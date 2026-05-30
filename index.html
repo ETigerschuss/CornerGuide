@@ -14,16 +14,15 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, set, push, onValue, onChildAdded, onDisconnect, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  // ⚠️ Replace with your own Firebase project config
-  // Create a free project at https://console.firebase.google.com
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "YOUR_PROJECT",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "000000000000",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyCIHeM2laZTAUF9BIJRjCAUb2ZGqlKjto8",
+    authDomain: "cornerguide.firebaseapp.com",
+    databaseURL: "https://cornerguide-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "cornerguide",
+    storageBucket: "cornerguide.firebasestorage.app",
+    messagingSenderId: "728546442384",
+    appId: "1:728546442384:web:79e7acd0b74cebed726c15",
+    measurementId: "G-GL66DD71KM"
   };
 
   let db = null;
