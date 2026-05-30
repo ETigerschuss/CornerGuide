@@ -12,7 +12,7 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, set, push, onValue, onChildAdded, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getDatabase, ref, set, push, onValue, onChildAdded, onDisconnect, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
   // ⚠️ Replace with your own Firebase project config
   // Create a free project at https://console.firebase.google.com
@@ -40,7 +40,7 @@
   }
 
   // Expose Firebase functions globally for use in the main script
-  window.FB = { db, ref, set, push, onValue, onChildAdded, serverTimestamp, remove, firebaseReady };
+  window.FB = { db, ref, set, push, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, firebaseReady };
 </script>
 <style>
 :root {
@@ -1260,7 +1260,7 @@ function initFirebase() {
 
 function broadcastPresence() {
   if (!window.FB?.firebaseReady || !STATE.nickname) return;
-  const { db, ref, set, serverTimestamp } = window.FB;
+  const { db, ref, set, onDisconnect } = window.FB;
   const myRef = ref(db, "presence/" + STATE.nickname);
   set(myRef, {
     name: STATE.nickname,
@@ -1268,11 +1268,8 @@ function broadcastPresence() {
     lastSeen: Date.now()
   });
 
-  // Remove presence on disconnect
-  window.addEventListener("beforeunload", () => {
-    const { remove } = window.FB;
-    remove(myRef);
-  });
+  // Use onDisconnect for reliable cleanup
+  onDisconnect(myRef).remove();
 }
 
 function listenFriendPresence() {
@@ -1426,8 +1423,8 @@ function renderCommentSection(cornerId, container) {
     </div>
     <ul class="comment-list">${listHtml || '<li style="color:var(--fg-dim);font-size:13px;padding:8px 0;">Noch keine Kommentare — sei der Erste!</li>'}</ul>
     <div class="comment-form">
-      <input type="text" class="comment-name-input" placeholder="Name" value="${escapeHtml(STATE.nickname)}" maxlength="20" />
-      <textarea class="comment-text-input" placeholder="Dein Kommentar..." maxlength="300"></textarea>
+      <input type="text" class="comment-name-input" placeholder="Name" value="${escapeHtml(STATE.nickname)}" maxlength="20" aria-label="Dein Name" />
+      <textarea class="comment-text-input" placeholder="Dein Kommentar..." maxlength="300" aria-label="Kommentar schreiben"></textarea>
       <button class="comment-submit" data-corner="${cornerId}">Senden</button>
     </div>
   `;
