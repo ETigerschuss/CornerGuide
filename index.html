@@ -2250,11 +2250,12 @@ function renderEmojiVotes(cornerId, container) {
   container.querySelectorAll(".emoji-vote-chip").forEach((btn) => {
     btn.addEventListener("click", () => {
       const amenity = btn.dataset.amenity;
+      const wasVoted = btn.classList.contains("voted");
       voteEmoji(cornerId, amenity);
       btn.classList.add("just-voted");
       setTimeout(() => btn.classList.remove("just-voted"), 300);
       const info = AMENITY_ICONS[amenity];
-      toast(`${info?.emoji || ""} ${btn.classList.contains("voted") ? "Stimme entfernt" : "Abgestimmt!"}`);
+      toast(`${info?.emoji || ""} ${wasVoted ? "Stimme entfernt" : "Abgestimmt!"}`);
     });
   });
 }
