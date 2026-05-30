@@ -731,6 +731,7 @@ input, textarea { cursor: text; }
   margin-bottom: 8px;
   position: relative;
 }
+.comment-item.mine { border-color: rgba(0,158,224,0.3); }
 .comment-item .comment-author {
   font-family: "JetBrains Mono", monospace;
   font-size: 10px;
@@ -750,6 +751,37 @@ input, textarea { cursor: text; }
   color: var(--fg);
   margin: 4px 0 0;
   line-height: 1.4;
+}
+.comment-item .comment-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.comment-item .comment-actions button {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--fg-dim);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.comment-item .comment-actions button:hover { border-color: var(--amber); color: var(--amber); }
+.comment-item .comment-actions button.delete-btn:hover { border-color: var(--pink); color: var(--pink); }
+.comment-edit-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--amber);
+  color: var(--fg);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 6px;
+  resize: none;
+  min-height: 36px;
 }
 .comment-form {
   display: flex;
@@ -795,6 +827,105 @@ input, textarea { cursor: text; }
   text-transform: uppercase;
 }
 .comment-form button:hover { background: var(--pink); color: #fff; }
+
+/* ====================== BAROMETER ====================== */
+.barometer-section {
+  padding: 10px 18px 14px;
+  border-top: 1px solid var(--line);
+}
+.barometer-header {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin: 0 0 8px;
+}
+.barometer-stars {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.barometer-stars button {
+  background: transparent;
+  border: none;
+  font-size: 26px;
+  padding: 2px;
+  cursor: pointer;
+  filter: grayscale(1) opacity(0.4);
+  transition: filter 0.15s, transform 0.15s;
+}
+.barometer-stars button.active { filter: none; transform: scale(1.15); }
+.barometer-stars button:hover { filter: none; transform: scale(1.2); }
+.barometer-stars button.voted { cursor: default; }
+.barometer-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--fg-dim);
+}
+.barometer-result .avg-score {
+  color: var(--amber);
+  font-weight: 700;
+  font-size: 14px;
+}
+.barometer-result .vote-count { font-size: 10px; }
+
+/* ====================== SPOT AMENITY ICONS ====================== */
+.spot-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.spot-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.spot-icon .icon-emoji { font-size: 14px; }
+.spot-icon .icon-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+/* ====================== MANUAL PRESENCE BUTTON ====================== */
+.checkin-btn {
+  background: var(--bg-3);
+  border: 1.5px solid var(--green);
+  color: var(--green);
+  padding: 9px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.checkin-btn:hover { background: rgba(184,255,58,0.1); }
+.checkin-btn.checked-in {
+  background: var(--green);
+  color: #111;
+  border-color: var(--green);
+  animation: pulse-badge 2s infinite;
+}
+.checkin-btn.checked-in:hover { background: #9de030; }
 
 /* ====================== FRIEND PRESENCE ====================== */
 .friends-bar {
@@ -988,7 +1119,7 @@ input, textarea { cursor: text; }
 <footer class="foot">
   Basiert auf der Maps-Liste <strong>Cornern als Lebensstil 🙌🍻</strong> von Florencia Porta<br>
   Gegründet vom Gossips Stammtisch: <strong>F · G · A · ÉT</strong><br>
-  Repo: CornerGuide · Alpha v0.4 · Echtzeit-Features powered by Firebase
+  Repo: CornerGuide · Alpha v0.5 · Echtzeit-Features powered by Firebase
 </footer>
 
 <!-- ============ FAB ============ -->
@@ -1068,7 +1199,8 @@ const CORNERS_OG = [
     area: "Sendling-Westend",
     lat: 48.118139, lng: 11.551083,
     description: "Preislich starker Kiosk mit der unschlagbaren 1,70 Augustiner Halbe\nBequeme Sitzmöglichkeiten, Austreten machbar aber nicht ideal.",
-    tags: ["Kiosk", "Augustiner", "günstig"]
+    tags: ["Kiosk", "Augustiner", "günstig"],
+    amenities: ["kiosk", "billig", "sonne"]
   },
   {
     id: "la-dolce-vita",
@@ -1076,7 +1208,8 @@ const CORNERS_OG = [
     area: "Gardasee, IT",
     lat: 45.922528, lng: 10.883167,
     description: "La dolce vita - irre Aussicht, gönnt euch Mal ne Auszeit",
-    tags: ["Italien", "View", "Ausflug"]
+    tags: ["Italien", "View", "Ausflug"],
+    amenities: ["sonne", "ruhig"]
   },
   {
     id: "the-cage",
@@ -1084,7 +1217,8 @@ const CORNERS_OG = [
     area: "Neuhausen",
     lat: 48.153937, lng: 11.543313,
     description: "Mit kostenloser Basketballaction kann dieser Corner angeben, aber die Kids können die Gelassenheit stören",
-    tags: ["Basketball", "Action"]
+    tags: ["Basketball", "Action"],
+    amenities: ["sonne", "nachbarn"]
   },
   {
     id: "ohm-grab",
@@ -1092,7 +1226,8 @@ const CORNERS_OG = [
     area: "Alter Südfriedhof",
     lat: 48.127063, lng: 11.566063,
     description: "Ein spezieller Corner: falls Mal wichtige Gespräche geführt werden müssen und die größte Berühmtheit Münchens um Rat gefragt werden muss, komm hier her!",
-    tags: ["Friedhof", "Special", "Ruhig"]
+    tags: ["Friedhof", "Special", "Ruhig"],
+    amenities: ["ruhig", "schatten"]
   },
   {
     id: "bavaria-blick",
@@ -1100,7 +1235,8 @@ const CORNERS_OG = [
     area: "Schwanthalerhöhe",
     lat: 48.128972, lng: 11.552083,
     description: "Schöne Sonnenuntergänge mit Sicht auf die Göttin des bayrischen Nektars. Kiosk Babylon ums Eck fülligem Angebot und für schwache Blasen ein freundlicher Rückzugsort.",
-    tags: ["Sunset", "Kiosk Babylon", "Bavaria"]
+    tags: ["Sunset", "Kiosk Babylon", "Bavaria"],
+    amenities: ["kiosk", "toilette", "sonne"]
   },
   {
     id: "windbeutel-geheimtipp",
@@ -1108,7 +1244,8 @@ const CORNERS_OG = [
     area: "Isarvorstadt",
     lat: 48.129528, lng: 11.563778,
     description: "Unbekannter Cornergeheimtipp, hab hier gerade noch ne Tiefkühlwindbeutelpackung gesehen, was mich mental direkt nach Rio in die Weihnachtszeit gebracht hat",
-    tags: ["Geheimtipp", "Skurril", "Rio-Vibes"]
+    tags: ["Geheimtipp", "Skurril", "Rio-Vibes"],
+    amenities: ["ruhig"]
   },
   {
     id: "kapuzinerdreieck",
@@ -1116,7 +1253,8 @@ const CORNERS_OG = [
     area: "Isarvorstadt",
     lat: 48.128063, lng: 11.556188,
     description: "Perfekter Spot, wenn du nah an nem Kiosk sein willst für  schnellen Nachschub 😄 Toiletten sind auch easy erreichbar. Ist bisschen laut, aber wenn du das Stadtleben live mitkriegen willst, Minute für Minute, dann ist es echt ein top Spot. Eigentlich die Mutter aller Corner.",
-    tags: ["Mutter aller Corner", "Kiosk", "Toilette"]
+    tags: ["Mutter aller Corner", "Kiosk", "Toilette"],
+    amenities: ["kiosk", "toilette", "billig", "nachbarn"]
   },
   {
     id: "schnecke",
@@ -1124,7 +1262,8 @@ const CORNERS_OG = [
     area: "Sweet Brown Snail",
     lat: 48.132188, lng: 11.543313,
     description: "Klassiker... Schneckenplatz\nKiosk weit weg, Sitzmöglichkeiten vorhanden",
-    tags: ["Klassiker", "Schnecke", "Sitzplatz"]
+    tags: ["Klassiker", "Schnecke", "Sitzplatz"],
+    amenities: ["sonne", "ruhig"]
   },
   {
     id: "kaiser-ludwig",
@@ -1132,7 +1271,8 @@ const CORNERS_OG = [
     area: "Ludwigsvorstadt",
     lat: 48.132063, lng: 11.555813,
     description: "Kein Kiosk und keine Toiletten in der Nähe.\nHistorisch wertvoll.\nBeim letzten Mal wars etwas kalt. (1/5 Sterne)",
-    tags: ["Historisch", "Kalt", "1/5"]
+    tags: ["Historisch", "Kalt", "1/5"],
+    amenities: ["schatten"]
   },
   {
     id: "piazza-zenetti",
@@ -1140,7 +1280,8 @@ const CORNERS_OG = [
     area: "Isarvorstadt",
     lat: 48.124563, lng: 11.555813,
     description: "nettes Flair, Bierchen von der Pizzeria und Horden an Poschies beim Theatergang beobachten.",
-    tags: ["Pizzeria", "Flair", "People-Watching"]
+    tags: ["Pizzeria", "Flair", "People-Watching"],
+    amenities: ["kiosk", "sonne", "nachbarn"]
   },
   {
     id: "harras",
@@ -1148,7 +1289,8 @@ const CORNERS_OG = [
     area: "Sendling",
     lat: 48.120083, lng: 11.540528,
     description: "Toller Platz Nähe Harras mit mehreren Bänken und Kiosk.\nMehrere Kneipen in der Nähe (Billardkneipe)",
-    tags: ["Bänke", "Kiosk", "Billard"]
+    tags: ["Bänke", "Kiosk", "Billard"],
+    amenities: ["kiosk", "billig", "sonne"]
   },
   {
     id: "isar-spot",
@@ -1156,9 +1298,21 @@ const CORNERS_OG = [
     area: "Isarvorstadt",
     lat: 48.129778, lng: 11.565056,
     description: "",
-    tags: ["Neu"]
+    tags: ["Neu"],
+    amenities: []
   }
 ];
+
+/* Amenity icon definitions */
+const AMENITY_ICONS = {
+  kiosk: { emoji: "🏪", label: "Kiosk" },
+  toilette: { emoji: "🚻", label: "Toilette" },
+  billig: { emoji: "💰", label: "Billig" },
+  schatten: { emoji: "🌳", label: "Schatten" },
+  sonne: { emoji: "☀️", label: "Sonne" },
+  ruhig: { emoji: "🤫", label: "Ruhig" },
+  nachbarn: { emoji: "👀", label: "Nachbarn" }
+};
 
 /* ====================== STATE ====================== */
 const STATE = {
@@ -1172,10 +1326,12 @@ const STATE = {
   geoActive: false,
   userPos: null,
   atCornerId: null,
+  manualCheckinId: null,
   PROXIMITY_M: 75,
   nickname: localStorage.getItem("cg.nickname") || "",
   friends: {},
-  comments: {}
+  comments: {},
+  barometer: {}
 };
 
 function getAllCorners() {
@@ -1241,6 +1397,7 @@ function initFirebase() {
     status.className = "firebase-status offline";
     status.textContent = "⚡ Offline-Modus — Firebase nicht konfiguriert (Kommentare & Freunde lokal)";
     loadLocalComments();
+    loadLocalBarometer();
     return;
   }
 
@@ -1253,6 +1410,8 @@ function initFirebase() {
   listenFriendPresence();
   // Listen for comments
   listenComments();
+  // Listen for barometer votes
+  listenBarometer();
   // Broadcast own presence
   broadcastPresence();
 }
@@ -1261,9 +1420,10 @@ function broadcastPresence() {
   if (!window.FB?.firebaseReady || !STATE.nickname) return;
   const { db, ref, set, onDisconnect } = window.FB;
   const myRef = ref(db, "presence/" + STATE.nickname);
+  const activeCorner = STATE.atCornerId || STATE.manualCheckinId || null;
   set(myRef, {
     name: STATE.nickname,
-    atCorner: STATE.atCornerId || null,
+    atCorner: activeCorner,
     lastSeen: Date.now()
   });
 
@@ -1396,6 +1556,34 @@ function addComment(cornerId, author, text) {
   }
 }
 
+function editComment(cornerId, commentKey, newText) {
+  if (!newText.trim()) return;
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set } = window.FB;
+    const commentRef = ref(db, "comments/" + cornerId + "/" + commentKey + "/text");
+    set(commentRef, newText.trim());
+  } else {
+    if (STATE.comments[cornerId]?.[commentKey]) {
+      STATE.comments[cornerId][commentKey].text = newText.trim();
+      saveLocalComments();
+      refreshAllCommentSections();
+    }
+  }
+}
+
+function deleteComment(cornerId, commentKey) {
+  if (window.FB?.firebaseReady) {
+    const { db, ref, remove } = window.FB;
+    remove(ref(db, "comments/" + cornerId + "/" + commentKey));
+  } else {
+    if (STATE.comments[cornerId]?.[commentKey]) {
+      delete STATE.comments[cornerId][commentKey];
+      saveLocalComments();
+      refreshAllCommentSections();
+    }
+  }
+}
+
 function refreshAllCommentSections() {
   $$(".comments-section").forEach((section) => {
     const cornerId = section.dataset.cornerId;
@@ -1405,20 +1593,27 @@ function refreshAllCommentSections() {
 
 function renderCommentSection(cornerId, container) {
   const comments = STATE.comments[cornerId] || {};
-  const commentList = Object.values(comments).sort((a, b) => a.time - b.time);
+  const commentEntries = Object.entries(comments).sort((a, b) => a[1].time - b[1].time);
 
-  const listHtml = commentList.map((c) => `
-    <li class="comment-item">
+  const listHtml = commentEntries.map(([key, c]) => {
+    const isMine = c.author === STATE.nickname;
+    return `
+    <li class="comment-item ${isMine ? "mine" : ""}">
       <span class="comment-author">${escapeHtml(c.author)}</span>
       <span class="comment-time">${timeAgo(c.time)}</span>
-      <p class="comment-text">${escapeHtml(c.text)}</p>
+      <p class="comment-text" id="comment-text-${key}">${escapeHtml(c.text)}</p>
+      ${isMine ? `<div class="comment-actions">
+        <button class="edit-btn" data-corner="${cornerId}" data-key="${key}">✏️ Edit</button>
+        <button class="delete-btn" data-corner="${cornerId}" data-key="${key}">🗑 Löschen</button>
+      </div>` : ""}
     </li>
-  `).join("");
+  `;
+  }).join("");
 
   container.innerHTML = `
     <div class="comments-header">
       <h3>💬 Kommentare</h3>
-      ${commentList.length > 0 ? `<span class="comment-count">${commentList.length}</span>` : ""}
+      ${commentEntries.length > 0 ? `<span class="comment-count">${commentEntries.length}</span>` : ""}
     </div>
     <ul class="comment-list">${listHtml || '<li style="color:var(--fg-dim);font-size:13px;padding:8px 0;">Noch keine Kommentare — sei der Erste!</li>'}</ul>
     <div class="comment-form">
@@ -1428,6 +1623,7 @@ function renderCommentSection(cornerId, container) {
     </div>
   `;
 
+  // Bind submit
   container.querySelector(".comment-submit").addEventListener("click", () => {
     const nameInput = container.querySelector(".comment-name-input");
     const textInput = container.querySelector(".comment-text-input");
@@ -1442,6 +1638,173 @@ function renderCommentSection(cornerId, container) {
       container.querySelector(".comment-submit").click();
     }
   });
+
+  // Bind edit buttons
+  container.querySelectorAll(".edit-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.key;
+      const cId = btn.dataset.corner;
+      const textEl = container.querySelector(`#comment-text-${key}`);
+      const currentText = STATE.comments[cId]?.[key]?.text || "";
+      const li = btn.closest(".comment-item");
+      const actionsDiv = li.querySelector(".comment-actions");
+      actionsDiv.innerHTML = "";
+      textEl.innerHTML = `<textarea class="comment-edit-input" maxlength="300">${escapeHtml(currentText)}</textarea>
+        <div class="comment-actions" style="margin-top:6px;">
+          <button class="save-edit-btn" data-corner="${cId}" data-key="${key}">✓ Speichern</button>
+          <button class="cancel-edit-btn">Abbrechen</button>
+        </div>`;
+      const editInput = textEl.querySelector(".comment-edit-input");
+      editInput.focus();
+      textEl.querySelector(".save-edit-btn").addEventListener("click", () => {
+        editComment(cId, key, editInput.value);
+        toast("Kommentar bearbeitet ✓");
+      });
+      textEl.querySelector(".cancel-edit-btn").addEventListener("click", () => {
+        renderCommentSection(cornerId, container);
+      });
+      editInput.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          editComment(cId, key, editInput.value);
+          toast("Kommentar bearbeitet ✓");
+        }
+        if (e.key === "Escape") renderCommentSection(cornerId, container);
+      });
+    });
+  });
+
+  // Bind delete buttons
+  container.querySelectorAll(".delete-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (confirm("Kommentar löschen?")) {
+        deleteComment(btn.dataset.corner, btn.dataset.key);
+        toast("Kommentar gelöscht 🗑");
+      }
+    });
+  });
+}
+
+/* ====================== BAROMETER (Daily Spot Rating) ====================== */
+function getTodayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function listenBarometer() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  const today = getTodayKey();
+  const baroRef = ref(db, "barometer/" + today);
+  onValue(baroRef, (snapshot) => {
+    STATE.barometer = snapshot.val() || {};
+    refreshAllBarometers();
+  });
+}
+
+function loadLocalBarometer() {
+  try {
+    const raw = localStorage.getItem("cg.barometer");
+    STATE.barometer = raw ? JSON.parse(raw) : {};
+  } catch (e) { STATE.barometer = {}; }
+}
+
+function saveLocalBarometer() {
+  localStorage.setItem("cg.barometer", JSON.stringify(STATE.barometer));
+}
+
+function voteBarometer(cornerId, score) {
+  const today = getTodayKey();
+  const voteKey = STATE.nickname;
+  if (!voteKey) { toast("Bitte gib zuerst einen Namen ein."); return; }
+
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set } = window.FB;
+    set(ref(db, "barometer/" + today + "/" + cornerId + "/" + voteKey), score);
+  } else {
+    if (!STATE.barometer[cornerId]) STATE.barometer[cornerId] = {};
+    STATE.barometer[cornerId][voteKey] = score;
+    saveLocalBarometer();
+    refreshAllBarometers();
+  }
+}
+
+function getBarometerData(cornerId) {
+  const votes = STATE.barometer[cornerId] || {};
+  const values = Object.values(votes);
+  const myVote = STATE.nickname ? (votes[STATE.nickname] || 0) : 0;
+  const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+  return { avg, count: values.length, myVote };
+}
+
+function refreshAllBarometers() {
+  $$(".barometer-section").forEach((section) => {
+    const cornerId = section.dataset.cornerId;
+    renderBarometer(cornerId, section);
+  });
+}
+
+function renderBarometer(cornerId, container) {
+  const { avg, count, myVote } = getBarometerData(cornerId);
+  const emojis = ["😴", "😐", "🙂", "😎", "🔥"];
+
+  const starsHtml = emojis.map((emoji, i) => {
+    const score = i + 1;
+    const isActive = score <= (myVote || 0);
+    const voted = myVote > 0;
+    return `<button class="baro-star ${isActive ? "active" : ""} ${voted ? "voted" : ""}" data-corner="${cornerId}" data-score="${score}">${emoji}</button>`;
+  }).join("");
+
+  const resultHtml = count > 0
+    ? `<span class="barometer-result"><span class="avg-score">${avg.toFixed(1)}</span><span class="vote-count">(${count} ${count === 1 ? "Stimme" : "Stimmen"})</span></span>`
+    : `<span class="barometer-result"><span class="vote-count">Noch keine Bewertung heute</span></span>`;
+
+  container.innerHTML = `
+    <p class="barometer-header">📊 Tages-Barometer</p>
+    <div class="barometer-stars">${starsHtml}${resultHtml}</div>
+  `;
+
+  container.querySelectorAll(".baro-star").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const score = parseInt(btn.dataset.score);
+      voteBarometer(cornerId, score);
+      toast(`Bewertung: ${emojis[score-1]} (${score}/5)`);
+    });
+  });
+}
+
+/* ====================== MANUAL CHECK-IN ====================== */
+function manualCheckin(cornerId) {
+  const wasCheckedIn = STATE.manualCheckinId === cornerId;
+
+  // Remove old checkin
+  if (STATE.manualCheckinId) {
+    const oldCard = document.getElementById("card-" + STATE.manualCheckinId);
+    oldCard?.classList.remove("at-here");
+    refreshMainMarker(STATE.manualCheckinId);
+  }
+
+  if (wasCheckedIn) {
+    // Toggle off
+    STATE.manualCheckinId = null;
+    toast("Ausgecheckt 👋");
+  } else {
+    // Check in
+    STATE.manualCheckinId = cornerId;
+    const card = document.getElementById("card-" + cornerId);
+    card?.classList.add("at-here");
+    refreshMainMarker(cornerId);
+    const corner = getAllCorners().find((c) => c.id === cornerId);
+    toast(`Eingecheckt am <strong>${escapeHtml(corner?.name || "")}</strong> 🍻`, "at-corner");
+  }
+
+  // Update all checkin buttons
+  $$(".checkin-btn").forEach((btn) => {
+    const isThis = btn.dataset.id === STATE.manualCheckinId;
+    btn.classList.toggle("checked-in", isThis);
+    btn.innerHTML = isThis ? "✅ Ich bin hier!" : "📍 Ich bin hier";
+  });
+
+  broadcastPresence();
 }
 
 function timeAgo(timestamp) {
@@ -1498,8 +1861,20 @@ function renderCards() {
       ? `<p class="card-desc">${escapeHtml(effectiveDesc)}${isEdited ? '<span class="edited-tag">bearbeitet</span>' : ""}</p>`
       : `<button class="desc-add-cta" data-action="edit-desc" data-id="${c.id}"><span>✏️</span> Beschreibung hinzufügen</button>`;
 
+    // Amenity icons
+    const amenities = c.amenities || [];
+    const amenityHtml = amenities.length > 0
+      ? `<ul class="spot-icons">${amenities.map((a) => {
+          const info = AMENITY_ICONS[a];
+          return info ? `<li class="spot-icon"><span class="icon-emoji">${info.emoji}</span><span class="icon-label">${info.label}</span></li>` : "";
+        }).join("")}</ul>`
+      : "";
+
+    // Check-in button state
+    const isCheckedIn = STATE.manualCheckinId === c.id;
+
     const card = document.createElement("article");
-    card.className = "card" + (isCustom ? " custom" : "");
+    card.className = "card" + (isCustom ? " custom" : "") + (isCheckedIn ? " at-here" : "");
     card.dataset.id = c.id;
     card.id = "card-" + c.id;
 
@@ -1515,14 +1890,17 @@ function renderCards() {
       <div class="card-body">
         <p class="card-area">${c.area || "—"}</p>
         <h2 class="card-name">${c.name}</h2>
+        ${amenityHtml}
         <div class="desc-container" id="desc-container-${c.id}">${descBlock}</div>
         <ul class="card-tags">${(c.tags || []).map((t) => `<li>#${escapeHtml(t)}</li>`).join("")}</ul>
       </div>
+      <div class="barometer-section" data-corner-id="${c.id}"></div>
       <div class="minimap-wrap">
         <div class="minimap" data-lat="${c.lat}" data-lng="${c.lng}" data-id="${c.id}" data-custom="${isCustom}"></div>
         <span class="minimap-label">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span>
       </div>
       <div class="card-actions">
+        <button class="checkin-btn ${isCheckedIn ? "checked-in" : ""}" data-id="${c.id}">${isCheckedIn ? "✅ Ich bin hier!" : "📍 Ich bin hier"}</button>
         <button class="action-btn primary" data-action="map" data-id="${c.id}">📍 Auf Karte</button>
         <button class="action-btn" data-action="route" data-id="${c.id}">🧭 Route</button>
         ${hasDesc ? `<button class="action-btn" data-action="edit-desc" data-id="${c.id}">✏️ Bearbeiten</button>` : ""}
@@ -1561,6 +1939,9 @@ function renderCards() {
 
   $$('[data-action="edit-desc"]').forEach((btn) => btn.addEventListener("click", () => startEditDescription(btn.dataset.id)));
 
+  // Bind check-in buttons
+  $$(".checkin-btn").forEach((btn) => btn.addEventListener("click", () => manualCheckin(btn.dataset.id)));
+
   // Lazy-init minimaps
   initMinimaps();
 
@@ -1568,6 +1949,16 @@ function renderCards() {
   $$(".comments-section").forEach((section) => {
     renderCommentSection(section.dataset.cornerId, section);
   });
+
+  // Render barometer sections
+  $$(".barometer-section").forEach((section) => {
+    renderBarometer(section.dataset.cornerId, section);
+  });
+
+  // Load local barometer if offline
+  if (!window.FB?.firebaseReady) {
+    loadLocalBarometer();
+  }
 }
 
 function escapeHtml(s) {
@@ -1759,7 +2150,8 @@ function refreshMainMarker(cornerId) {
   const m = STATE.mainMarkers[cornerId];
   if (!m) return;
   const el = m.getElement()?.querySelector(".corner-marker");
-  if (el) el.classList.toggle("at-here", STATE.atCornerId === cornerId);
+  const isHere = STATE.atCornerId === cornerId || STATE.manualCheckinId === cornerId;
+  if (el) el.classList.toggle("at-here", isHere);
 }
 
 /* ====================== GEOLOCATION ====================== */
