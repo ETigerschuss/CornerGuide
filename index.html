@@ -1,0 +1,1437 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0d0d0d" />
+<title>Minga's Corner · vom gossips Stammtisch 🍻</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,wght@1,600;1,800&family=Caveat:wght@600;700&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --bg: #0d0d0d;
+  --bg-2: #161616;
+  --bg-3: #1f1f1f;
+  --line: #2a2a2a;
+  --fg: #f4e9d1;
+  --fg-dim: #9a9285;
+  --amber: #e8a93e;
+  --amber-hot: #ffae00;
+  --pink: #ff2e6c;
+  --green: #b8ff3a;
+  --blue: #6cb6ff;
+  --bayern: #009ee0;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); min-height: 100%; }
+body {
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 16px; line-height: 1.5;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(232,169,62,0.08), transparent 45%),
+    radial-gradient(circle at 85% 30%, rgba(0,158,224,0.05), transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(255,46,108,0.04), transparent 55%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.92 0 0 0 0 0.82 0 0 0 0.04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+button, input, textarea { font-family: inherit; cursor: pointer; }
+input, textarea { cursor: text; }
+
+/* ====================== HERO ====================== */
+.hero {
+  padding: calc(36px + var(--safe-top)) 20px 28px;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 2px solid var(--line);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(232,169,62,0.15), transparent 60%),
+    repeating-linear-gradient(45deg, transparent 0 18px, rgba(255,255,255,0.012) 18px 19px);
+}
+.hero-inner { max-width: 720px; margin: 0 auto; text-align: center; position: relative; }
+.stamps {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 14px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--fg-dim);
+  text-transform: uppercase;
+}
+.stamp {
+  display: inline-block;
+  padding: 5px 9px;
+  border: 1.5px solid var(--fg-dim);
+  border-radius: 3px;
+  letter-spacing: 1.5px;
+}
+.stamp.left { transform: rotate(-3deg); border-color: var(--amber); color: var(--amber); }
+.stamp.right { transform: rotate(2deg); border-color: var(--pink); color: var(--pink); }
+
+.title-block {
+  margin: 8px 0 16px;
+  position: relative;
+}
+.title-mingas {
+  font-family: "Anton", sans-serif;
+  font-weight: 400;
+  font-size: clamp(56px, 16vw, 110px);
+  line-height: 0.88;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin: 0;
+  display: inline-block;
+  position: relative;
+}
+.title-mingas::after {
+  content: "";
+  position: absolute;
+  left: -2%; right: -2%;
+  bottom: 0.04em;
+  height: 6px;
+  background: var(--amber);
+  z-index: -1;
+  transform: rotate(-1deg);
+  border-radius: 6px;
+}
+.title-corner {
+  font-family: "Anton", sans-serif;
+  font-weight: 400;
+  font-size: clamp(56px, 16vw, 110px);
+  line-height: 0.88;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin: -0.08em 0 0;
+  display: block;
+}
+.title-corner em {
+  font-style: normal;
+  -webkit-text-stroke: 1.5px var(--fg);
+  color: transparent;
+}
+.subtitle {
+  font-family: "Caveat", cursive;
+  font-weight: 700;
+  font-size: clamp(22px, 5.5vw, 32px);
+  color: var(--fg);
+  margin: 8px 0 0;
+  transform: rotate(-1.5deg);
+  display: inline-block;
+}
+.subtitle .gossips { color: var(--pink); text-decoration: underline wavy var(--pink); text-underline-offset: 4px; }
+
+.meta-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0 18px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.meta-line .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--amber); }
+.meta-line strong { color: var(--amber); font-weight: 700; }
+
+.tabs {
+  display: inline-flex;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 2px;
+  position: relative;
+  z-index: 1;
+}
+.tab {
+  background: transparent;
+  border: none;
+  color: var(--fg-dim);
+  padding: 9px 22px;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  transition: all 0.15s;
+}
+.tab.active { background: var(--amber); color: #111; }
+
+/* ====================== VIEWS ====================== */
+.view { display: none; }
+.view.active { display: block; }
+
+#view-list {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px calc(120px + var(--safe-bottom));
+}
+.list-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--fg-dim);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.list-meta .count-num { color: var(--amber); font-weight: 700; }
+.cards { display: flex; flex-direction: column; gap: 18px; }
+
+/* ====================== CARD ====================== */
+.card {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+.card.at-here {
+  border-color: var(--green);
+  box-shadow: 0 0 0 1px var(--green), 0 8px 30px rgba(184,255,58,0.18);
+}
+.card-photo {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, #1a1a1a, #252525);
+  overflow: hidden;
+}
+.card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-photo-empty {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; color: var(--fg-dim);
+  background: repeating-linear-gradient(45deg, transparent, transparent 14px, rgba(255,255,255,0.018) 14px, rgba(255,255,255,0.018) 28px);
+}
+.card-photo-empty svg { width: 36px; height: 36px; opacity: 0.4; }
+.card-photo-empty span { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; }
+.photo-input { display: none; }
+.photo-btn {
+  position: absolute;
+  bottom: 12px; right: 12px;
+  background: rgba(0,0,0,0.72);
+  color: var(--fg);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-family: "JetBrains Mono", monospace;
+  letter-spacing: 1px;
+  backdrop-filter: blur(8px);
+}
+.photo-btn:hover { background: var(--amber); color: #111; border-color: var(--amber); }
+.card-num {
+  position: absolute;
+  top: 14px; left: 14px;
+  background: var(--amber);
+  color: #111;
+  font-family: "Anton", sans-serif;
+  font-size: 19px;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  transform: rotate(-6deg);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  z-index: 2;
+}
+.card.custom .card-num { background: var(--bayern); color: #fff; }
+.card .mine-badge {
+  position: absolute;
+  top: 14px; left: 60px;
+  background: var(--bayern);
+  color: #fff;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transform: rotate(-2deg);
+  z-index: 2;
+  display: none;
+}
+.card.custom .mine-badge { display: inline-block; }
+.at-badge {
+  position: absolute;
+  top: 14px; right: 14px;
+  background: var(--green);
+  color: #111;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 999px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  display: none;
+  z-index: 2;
+}
+.card.at-here .at-badge { display: inline-block; animation: pulse-badge 2s infinite; }
+@keyframes pulse-badge {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(184,255,58,0.6); }
+  50% { box-shadow: 0 0 0 10px rgba(184,255,58,0); }
+}
+
+.card-body { padding: 18px 18px 8px; }
+.card-area {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 0 0 4px;
+}
+.card-name {
+  font-family: "Anton", sans-serif;
+  font-weight: 400;
+  font-size: 28px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  line-height: 1;
+  margin: 0 0 14px;
+}
+.card-desc {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 15.5px;
+  color: var(--fg);
+  margin: 0 0 14px;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+.card-desc.empty { color: var(--fg-dim); font-style: italic; font-weight: 400; }
+
+/* Description edit state */
+.desc-container { margin: 0 0 14px; position: relative; }
+.desc-add-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: 1.5px dashed var(--line);
+  border-radius: 10px;
+  color: var(--amber);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.desc-add-cta:hover { border-color: var(--amber); background: rgba(232,169,62,0.06); }
+.edited-tag {
+  display: inline-block;
+  margin-left: 6px;
+  font-family: "JetBrains Mono", monospace;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--bayern);
+  background: rgba(0,158,224,0.12);
+  border: 1px solid rgba(0,158,224,0.3);
+  padding: 2px 6px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.desc-editor {
+  width: 100%;
+  background: var(--bg-3);
+  border: 1.5px solid var(--amber);
+  color: var(--fg);
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 15.5px;
+  line-height: 1.45;
+  resize: vertical;
+  min-height: 100px;
+}
+.desc-editor:focus { outline: none; border-color: var(--pink); }
+.desc-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.desc-edit-hint {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  color: var(--fg-dim);
+  letter-spacing: 1px;
+  margin-top: 8px;
+  text-transform: uppercase;
+}
+.card-tags {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  margin: 0 0 14px;
+  list-style: none;
+  padding: 0;
+}
+.card-tags li {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--fg-dim);
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+/* minimap */
+.minimap-wrap {
+  position: relative;
+  height: 110px;
+  margin: 0 18px 14px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #1a1a1a;
+}
+.minimap { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+.minimap-wrap .minimap-label {
+  position: absolute;
+  bottom: 6px; left: 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--fg);
+  background: rgba(0,0,0,0.65);
+  padding: 3px 6px;
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 500;
+}
+.minimap-marker {
+  width: 22px; height: 22px;
+  background: var(--amber);
+  border: 2px solid #111;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 1px 1px 0 rgba(0,0,0,0.6);
+  display: grid; place-items: center;
+}
+.minimap-marker.at-here { background: var(--green); }
+
+.card-actions {
+  padding: 0 18px 18px;
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.action-btn {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  padding: 9px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.action-btn:hover, .action-btn:focus { border-color: var(--amber); color: var(--amber); outline: none; }
+.action-btn.primary { background: var(--amber); color: #111; border-color: var(--amber); }
+.action-btn.primary:hover { background: var(--pink); color: #fff; border-color: var(--pink); }
+.action-btn.danger { color: var(--pink); }
+.action-btn.danger:hover { border-color: var(--pink); }
+
+/* ====================== MAP VIEW ====================== */
+#view-map { padding: 0; }
+.map-toolbar {
+  display: flex; gap: 8px; padding: 12px 16px; flex-wrap: wrap;
+  background: var(--bg-2); border-bottom: 1px solid var(--line);
+  align-items: center;
+}
+.geo-btn {
+  background: var(--bg-3); color: var(--fg);
+  border: 1px solid var(--line);
+  padding: 8px 14px; border-radius: 999px;
+  font-size: 13px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.geo-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.geo-btn:hover:not(.active) { border-color: var(--amber); }
+.geo-status {
+  font-family: "JetBrains Mono", monospace; font-size: 11px;
+  color: var(--fg-dim); letter-spacing: 1px; margin-left: auto;
+}
+.geo-status.live { color: var(--blue); }
+.geo-status.at-corner { color: var(--green); }
+.map-shell {
+  height: calc(100vh - 290px - var(--safe-top));
+  min-height: 380px;
+  position: relative;
+}
+#main-map { width: 100%; height: 100%; background: #1a1a1a; }
+.leaflet-container { background: #1a1a1a; font-family: inherit; }
+.leaflet-control-attribution {
+  background: rgba(13,13,13,0.7) !important;
+  color: var(--fg-dim) !important; font-size: 10px !important;
+}
+.leaflet-control-attribution a { color: var(--amber) !important; }
+/* Dark theme over standard OSM tiles via CSS filter - works on any network */
+.leaflet-tile-pane {
+  filter: invert(1) hue-rotate(185deg) brightness(0.92) contrast(0.95) saturate(0.55);
+}
+/* Don't filter markers, popups or controls */
+.leaflet-marker-pane, .leaflet-popup-pane, .leaflet-overlay-pane,
+.leaflet-shadow-pane, .leaflet-control-container { filter: none !important; }
+
+.corner-marker {
+  width: 30px; height: 30px;
+  background: var(--amber);
+  border: 2px solid #111;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.6);
+  display: grid; place-items: center;
+}
+.corner-marker.custom { background: var(--bayern); }
+.corner-marker .num {
+  font-family: "Anton", sans-serif; color: #111;
+  font-size: 13px; transform: rotate(45deg);
+  line-height: 1;
+}
+.corner-marker.custom .num { color: #fff; }
+.corner-marker.at-here { background: var(--green); animation: pulse 1.8s infinite; }
+@keyframes pulse {
+  0%, 100% { box-shadow: 2px 2px 0 rgba(0,0,0,0.6), 0 0 0 0 rgba(184,255,58,0.55); }
+  50% { box-shadow: 2px 2px 0 rgba(0,0,0,0.6), 0 0 0 18px rgba(184,255,58,0); }
+}
+.user-marker {
+  width: 18px; height: 18px;
+  background: var(--blue);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(108,182,255,0.4), 0 2px 8px rgba(0,0,0,0.5);
+  animation: user-pulse 2s infinite;
+}
+@keyframes user-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(108,182,255,0.4), 0 0 0 0 rgba(108,182,255,0.5), 0 2px 8px rgba(0,0,0,0.5); }
+  50% { box-shadow: 0 0 0 2px rgba(108,182,255,0.4), 0 0 0 16px rgba(108,182,255,0), 0 2px 8px rgba(0,0,0,0.5); }
+}
+
+/* ====================== FAB ====================== */
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(20px + var(--safe-bottom));
+  z-index: 1500;
+  background: var(--amber);
+  color: #111;
+  border: none;
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  font-size: 30px;
+  font-weight: 300;
+  display: grid; place-items: center;
+  box-shadow: 0 8px 24px rgba(232,169,62,0.4), 0 2px 8px rgba(0,0,0,0.4);
+  transition: transform 0.15s;
+}
+.fab:hover { transform: scale(1.05); background: var(--pink); color: #fff; }
+.fab svg { width: 26px; height: 26px; stroke-width: 2.5; }
+
+/* ====================== MODAL ====================== */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 2500;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: flex-end; justify-content: center;
+  animation: fade 0.2s;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--bg-2);
+  border-top: 2px solid var(--amber);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 560px;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 20px 20px calc(24px + var(--safe-bottom));
+  animation: slide 0.25s;
+}
+@keyframes slide { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 40px; height: 4px; background: var(--line); border-radius: 2px; margin: 0 auto 18px; }
+.modal h2 {
+  font-family: "Anton", sans-serif;
+  font-weight: 400;
+  font-size: 28px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+}
+.modal p.sub {
+  font-family: "Fraunces", serif; font-style: italic;
+  color: var(--fg-dim); margin: 0 0 20px;
+}
+.field { margin-bottom: 14px; }
+.field label {
+  display: block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--fg-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
+}
+.field label .req { color: var(--pink); }
+.field input, .field textarea {
+  width: 100%;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  padding: 11px 13px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+}
+.field textarea { min-height: 80px; resize: vertical; line-height: 1.45; }
+.field input:focus, .field textarea:focus { outline: none; border-color: var(--amber); }
+.coord-row { display: flex; gap: 8px; }
+.coord-row .field { flex: 1; margin-bottom: 0; }
+.coord-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+.modal-actions .action-btn { flex: 1; justify-content: center; }
+.export-block {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  padding: 12px;
+  border-radius: 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--fg-dim);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 12px;
+}
+
+/* ====================== TOAST ====================== */
+.toast {
+  position: fixed;
+  top: calc(20px + var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%) translateY(-30px);
+  background: var(--bg-2);
+  border: 1px solid var(--amber);
+  border-left: 4px solid var(--amber);
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 3000;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  max-width: calc(100vw - 32px);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.at-corner { border-color: var(--green); border-left-color: var(--green); }
+.toast strong { color: var(--amber); }
+.toast.at-corner strong { color: var(--green); }
+
+/* ====================== FOOTER ====================== */
+.foot {
+  border-top: 1px solid var(--line);
+  text-align: center;
+  padding: 24px 20px calc(100px + var(--safe-bottom));
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--fg-dim);
+}
+.foot strong { color: var(--pink); font-style: normal; font-family: "DM Sans"; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="stamps">
+      <span class="stamp left">Zine 001</span>
+      <span class="stamp right">Stammtisch</span>
+    </div>
+    <div class="title-block">
+      <h1 class="title-mingas">Minga's</h1>
+      <span class="title-corner"><em>Corner</em></span>
+    </div>
+    <p class="subtitle">vom <span class="gossips">gossips</span> Stammtisch</p>
+    <div class="meta-line">
+      <span><strong id="header-count">12</strong> Spots</span>
+      <span class="dot"></span>
+      <span>München</span>
+      <span class="dot"></span>
+      <span>OG-Liste: Florencia</span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="list">Liste</button>
+      <button class="tab" data-view="map">Karte</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ VIEWS ============ -->
+<main>
+  <section id="view-list" class="view active">
+    <div class="list-meta">
+      <span><span class="count-num" id="corner-count">--</span> Spots gesamt</span>
+      <span id="me-position-meta">Standort aus</span>
+    </div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section id="view-map" class="view">
+    <div class="map-toolbar">
+      <button id="locate-btn" class="geo-btn">📍 Standort an</button>
+      <span class="geo-status" id="geo-status">Standort aus</span>
+    </div>
+    <div class="map-shell"><div id="main-map"></div></div>
+  </section>
+</main>
+
+<footer class="foot">
+  Basiert auf der Maps-Liste <strong>Cornern als Lebensstil 🙌🍻</strong> von Florencia Porta<br>
+  Repo: CornerGuide · Alpha v0.3 · keine Tracker, keine Server, Daten bleiben auf deinem Gerät
+</footer>
+
+<!-- ============ FAB ============ -->
+<button id="fab" class="fab" aria-label="Spot hinzufügen">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+</button>
+
+<!-- ============ ADD-SPOT MODAL ============ -->
+<div id="modal-backdrop" class="modal-backdrop">
+  <div class="modal" role="dialog" aria-labelledby="modal-title">
+    <div class="modal-handle"></div>
+    <h2 id="modal-title">Neuer Spot</h2>
+    <p class="sub">Trag ihn ein — bleibt erstmal nur auf deinem Gerät.</p>
+
+    <div class="field">
+      <label>Name <span class="req">*</span></label>
+      <input type="text" id="f-name" maxlength="80" placeholder="z.B. Au-Brücke" />
+    </div>
+    <div class="field">
+      <label>Stadtteil</label>
+      <input type="text" id="f-area" maxlength="60" placeholder="z.B. Au-Haidhausen" />
+    </div>
+    <div class="field">
+      <label>Beschreibung <span class="req">*</span></label>
+      <textarea id="f-desc" maxlength="500" placeholder="Wie ist der Spot? Was macht ihn aus?"></textarea>
+    </div>
+    <div class="field">
+      <label>Tags (Komma-getrennt)</label>
+      <input type="text" id="f-tags" maxlength="120" placeholder="Kiosk, Sunset, ruhig" />
+    </div>
+    <div class="coord-row">
+      <div class="field">
+        <label>Latitude <span class="req">*</span></label>
+        <input type="number" id="f-lat" step="any" placeholder="48.1351" />
+      </div>
+      <div class="field">
+        <label>Longitude <span class="req">*</span></label>
+        <input type="number" id="f-lng" step="any" placeholder="11.5820" />
+      </div>
+    </div>
+    <div class="coord-actions">
+      <button class="action-btn" id="use-location">📍 Aktuellen Standort verwenden</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="action-btn" id="modal-cancel">Abbrechen</button>
+      <button class="action-btn primary" id="modal-save">Speichern</button>
+    </div>
+
+    <details style="margin-top: 18px;">
+      <summary style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--fg-dim); letter-spacing: 1px; text-transform: uppercase;">Deine Spots für's Repo exportieren</summary>
+      <p style="font-size: 12px; color: var(--fg-dim); margin: 10px 0;">Kopiere den Code und füge ihn in der index.html ins <code>CORNERS</code>-Array ein, damit andere ihn auch sehen.</p>
+      <div id="export-block" class="export-block">Noch keine eigenen Spots.</div>
+      <button class="action-btn" id="copy-export" style="margin-top: 8px;">📋 In Zwischenablage</button>
+    </details>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/* ====================== DATA ====================== */
+const CORNERS_OG = [
+  {
+    id: "implerstrasse",
+    name: "Sendlinger Kiosk",
+    area: "Sendling-Westend",
+    lat: 48.118139, lng: 11.551083,
+    description: "Preislich starker Kiosk mit der unschlagbaren 1,70 Augustiner Halbe\nBequeme Sitzmöglichkeiten, Austreten machbar aber nicht ideal.",
+    tags: ["Kiosk", "Augustiner", "günstig"]
+  },
+  {
+    id: "la-dolce-vita",
+    name: "La Dolce Vita",
+    area: "Gardasee, IT",
+    lat: 45.922528, lng: 10.883167,
+    description: "La dolce vita - irre Aussicht, gönnt euch Mal ne Auszeit",
+    tags: ["Italien", "View", "Ausflug"]
+  },
+  {
+    id: "the-cage",
+    name: "The Cage Neuhausen",
+    area: "Neuhausen",
+    lat: 48.153937, lng: 11.543313,
+    description: "Mit kostenloser Basketballaction kann dieser Corner angeben, aber die Kids können die Gelassenheit stören",
+    tags: ["Basketball", "Action"]
+  },
+  {
+    id: "ohm-grab",
+    name: "Grab v. Georg Simon Ohm",
+    area: "Alter Südfriedhof",
+    lat: 48.127063, lng: 11.566063,
+    description: "Ein spezieller Corner: falls Mal wichtige Gespräche geführt werden müssen und die größte Berühmtheit Münchens um Rat gefragt werden muss, komm hier her!",
+    tags: ["Friedhof", "Special", "Ruhig"]
+  },
+  {
+    id: "bavaria-blick",
+    name: "Bavaria-Blick",
+    area: "Schwanthalerhöhe",
+    lat: 48.128972, lng: 11.552083,
+    description: "Schöne Sonnenuntergänge mit Sicht auf die Göttin des bayrischen Nektars. Kiosk Babylon ums Eck fülligem Angebot und für schwache Blasen ein freundlicher Rückzugsort.",
+    tags: ["Sunset", "Kiosk Babylon", "Bavaria"]
+  },
+  {
+    id: "windbeutel-geheimtipp",
+    name: "Tiefkühl-Geheimtipp",
+    area: "Isarvorstadt",
+    lat: 48.129528, lng: 11.563778,
+    description: "Unbekannter Cornergeheimtipp, hab hier gerade noch ne Tiefkühlwindbeutelpackung gesehen, was mich mental direkt nach Rio in die Weihnachtszeit gebracht hat",
+    tags: ["Geheimtipp", "Skurril", "Rio-Vibes"]
+  },
+  {
+    id: "kapuzinerdreieck",
+    name: "Kapuzinerdreieck",
+    area: "Isarvorstadt",
+    lat: 48.128063, lng: 11.556188,
+    description: "Perfekter Spot, wenn du nah an nem Kiosk sein willst für  schnellen Nachschub 😄 Toiletten sind auch easy erreichbar. Ist bisschen laut, aber wenn du das Stadtleben live mitkriegen willst, Minute für Minute, dann ist es echt ein top Spot. Eigentlich die Mutter aller Corner.",
+    tags: ["Mutter aller Corner", "Kiosk", "Toilette"]
+  },
+  {
+    id: "schnecke",
+    name: "Große Schnecke",
+    area: "Sweet Brown Snail",
+    lat: 48.132188, lng: 11.543313,
+    description: "Klassiker... Schneckenplatz\nKiosk weit weg, Sitzmöglichkeiten vorhanden",
+    tags: ["Klassiker", "Schnecke", "Sitzplatz"]
+  },
+  {
+    id: "kaiser-ludwig",
+    name: "Denkmal Kaiser-Ludwig",
+    area: "Ludwigsvorstadt",
+    lat: 48.132063, lng: 11.555813,
+    description: "Kein Kiosk und keine Toiletten in der Nähe.\nHistorisch wertvoll.\nBeim letzten Mal wars etwas kalt. (1/5 Sterne)",
+    tags: ["Historisch", "Kalt", "1/5"]
+  },
+  {
+    id: "piazza-zenetti",
+    name: "Piazza Zenetti",
+    area: "Isarvorstadt",
+    lat: 48.124563, lng: 11.555813,
+    description: "nettes Flair, Bierchen von der Pizzeria und Horden an Poschies beim Theatergang beobachten.",
+    tags: ["Pizzeria", "Flair", "People-Watching"]
+  },
+  {
+    id: "harras",
+    name: "Harras-Bänke",
+    area: "Sendling",
+    lat: 48.120083, lng: 11.540528,
+    description: "Toller Platz Nähe Harras mit mehreren Bänken und Kiosk.\nMehrere Kneipen in der Nähe (Billardkneipe)",
+    tags: ["Bänke", "Kiosk", "Billard"]
+  },
+  {
+    id: "isar-spot",
+    name: "Spot ohne Namen",
+    area: "Isarvorstadt",
+    lat: 48.129778, lng: 11.565056,
+    description: "",
+    tags: ["Neu"]
+  }
+];
+
+/* ====================== STATE ====================== */
+const STATE = {
+  view: "list",
+  customSpots: loadCustomSpots(),
+  mainMap: null,
+  mainMarkers: {},
+  miniMaps: {},
+  userMainMarker: null,
+  geoWatch: null,
+  geoActive: false,
+  userPos: null,
+  atCornerId: null,
+  PROXIMITY_M: 75
+};
+
+function getAllCorners() {
+  return [...CORNERS_OG, ...STATE.customSpots];
+}
+
+function getDescription(c) {
+  // For custom spots: description is stored on the spot itself.
+  // For OG spots: check for user-edit override in localStorage.
+  if (c.isCustom) return c.description || "";
+  const override = localStorage.getItem("cg.desc." + c.id);
+  return override !== null ? override : (c.description || "");
+}
+
+function loadCustomSpots() {
+  try {
+    const raw = localStorage.getItem("cg.custom-spots");
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) { return []; }
+}
+function saveCustomSpots() {
+  localStorage.setItem("cg.custom-spots", JSON.stringify(STATE.customSpots));
+}
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+
+/* ====================== INIT ====================== */
+document.addEventListener("DOMContentLoaded", () => {
+  renderCards();
+  bindTabs();
+  bindGeo();
+  bindModal();
+  updateCounts();
+});
+
+function updateCounts() {
+  const total = getAllCorners().length;
+  $("#corner-count").textContent = String(total).padStart(2, "0");
+  $("#header-count").textContent = String(total);
+}
+
+/* ====================== TABS ====================== */
+function bindTabs() {
+  $$(".tab").forEach((t) => {
+    t.addEventListener("click", () => {
+      const v = t.dataset.view;
+      STATE.view = v;
+      $$(".tab").forEach((x) => x.classList.toggle("active", x === t));
+      $$(".view").forEach((x) => x.classList.toggle("active", x.id === "view-" + v));
+      if (v === "map") {
+        if (!STATE.mainMap) initMainMap();
+        setTimeout(() => STATE.mainMap?.invalidateSize(), 50);
+      }
+    });
+  });
+}
+
+/* ====================== CARDS ====================== */
+function renderCards() {
+  const root = $("#cards");
+  root.innerHTML = "";
+  const all = getAllCorners();
+
+  all.forEach((c, i) => {
+    const isCustom = !!c.isCustom;
+    const photoSrc = localStorage.getItem("cg.photo." + c.id);
+    const photoEl = photoSrc
+      ? `<img src="${photoSrc}" alt="${c.name}">`
+      : `<div class="card-photo-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg><span>Foto hochladen</span></div>`;
+
+    const effectiveDesc = getDescription(c);
+    const hasDesc = !!effectiveDesc;
+    const isEdited = !isCustom && localStorage.getItem("cg.desc." + c.id) !== null;
+
+    const descBlock = hasDesc
+      ? `<p class="card-desc">${escapeHtml(effectiveDesc)}${isEdited ? '<span class="edited-tag">bearbeitet</span>' : ""}</p>`
+      : `<button class="desc-add-cta" data-action="edit-desc" data-id="${c.id}"><span>✏️</span> Beschreibung hinzufügen</button>`;
+
+    const card = document.createElement("article");
+    card.className = "card" + (isCustom ? " custom" : "");
+    card.dataset.id = c.id;
+    card.id = "card-" + c.id;
+
+    card.innerHTML = `
+      <div class="card-photo">
+        <div class="card-num">${String(i + 1).padStart(2, "0")}</div>
+        <span class="mine-badge">Mein Spot</span>
+        <span class="at-badge">Du bist hier</span>
+        ${photoEl}
+        <input type="file" accept="image/*" class="photo-input" data-id="${c.id}">
+        <button class="photo-btn" data-id="${c.id}">📷 ${photoSrc ? "Ändern" : "Hinzufügen"}</button>
+      </div>
+      <div class="card-body">
+        <p class="card-area">${c.area || "—"}</p>
+        <h2 class="card-name">${c.name}</h2>
+        <div class="desc-container" id="desc-container-${c.id}">${descBlock}</div>
+        <ul class="card-tags">${(c.tags || []).map((t) => `<li>#${escapeHtml(t)}</li>`).join("")}</ul>
+      </div>
+      <div class="minimap-wrap">
+        <div class="minimap" data-lat="${c.lat}" data-lng="${c.lng}" data-id="${c.id}" data-custom="${isCustom}"></div>
+        <span class="minimap-label">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span>
+      </div>
+      <div class="card-actions">
+        <button class="action-btn primary" data-action="map" data-id="${c.id}">📍 Auf Karte</button>
+        <button class="action-btn" data-action="route" data-id="${c.id}">🧭 Route</button>
+        ${hasDesc ? `<button class="action-btn" data-action="edit-desc" data-id="${c.id}">✏️ Bearbeiten</button>` : ""}
+        ${isCustom ? `<button class="action-btn danger" data-action="delete" data-id="${c.id}">🗑 Löschen</button>` : ""}
+      </div>
+    `;
+    root.appendChild(card);
+  });
+
+  // Bind photo
+  $$(".photo-btn").forEach((btn) => btn.addEventListener("click", () => $(`.photo-input[data-id="${btn.dataset.id}"]`).click()));
+  $$(".photo-input").forEach((inp) => inp.addEventListener("change", (e) => {
+    const f = e.target.files?.[0];
+    if (f) handlePhotoUpload(f, inp.dataset.id);
+  }));
+
+  // Action buttons
+  $$('[data-action="map"]').forEach((btn) => btn.addEventListener("click", () => {
+    const c = getAllCorners().find((x) => x.id === btn.dataset.id);
+    $(`.tab[data-view="map"]`).click();
+    setTimeout(() => {
+      if (STATE.mainMap) {
+        STATE.mainMap.flyTo([c.lat, c.lng], 17, { duration: 0.7 });
+        STATE.mainMarkers[c.id]?.openPopup?.();
+      }
+    }, 250);
+  }));
+  $$('[data-action="route"]').forEach((btn) => btn.addEventListener("click", () => {
+    const c = getAllCorners().find((x) => x.id === btn.dataset.id);
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank");
+  }));
+  $$('[data-action="delete"]').forEach((btn) => btn.addEventListener("click", () => {
+    if (confirm("Wirklich löschen?")) deleteCustomSpot(btn.dataset.id);
+  }));
+
+  $$('[data-action="edit-desc"]').forEach((btn) => btn.addEventListener("click", () => startEditDescription(btn.dataset.id)));
+
+  // Lazy-init minimaps
+  initMinimaps();
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+/* ====================== DESCRIPTION EDITING ====================== */
+function startEditDescription(cornerId) {
+  const container = document.getElementById("desc-container-" + cornerId);
+  if (!container) return;
+  const c = getAllCorners().find((x) => x.id === cornerId);
+  if (!c) return;
+  const currentDesc = getDescription(c);
+  const hasOverride = !c.isCustom && localStorage.getItem("cg.desc." + cornerId) !== null;
+
+  container.innerHTML = `
+    <textarea class="desc-editor" placeholder="Was macht den Spot aus? Kiosk-Tipps, Toiletten, Vibes, Stories...">${escapeHtml(currentDesc)}</textarea>
+    <div class="desc-edit-actions">
+      <button class="action-btn primary" data-edit="save">✓ Speichern</button>
+      <button class="action-btn" data-edit="cancel">Abbrechen</button>
+      ${hasOverride ? '<button class="action-btn danger" data-edit="reset">↻ Original</button>' : ""}
+    </div>
+    <p class="desc-edit-hint">⌘/Strg+Enter speichert · Esc bricht ab</p>
+  `;
+
+  const textarea = container.querySelector(".desc-editor");
+  textarea.focus();
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+  container.querySelector('[data-edit="save"]').addEventListener("click", () => {
+    saveDescription(cornerId, textarea.value);
+  });
+  container.querySelector('[data-edit="cancel"]').addEventListener("click", () => {
+    renderCards();
+  });
+  const resetBtn = container.querySelector('[data-edit="reset"]');
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      localStorage.removeItem("cg.desc." + cornerId);
+      renderCards();
+      toast("Auf Original zurückgesetzt ↻");
+    });
+  }
+  textarea.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") saveDescription(cornerId, textarea.value);
+    if (e.key === "Escape") renderCards();
+  });
+
+  // Scroll the editor into view
+  container.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function saveDescription(cornerId, newText) {
+  const trimmed = newText.trim();
+  const c = getAllCorners().find((x) => x.id === cornerId);
+  if (!c) return;
+
+  if (c.isCustom) {
+    const idx = STATE.customSpots.findIndex((x) => x.id === cornerId);
+    if (idx >= 0) {
+      STATE.customSpots[idx].description = trimmed;
+      saveCustomSpots();
+    }
+  } else {
+    if (trimmed) localStorage.setItem("cg.desc." + cornerId, trimmed);
+    else localStorage.removeItem("cg.desc." + cornerId);
+  }
+  renderCards();
+  toast(trimmed ? "Beschreibung gespeichert ✓" : "Beschreibung gelöscht");
+}
+
+/* ====================== MINIMAPS ====================== */
+function initMinimaps() {
+  // Clean up old
+  Object.values(STATE.miniMaps).forEach((m) => { try { m.remove(); } catch (e) {} });
+  STATE.miniMaps = {};
+
+  if (typeof L === "undefined") {
+    // Leaflet not loaded yet - retry shortly
+    setTimeout(initMinimaps, 300);
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        if (!STATE.miniMaps[el.dataset.id]) {
+          createMinimap(el);
+        }
+        observer.unobserve(el);
+      }
+    });
+  }, { rootMargin: "200px 0px" });
+
+  $$(".minimap").forEach((el) => observer.observe(el));
+}
+
+function createMinimap(el) {
+  const lat = parseFloat(el.dataset.lat);
+  const lng = parseFloat(el.dataset.lng);
+  const id = el.dataset.id;
+  const isCustom = el.dataset.custom === "true";
+
+  const map = L.map(el, {
+    zoomControl: false, attributionControl: false,
+    dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
+    boxZoom: false, keyboard: false,
+    touchZoom: false,
+    zoomSnap: 0.1
+  }).setView([lat, lng], 16);
+
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    crossOrigin: true
+  }).addTo(map);
+
+  const icon = L.divIcon({
+    className: "",
+    html: `<div class="minimap-marker ${isCustom ? "custom" : ""}"></div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 22]
+  });
+  L.marker([lat, lng], { icon, interactive: false }).addTo(map);
+
+  // Force a redraw in case the container size wasn't right at init
+  setTimeout(() => map.invalidateSize(), 100);
+
+  STATE.miniMaps[id] = map;
+}
+
+/* ====================== PHOTO UPLOAD ====================== */
+function handlePhotoUpload(file, cornerId) {
+  if (!file.type.startsWith("image/")) { toast("Das ist kein Bild."); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const maxW = 900;
+      const scale = Math.min(1, maxW / img.width);
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+      try {
+        localStorage.setItem("cg.photo." + cornerId, dataUrl);
+        renderCards();
+        toast("Foto gespeichert 📸");
+      } catch (err) { toast("Speicher voll. Lösch ein altes Foto."); }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ====================== MAIN MAP ====================== */
+function initMainMap() {
+  if (typeof L === "undefined") { toast("Karte konnte nicht geladen werden. Internetverbindung prüfen?"); return; }
+  const map = L.map("main-map", { zoomControl: true }).setView([48.135, 11.555], 13);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap-Mitwirkende",
+    maxZoom: 19,
+    crossOrigin: true
+  }).addTo(map);
+  STATE.mainMap = map;
+  rebuildMainMarkers();
+  const muc = getAllCorners().filter((c) => Math.abs(c.lat - 48.135) < 2);
+  if (muc.length) {
+    const bounds = L.latLngBounds(muc.map((c) => [c.lat, c.lng]));
+    map.fitBounds(bounds, { padding: [40, 40] });
+  }
+}
+
+function rebuildMainMarkers() {
+  if (!STATE.mainMap) return;
+  Object.values(STATE.mainMarkers).forEach((m) => STATE.mainMap.removeLayer(m));
+  STATE.mainMarkers = {};
+  getAllCorners().forEach((c, i) => {
+    const isCustom = !!c.isCustom;
+    const icon = L.divIcon({
+      className: "",
+      html: `<div class="corner-marker ${isCustom ? "custom" : ""}" data-id="${c.id}"><span class="num">${i + 1}</span></div>`,
+      iconSize: [30, 30], iconAnchor: [15, 30]
+    });
+    const m = L.marker([c.lat, c.lng], { icon }).addTo(STATE.mainMap);
+    m.bindPopup(`<strong>${escapeHtml(c.name)}</strong><br><small>${escapeHtml(c.area || "")}</small>`);
+    STATE.mainMarkers[c.id] = m;
+  });
+}
+
+function refreshMainMarker(cornerId) {
+  const m = STATE.mainMarkers[cornerId];
+  if (!m) return;
+  const el = m.getElement()?.querySelector(".corner-marker");
+  if (el) el.classList.toggle("at-here", STATE.atCornerId === cornerId);
+}
+
+/* ====================== GEOLOCATION ====================== */
+function bindGeo() {
+  $("#locate-btn").addEventListener("click", () => STATE.geoActive ? stopGeo() : startGeo());
+}
+
+function startGeo() {
+  if (!navigator.geolocation) { toast("Geolocation wird nicht unterstützt."); return; }
+  setGeoStatus("Suche…", "");
+  STATE.geoWatch = navigator.geolocation.watchPosition(
+    onGeoUpdate, onGeoError,
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+  );
+  STATE.geoActive = true;
+  $("#locate-btn").classList.add("active");
+  $("#locate-btn").textContent = "📍 Standort aus";
+}
+function stopGeo() {
+  if (STATE.geoWatch !== null) navigator.geolocation.clearWatch(STATE.geoWatch);
+  STATE.geoWatch = null;
+  STATE.geoActive = false;
+  $("#locate-btn").classList.remove("active");
+  $("#locate-btn").textContent = "📍 Standort an";
+  setGeoStatus("Standort aus", "");
+  $("#me-position-meta").textContent = "Standort aus";
+  if (STATE.userMainMarker && STATE.mainMap) { STATE.mainMap.removeLayer(STATE.userMainMarker); STATE.userMainMarker = null; }
+  if (STATE.atCornerId) {
+    const old = STATE.atCornerId; STATE.atCornerId = null;
+    refreshMainMarker(old);
+    document.getElementById("card-" + old)?.classList.remove("at-here");
+  }
+}
+
+function onGeoUpdate(pos) {
+  const { latitude, longitude } = pos.coords;
+  STATE.userPos = { lat: latitude, lng: longitude };
+  if (STATE.mainMap) {
+    if (!STATE.userMainMarker) {
+      const icon = L.divIcon({ className: "", html: `<div class="user-marker"></div>`, iconSize: [18, 18], iconAnchor: [9, 9] });
+      STATE.userMainMarker = L.marker([latitude, longitude], { icon, zIndexOffset: 1000 }).addTo(STATE.mainMap);
+    } else {
+      STATE.userMainMarker.setLatLng([latitude, longitude]);
+    }
+  }
+
+  let nearest = null; let nDist = Infinity;
+  getAllCorners().forEach((c) => {
+    const d = haversine(latitude, longitude, c.lat, c.lng);
+    if (d < nDist) { nDist = d; nearest = c; }
+  });
+
+  const newAt = nDist <= STATE.PROXIMITY_M ? nearest.id : null;
+  if (newAt !== STATE.atCornerId) {
+    const prev = STATE.atCornerId;
+    STATE.atCornerId = newAt;
+    if (prev) { refreshMainMarker(prev); document.getElementById("card-" + prev)?.classList.remove("at-here"); }
+    if (newAt) {
+      refreshMainMarker(newAt);
+      const card = document.getElementById("card-" + newAt);
+      card?.classList.add("at-here");
+      toast(`Du bist am <strong>${escapeHtml(nearest.name)}</strong>! 🍻`, "at-corner");
+      if (STATE.view === "list") card?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  if (STATE.atCornerId) {
+    setGeoStatus(`AM SPOT: ${nearest.name.toUpperCase()}`, "at-corner");
+    $("#me-position-meta").innerHTML = `<span style="color:var(--green)">📍 ${escapeHtml(nearest.name)}</span>`;
+  } else {
+    const dStr = nDist < 1000 ? `${Math.round(nDist)} m` : `${(nDist / 1000).toFixed(1)} km`;
+    setGeoStatus(`${dStr} bis ${nearest.name}`, "live");
+    $("#me-position-meta").innerHTML = `<span style="color:var(--blue)">📍 ${dStr} bis ${escapeHtml(nearest.name)}</span>`;
+  }
+}
+function onGeoError(err) {
+  stopGeo();
+  if (err.code === 1) toast("Standort-Zugriff verweigert.");
+  else if (err.code === 2) toast("Standort nicht verfügbar.");
+  else toast("Standort-Fehler.");
+}
+function setGeoStatus(text, cls) {
+  const el = $("#geo-status");
+  el.textContent = text;
+  el.className = "geo-status " + (cls || "");
+}
+
+/* ====================== HAVERSINE ====================== */
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/* ====================== MODAL / ADD-SPOT ====================== */
+function bindModal() {
+  $("#fab").addEventListener("click", openModal);
+  $("#modal-cancel").addEventListener("click", closeModal);
+  $("#modal-backdrop").addEventListener("click", (e) => { if (e.target.id === "modal-backdrop") closeModal(); });
+  $("#modal-save").addEventListener("click", saveNewSpot);
+  $("#use-location").addEventListener("click", fillCurrentLocation);
+  $("#copy-export").addEventListener("click", copyExport);
+}
+
+function openModal() {
+  ["f-name", "f-area", "f-desc", "f-tags", "f-lat", "f-lng"].forEach((id) => { $("#" + id).value = ""; });
+  refreshExportBlock();
+  $("#modal-backdrop").classList.add("open");
+  setTimeout(() => $("#f-name").focus(), 100);
+}
+function closeModal() { $("#modal-backdrop").classList.remove("open"); }
+
+function fillCurrentLocation() {
+  if (!navigator.geolocation) { toast("Geolocation nicht unterstützt."); return; }
+  $("#use-location").textContent = "📍 Suche…";
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      $("#f-lat").value = pos.coords.latitude.toFixed(6);
+      $("#f-lng").value = pos.coords.longitude.toFixed(6);
+      $("#use-location").textContent = "📍 Übernommen";
+      setTimeout(() => $("#use-location").textContent = "📍 Aktuellen Standort verwenden", 2000);
+    },
+    () => { $("#use-location").textContent = "📍 Aktuellen Standort verwenden"; toast("Standort nicht verfügbar."); },
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
+}
+
+function saveNewSpot() {
+  const name = $("#f-name").value.trim();
+  const desc = $("#f-desc").value.trim();
+  const lat = parseFloat($("#f-lat").value);
+  const lng = parseFloat($("#f-lng").value);
+  if (!name) { toast("Name fehlt."); return; }
+  if (!desc) { toast("Beschreibung fehlt."); return; }
+  if (isNaN(lat) || isNaN(lng)) { toast("Koordinaten fehlen."); return; }
+
+  const spot = {
+    id: "custom-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+    name,
+    area: $("#f-area").value.trim() || "Eigener Spot",
+    lat, lng,
+    description: desc,
+    tags: $("#f-tags").value.split(",").map((s) => s.trim()).filter(Boolean),
+    isCustom: true
+  };
+  STATE.customSpots.push(spot);
+  saveCustomSpots();
+  closeModal();
+  renderCards();
+  updateCounts();
+  rebuildMainMarkers();
+  toast(`Spot <strong>${escapeHtml(name)}</strong> hinzugefügt 🍻`);
+}
+
+function deleteCustomSpot(id) {
+  STATE.customSpots = STATE.customSpots.filter((s) => s.id !== id);
+  saveCustomSpots();
+  localStorage.removeItem("cg.photo." + id);
+  renderCards();
+  updateCounts();
+  rebuildMainMarkers();
+  toast("Spot gelöscht.");
+}
+
+function refreshExportBlock() {
+  const block = $("#export-block");
+  if (!STATE.customSpots.length) {
+    block.textContent = "Noch keine eigenen Spots.";
+    return;
+  }
+  const code = STATE.customSpots.map((s) => {
+    return `  {
+    id: "${s.id}",
+    name: ${JSON.stringify(s.name)},
+    area: ${JSON.stringify(s.area)},
+    lat: ${s.lat}, lng: ${s.lng},
+    description: ${JSON.stringify(s.description)},
+    tags: ${JSON.stringify(s.tags)}
+  }`;
+  }).join(",\n");
+  block.textContent = code + ",";
+}
+
+function copyExport() {
+  const text = $("#export-block").textContent;
+  if (!navigator.clipboard) { toast("Clipboard nicht verfügbar."); return; }
+  navigator.clipboard.writeText(text).then(() => toast("Kopiert. Ab in die index.html ins CORNERS-Array!"));
+}
+
+/* ====================== TOAST ====================== */
+let toastTimer = null;
+function toast(html, variant) {
+  const el = $("#toast");
+  el.innerHTML = html;
+  el.className = "toast" + (variant ? " " + variant : "");
+  el.hidden = false;
+  requestAnimationFrame(() => el.classList.add("show"));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.classList.remove("show");
+    setTimeout(() => (el.hidden = true), 200);
+  }, 4500);
+}
+</script>
+</body>
+</html>
