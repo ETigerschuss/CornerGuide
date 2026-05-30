@@ -1714,7 +1714,8 @@ function saveLocalBarometer() {
 
 function voteBarometer(cornerId, score) {
   const today = getTodayKey();
-  const voteKey = STATE.nickname || "anonym";
+  const voteKey = STATE.nickname;
+  if (!voteKey) { toast("Bitte gib zuerst einen Namen ein."); return; }
 
   if (window.FB?.firebaseReady) {
     const { db, ref, set } = window.FB;
@@ -1730,7 +1731,7 @@ function voteBarometer(cornerId, score) {
 function getBarometerData(cornerId) {
   const votes = STATE.barometer[cornerId] || {};
   const values = Object.values(votes);
-  const myVote = votes[STATE.nickname || "anonym"] || 0;
+  const myVote = STATE.nickname ? (votes[STATE.nickname] || 0) : 0;
   const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
   return { avg, count: values.length, myVote };
 }
