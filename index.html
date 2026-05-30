@@ -1206,6 +1206,98 @@ input, textarea { cursor: text; }
 }
 .nickname-prompt button:hover { background: var(--pink); color: #fff; }
 
+/* ====================== PHOTO GALLERY ====================== */
+.photo-gallery {
+  padding: 10px 18px 14px;
+  border-top: 1px solid var(--line);
+}
+.gallery-header {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gallery-grid {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  scroll-snap-type: x mandatory;
+}
+.gallery-item {
+  flex: 0 0 200px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  scroll-snap-align: start;
+}
+.gallery-img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  display: block;
+}
+.gallery-meta {
+  padding: 6px 8px 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.gallery-author {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  color: var(--amber);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.gallery-time {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  color: var(--fg-dim);
+}
+.gallery-caption {
+  font-size: 11px;
+  color: var(--fg);
+  width: 100%;
+}
+.gallery-rating {
+  padding: 4px 8px 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.photo-rate-btn {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  padding: 2px;
+  cursor: pointer;
+  filter: grayscale(1) opacity(0.4);
+  transition: filter 0.15s, transform 0.15s;
+}
+.photo-rate-btn.active { filter: none; transform: scale(1.1); }
+.photo-rate-btn:hover { filter: none; transform: scale(1.2); }
+.gallery-avg {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--amber);
+  margin-left: 6px;
+  font-weight: 700;
+}
+.gallery-upload-btn {
+  margin-top: 4px;
+}
+
 /* ====================== FIREBASE STATUS ====================== */
 .firebase-status {
   text-align: center;
@@ -1297,7 +1389,7 @@ input, textarea { cursor: text; }
   <div class="modal" role="dialog" aria-labelledby="modal-title">
     <div class="modal-handle"></div>
     <h2 id="modal-title">Neuer Spot</h2>
-    <p class="sub">Trag ihn ein — bleibt erstmal nur auf deinem Gerät.</p>
+    <p class="sub">Trag ihn ein — wird für alle sichtbar gespeichert.</p>
 
     <div class="field">
       <label>Name <span class="req">*</span></label>
@@ -1498,7 +1590,8 @@ const STATE = {
   comments: {},
   barometer: {},
   visits: {},
-  emojiVotes: {}
+  emojiVotes: {},
+  photos: {}
 };
 
 function getAllCorners() {
@@ -1566,6 +1659,7 @@ function initFirebase() {
     loadLocalComments();
     loadLocalBarometer();
     STATE.emojiVotes = loadLocalEmojiVotes();
+    // Photos loaded on demand via getPhotos()
     return;
   }
 
@@ -1576,6 +1670,8 @@ function initFirebase() {
 
   // Listen for friend presence
   listenFriendPresence();
+  // Listen for shared corners
+  listenSharedCorners();
   // Listen for comments
   listenComments();
   // Listen for barometer votes
@@ -1584,6 +1680,8 @@ function initFirebase() {
   listenVisits();
   // Listen for emoji votes
   listenEmojiVotes();
+  // Listen for photos
+  listenPhotos();
   // Broadcast own presence
   broadcastPresence();
 }
@@ -1601,6 +1699,179 @@ function broadcastPresence() {
 
   // Use onDisconnect for reliable cleanup
   onDisconnect(myRef).remove();
+}
+
+/* ====================== SHARED CORNERS (Firebase) ====================== */
+function listenSharedCorners() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  const cornersRef = ref(db, "corners");
+  onValue(cornersRef, (snapshot) => {
+    const data = snapshot.val() || {};
+    STATE.customSpots = Object.values(data);
+    renderCards();
+    updateCounts();
+    rebuildMainMarkers();
+  });
+}
+
+/* ====================== PHOTOS (Firebase) ====================== */
+function listenPhotos() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  const photosRef = ref(db, "photos");
+  onValue(photosRef, (snapshot) => {
+    STATE.photos = snapshot.val() || {};
+    refreshAllPhotoGalleries();
+  });
+}
+
+function getPhotos(cornerId) {
+  if (window.FB?.firebaseReady) {
+    return Object.values(STATE.photos?.[cornerId] || {}).sort((a, b) => b.time - a.time);
+  }
+  try {
+    const raw = localStorage.getItem("cg.photos." + cornerId);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) { return []; }
+}
+
+function savePhoto(cornerId, dataUrl, caption) {
+  const photo = {
+    src: dataUrl,
+    author: STATE.nickname || "Anonym",
+    time: Date.now(),
+    caption: caption || "",
+    ratings: {}
+  };
+
+  if (window.FB?.firebaseReady) {
+    const { db, ref, push, set } = window.FB;
+    const newRef = push(ref(db, "photos/" + cornerId));
+    set(newRef, photo);
+  } else {
+    const photos = getPhotos(cornerId);
+    photo.id = "photo-" + Date.now();
+    photos.push(photo);
+    // Keep only last 10 photos per spot in localStorage
+    const trimmed = photos.slice(-10);
+    localStorage.setItem("cg.photos." + cornerId, JSON.stringify(trimmed));
+    refreshAllPhotoGalleries();
+  }
+}
+
+function ratePhoto(cornerId, photoKey, score) {
+  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set } = window.FB;
+    set(ref(db, "photos/" + cornerId + "/" + photoKey + "/ratings/" + STATE.nickname), score);
+  } else {
+    try {
+      const photos = getPhotos(cornerId);
+      const photo = photos.find((p) => p.id === photoKey);
+      if (photo) {
+        if (!photo.ratings) photo.ratings = {};
+        photo.ratings[STATE.nickname] = score;
+        localStorage.setItem("cg.photos." + cornerId, JSON.stringify(photos));
+        refreshAllPhotoGalleries();
+      }
+    } catch (e) {}
+  }
+}
+
+function refreshAllPhotoGalleries() {
+  $$(".photo-gallery").forEach((section) => {
+    const cornerId = section.dataset.cornerId;
+    renderPhotoGallery(cornerId, section);
+  });
+}
+
+function renderPhotoGallery(cornerId, container) {
+  let photos;
+  if (window.FB?.firebaseReady) {
+    const raw = STATE.photos?.[cornerId] || {};
+    photos = Object.entries(raw).map(([key, p]) => ({ ...p, key })).sort((a, b) => b.time - a.time);
+  } else {
+    photos = getPhotos(cornerId).map((p) => ({ ...p, key: p.id }));
+  }
+
+  if (photos.length === 0) {
+    container.innerHTML = `
+      <p class="gallery-header">📸 Foto-Galerie</p>
+      <p style="font-size:12px;color:var(--fg-dim);margin:0 0 8px;">Noch keine Fotos — lade das erste hoch!</p>
+      <button class="action-btn gallery-upload-btn" data-corner="${cornerId}">📷 Foto hochladen</button>
+      <input type="file" accept="image/*" class="gallery-file-input" data-corner="${cornerId}" style="display:none;" multiple>
+    `;
+  } else {
+    const photosHtml = photos.slice(0, 8).map((p) => {
+      const ratings = p.ratings || {};
+      const ratingValues = Object.values(ratings);
+      const avgRating = ratingValues.length > 0 ? (ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length).toFixed(1) : "—";
+      const myRating = STATE.nickname ? (ratings[STATE.nickname] || 0) : 0;
+      const starsHtml = [1, 2, 3, 4, 5].map((s) =>
+        `<button class="photo-rate-btn ${s <= myRating ? "active" : ""}" data-corner="${cornerId}" data-photo="${p.key}" data-score="${s}">⭐</button>`
+      ).join("");
+
+      return `<div class="gallery-item">
+        <img src="${p.src}" alt="Foto" class="gallery-img" />
+        <div class="gallery-meta">
+          <span class="gallery-author">${escapeHtml(p.author)}</span>
+          <span class="gallery-time">${timeAgo(p.time)}</span>
+          ${p.caption ? `<span class="gallery-caption">${escapeHtml(p.caption)}</span>` : ""}
+        </div>
+        <div class="gallery-rating">
+          ${starsHtml}
+          <span class="gallery-avg">${avgRating} ${ratingValues.length > 0 ? `(${ratingValues.length})` : ""}</span>
+        </div>
+      </div>`;
+    }).join("");
+
+    container.innerHTML = `
+      <p class="gallery-header">📸 Foto-Galerie <span class="comment-count">${photos.length}</span></p>
+      <div class="gallery-grid">${photosHtml}</div>
+      <button class="action-btn gallery-upload-btn" data-corner="${cornerId}">📷 Foto hochladen</button>
+      <input type="file" accept="image/*" class="gallery-file-input" data-corner="${cornerId}" style="display:none;" multiple>
+    `;
+  }
+
+  // Bind upload button
+  const uploadBtn = container.querySelector(".gallery-upload-btn");
+  const fileInput = container.querySelector(".gallery-file-input");
+  uploadBtn?.addEventListener("click", () => fileInput?.click());
+  fileInput?.addEventListener("change", (e) => {
+    const files = e.target.files;
+    if (!files?.length) return;
+    Array.from(files).forEach((f) => {
+      if (!f.type.startsWith("image/")) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const maxW = 900;
+          const scale = Math.min(1, maxW / img.width);
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+          savePhoto(cornerId, dataUrl, "");
+          toast("Foto hochgeladen 📸");
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(f);
+    });
+    fileInput.value = "";
+  });
+
+  // Bind rating buttons
+  container.querySelectorAll(".photo-rate-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      ratePhoto(btn.dataset.corner, btn.dataset.photo, parseInt(btn.dataset.score));
+      toast("Foto bewertet ⭐");
+    });
+  });
 }
 
 function listenFriendPresence() {
@@ -2019,21 +2290,18 @@ function renderBarometer(cornerId, container) {
   });
 }
 
-/* ====================== MANUAL CHECK-IN (GPS-GATED) ====================== */
+/* ====================== MANUAL CHECK-IN (GPS optional) ====================== */
 function manualCheckin(cornerId) {
-  // GPS-gated: only allow if within proximity or GPS confirms location
+  // Allow manual check-in always; GPS proximity is shown as info but not required
   const corner = getAllCorners().find((c) => c.id === cornerId);
   if (!corner) return;
 
   if (STATE.geoActive && STATE.userPos) {
     const dist = haversine(STATE.userPos.lat, STATE.userPos.lng, corner.lat, corner.lng);
     if (dist > STATE.PROXIMITY_M) {
-      toast(`❌ Du bist <strong>${Math.round(dist)}m</strong> entfernt — du musst vor Ort sein zum Einchecken!`);
-      return;
+      // Show distance info but still allow check-in
+      toast(`📍 Du bist <strong>${Math.round(dist)}m</strong> entfernt — manuell eingecheckt!`);
     }
-  } else if (!STATE.geoActive) {
-    toast("📍 Aktiviere zuerst deinen Standort, um einzuchecken!");
-    return;
   }
 
   const wasCheckedIn = STATE.manualCheckinId === cornerId;
@@ -2072,22 +2340,20 @@ function updateCheckinButtons() {
     const corner = getAllCorners().find((c) => c.id === cId);
 
     btn.classList.toggle("checked-in", isThis);
+    btn.classList.remove("disabled");
 
     if (isThis) {
       btn.innerHTML = "✅ Ich bin hier!";
-      btn.classList.remove("disabled");
     } else if (STATE.geoActive && STATE.userPos && corner) {
       const dist = haversine(STATE.userPos.lat, STATE.userPos.lng, corner.lat, corner.lng);
       const inRange = dist <= STATE.PROXIMITY_M;
-      btn.classList.toggle("disabled", !inRange);
       if (inRange) {
         btn.innerHTML = `📍 Einchecken <span class="checkin-distance">${Math.round(dist)}m</span>`;
       } else {
-        btn.innerHTML = `🔒 Zu weit <span class="checkin-distance">${dist < 1000 ? Math.round(dist) + "m" : (dist/1000).toFixed(1) + "km"}</span>`;
+        btn.innerHTML = `📍 Einchecken <span class="checkin-distance">${dist < 1000 ? Math.round(dist) + "m" : (dist/1000).toFixed(1) + "km"}</span>`;
       }
     } else {
-      btn.classList.add("disabled");
-      btn.innerHTML = "📍 Standort aktivieren";
+      btn.innerHTML = "📍 Einchecken";
     }
   });
 }
@@ -2344,12 +2610,13 @@ function renderCards() {
         <span class="minimap-label">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span>
       </div>
       <div class="card-actions">
-        <button class="checkin-btn ${isCheckedIn ? "checked-in" : ""} ${!STATE.geoActive ? "disabled" : ""}" data-id="${c.id}">${isCheckedIn ? "✅ Ich bin hier!" : (STATE.geoActive ? "📍 Einchecken" : "📍 Standort aktivieren")}</button>
+        <button class="checkin-btn ${isCheckedIn ? "checked-in" : ""}" data-id="${c.id}">${isCheckedIn ? "✅ Ich bin hier!" : "📍 Einchecken"}</button>
         <button class="action-btn primary" data-action="map" data-id="${c.id}">📍 Auf Karte</button>
         <button class="action-btn" data-action="route" data-id="${c.id}">🧭 Route</button>
         ${hasDesc ? `<button class="action-btn" data-action="edit-desc" data-id="${c.id}">✏️ Bearbeiten</button>` : ""}
         ${isCustom ? `<button class="action-btn danger" data-action="delete" data-id="${c.id}">🗑 Löschen</button>` : ""}
       </div>
+      <div class="photo-gallery" data-corner-id="${c.id}"></div>
       <div class="visit-trail" data-corner-id="${c.id}"></div>
       <div class="comments-section" data-corner-id="${c.id}"></div>
     `;
@@ -2408,6 +2675,11 @@ function renderCards() {
   // Render visit trails
   $$(".visit-trail").forEach((section) => {
     renderVisitTrail(section.dataset.cornerId, section);
+  });
+
+  // Render photo galleries
+  $$(".photo-gallery").forEach((section) => {
+    renderPhotoGallery(section.dataset.cornerId, section);
   });
 
   // Load local barometer if offline
@@ -2556,7 +2828,10 @@ function handlePhotoUpload(file, cornerId) {
       canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL("image/jpeg", 0.78);
       try {
+        // Save as cover photo in localStorage
         localStorage.setItem("cg.photo." + cornerId, dataUrl);
+        // Also save to Firebase/gallery
+        savePhoto(cornerId, dataUrl, "");
         renderCards();
         toast("Foto gespeichert 📸");
       } catch (err) { toast("Speicher voll. Lösch ein altes Foto."); }
@@ -2597,6 +2872,14 @@ function rebuildMainMarkers() {
     });
     const m = L.marker([c.lat, c.lng], { icon }).addTo(STATE.mainMap);
     m.bindPopup(`<strong>${escapeHtml(c.name)}</strong><br><small>${escapeHtml(c.area || "")}</small>`);
+    // Click on marker navigates to the corner card in list view
+    m.on("click", () => {
+      $(`.tab[data-view="list"]`).click();
+      setTimeout(() => {
+        const card = document.getElementById("card-" + c.id);
+        if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 150);
+    });
     STATE.mainMarkers[c.id] = m;
   });
 }
@@ -2778,10 +3061,20 @@ function saveNewSpot() {
     lat, lng,
     description: desc,
     tags: $("#f-tags").value.split(",").map((s) => s.trim()).filter(Boolean),
-    isCustom: true
+    amenities: [],
+    isCustom: true,
+    createdBy: STATE.nickname || "Anonym",
+    createdAt: Date.now()
   };
-  STATE.customSpots.push(spot);
-  saveCustomSpots();
+
+  // Save to Firebase so all users see it
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set } = window.FB;
+    set(ref(db, "corners/" + spot.id), spot);
+  } else {
+    STATE.customSpots.push(spot);
+    saveCustomSpots();
+  }
   closeModal();
   renderCards();
   updateCounts();
@@ -2790,8 +3083,13 @@ function saveNewSpot() {
 }
 
 function deleteCustomSpot(id) {
-  STATE.customSpots = STATE.customSpots.filter((s) => s.id !== id);
-  saveCustomSpots();
+  if (window.FB?.firebaseReady) {
+    const { db, ref, remove } = window.FB;
+    remove(ref(db, "corners/" + id));
+  } else {
+    STATE.customSpots = STATE.customSpots.filter((s) => s.id !== id);
+    saveCustomSpots();
+  }
   localStorage.removeItem("cg.photo." + id);
   renderCards();
   updateCounts();
