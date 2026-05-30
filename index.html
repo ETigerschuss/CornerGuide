@@ -926,6 +926,170 @@ input, textarea { cursor: text; }
   animation: pulse-badge 2s infinite;
 }
 .checkin-btn.checked-in:hover { background: #9de030; }
+.checkin-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--fg-dim);
+  color: var(--fg-dim);
+}
+.checkin-btn.disabled:hover { background: transparent; }
+.checkin-distance {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--fg-dim);
+  margin-left: 4px;
+}
+
+/* ====================== EMOJI VOTING ====================== */
+.emoji-votes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.emoji-vote-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-3);
+  border: 1.5px solid var(--line);
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.emoji-vote-chip:hover { border-color: var(--amber); transform: scale(1.05); }
+.emoji-vote-chip.voted { border-color: var(--amber); background: rgba(232,169,62,0.12); }
+.emoji-vote-chip .vote-count {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--amber);
+  font-weight: 700;
+  min-width: 14px;
+  text-align: center;
+}
+.emoji-vote-chip .vote-emoji { font-size: 16px; }
+@keyframes emoji-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+.emoji-vote-chip.just-voted { animation: emoji-pop 0.3s ease; }
+
+/* ====================== COMMENT REPLIES ====================== */
+.comment-replies {
+  margin: 8px 0 0 16px;
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
+}
+.comment-replies .comment-item {
+  background: var(--bg);
+  border-color: var(--line);
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+.reply-form {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  margin-left: 16px;
+}
+.reply-form textarea {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  resize: none;
+  min-height: 32px;
+}
+.reply-form textarea:focus { outline: none; border-color: var(--amber); }
+.reply-form button {
+  background: var(--amber);
+  color: #111;
+  border: none;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: "JetBrains Mono", monospace;
+  letter-spacing: 1px;
+}
+.reply-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--fg-dim);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.reply-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+/* ====================== VISIT TRAIL ====================== */
+.visit-trail {
+  padding: 8px 18px 12px;
+  border-top: 1px solid var(--line);
+}
+.visit-trail-header {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin: 0 0 6px;
+}
+.visit-trail-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.visit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--fg-dim);
+}
+.visit-chip .visit-name { color: var(--amber); font-weight: 600; }
+.visit-chip .visit-time {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+.visit-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(232,169,62,0.1);
+  border: 1px solid rgba(232,169,62,0.3);
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--amber);
+  letter-spacing: 1px;
+  margin-left: 8px;
+}
+.visit-count-badge .fire { font-size: 12px; }
 
 /* ====================== FRIEND PRESENCE ====================== */
 .friends-bar {
@@ -1102,6 +1266,7 @@ input, textarea { cursor: text; }
   <section id="view-list" class="view active">
     <div class="list-meta">
       <span><span class="count-num" id="corner-count">--</span> Spots gesamt</span>
+      <button id="list-locate-btn" class="geo-btn" style="padding:6px 12px;font-size:12px;">📍 Standort an</button>
       <span id="me-position-meta">Standort aus</span>
     </div>
     <div class="cards" id="cards"></div>
@@ -1331,7 +1496,9 @@ const STATE = {
   nickname: localStorage.getItem("cg.nickname") || "",
   friends: {},
   comments: {},
-  barometer: {}
+  barometer: {},
+  visits: {},
+  emojiVotes: {}
 };
 
 function getAllCorners() {
@@ -1398,6 +1565,7 @@ function initFirebase() {
     status.textContent = "⚡ Offline-Modus — Firebase nicht konfiguriert (Kommentare & Freunde lokal)";
     loadLocalComments();
     loadLocalBarometer();
+    STATE.emojiVotes = loadLocalEmojiVotes();
     return;
   }
 
@@ -1412,6 +1580,10 @@ function initFirebase() {
   listenComments();
   // Listen for barometer votes
   listenBarometer();
+  // Listen for visits
+  listenVisits();
+  // Listen for emoji votes
+  listenEmojiVotes();
   // Broadcast own presence
   broadcastPresence();
 }
@@ -1597,15 +1769,30 @@ function renderCommentSection(cornerId, container) {
 
   const listHtml = commentEntries.map(([key, c]) => {
     const isMine = c.author === STATE.nickname;
+    const replies = c.replies ? Object.entries(c.replies).sort((a, b) => a[1].time - b[1].time) : [];
+    const repliesHtml = replies.length > 0 ? `
+      <div class="comment-replies">
+        ${replies.map(([rKey, r]) => `
+          <div class="comment-item ${r.author === STATE.nickname ? "mine" : ""}">
+            <span class="comment-author">${escapeHtml(r.author)}</span>
+            <span class="comment-time">${timeAgo(r.time)}</span>
+            <p class="comment-text">${escapeHtml(r.text)}</p>
+          </div>
+        `).join("")}
+      </div>
+    ` : "";
+
     return `
     <li class="comment-item ${isMine ? "mine" : ""}">
       <span class="comment-author">${escapeHtml(c.author)}</span>
       <span class="comment-time">${timeAgo(c.time)}</span>
       <p class="comment-text" id="comment-text-${key}">${escapeHtml(c.text)}</p>
-      ${isMine ? `<div class="comment-actions">
-        <button class="edit-btn" data-corner="${cornerId}" data-key="${key}">✏️ Edit</button>
-        <button class="delete-btn" data-corner="${cornerId}" data-key="${key}">🗑 Löschen</button>
-      </div>` : ""}
+      <div class="comment-actions">
+        <button class="reply-btn" data-corner="${cornerId}" data-key="${key}">💬 Antworten</button>
+        ${isMine ? `<button class="edit-btn" data-corner="${cornerId}" data-key="${key}">✏️ Edit</button>
+        <button class="delete-btn" data-corner="${cornerId}" data-key="${key}">🗑 Löschen</button>` : ""}
+      </div>
+      ${repliesHtml}
     </li>
   `;
   }).join("");
@@ -1637,6 +1824,44 @@ function renderCommentSection(cornerId, container) {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       container.querySelector(".comment-submit").click();
     }
+  });
+
+  // Bind reply buttons
+  container.querySelectorAll(".reply-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.key;
+      const cId = btn.dataset.corner;
+      const li = btn.closest(".comment-item");
+
+      // Remove existing reply forms
+      li.querySelectorAll(".reply-form").forEach((f) => f.remove());
+
+      const replyForm = document.createElement("div");
+      replyForm.className = "reply-form";
+      replyForm.innerHTML = `
+        <textarea placeholder="Antwort schreiben..." maxlength="200"></textarea>
+        <button>↩️</button>
+      `;
+      li.appendChild(replyForm);
+
+      const replyInput = replyForm.querySelector("textarea");
+      replyInput.focus();
+
+      replyForm.querySelector("button").addEventListener("click", () => {
+        const replyText = replyInput.value.trim();
+        if (!replyText) return;
+        addReply(cId, key, STATE.nickname || "Anonym", replyText);
+        replyForm.remove();
+        toast("Antwort gesendet 💬");
+      });
+
+      replyInput.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          replyForm.querySelector("button").click();
+        }
+        if (e.key === "Escape") replyForm.remove();
+      });
+    });
   });
 
   // Bind edit buttons
@@ -1682,6 +1907,28 @@ function renderCommentSection(cornerId, container) {
       }
     });
   });
+}
+
+/* ====================== COMMENT REPLIES ====================== */
+function addReply(cornerId, commentKey, author, text) {
+  const reply = {
+    author: author || "Anonym",
+    text: text.trim(),
+    time: Date.now()
+  };
+
+  if (window.FB?.firebaseReady) {
+    const { db, ref, push, set } = window.FB;
+    const newRef = push(ref(db, "comments/" + cornerId + "/" + commentKey + "/replies"));
+    set(newRef, reply);
+  } else {
+    if (!STATE.comments[cornerId]?.[commentKey]) return;
+    if (!STATE.comments[cornerId][commentKey].replies) STATE.comments[cornerId][commentKey].replies = {};
+    const rKey = "reply-" + Date.now() + "-" + Math.random().toString(36).slice(2, 5);
+    STATE.comments[cornerId][commentKey].replies[rKey] = reply;
+    saveLocalComments();
+    refreshAllCommentSections();
+  }
 }
 
 /* ====================== BAROMETER (Daily Spot Rating) ====================== */
@@ -1772,8 +2019,23 @@ function renderBarometer(cornerId, container) {
   });
 }
 
-/* ====================== MANUAL CHECK-IN ====================== */
+/* ====================== MANUAL CHECK-IN (GPS-GATED) ====================== */
 function manualCheckin(cornerId) {
+  // GPS-gated: only allow if within proximity or GPS confirms location
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  if (!corner) return;
+
+  if (STATE.geoActive && STATE.userPos) {
+    const dist = haversine(STATE.userPos.lat, STATE.userPos.lng, corner.lat, corner.lng);
+    if (dist > STATE.PROXIMITY_M) {
+      toast(`❌ Du bist <strong>${Math.round(dist)}m</strong> entfernt — du musst vor Ort sein zum Einchecken!`);
+      return;
+    }
+  } else if (!STATE.geoActive) {
+    toast("📍 Aktiviere zuerst deinen Standort, um einzuchecken!");
+    return;
+  }
+
   const wasCheckedIn = STATE.manualCheckinId === cornerId;
 
   // Remove old checkin
@@ -1793,18 +2055,209 @@ function manualCheckin(cornerId) {
     const card = document.getElementById("card-" + cornerId);
     card?.classList.add("at-here");
     refreshMainMarker(cornerId);
-    const corner = getAllCorners().find((c) => c.id === cornerId);
     toast(`Eingecheckt am <strong>${escapeHtml(corner?.name || "")}</strong> 🍻`, "at-corner");
+    // Record visit in trail
+    recordVisit(cornerId);
   }
 
   // Update all checkin buttons
-  $$(".checkin-btn").forEach((btn) => {
-    const isThis = btn.dataset.id === STATE.manualCheckinId;
-    btn.classList.toggle("checked-in", isThis);
-    btn.innerHTML = isThis ? "✅ Ich bin hier!" : "📍 Ich bin hier";
-  });
-
+  updateCheckinButtons();
   broadcastPresence();
+}
+
+function updateCheckinButtons() {
+  $$(".checkin-btn").forEach((btn) => {
+    const cId = btn.dataset.id;
+    const isThis = cId === STATE.manualCheckinId;
+    const corner = getAllCorners().find((c) => c.id === cId);
+
+    btn.classList.toggle("checked-in", isThis);
+
+    if (isThis) {
+      btn.innerHTML = "✅ Ich bin hier!";
+      btn.classList.remove("disabled");
+    } else if (STATE.geoActive && STATE.userPos && corner) {
+      const dist = haversine(STATE.userPos.lat, STATE.userPos.lng, corner.lat, corner.lng);
+      const inRange = dist <= STATE.PROXIMITY_M;
+      btn.classList.toggle("disabled", !inRange);
+      if (inRange) {
+        btn.innerHTML = `📍 Einchecken <span class="checkin-distance">${Math.round(dist)}m</span>`;
+      } else {
+        btn.innerHTML = `🔒 Zu weit <span class="checkin-distance">${dist < 1000 ? Math.round(dist) + "m" : (dist/1000).toFixed(1) + "km"}</span>`;
+      }
+    } else {
+      btn.classList.add("disabled");
+      btn.innerHTML = "📍 Standort aktivieren";
+    }
+  });
+}
+
+/* ====================== VISIT TRAIL ====================== */
+function recordVisit(cornerId) {
+  const visit = {
+    user: STATE.nickname || "Anonym",
+    time: Date.now()
+  };
+
+  if (window.FB?.firebaseReady) {
+    const { db, ref, push, set } = window.FB;
+    const newRef = push(ref(db, "visits/" + cornerId));
+    set(newRef, visit);
+  } else {
+    const visits = loadLocalVisits();
+    if (!visits[cornerId]) visits[cornerId] = [];
+    visits[cornerId].push(visit);
+    // Keep only last 20 visits per spot
+    if (visits[cornerId].length > 20) visits[cornerId] = visits[cornerId].slice(-20);
+    localStorage.setItem("cg.visits", JSON.stringify(visits));
+    refreshAllVisitTrails();
+  }
+}
+
+function loadLocalVisits() {
+  try {
+    return JSON.parse(localStorage.getItem("cg.visits") || "{}");
+  } catch (e) { return {}; }
+}
+
+function listenVisits() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  const visitRef = ref(db, "visits");
+  onValue(visitRef, (snapshot) => {
+    STATE.visits = snapshot.val() || {};
+    refreshAllVisitTrails();
+  });
+}
+
+function refreshAllVisitTrails() {
+  $$(".visit-trail").forEach((section) => {
+    const cornerId = section.dataset.cornerId;
+    renderVisitTrail(cornerId, section);
+  });
+}
+
+function renderVisitTrail(cornerId, container) {
+  const visits = window.FB?.firebaseReady
+    ? Object.values(STATE.visits?.[cornerId] || {})
+    : (loadLocalVisits()[cornerId] || []);
+
+  const sorted = visits.sort((a, b) => b.time - a.time).slice(0, 8);
+  const totalVisits = visits.length;
+
+  if (sorted.length === 0) {
+    container.innerHTML = `
+      <p class="visit-trail-header">👣 Besucher-Trail</p>
+      <p style="font-size:12px;color:var(--fg-dim);margin:0;">Noch keine Besuche — sei der Erste!</p>
+    `;
+    return;
+  }
+
+  const chips = sorted.map((v) => `
+    <li class="visit-chip">
+      <span class="visit-name">${escapeHtml(v.user)}</span>
+      <span class="visit-time">${timeAgo(v.time)}</span>
+    </li>
+  `).join("");
+
+  container.innerHTML = `
+    <p class="visit-trail-header">👣 Besucher-Trail ${totalVisits > 0 ? `<span class="visit-count-badge"><span class="fire">🔥</span> ${totalVisits}x besucht</span>` : ""}</p>
+    <ul class="visit-trail-list">${chips}</ul>
+  `;
+}
+
+/* ====================== EMOJI VOTING ====================== */
+function listenEmojiVotes() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  const emojiRef = ref(db, "emojiVotes");
+  onValue(emojiRef, (snapshot) => {
+    STATE.emojiVotes = snapshot.val() || {};
+    refreshAllEmojiVotes();
+  });
+}
+
+function loadLocalEmojiVotes() {
+  try {
+    return JSON.parse(localStorage.getItem("cg.emojiVotes") || "{}");
+  } catch (e) { return {}; }
+}
+
+function voteEmoji(cornerId, amenityKey) {
+  const voteKey = STATE.nickname;
+  if (!voteKey) { toast("Bitte gib zuerst einen Namen ein."); return; }
+
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set, remove: fbRemove } = window.FB;
+    const voteRef = ref(db, "emojiVotes/" + cornerId + "/" + amenityKey + "/" + voteKey);
+    // Toggle vote
+    const currentVotes = STATE.emojiVotes?.[cornerId]?.[amenityKey] || {};
+    if (currentVotes[voteKey]) {
+      fbRemove(voteRef);
+    } else {
+      set(voteRef, true);
+    }
+  } else {
+    const votes = loadLocalEmojiVotes();
+    if (!votes[cornerId]) votes[cornerId] = {};
+    if (!votes[cornerId][amenityKey]) votes[cornerId][amenityKey] = {};
+    // Toggle
+    if (votes[cornerId][amenityKey][voteKey]) {
+      delete votes[cornerId][amenityKey][voteKey];
+    } else {
+      votes[cornerId][amenityKey][voteKey] = true;
+    }
+    localStorage.setItem("cg.emojiVotes", JSON.stringify(votes));
+    STATE.emojiVotes = votes;
+    refreshAllEmojiVotes();
+  }
+}
+
+function getEmojiVoteData(cornerId, amenityKey) {
+  const votes = window.FB?.firebaseReady
+    ? (STATE.emojiVotes?.[cornerId]?.[amenityKey] || {})
+    : (loadLocalEmojiVotes()[cornerId]?.[amenityKey] || {});
+  const count = Object.keys(votes).length;
+  const myVote = STATE.nickname ? !!votes[STATE.nickname] : false;
+  return { count, myVote };
+}
+
+function refreshAllEmojiVotes() {
+  $$(".emoji-votes").forEach((section) => {
+    const cornerId = section.dataset.cornerId;
+    renderEmojiVotes(cornerId, section);
+  });
+}
+
+function renderEmojiVotes(cornerId, container) {
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  if (!corner) return;
+  const amenities = corner.amenities || [];
+  if (amenities.length === 0) { container.innerHTML = ""; return; }
+
+  const chips = amenities.map((a) => {
+    const info = AMENITY_ICONS[a];
+    if (!info) return "";
+    const { count, myVote } = getEmojiVoteData(cornerId, a);
+    return `<button class="emoji-vote-chip ${myVote ? "voted" : ""}" data-corner="${cornerId}" data-amenity="${a}" title="Stimme für ${info.label}">
+      <span class="vote-emoji">${info.emoji}</span>
+      <span class="vote-count">${count || ""}</span>
+    </button>`;
+  }).join("");
+
+  container.innerHTML = chips;
+
+  container.querySelectorAll(".emoji-vote-chip").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const amenity = btn.dataset.amenity;
+      const wasVoted = btn.classList.contains("voted");
+      voteEmoji(cornerId, amenity);
+      btn.classList.add("just-voted");
+      setTimeout(() => btn.classList.remove("just-voted"), 300);
+      const info = AMENITY_ICONS[amenity];
+      toast(`${info?.emoji || ""} ${wasVoted ? "Stimme entfernt" : "Abgestimmt!"}`);
+    });
+  });
 }
 
 function timeAgo(timestamp) {
@@ -1861,15 +2314,6 @@ function renderCards() {
       ? `<p class="card-desc">${escapeHtml(effectiveDesc)}${isEdited ? '<span class="edited-tag">bearbeitet</span>' : ""}</p>`
       : `<button class="desc-add-cta" data-action="edit-desc" data-id="${c.id}"><span>✏️</span> Beschreibung hinzufügen</button>`;
 
-    // Amenity icons
-    const amenities = c.amenities || [];
-    const amenityHtml = amenities.length > 0
-      ? `<ul class="spot-icons">${amenities.map((a) => {
-          const info = AMENITY_ICONS[a];
-          return info ? `<li class="spot-icon"><span class="icon-emoji">${info.emoji}</span><span class="icon-label">${info.label}</span></li>` : "";
-        }).join("")}</ul>`
-      : "";
-
     // Check-in button state
     const isCheckedIn = STATE.manualCheckinId === c.id;
 
@@ -1890,7 +2334,7 @@ function renderCards() {
       <div class="card-body">
         <p class="card-area">${c.area || "—"}</p>
         <h2 class="card-name">${c.name}</h2>
-        ${amenityHtml}
+        <div class="emoji-votes" data-corner-id="${c.id}"></div>
         <div class="desc-container" id="desc-container-${c.id}">${descBlock}</div>
         <ul class="card-tags">${(c.tags || []).map((t) => `<li>#${escapeHtml(t)}</li>`).join("")}</ul>
       </div>
@@ -1900,12 +2344,13 @@ function renderCards() {
         <span class="minimap-label">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span>
       </div>
       <div class="card-actions">
-        <button class="checkin-btn ${isCheckedIn ? "checked-in" : ""}" data-id="${c.id}">${isCheckedIn ? "✅ Ich bin hier!" : "📍 Ich bin hier"}</button>
+        <button class="checkin-btn ${isCheckedIn ? "checked-in" : ""} ${!STATE.geoActive ? "disabled" : ""}" data-id="${c.id}">${isCheckedIn ? "✅ Ich bin hier!" : (STATE.geoActive ? "📍 Einchecken" : "📍 Standort aktivieren")}</button>
         <button class="action-btn primary" data-action="map" data-id="${c.id}">📍 Auf Karte</button>
         <button class="action-btn" data-action="route" data-id="${c.id}">🧭 Route</button>
         ${hasDesc ? `<button class="action-btn" data-action="edit-desc" data-id="${c.id}">✏️ Bearbeiten</button>` : ""}
         ${isCustom ? `<button class="action-btn danger" data-action="delete" data-id="${c.id}">🗑 Löschen</button>` : ""}
       </div>
+      <div class="visit-trail" data-corner-id="${c.id}"></div>
       <div class="comments-section" data-corner-id="${c.id}"></div>
     `;
     root.appendChild(card);
@@ -1953,6 +2398,16 @@ function renderCards() {
   // Render barometer sections
   $$(".barometer-section").forEach((section) => {
     renderBarometer(section.dataset.cornerId, section);
+  });
+
+  // Render emoji vote sections
+  $$(".emoji-votes").forEach((section) => {
+    renderEmojiVotes(section.dataset.cornerId, section);
+  });
+
+  // Render visit trails
+  $$(".visit-trail").forEach((section) => {
+    renderVisitTrail(section.dataset.cornerId, section);
   });
 
   // Load local barometer if offline
@@ -2157,6 +2612,7 @@ function refreshMainMarker(cornerId) {
 /* ====================== GEOLOCATION ====================== */
 function bindGeo() {
   $("#locate-btn").addEventListener("click", () => STATE.geoActive ? stopGeo() : startGeo());
+  $("#list-locate-btn").addEventListener("click", () => STATE.geoActive ? stopGeo() : startGeo());
 
   // Request notification permission early
   if ("Notification" in window && Notification.permission === "default") {
@@ -2180,6 +2636,8 @@ function startGeo() {
   STATE.geoActive = true;
   $("#locate-btn").classList.add("active");
   $("#locate-btn").textContent = "📍 Standort aus";
+  $("#list-locate-btn").classList.add("active");
+  $("#list-locate-btn").textContent = "📍 Standort aus";
 }
 function stopGeo() {
   if (STATE.geoWatch !== null) navigator.geolocation.clearWatch(STATE.geoWatch);
@@ -2187,6 +2645,8 @@ function stopGeo() {
   STATE.geoActive = false;
   $("#locate-btn").classList.remove("active");
   $("#locate-btn").textContent = "📍 Standort an";
+  $("#list-locate-btn").classList.remove("active");
+  $("#list-locate-btn").textContent = "📍 Standort an";
   setGeoStatus("Standort aus", "");
   $("#me-position-meta").textContent = "Standort aus";
   if (STATE.userMainMarker && STATE.mainMap) { STATE.mainMap.removeLayer(STATE.userMainMarker); STATE.userMainMarker = null; }
@@ -2195,6 +2655,8 @@ function stopGeo() {
     refreshMainMarker(old);
     document.getElementById("card-" + old)?.classList.remove("at-here");
   }
+  // Update check-in buttons to disabled state
+  updateCheckinButtons();
   // Update presence to show no corner
   broadcastPresence();
 }
@@ -2241,6 +2703,9 @@ function onGeoUpdate(pos) {
     setGeoStatus(`${dStr} bis ${nearest.name}`, "live");
     $("#me-position-meta").innerHTML = `<span style="color:var(--blue)">📍 ${dStr} bis ${escapeHtml(nearest.name)}</span>`;
   }
+
+  // Update check-in button states based on new position
+  updateCheckinButtons();
 }
 function onGeoError(err) {
   stopGeo();
