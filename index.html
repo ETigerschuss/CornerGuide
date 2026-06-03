@@ -1823,6 +1823,91 @@ input, textarea { cursor: text; }
 .feedback-highlights { margin-top: 8px; }
 .feedback-highlights-title { font-size: 12px; color: var(--fg-dim); margin: 0 0 4px; }
 .feedback-quote { font-size: 13px; color: var(--fg); margin: 2px 0; font-style: italic; }
+
+/* ====================== LEVEL SYSTEM ====================== */
+.level-bar { display: flex; align-items: center; gap: 8px; }
+.level-badge { font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700; color: var(--amber); white-space: nowrap; }
+.level-progress { flex: 1; height: 5px; background: var(--bg-3); border-radius: 999px; overflow: hidden; border: 1px solid var(--line); min-width: 50px; }
+.level-progress-fill { height: 100%; background: linear-gradient(90deg, var(--amber), var(--green)); border-radius: 999px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+@keyframes level-pulse { 0%{filter:brightness(1)} 50%{filter:brightness(1.5)} 100%{filter:brightness(1)} }
+.level-progress-fill.pulse { animation: level-pulse 0.6s ease; }
+
+/* ====================== TEAMS SYSTEM ====================== */
+.team-select-section { background: var(--bg-3); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 14px 0; }
+.team-select-section h4 { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--fg-dim); margin: 0 0 10px; }
+.team-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.team-btn { background: var(--bg); border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px; font-size: 18px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px; }
+.team-btn:hover { border-color: var(--amber); transform: scale(1.05); }
+.team-btn.active { border-color: var(--green); background: rgba(184,255,58,0.08); box-shadow: 0 0 8px rgba(184,255,58,0.2); }
+.team-btn .team-label { font-family: "JetBrains Mono", monospace; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-dim); }
+.team-badge { display: inline-flex; align-items: center; font-size: 14px; margin-left: 2px; }
+.captured-badge { position: absolute; bottom: 14px; left: 14px; background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.2); border-radius: 999px; padding: 4px 10px; font-size: 12px; backdrop-filter: blur(6px); z-index: 2; display: flex; align-items: center; gap: 4px; }
+.captured-badge .cap-emoji { font-size: 16px; }
+.captured-badge .cap-label { font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-dim); }
+
+/* ====================== CORNER STATUS EMOJIS ====================== */
+.corner-status-section { margin: 14px 0; }
+.corner-status-section h4 { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--fg-dim); margin: 0 0 8px; }
+.status-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.status-btn { background: var(--bg-3); border: 1.5px solid var(--line); border-radius: 999px; padding: 8px 14px; font-size: 14px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+.status-btn:hover { border-color: var(--fg-dim); }
+.status-btn.active { border-color: var(--green); background: rgba(184,255,58,0.08); }
+.status-btn .status-count { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); }
+
+/* ====================== COOLDOWN ====================== */
+.checkin-btn.cooldown { opacity: 0.6; cursor: not-allowed; }
+.cooldown-timer { font-family: "JetBrains Mono", monospace; font-size: 10px; margin-left: 4px; color: var(--fg-dim); }
+
+/* ====================== PROFILE TAB ====================== */
+#view-profile { max-width: 720px; margin: 0 auto; padding: 24px 16px calc(120px + var(--safe-bottom)); }
+.profile-header { background: var(--bg-2); border: 2px solid var(--line); border-radius: 16px; padding: 24px 20px; margin-bottom: 18px; text-align: center; }
+.profile-avatar { font-size: 48px; margin-bottom: 8px; }
+.profile-name { font-family: "Anton", sans-serif; font-size: 28px; text-transform: uppercase; margin: 0 0 4px; }
+.profile-level-info { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--amber); margin-bottom: 12px; }
+.profile-progress { height: 10px; background: var(--bg-3); border-radius: 999px; overflow: hidden; border: 1px solid var(--line); margin: 8px 0; }
+.profile-progress-fill { height: 100%; background: linear-gradient(90deg, var(--amber), var(--green)); border-radius: 999px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+.profile-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 18px; }
+.profile-stat { background: var(--bg-3); border: 1px solid var(--line); border-radius: 12px; padding: 14px; text-align: center; }
+.profile-stat .stat-icon { font-size: 22px; margin-bottom: 4px; }
+.profile-stat .stat-value { font-family: "Anton", sans-serif; font-size: 24px; color: var(--amber); }
+.profile-stat .stat-label { font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--fg-dim); }
+.team-history { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 18px; }
+.team-history h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 20px; text-transform: uppercase; margin: 0 0 14px; }
+.team-history-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.team-history-item { background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; padding: 10px 8px; text-align: center; }
+.team-history-item .th-emoji { font-size: 22px; }
+.team-history-item .th-count { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--amber); font-weight: 700; }
+.team-history-item .th-name { font-family: "JetBrains Mono", monospace; font-size: 8px; color: var(--fg-dim); letter-spacing: 1px; text-transform: uppercase; }
+.best-friends-section { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 18px; }
+.best-friends-section h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 20px; text-transform: uppercase; margin: 0 0 14px; }
+.friend-encounter { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px; }
+.friend-encounter .fe-name { font-weight: 600; flex: 1; }
+.friend-encounter .fe-count { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--amber); }
+.notification-toggle { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 18px; }
+.notification-toggle h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 20px; text-transform: uppercase; margin: 0 0 14px; }
+.notif-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.notif-opt { background: var(--bg-3); border: 1.5px solid var(--line); color: var(--fg-dim); padding: 8px 14px; border-radius: 999px; font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
+.notif-opt:hover { border-color: var(--fg-dim); }
+.notif-opt.active { border-color: var(--green); color: var(--green); background: rgba(184,255,58,0.08); }
+
+/* ====================== TEAM LEADERBOARD ====================== */
+.team-battle-section { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 18px; }
+.team-battle-section h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 22px; text-transform: uppercase; margin: 0 0 14px; }
+.team-battle-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px; }
+.team-battle-item .tb-emoji { font-size: 24px; }
+.team-battle-item .tb-name { flex: 1; font-weight: 600; font-size: 14px; }
+.team-battle-item .tb-bar { flex: 2; height: 8px; background: var(--bg); border-radius: 999px; overflow: hidden; }
+.team-battle-item .tb-bar-fill { height: 100%; border-radius: 999px; transition: width 0.5s; }
+.team-battle-item .tb-score { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fg-dim); min-width: 20px; text-align: right; }
+
+/* ====================== LIVE LOCATION MARKERS ====================== */
+.live-user-marker { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); position: relative; }
+.live-user-marker .live-nick { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; font-family: "JetBrains Mono", monospace; font-size: 9px; padding: 2px 6px; border-radius: 4px; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.live-user-marker:hover .live-nick { opacity: 1; }
+
+.team-btn { padding: 8px 10px; }
+.team-btn .team-label { display: none; }
+
 </style>
 </head>
 <body>
@@ -1850,6 +1935,7 @@ input, textarea { cursor: text; }
       <button class="tab active" data-view="list">Liste</button>
       <button class="tab" data-view="map">Karte</button>
       <button class="tab" data-view="leaderboard">🏆 Ranking</button>
+      <button class="tab" data-view="profile">👤 Profil</button>
     </nav>
   </div>
 </header>
@@ -1863,7 +1949,7 @@ input, textarea { cursor: text; }
   <div id="nickname-bar" class="nickname-bar" style="display:none;">
     <span class="nick-label">👤</span>
     <span class="nick-name" id="nick-display"></span>
-    <span class="nick-pts" id="nick-pts"></span>
+    <span class="nick-pts" id="nick-pts"></span><span class="level-bar" id="nick-level-bar"><span class="level-badge" id="nick-level-badge"></span><span class="level-progress"><span class="level-progress-fill" id="nick-level-fill"></span></span></span>
     <button class="nick-change" id="nick-change-btn">✏️ Ändern</button>
   </div>
 
@@ -1894,10 +1980,15 @@ input, textarea { cursor: text; }
 
   <section id="view-leaderboard" class="view">
     <div id="popular-corner-section"></div>
+    <div id="team-battle-section"></div>
     <div id="leaderboard-visits"></div>
     <div id="leaderboard-contributors"></div>
     <div id="leaderboard-points"></div>
     <div id="achievements-section"></div>
+  </section>
+
+  <section id="view-profile" class="view">
+    <div id="profile-content"></div>
   </section>
 </main>
 
@@ -2163,6 +2254,47 @@ const AMENITY_ICONS = {
   nachbarn: { emoji: "👀", label: "Nachbarn" }
 };
 
+/* ====================== TEAMS & LEVELS ====================== */
+const TEAMS = {
+  plant: { emoji: "🌱", name: "Pflanze", color: "#7dde7d" },
+  insect: { emoji: "🐛", name: "Insekt", color: "#e8a93e" },
+  alien: { emoji: "👽", name: "Alien", color: "#b388ff" },
+  wolf: { emoji: "🐺", name: "Wolf", color: "#6b8cff" },
+  bird: { emoji: "🐦", name: "Vogel", color: "#ff6b9d" },
+  octopus: { emoji: "🐙", name: "Oktopus", color: "#00bcd4" }
+};
+
+const LEVEL_TIERS = [
+  { name: "Corner Newbie", emoji: "🌀", maxLvl: 5 },
+  { name: "Corner Explorer", emoji: "🗺️", maxLvl: 10 },
+  { name: "Corner Regular", emoji: "🔥", maxLvl: 15 },
+  { name: "Corner Guide", emoji: "🧭", maxLvl: 20 },
+  { name: "Corner Legend", emoji: "👑", maxLvl: 999 }
+];
+
+const CORNER_STATUSES = {
+  water: { emoji: "🌊", label: "Wasser" },
+  smoke: { emoji: "🌿", label: "Kiffen ok" },
+  police: { emoji: "🚨", label: "Polizei" }
+};
+
+const COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
+
+// getLevel and getLevelTier defined in enhanced section below
+
+function loadTeamHistory() {
+  try { return JSON.parse(localStorage.getItem("cg.teamHistory") || "{}"); }
+  catch (e) { return {}; }
+}
+
+function saveTeamHistory(hist) {
+  localStorage.setItem("cg.teamHistory", JSON.stringify(hist));
+}
+
+function loadNotifPref() {
+  return localStorage.getItem("cg.notifPref") || "all";
+}
+
 /* ====================== STATE ====================== */
 const STATE = {
   view: "list",
@@ -2187,7 +2319,21 @@ const STATE = {
   achievements: loadAchievements(),
   points: loadPoints(),
   visitedCorners: loadVisitedCorners(),
-  checkinFeedback: loadCheckinFeedback()
+  checkinFeedback: loadCheckinFeedback(),
+  // New feature state
+  team: localStorage.getItem("cg.team") || "",
+  teamHistory: loadTeamHistory(),
+  teams: {},
+  cornerStatuses: {},
+  captured: {},
+  captureHistory: {},
+  encounters: {},
+  liveLocations: {},
+  liveMarkers: {},
+  lastCheckinTime: parseInt(localStorage.getItem("cg.lastCheckinTime") || "0"),
+  lastCheckinCorner: localStorage.getItem("cg.lastCheckinCorner") || "",
+  notifPref: loadNotifPref(),
+  cooldownInterval: null
 };
 
 function getAllCorners() {
@@ -2260,7 +2406,7 @@ function unlockAchievement(id, name, emoji, pts) {
   STATE.achievements.push(id);
   saveAchievements();
   addPoints(STATE.nickname, pts, name);
-  toast(`🏆 Achievement freigeschaltet: ${emoji} <strong>${name}</strong> (+${pts} Punkte)`);
+  toast(`🏆 Achievement freigeschaltet: ${emoji} <strong>${name}</strong>`);
 
   if (window.FB?.firebaseReady) {
     const { db, ref, set } = window.FB;
@@ -2284,6 +2430,11 @@ document.addEventListener("DOMContentLoaded", () => {
   bindNicknameBar();
   updateCounts();
   initFirebase();
+  bindGlobalXp();
+  // Start cooldown display if active
+  if (STATE.lastCheckinTime && (Date.now() - STATE.lastCheckinTime) < COOLDOWN_MS) {
+    startCooldownDisplay();
+  }
 });
 
 function checkNickname() {
@@ -2329,9 +2480,16 @@ function updateNicknameBar() {
   const bar = $("#nickname-bar");
   if (STATE.nickname) {
     bar.style.display = "flex";
-    $("#nick-display").textContent = STATE.nickname;
-    const myPts = STATE.points[STATE.nickname]?.total || 0;
-    $("#nick-pts").textContent = myPts > 0 ? `⭐ ${myPts} Pts` : "";
+    const teamEmoji = STATE.team ? (TEAMS[STATE.team]?.emoji || "") + " " : "";
+    $("#nick-display").textContent = teamEmoji + STATE.nickname;
+    const myXp = STATE.points[STATE.nickname]?.total || 0;
+    const { level, progress } = getLevel(myXp);
+    const tier = getLevelTier(level);
+    $("#nick-pts").textContent = "";
+    const badge = document.getElementById("nick-level-badge");
+    const fill = document.getElementById("nick-level-fill");
+    if (badge) badge.textContent = `${tier.emoji} Lv.${level}`;
+    if (fill) fill.style.width = `${Math.round(progress * 100)}%`;
   } else {
     bar.style.display = "none";
   }
@@ -2372,6 +2530,16 @@ function initFirebase() {
   listenPhotos();
   // Listen for points
   listenPoints();
+  // Listen for teams
+  listenTeams();
+  // Listen for corner statuses
+  listenCornerStatuses();
+  // Listen for captured corners
+  listenCaptured();
+  // Listen for encounters
+  listenEncounters();
+  // Listen for live locations
+  listenLiveLocations();
   // Broadcast own presence
   broadcastPresence();
 }
@@ -2384,11 +2552,25 @@ function broadcastPresence() {
   set(myRef, {
     name: STATE.nickname,
     atCorner: activeCorner,
+    team: STATE.team || "",
     lastSeen: Date.now()
   });
 
   // Use onDisconnect for reliable cleanup
   onDisconnect(myRef).remove();
+
+  // Broadcast live location if geo active
+  if (STATE.geoActive && STATE.userPos) {
+    const liveRef = ref(db, "liveLocations/" + STATE.nickname);
+    set(liveRef, {
+      lat: STATE.userPos.lat,
+      lng: STATE.userPos.lng,
+      nickname: STATE.nickname,
+      team: STATE.team || "",
+      timestamp: Date.now()
+    });
+    onDisconnect(liveRef).remove();
+  }
 }
 
 /* ====================== SHARED CORNERS (Firebase) ====================== */
@@ -2599,7 +2781,7 @@ function listenFriendPresence() {
       if (info.atCorner && (!oldFriends[name] || oldFriends[name].atCorner !== info.atCorner)) {
         const corner = getAllCorners().find((c) => c.id === info.atCorner);
         if (corner) {
-          friendAtCornerAlarm(name, corner);
+          friendAtCornerAlarm(name, corner, info);
         }
       }
     });
@@ -2607,14 +2789,19 @@ function listenFriendPresence() {
   });
 }
 
-function friendAtCornerAlarm(friendName, corner) {
+function friendAtCornerAlarm(friendName, corner, friendInfo) {
+  // Check notification preference
+  if (STATE.notifPref === "off") return;
+  if (STATE.notifPref === "team" && friendInfo?.team !== STATE.team) return;
+
   // Show toast notification
-  toast(`🚨 <strong>${escapeHtml(friendName)}</strong> ist am <strong>${escapeHtml(corner.name)}</strong>!`, "friend-alert");
+  const teamEmoji = friendInfo?.team ? (TEAMS[friendInfo.team]?.emoji || "") + " " : "";
+  toast(`🚨 <strong>${teamEmoji}${escapeHtml(friendName)}</strong> ist am <strong>${escapeHtml(corner.name)}</strong>!`, "friend-alert");
 
   // Browser notification (if permitted)
   if (Notification.permission === "granted") {
     new Notification("🍻 Minga Corner Guide", {
-      body: `${friendName} ist gerade am ${corner.name}!`,
+      body: `${teamEmoji}${friendName} ist gerade am ${corner.name}!`,
       icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍻</text></svg>"
     });
   } else if (Notification.permission !== "denied") {
@@ -2656,9 +2843,10 @@ function renderFriendsBar() {
   list.innerHTML = friends.map((f) => {
     const corner = f.atCorner ? getAllCorners().find((c) => c.id === f.atCorner) : null;
     const isAtCorner = !!corner;
+    const teamEmoji = f.team ? (TEAMS[f.team]?.emoji || "") + " " : "";
     return `<li class="friend-chip ${isAtCorner ? "" : "away"}">
       <span class="friend-dot"></span>
-      <span>${escapeHtml(f.name)}</span>
+      <span>${teamEmoji}${escapeHtml(f.name)}</span>
       <span class="friend-corner">${isAtCorner ? "@ " + escapeHtml(corner.name) : "unterwegs"}</span>
     </li>`;
   }).join("");
@@ -2817,6 +3005,7 @@ function renderCommentSection(cornerId, container) {
     addComment(cornerId, nameInput.value, textInput.value);
     textInput.value = "";
     toast("Kommentar gesendet 💬");
+    addPoints(STATE.nickname, 5, "Kommentar geschrieben");
     // Achievement
     if (!STATE.achievements.includes("first-comment")) {
       unlockAchievement("first-comment", "Kommentator", "💬", 10);
@@ -3019,25 +3208,36 @@ function renderBarometer(cornerId, container) {
       const score = parseInt(btn.dataset.score);
       voteBarometer(cornerId, score);
       toast(`Bewertung: ${emojis[score-1]} (${score}/5)`);
+      addPoints(STATE.nickname, 2, "Barometer bewertet");
     });
   });
 }
 
 /* ====================== MANUAL CHECK-IN (GPS optional) ====================== */
 function manualCheckin(cornerId) {
-  // Allow manual check-in always; GPS proximity is shown as info but not required
   const corner = getAllCorners().find((c) => c.id === cornerId);
   if (!corner) return;
+
+  const wasCheckedIn = STATE.manualCheckinId === cornerId;
+
+  // Cooldown check: only for DIFFERENT corners
+  if (!wasCheckedIn && STATE.lastCheckinCorner && STATE.lastCheckinCorner !== cornerId) {
+    const elapsed = Date.now() - STATE.lastCheckinTime;
+    if (elapsed < COOLDOWN_MS) {
+      const remaining = COOLDOWN_MS - elapsed;
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      toast(`⏳ Cooldown: ${mins}:${String(secs).padStart(2,"0")} bis zum nächsten Spot`);
+      return;
+    }
+  }
 
   if (STATE.geoActive && STATE.userPos) {
     const dist = haversine(STATE.userPos.lat, STATE.userPos.lng, corner.lat, corner.lng);
     if (dist > STATE.PROXIMITY_M) {
-      // Show distance info but still allow check-in
       toast(`📍 Du bist <strong>${Math.round(dist)}m</strong> entfernt — manuell eingecheckt!`);
     }
   }
-
-  const wasCheckedIn = STATE.manualCheckinId === cornerId;
 
   // Remove old checkin
   if (STATE.manualCheckinId) {
@@ -3047,31 +3247,35 @@ function manualCheckin(cornerId) {
   }
 
   if (wasCheckedIn) {
-    // Toggle off
+    // Toggle off (no cooldown triggered)
     STATE.manualCheckinId = null;
     toast("Ausgecheckt 👋");
   } else {
     // Check in
     STATE.manualCheckinId = cornerId;
+    STATE.lastCheckinTime = Date.now();
+    STATE.lastCheckinCorner = cornerId;
+    localStorage.setItem("cg.lastCheckinTime", String(STATE.lastCheckinTime));
+    localStorage.setItem("cg.lastCheckinCorner", cornerId);
+
     const card = document.getElementById("card-" + cornerId);
     card?.classList.add("at-here");
     refreshMainMarker(cornerId);
     toast(`Eingecheckt am <strong>${escapeHtml(corner?.name || "")}</strong> 🍻`, "at-corner");
     // Record visit in trail
     recordVisit(cornerId);
+    // XP for check-in
+    addPoints(STATE.nickname, 5, "Check-in");
 
     // Check if first time visiting this corner
     const isFirstVisit = !STATE.visitedCorners.includes(cornerId);
     if (isFirstVisit) {
       STATE.visitedCorners.push(cornerId);
       saveVisitedCorners();
-      // Show first check-in prompt after short delay
       setTimeout(() => showCheckinPrompt(cornerId), 800);
-      // Award first check-in achievement
       if (STATE.visitedCorners.length === 1) {
         unlockAchievement("first-checkin", "Erster Besuch", "📍", 20);
       }
-      // Points for visiting new corner
       addPoints(STATE.nickname, 10, `Neuer Corner: ${corner.name}`);
     }
 
@@ -3079,24 +3283,45 @@ function manualCheckin(cornerId) {
     const totalVisits = STATE.visitedCorners.length;
     if (totalVisits >= 5) unlockAchievement("five-checkins", "Stammgast", "🔥", 50);
     if (totalVisits >= 10) unlockAchievement("ten-checkins", "Local Legend", "👑", 100);
+
+    // Passive XP: award corner creator
+    if (corner.isCustom && corner.createdBy && corner.createdBy !== STATE.nickname) {
+      addPoints(corner.createdBy, 3, "Jemand hat deinen Corner besucht");
+    }
+
+    // Check capture conditions
+    checkCaptureCondition(cornerId);
+
+    // Log encounters with others at this corner
+    logEncounters(cornerId);
+
+    // Start cooldown timer display
+    startCooldownDisplay();
   }
 
-  // Update all checkin buttons
   updateCheckinButtons();
   broadcastPresence();
 }
 
 function updateCheckinButtons() {
+  const hasCooldown = STATE.lastCheckinCorner && (Date.now() - STATE.lastCheckinTime) < COOLDOWN_MS;
+  const remaining = hasCooldown ? COOLDOWN_MS - (Date.now() - STATE.lastCheckinTime) : 0;
+  const cooldownStr = hasCooldown ? ` ⏳ ${Math.floor(remaining/60000)}:${String(Math.floor((remaining%60000)/1000)).padStart(2,"0")}` : "";
+
   $$(".checkin-btn").forEach((btn) => {
     const cId = btn.dataset.id;
     const isThis = cId === STATE.manualCheckinId;
     const corner = getAllCorners().find((c) => c.id === cId);
+    const isCooldownBlocked = hasCooldown && cId !== STATE.lastCheckinCorner && !isThis;
 
     btn.classList.toggle("checked-in", isThis);
+    btn.classList.toggle("cooldown", isCooldownBlocked);
     btn.classList.remove("disabled");
 
     if (isThis) {
       btn.innerHTML = "✅ Ich bin hier!";
+    } else if (isCooldownBlocked) {
+      btn.innerHTML = `📍 Einchecken<span class="cooldown-timer">${cooldownStr}</span>`;
     } else if (STATE.geoActive && STATE.userPos && corner) {
       const dist = haversine(STATE.userPos.lat, STATE.userPos.lng, corner.lat, corner.lng);
       const inRange = dist <= STATE.PROXIMITY_M;
@@ -3109,6 +3334,18 @@ function updateCheckinButtons() {
       btn.innerHTML = "📍 Einchecken";
     }
   });
+}
+
+function startCooldownDisplay() {
+  if (STATE.cooldownInterval) clearInterval(STATE.cooldownInterval);
+  STATE.cooldownInterval = setInterval(() => {
+    const elapsed = Date.now() - STATE.lastCheckinTime;
+    if (elapsed >= COOLDOWN_MS) {
+      clearInterval(STATE.cooldownInterval);
+      STATE.cooldownInterval = null;
+    }
+    updateCheckinButtons();
+  }, 1000);
 }
 
 /* ====================== VISIT TRAIL ====================== */
@@ -3275,6 +3512,7 @@ function renderEmojiVotes(cornerId, container) {
       setTimeout(() => btn.classList.remove("just-voted"), 300);
       const info = AMENITY_ICONS[amenity];
       toast(`${info?.emoji || ""} ${wasVoted ? "Stimme entfernt" : "Abgestimmt!"}`);
+      if (!wasVoted) addPoints(STATE.nickname, 2, "Emoji-Vote");
     });
   });
 }
@@ -3305,6 +3543,9 @@ function openDetail(cornerId) {
   const c = getAllCorners().find((x) => x.id === cornerId);
   if (!c) return;
 
+  // XP for viewing detail
+  addPoints(STATE.nickname, 2, "Spot-Detail angesehen");
+
   const overlay = $("#detail-overlay");
   $("#detail-title").textContent = c.name;
 
@@ -3313,13 +3554,24 @@ function openDetail(cornerId) {
   const visits = getVisitCount(cornerId);
   const { avg, count: baroCount } = getBarometerData(cornerId);
   const peopleHere = getPeopleAtCorner(cornerId);
+  const capturedInfo = STATE.captured[cornerId];
 
   let peopleHtml = "";
   if (peopleHere.length > 0) {
     peopleHtml = `<div class="detail-people-here">🟢 ${peopleHere.length} ${peopleHere.length === 1 ? "Person" : "Personen"} gerade hier: ${peopleHere.map(n => escapeHtml(n)).join(", ")}</div>`;
   }
 
+  let capturedHtml = "";
+  if (capturedInfo && capturedInfo.team) {
+    const t = TEAMS[capturedInfo.team];
+    capturedHtml = `<div class="detail-people-here" style="border-color:${t?.color || 'var(--line)'};color:${t?.color || 'var(--fg)'};background:rgba(255,255,255,0.05);">${t?.emoji || ""} Eingenommen von Team ${t?.name || capturedInfo.team}</div>`;
+  }
+
   const feedbackHtml = STATE.checkinFeedback[cornerId] ? renderFeedbackSummary(cornerId) : "";
+
+  // Team picker shown only if user is checked in here
+  const isCheckedInHere = STATE.manualCheckinId === cornerId;
+  const teamPickerHtml = isCheckedInHere ? renderTeamPickerHtml(cornerId) : "";
 
   $("#detail-content").innerHTML = `
     <div class="detail-hero-photo">
@@ -3331,11 +3583,14 @@ function openDetail(cornerId) {
       <div class="detail-stat"><span class="stat-num">${peopleHere.length}</span><span class="stat-label">Hier jetzt</span></div>
       <div class="detail-stat"><span class="stat-num">${Object.keys(STATE.comments[cornerId] || {}).length}</span><span class="stat-label">Kommentare</span></div>
     </div>
+    ${capturedHtml}
     ${peopleHtml}
     <p class="card-area" style="margin-top:14px;">${c.area || "—"}</p>
     <h2 class="card-name" style="margin-bottom:14px;">${c.name}</h2>
     ${effectiveDesc ? `<p class="card-desc">${escapeHtml(effectiveDesc)}</p>` : ""}
     <ul class="card-tags" style="margin-bottom:14px;">${(c.tags || []).map((t) => `<li>#${escapeHtml(t)}</li>`).join("")}</ul>
+    ${teamPickerHtml}
+    <div class="corner-status-section" data-corner-id="${c.id}"></div>
     ${feedbackHtml}
     <div class="emoji-votes" data-corner-id="${c.id}"></div>
     <div class="barometer-section" data-corner-id="${c.id}"></div>
@@ -3367,6 +3622,18 @@ function openDetail(cornerId) {
   detailContent.querySelector('[data-action="route-detail"]')?.addEventListener("click", () => {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank");
   });
+
+  // Bind team picker buttons
+  detailContent.querySelectorAll(".team-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectTeam(btn.dataset.team);
+      setTimeout(() => openDetail(cornerId), 100);
+    });
+  });
+
+  // Render corner status section
+  const statusSection = detailContent.querySelector(".corner-status-section");
+  if (statusSection) renderCornerStatusSection(cornerId, statusSection);
 
   // Render sub-sections
   const emojiSection = detailContent.querySelector(".emoji-votes");
@@ -3439,6 +3706,8 @@ function openLightbox(src, author) {
   $("#lightbox-img").src = src;
   $("#lightbox-author").textContent = author ? `📸 von ${author}` : "";
   $("#lightbox").classList.add("open");
+  // XP for viewing photo
+  addPoints(STATE.nickname, 2, "Foto angesehen");
 }
 
 function closeLightbox() {
@@ -3507,6 +3776,7 @@ function submitCheckinFeedback() {
 /* ====================== LEADERBOARD ====================== */
 function renderLeaderboard() {
   renderPopularCorner();
+  renderTeamBattles();
   renderVisitLeaderboard();
   renderContributorsLeaderboard();
   renderPointsLeaderboard();
@@ -3602,7 +3872,7 @@ function renderPointsLeaderboard() {
     .slice(0, 10);
 
   if (sorted.length === 0) {
-    container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Punkte-Ranking</h3><p style="color:var(--fg-dim);font-size:13px;">Noch keine Punkte vergeben.</p></div>`;
+    container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Level-Ranking</h3><p style="color:var(--fg-dim);font-size:13px;">Noch keine Aktivität.</p></div>`;
     return;
   }
 
@@ -3610,14 +3880,16 @@ function renderPointsLeaderboard() {
     const cls = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
     const badge = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
     const isMe = x.user === STATE.nickname;
+    const lvl = getLevel(x.total);
+    const tier = getLevelTier(lvl);
     return `<li class="leaderboard-item ${cls} ${isMe ? "current-user" : ""}">
       <span class="lb-rank">${badge || (i + 1)}</span>
       <span class="lb-name">${escapeHtml(x.user)} ${isMe ? "(du)" : ""}</span>
-      <span class="lb-score">${x.total} Pts</span>
+      <span class="lb-score">${tier.emoji} Lv.${lvl}</span>
     </li>`;
   }).join("");
 
-  container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Punkte-Ranking</h3><ul class="leaderboard-list">${listHtml}</ul></div>`;
+  container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Level-Ranking</h3><ul class="leaderboard-list">${listHtml}</ul></div>`;
 }
 
 function renderAchievementsSection() {
@@ -3666,6 +3938,11 @@ function bindTabs() {
       if (v === "leaderboard") {
         renderLeaderboard();
       }
+      if (v === "profile") {
+        renderProfile();
+      }
+      // Subtle XP for any tab click
+      addPoints(STATE.nickname, 1, "Navigation");
     });
   });
 }
@@ -4023,52 +4300,7 @@ function stopGeo() {
   broadcastPresence();
 }
 
-function onGeoUpdate(pos) {
-  const { latitude, longitude } = pos.coords;
-  STATE.userPos = { lat: latitude, lng: longitude };
-  if (STATE.mainMap) {
-    if (!STATE.userMainMarker) {
-      const icon = L.divIcon({ className: "", html: `<div class="user-marker"></div>`, iconSize: [18, 18], iconAnchor: [9, 9] });
-      STATE.userMainMarker = L.marker([latitude, longitude], { icon, zIndexOffset: 1000 }).addTo(STATE.mainMap);
-    } else {
-      STATE.userMainMarker.setLatLng([latitude, longitude]);
-    }
-  }
-
-  let nearest = null; let nDist = Infinity;
-  getAllCorners().forEach((c) => {
-    const d = haversine(latitude, longitude, c.lat, c.lng);
-    if (d < nDist) { nDist = d; nearest = c; }
-  });
-
-  const newAt = nDist <= STATE.PROXIMITY_M ? nearest.id : null;
-  if (newAt !== STATE.atCornerId) {
-    const prev = STATE.atCornerId;
-    STATE.atCornerId = newAt;
-    if (prev) { refreshMainMarker(prev); document.getElementById("card-" + prev)?.classList.remove("at-here"); }
-    if (newAt) {
-      refreshMainMarker(newAt);
-      const card = document.getElementById("card-" + newAt);
-      card?.classList.add("at-here");
-      toast(`Du bist am <strong>${escapeHtml(nearest.name)}</strong>! 🍻`, "at-corner");
-      if (STATE.view === "list") card?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-    // Broadcast updated presence to friends
-    broadcastPresence();
-  }
-
-  if (STATE.atCornerId) {
-    setGeoStatus(`AM SPOT: ${nearest.name.toUpperCase()}`, "at-corner");
-    $("#me-position-meta").innerHTML = `<span style="color:var(--green)">📍 ${escapeHtml(nearest.name)}</span>`;
-  } else {
-    const dStr = nDist < 1000 ? `${Math.round(nDist)} m` : `${(nDist / 1000).toFixed(1)} km`;
-    setGeoStatus(`${dStr} bis ${nearest.name}`, "live");
-    $("#me-position-meta").innerHTML = `<span style="color:var(--blue)">📍 ${dStr} bis ${escapeHtml(nearest.name)}</span>`;
-  }
-
-  // Update check-in button states based on new position
-  updateCheckinButtons();
-}
+// onGeoUpdate defined below in enhanced geo section
 function onGeoError(err) {
   stopGeo();
   if (err.code === 1) toast("Standort-Zugriff verweigert.");
@@ -4124,48 +4356,7 @@ function fillCurrentLocation() {
   );
 }
 
-function saveNewSpot() {
-  const name = $("#f-name").value.trim();
-  const desc = $("#f-desc").value.trim();
-  const lat = parseFloat($("#f-lat").value);
-  const lng = parseFloat($("#f-lng").value);
-  if (!name) { toast("Name fehlt."); return; }
-  if (!desc) { toast("Beschreibung fehlt."); return; }
-  if (isNaN(lat) || isNaN(lng)) { toast("Koordinaten fehlen."); return; }
-
-  const spot = {
-    id: "custom-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
-    name,
-    area: $("#f-area").value.trim() || "Eigener Spot",
-    lat, lng,
-    description: desc,
-    tags: $("#f-tags").value.split(",").map((s) => s.trim()).filter(Boolean),
-    amenities: [],
-    isCustom: true,
-    createdBy: STATE.nickname || "Anonym",
-    createdAt: Date.now()
-  };
-
-  // Save to Firebase so all users see it
-  if (window.FB?.firebaseReady) {
-    const { db, ref, set } = window.FB;
-    set(ref(db, "corners/" + spot.id), spot);
-  } else {
-    STATE.customSpots.push(spot);
-    saveCustomSpots();
-  }
-  closeModal();
-  renderCards();
-  updateCounts();
-  rebuildMainMarkers();
-  toast(`Spot <strong>${escapeHtml(name)}</strong> hinzugefügt 🍻`);
-
-  // Achievements for adding corners
-  unlockAchievement("first-corner", "Entdecker", "🗺️", 30);
-  addPoints(STATE.nickname, 15, `Corner hinzugefügt: ${name}`);
-  const myCorners = STATE.customSpots.filter(s => s.createdBy === STATE.nickname).length;
-  if (myCorners >= 3) unlockAchievement("three-corners", "Kartograph", "🧭", 50);
-}
+// saveNewSpot defined below in enhanced section
 
 function deleteCustomSpot(id) {
   if (window.FB?.firebaseReady) {
@@ -4207,7 +4398,1367 @@ function copyExport() {
   navigator.clipboard.writeText(text).then(() => toast("Kopiert. Ab in die index.html ins CORNERS-Array!"));
 }
 
+/* ====================== TEAMS SYSTEM ====================== */
+function selectTeam(teamKey) {
+  if (!TEAMS[teamKey]) return;
+  STATE.team = teamKey;
+  localStorage.setItem("cg.team", teamKey);
+
+  // Track team history
+  if (!STATE.teamHistory[teamKey]) STATE.teamHistory[teamKey] = 0;
+  STATE.teamHistory[teamKey]++;
+  saveTeamHistory(STATE.teamHistory);
+
+  // Sync to Firebase
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set } = window.FB;
+    set(ref(db, "teams/" + STATE.nickname), { team: teamKey, joinedAt: Date.now() });
+  }
+
+  const t = TEAMS[teamKey];
+  toast(`${t.emoji} Du bist jetzt Team <strong>${t.name}</strong>!`);
+  updateNicknameBar();
+  broadcastPresence();
+  addPoints(STATE.nickname, 2, "Team gewählt");
+}
+
+function renderTeamPickerHtml(cornerId) {
+  const buttons = Object.entries(TEAMS).map(([key, t]) => {
+    const active = STATE.team === key ? "active" : "";
+    return `<button class="team-btn ${active}" data-team="${key}" title="${t.name}">
+      <span>${t.emoji}</span>
+      <span class="team-label">${t.name}</span>
+    </button>`;
+  }).join("");
+
+  return `<div class="team-select-section">
+    <h4>Für welches Team checkst du ein?</h4>
+    <div class="team-buttons">${buttons}</div>
+  </div>`;
+}
+
+function listenTeams() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "teams"), (snapshot) => {
+    STATE.teams = snapshot.val() || {};
+  });
+}
+
+/* ====================== CORNER STATUS EMOJIS ====================== */
+function renderCornerStatusSection(cornerId, container) {
+  const statuses = STATE.cornerStatuses[cornerId] || {};
+  const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000);
+
+  const buttons = Object.entries(CORNER_STATUSES).map(([key, info]) => {
+    const reports = statuses[key] || {};
+    // Count only reports from last 2 hours
+    const recentReports = Object.entries(reports).filter(([, ts]) => ts > twoHoursAgo);
+    const myReport = STATE.nickname && reports[STATE.nickname] && reports[STATE.nickname] > twoHoursAgo;
+    const count = recentReports.length;
+
+    return `<button class="status-btn ${myReport ? "active" : ""}" data-corner="${cornerId}" data-status="${key}">
+      <span class="status-emoji">${info.emoji}</span>
+      <span class="status-count">${count > 0 ? count : ""}</span>
+    </button>`;
+  }).join("");
+
+  container.innerHTML = `
+    <h4>Status melden</h4>
+    <div class="status-buttons">${buttons}</div>
+  `;
+
+  container.querySelectorAll(".status-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggleCornerStatus(btn.dataset.corner, btn.dataset.status);
+      addPoints(STATE.nickname, 2, "Status gemeldet");
+    });
+  });
+}
+
+function toggleCornerStatus(cornerId, statusKey) {
+  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set, remove: fbRemove } = window.FB;
+    const statusRef = ref(db, "cornerStatuses/" + cornerId + "/" + statusKey + "/" + STATE.nickname);
+    const current = STATE.cornerStatuses?.[cornerId]?.[statusKey]?.[STATE.nickname];
+    const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000);
+    if (current && current > twoHoursAgo) {
+      fbRemove(statusRef);
+      toast(`${CORNER_STATUSES[statusKey].emoji} Status entfernt`);
+    } else {
+      set(statusRef, Date.now());
+      toast(`${CORNER_STATUSES[statusKey].emoji} Status gemeldet!`);
+    }
+  } else {
+    // Local fallback
+    if (!STATE.cornerStatuses[cornerId]) STATE.cornerStatuses[cornerId] = {};
+    if (!STATE.cornerStatuses[cornerId][statusKey]) STATE.cornerStatuses[cornerId][statusKey] = {};
+    const current = STATE.cornerStatuses[cornerId][statusKey][STATE.nickname];
+    const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000);
+    if (current && current > twoHoursAgo) {
+      delete STATE.cornerStatuses[cornerId][statusKey][STATE.nickname];
+    } else {
+      STATE.cornerStatuses[cornerId][statusKey] = { ...STATE.cornerStatuses[cornerId][statusKey], [STATE.nickname]: Date.now() };
+    }
+  }
+}
+
+function listenCornerStatuses() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "cornerStatuses"), (snapshot) => {
+    STATE.cornerStatuses = snapshot.val() || {};
+  });
+}
+
+/* ====================== CORNER CAPTURE ====================== */
+function checkCaptureCondition(cornerId) {
+  if (!STATE.team) return;
+
+  // Count how many people from the same team are checked in at this corner
+  const peopleHere = getPeopleAtCorner(cornerId);
+  let sameTeamCount = 0;
+  const sameTeamUsers = [];
+
+  // Check ourselves
+  if (STATE.manualCheckinId === cornerId && STATE.team) {
+    sameTeamCount++;
+    sameTeamUsers.push(STATE.nickname);
+  }
+
+  // Check friends
+  Object.entries(STATE.friends).forEach(([name, info]) => {
+    if (info.atCorner === cornerId && info.team === STATE.team) {
+      sameTeamCount++;
+      sameTeamUsers.push(name);
+    }
+  });
+
+  if (sameTeamCount >= 3) {
+    captureCorner(cornerId, STATE.team, sameTeamUsers);
+  }
+}
+
+function captureCorner(cornerId, team, users) {
+  if (STATE.captured[cornerId]?.team === team) return; // Already captured by same team
+
+  const captureData = { team, capturedAt: Date.now(), capturedBy: users };
+
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set } = window.FB;
+    set(ref(db, "captured/" + cornerId), captureData);
+  }
+
+  STATE.captured[cornerId] = captureData;
+  const t = TEAMS[team];
+  toast(`${t?.emoji} Team ${t?.name} hat <strong>${getAllCorners().find(c => c.id === cornerId)?.name}</strong> eingenommen! 🏴`);
+
+  // Points for capture participants
+  users.forEach((u) => addPoints(u, 25, "Corner eingenommen"));
+  unlockAchievement("first-capture", "Eroberer", "🏴", 30);
+}
+
+function listenCaptured() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "captured"), (snapshot) => {
+    STATE.captured = snapshot.val() || {};
+    renderCards();
+  });
+}
+
+/* ====================== ENCOUNTERS / FRIENDSHIP ====================== */
+function logEncounters(cornerId) {
+  if (!STATE.nickname || !window.FB?.firebaseReady) return;
+  const { db, ref, set } = window.FB;
+
+  // Find other people at the same corner
+  Object.entries(STATE.friends).forEach(([name, info]) => {
+    if (info.atCorner === cornerId) {
+      const pair = [STATE.nickname, name].sort().join("__");
+      const encounterRef = ref(db, "encounters/" + pair);
+      const existing = STATE.encounters[pair] || { count: 0, lastSeen: 0 };
+      set(encounterRef, {
+        count: (existing.count || 0) + 1,
+        lastSeen: Date.now(),
+        users: [STATE.nickname, name].sort()
+      });
+    }
+  });
+}
+
+function listenEncounters() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "encounters"), (snapshot) => {
+    STATE.encounters = snapshot.val() || {};
+  });
+}
+
+/* ====================== LIVE LOCATION ====================== */
+function listenLiveLocations() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "liveLocations"), (snapshot) => {
+    STATE.liveLocations = snapshot.val() || {};
+    renderLiveLocationMarkers();
+  });
+}
+
+function renderLiveLocationMarkers() {
+  if (!STATE.mainMap) return;
+
+  // Remove old markers
+  Object.values(STATE.liveMarkers).forEach((m) => {
+    try { STATE.mainMap.removeLayer(m); } catch (e) {}
+  });
+  STATE.liveMarkers = {};
+
+  const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+
+  Object.entries(STATE.liveLocations).forEach(([user, loc]) => {
+    if (user === STATE.nickname) return;
+    if (!loc.lat || !loc.lng || loc.timestamp < fiveMinAgo) return;
+
+    const teamInfo = TEAMS[loc.team] || {};
+    const color = teamInfo.color || "#ffffff";
+    const emoji = teamInfo.emoji || "👤";
+
+    const icon = L.divIcon({
+      className: "",
+      html: `<div class="live-user-marker" style="background:${color};">
+        <span class="live-nick">${escapeHtml(loc.nickname || user)}</span>
+        ${emoji}
+      </div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
+    });
+
+    const marker = L.marker([loc.lat, loc.lng], { icon, zIndexOffset: 500 }).addTo(STATE.mainMap);
+    marker.bindTooltip(escapeHtml(loc.nickname || user), { direction: "top", offset: [0, -14] });
+    STATE.liveMarkers[user] = marker;
+  });
+}
+
+/* ====================== TEAM BATTLES LEADERBOARD ====================== */
+function renderTeamBattles() {
+  const container = document.getElementById("team-battle-section");
+  if (!container) return;
+
+  // Count captures per team
+  const teamCaptures = {};
+  Object.values(STATE.captured).forEach((cap) => {
+    if (cap.team) {
+      teamCaptures[cap.team] = (teamCaptures[cap.team] || 0) + 1;
+    }
+  });
+
+  const sorted = Object.entries(TEAMS).map(([key, t]) => ({
+    key, ...t, captures: teamCaptures[key] || 0
+  })).sort((a, b) => b.captures - a.captures);
+
+  const maxCaptures = Math.max(1, ...sorted.map(t => t.captures));
+
+  const items = sorted.map((t) => `
+    <div class="team-battle-item">
+      <span class="tb-emoji">${t.emoji}</span>
+      <span class="tb-name">${t.name}</span>
+      <span class="tb-bar"><span class="tb-bar-fill" style="width:${(t.captures/maxCaptures)*100}%;background:${t.color};"></span></span>
+      <span class="tb-score">${t.captures}</span>
+    </div>
+  `).join("");
+
+  container.innerHTML = `<div class="team-battle-section">
+    <h3>⚔️ Team Battles</h3>
+    ${items || '<p style="color:var(--fg-dim);font-size:13px;">Noch keine Corners eingenommen.</p>'}
+  </div>`;
+}
+
+/* ====================== PROFILE PAGE ====================== */
+function renderProfile() {
+  const container = document.getElementById("profile-content");
+  if (!container) return;
+
+  const myXp = STATE.points[STATE.nickname]?.total || 0;
+  const { level, progress } = getLevel(myXp);
+  const tier = getLevelTier(level);
+  const teamInfo = STATE.team ? TEAMS[STATE.team] : null;
+
+  // Stats
+  const totalCheckins = Object.values(STATE.visits || {}).reduce((sum, v) => {
+    const entries = Object.values(v || {});
+    return sum + entries.filter(e => e.user === STATE.nickname).length;
+  }, 0);
+  const cornersVisited = STATE.visitedCorners.length;
+  const commentsWritten = Object.values(STATE.comments || {}).reduce((sum, corner) => {
+    return sum + Object.values(corner || {}).filter(c => c.author === STATE.nickname).length;
+  }, 0);
+  const capturesParticipated = Object.values(STATE.captured || {}).filter(cap =>
+    cap.capturedBy && cap.capturedBy.includes(STATE.nickname)
+  ).length;
+
+  // Team history
+  const teamHistHtml = Object.entries(TEAMS).map(([key, t]) => {
+    const count = STATE.teamHistory[key] || 0;
+    return `<div class="team-history-item">
+      <div class="th-emoji">${t.emoji}</div>
+      <div class="th-count">${count}x</div>
+      <div class="th-name">${t.name}</div>
+    </div>`;
+  }).join("");
+
+  // Best friends (encounters)
+  const myEncounters = Object.entries(STATE.encounters || {}).filter(([pair]) =>
+    pair.includes(STATE.nickname)
+  ).map(([pair, data]) => {
+    const other = (data.users || pair.split("__")).find(u => u !== STATE.nickname);
+    return { name: other || "?", count: data.count || 0, lastSeen: data.lastSeen || 0 };
+  }).sort((a, b) => b.count - a.count).slice(0, 5);
+
+  const friendsHtml = myEncounters.length > 0
+    ? myEncounters.map(f => `<div class="friend-encounter">
+        <span class="fe-name">${escapeHtml(f.name)}</span>
+        <span class="fe-count">${f.count}x zusammen</span>
+      </div>`).join("")
+    : '<p style="color:var(--fg-dim);font-size:13px;">Checke gemeinsam mit Freunden ein!</p>';
+
+  // Notification preference
+  const notifPref = STATE.notifPref;
+
+  container.innerHTML = `
+    <div class="profile-header">
+      <div class="profile-avatar">${teamInfo ? teamInfo.emoji : "👤"}</div>
+      <div class="profile-name">${escapeHtml(STATE.nickname || "Anonym")}</div>
+      <div class="profile-level-info">${tier.emoji} ${tier.name} · Level ${level}</div>
+      <div class="profile-progress">
+        <div class="profile-progress-fill" style="width:${Math.round(progress * 100)}%"></div>
+      </div>
+    </div>
+
+    <div class="profile-stats">
+      <div class="profile-stat">
+        <div class="stat-icon">📍</div>
+        <div class="stat-value">${cornersVisited}</div>
+        <div class="stat-label">Corners besucht</div>
+      </div>
+      <div class="profile-stat">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value">${totalCheckins}</div>
+        <div class="stat-label">Check-ins</div>
+      </div>
+      <div class="profile-stat">
+        <div class="stat-icon">🏴</div>
+        <div class="stat-value">${capturesParticipated}</div>
+        <div class="stat-label">Eroberungen</div>
+      </div>
+      <div class="profile-stat">
+        <div class="stat-icon">💬</div>
+        <div class="stat-value">${commentsWritten}</div>
+        <div class="stat-label">Kommentare</div>
+      </div>
+    </div>
+
+    <div class="team-history">
+      <h3>⚔️ Team-Historie</h3>
+      <div class="team-history-grid">${teamHistHtml}</div>
+    </div>
+
+    <div class="best-friends-section">
+      <h3>🤝 Corner-Freunde</h3>
+      ${friendsHtml}
+    </div>
+
+    <div class="notification-toggle">
+      <h3>🔔 Benachrichtigungen</h3>
+      <div class="notif-options">
+        <button class="notif-opt ${notifPref === "all" ? "active" : ""}" data-pref="all">Alle</button>
+        <button class="notif-opt ${notifPref === "team" ? "active" : ""}" data-pref="team">Nur Team</button>
+        <button class="notif-opt ${notifPref === "off" ? "active" : ""}" data-pref="off">Aus</button>
+      </div>
+    </div>
+
+    <div id="profile-achievements"></div>
+  `;
+
+  // Bind notification toggles
+  container.querySelectorAll(".notif-opt").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      STATE.notifPref = btn.dataset.pref;
+      localStorage.setItem("cg.notifPref", STATE.notifPref);
+      container.querySelectorAll(".notif-opt").forEach(b => b.classList.toggle("active", b.dataset.pref === STATE.notifPref));
+      toast(`🔔 Benachrichtigungen: ${STATE.notifPref === "all" ? "Alle" : STATE.notifPref === "team" ? "Nur Team" : "Aus"}`);
+    });
+  });
+
+  // Render achievements in profile too
+  const achContainer = container.querySelector("#profile-achievements");
+  if (achContainer) renderAchievementsInProfile(achContainer);
+}
+
+function renderAchievementsInProfile(container) {
+  const allAchievements = [
+    { id: "first-login", name: "Willkommen", emoji: "👋", desc: "Account erstellt" },
+    { id: "first-checkin", name: "Erster Besuch", emoji: "📍", desc: "Erstes Check-in" },
+    { id: "first-corner", name: "Entdecker", emoji: "🗺️", desc: "Ersten Corner hinzugefügt" },
+    { id: "first-photo", name: "Fotograf", emoji: "📸", desc: "Erstes Foto hochgeladen" },
+    { id: "first-comment", name: "Kommentator", emoji: "💬", desc: "Erster Kommentar" },
+    { id: "five-checkins", name: "Stammgast", emoji: "🔥", desc: "5 verschiedene Spots" },
+    { id: "ten-checkins", name: "Local Legend", emoji: "👑", desc: "10 verschiedene Spots" },
+    { id: "three-corners", name: "Kartograph", emoji: "🧭", desc: "3 Corners hinzugefügt" },
+    { id: "first-capture", name: "Eroberer", emoji: "🏴", desc: "Ersten Corner eingenommen" },
+    { id: "five-ratings", name: "Kritiker", emoji: "⭐", desc: "5 Bewertungen abgegeben" },
+  ];
+
+  const cardsHtml = allAchievements.map((a) => {
+    const unlocked = STATE.achievements.includes(a.id);
+    return `<div class="achievement-card ${unlocked ? "unlocked" : "locked"}">
+      <div class="achievement-emoji">${a.emoji}</div>
+      <div class="achievement-name">${a.name}</div>
+    </div>`;
+  }).join("");
+
+  container.innerHTML = `<div class="leaderboard-section">
+    <h3>🏆 Achievements</h3>
+    <div class="achievements-grid">${cardsHtml}</div>
+  </div>`;
+}
+
+/* ====================== NOTIFICATIONS ====================== */
+function shouldNotify(friendInfo) {
+  if (STATE.notifPref === "off") return false;
+  if (STATE.notifPref === "team" && friendInfo.team !== STATE.team) return false;
+  return true;
+}
+
+/* ====================== SUBTLE XP / GAMIFICATION ====================== */
+function bindGlobalXp() {
+  // Handled by the global click listener in the final feature overrides.
+}
+
 /* ====================== TOAST ====================== */
+
+/* ====================== FEATURE OVERRIDES ====================== */
+const TEAM_ORDER = ["plant", "insect", "alien", "wolf", "bird", "octopus"];
+const TEAM_STORAGE_KEY = "cg.team";
+const TEAM_HISTORY_KEY = "cg.teamHistory";
+const NOTIF_STORAGE_KEY = "cg.notifications";
+const USER_ID_STORAGE_KEY = "cg.userId";
+const STATUS_WINDOW_MS = 2 * 60 * 60 * 1000;
+let detailXpCornerId = null;
+
+STATE.userId = getOrCreateUserId();
+STATE.notifPref = localStorage.getItem(NOTIF_STORAGE_KEY) || STATE.notifPref || "all";
+STATE.team = localStorage.getItem(TEAM_STORAGE_KEY) || STATE.team || "";
+STATE.teamHistory = normalizeTeamHistory(STATE.teamHistory);
+STATE.cornerStatuses = STATE.cornerStatuses || {};
+STATE.captured = STATE.captured || {};
+STATE.captureHistory = STATE.captureHistory || {};
+STATE.encounters = STATE.encounters || {};
+STATE.liveLocations = STATE.liveLocations || {};
+STATE.liveMarkers = STATE.liveMarkers || {};
+ensurePointIdentity();
+
+function getOrCreateUserId() {
+  let id = localStorage.getItem(USER_ID_STORAGE_KEY);
+  if (!id) {
+    id = "user-" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+    localStorage.setItem(USER_ID_STORAGE_KEY, id);
+  }
+  return id;
+}
+
+function normalizeTeamHistory(value) {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === "object") {
+    return Object.entries(value).map(([team, count]) => ({ team, count, changedAt: Date.now() - ((count || 0) * 1000) }));
+  }
+  return [];
+}
+
+function saveTeamHistoryValue() {
+  localStorage.setItem(TEAM_HISTORY_KEY, JSON.stringify(STATE.teamHistory));
+}
+
+function ensureTeamHistoryEntry(teamId) {
+  if (!teamId) return;
+  const last = STATE.teamHistory[0];
+  if (last?.team === teamId) return;
+  STATE.teamHistory.unshift({ team: teamId, changedAt: Date.now() });
+  STATE.teamHistory = STATE.teamHistory.slice(0, 20);
+  saveTeamHistoryValue();
+}
+ensureTeamHistoryEntry(STATE.team);
+
+function ensurePointIdentity() {
+  if (!STATE.points || typeof STATE.points !== "object") STATE.points = {};
+  if (STATE.nickname && STATE.points[STATE.nickname] && !STATE.points[STATE.userId]) {
+    STATE.points[STATE.userId] = { ...STATE.points[STATE.nickname] };
+    delete STATE.points[STATE.nickname];
+  }
+  if (!STATE.points[STATE.userId]) STATE.points[STATE.userId] = { total: 0, history: [] };
+  STATE.points[STATE.userId].nickname = STATE.nickname || STATE.points[STATE.userId].nickname || "Anonym";
+  savePoints();
+}
+
+function getLevel(xp) {
+  const total = Number(xp || 0);
+  const level = Math.max(1, Math.floor((total + 99) / 100));
+  const prevThreshold = Math.max(0, (level - 1) * 100);
+  const nextThreshold = level * 100;
+  const progress = nextThreshold > prevThreshold ? (total - prevThreshold) / (nextThreshold - prevThreshold) : 1;
+  return { level, progress: Math.max(0, Math.min(1, progress)) };
+}
+
+function getLevelTier(level) {
+  if (level <= 5) return { name: "Corner Newbie", emoji: "✨" };
+  if (level <= 10) return { name: "Corner Explorer", emoji: "🗺️" };
+  if (level <= 15) return { name: "Corner Regular", emoji: "🔥" };
+  if (level <= 20) return { name: "Corner Guide", emoji: "🧭" };
+  return { name: "Corner Legend", emoji: "👑" };
+}
+
+function currentUserKey() { return STATE.userId || STATE.nickname; }
+function getCurrentXp() { return STATE.points[currentUserKey()]?.total || 0; }
+function addXp(amount, reason) { addPoints(currentUserKey(), amount, reason); }
+function getTeamInfo(teamId) { return TEAMS[teamId] || null; }
+function getDisplayName(name, teamId) { const t = getTeamInfo(teamId); return `${t ? t.emoji + " " : ""}${name || "Anonym"}`; }
+
+function addPoints(user, pts, reason) {
+  if (!user || !pts) return;
+  const key = user === STATE.nickname ? currentUserKey() : user;
+  if (!STATE.points[key]) STATE.points[key] = { total: 0, history: [], nickname: key === currentUserKey() ? STATE.nickname : user };
+  STATE.points[key].total += pts;
+  STATE.points[key].history.push({ pts, reason, time: Date.now() });
+  if (key === currentUserKey()) STATE.points[key].nickname = STATE.nickname || STATE.points[key].nickname;
+  savePoints();
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set } = window.FB;
+    set(ref(db, "points/" + key), STATE.points[key]);
+  }
+  updateNicknameBar();
+  if (STATE.view === "leaderboard") renderLeaderboard();
+  if (STATE.view === "profile") renderProfile();
+}
+
+function unlockAchievement(id, name, emoji, pts) {
+  if (STATE.achievements.includes(id)) return;
+  STATE.achievements.push(id);
+  saveAchievements();
+  addXp(pts, name);
+  toast(`🏆 Achievement freigeschaltet: ${emoji} <strong>${name}</strong>`);
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set } = window.FB;
+    set(ref(db, "achievements/" + currentUserKey() + "/" + id), { name, emoji, time: Date.now(), nickname: STATE.nickname || "Anonym" });
+  }
+}
+
+function saveNickname() {
+  const name = $("#nickname-input").value.trim();
+  if (!name) { toast("Bitte gib einen Namen ein."); return; }
+  STATE.nickname = name;
+  localStorage.setItem("cg.nickname", name);
+  ensurePointIdentity();
+  $("#nickname-prompt").style.display = "none";
+  toast(`Willkommen, <strong>${escapeHtml(name)}</strong>! 🍻`);
+  syncIdentity();
+  updateNicknameBar();
+  unlockAchievement("first-login", "Willkommen", "👋", 10);
+}
+
+function bindNicknameBar() {
+  updateNicknameBar();
+  $("#nick-change-btn").addEventListener("click", () => {
+    const newName = prompt("Neuer Nickname:", STATE.nickname);
+    if (!newName || !newName.trim()) return;
+    STATE.nickname = newName.trim();
+    localStorage.setItem("cg.nickname", STATE.nickname);
+    ensurePointIdentity();
+    toast(`Nickname geändert: <strong>${escapeHtml(STATE.nickname)}</strong>`);
+    syncIdentity();
+    updateNicknameBar();
+    renderFriendsBar();
+    if (STATE.view === "profile") renderProfile();
+  });
+}
+
+function syncIdentity() {
+  syncTeam();
+  broadcastPresence();
+  broadcastLiveLocation();
+}
+
+function updateNicknameBar() {
+  const bar = $("#nickname-bar");
+  if (!STATE.nickname) { bar.style.display = "none"; return; }
+  bar.style.display = "flex";
+  $("#nick-display").textContent = getDisplayName(STATE.nickname, STATE.team);
+  const { level, progress } = getLevel(getCurrentXp());
+  const tier = getLevelTier(level);
+  $("#nick-pts").textContent = `${tier.emoji} Lv.${level}`;
+  const badge = $("#nick-level-badge");
+  const fill = $("#nick-level-fill");
+  if (badge) badge.textContent = tier.name;
+  if (fill) fill.style.width = `${Math.round(progress * 100)}%`;
+}
+
+function renderTeamPickerHtml() {
+  return `
+    <div class="team-select-section">
+      <h4>Für welches Team checkst du ein?</h4>
+      <div class="team-buttons">
+        ${TEAM_ORDER.map((teamId) => `
+          <button class="team-btn ${STATE.team === teamId ? "active" : ""}" data-team="${teamId}" title="${TEAMS[teamId].name}" style="border-color:${STATE.team === teamId ? TEAMS[teamId].color : "var(--line)"};">
+            <span>${TEAMS[teamId].emoji}</span>
+            <span class="team-label">${TEAMS[teamId].name}</span>
+          </button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function selectTeam(teamId) {
+  if (!TEAMS[teamId]) return;
+  STATE.team = teamId;
+  localStorage.setItem(TEAM_STORAGE_KEY, teamId);
+  ensureTeamHistoryEntry(teamId);
+  syncIdentity();
+  updateNicknameBar();
+  renderFriendsBar();
+  renderCards();
+  rebuildMainMarkers();
+  if (STATE.view === "leaderboard") renderLeaderboard();
+  if (STATE.view === "profile") renderProfile();
+}
+
+function syncTeam() {
+  if (!STATE.team || !window.FB?.firebaseReady || !STATE.nickname) return;
+  const { db, ref, set } = window.FB;
+  set(ref(db, "teams/" + currentUserKey()), { nickname: STATE.nickname, team: STATE.team, updatedAt: Date.now() });
+}
+
+function listenTeams() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "teams"), (snapshot) => {
+    STATE.teams = snapshot.val() || {};
+    renderFriendsBar();
+    if (STATE.view === "profile") renderProfile();
+  });
+}
+
+function listenCornerStatuses() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "cornerStatus"), (snapshot) => {
+    STATE.cornerStatuses = snapshot.val() || {};
+    refreshAllCornerStatusSections();
+  });
+}
+
+function listenCaptured() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "captured"), (snapshot) => {
+    STATE.captured = snapshot.val() || {};
+    renderCards();
+    rebuildMainMarkers();
+    if (STATE.view === "leaderboard") renderLeaderboard();
+    if (STATE.view === "profile") renderProfile();
+  });
+  onValue(ref(db, "captureHistory"), (snapshot) => {
+    STATE.captureHistory = snapshot.val() || {};
+    if (STATE.view === "leaderboard") renderLeaderboard();
+    if (STATE.view === "profile") renderProfile();
+  });
+}
+
+function listenEncounters() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "encounters"), (snapshot) => {
+    STATE.encounters = snapshot.val() || {};
+    if (STATE.view === "profile") renderProfile();
+  });
+}
+
+function listenLiveLocations() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "liveLocations"), (snapshot) => {
+    STATE.liveLocations = snapshot.val() || {};
+    renderLiveLocationMarkers();
+  });
+}
+
+function renderLiveLocationMarkers() {
+  if (!STATE.mainMap) return;
+  Object.values(STATE.liveMarkers).forEach((marker) => { try { STATE.mainMap.removeLayer(marker); } catch (e) {} });
+  STATE.liveMarkers = {};
+  Object.entries(STATE.liveLocations || {}).forEach(([userId, info]) => {
+    if (!info || userId === currentUserKey()) return;
+    const team = getTeamInfo(info.team);
+    const color = team?.color || "#6cb6ff";
+    const icon = L.divIcon({
+      className: "",
+      html: `<div class="live-user-marker" style="background:${color};"><span class="live-nick">${escapeHtml(info.nickname || userId)}</span>${team?.emoji || "👤"}</div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
+    });
+    const marker = L.marker([info.lat, info.lng], { icon, zIndexOffset: 1200 }).addTo(STATE.mainMap);
+    marker.bindPopup(`<strong>${escapeHtml(info.nickname || userId)}</strong>`);
+    STATE.liveMarkers[userId] = marker;
+  });
+}
+
+function initFirebase() {
+  if (!window.FB || !window.FB.firebaseReady) {
+    const status = $("#fb-status");
+    status.style.display = "block";
+    status.className = "firebase-status offline";
+    status.textContent = "⚡ Offline-Modus — Firebase nicht konfiguriert (Kommentare & Freunde lokal)";
+    loadLocalComments();
+    loadLocalBarometer();
+    STATE.emojiVotes = loadLocalEmojiVotes();
+    STATE.visits = loadLocalVisits();
+    updateNicknameBar();
+    return;
+  }
+  const status = $("#fb-status");
+  status.style.display = "block";
+  status.className = "firebase-status online";
+  status.textContent = "⚡ Live — verbunden mit deinen Freunden";
+  listenFriendPresence();
+  listenSharedCorners();
+  listenComments();
+  listenBarometer();
+  listenVisits();
+  listenEmojiVotes();
+  listenPhotos();
+  listenPoints();
+  listenTeams();
+  listenCornerStatuses();
+  listenCaptured();
+  listenEncounters();
+  listenLiveLocations();
+  syncIdentity();
+}
+
+function broadcastPresence() {
+  if (!window.FB?.firebaseReady || !STATE.nickname) return;
+  const { db, ref, set, onDisconnect } = window.FB;
+  const activeCorner = STATE.atCornerId || STATE.manualCheckinId || null;
+  const myRef = ref(db, "presence/" + currentUserKey());
+  set(myRef, { nickname: STATE.nickname, name: STATE.nickname, team: STATE.team || "", atCorner: activeCorner, lastSeen: Date.now() });
+  onDisconnect(myRef).remove();
+}
+
+function broadcastLiveLocation() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, set, onDisconnect, remove } = window.FB;
+  const liveRef = ref(db, "liveLocations/" + currentUserKey());
+  if (!STATE.geoActive || !STATE.userPos || !STATE.nickname) { remove(liveRef); return; }
+  set(liveRef, { lat: STATE.userPos.lat, lng: STATE.userPos.lng, nickname: STATE.nickname, team: STATE.team || "", timestamp: Date.now() });
+  onDisconnect(liveRef).remove();
+}
+
+function listenFriendPresence() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "presence"), (snapshot) => {
+    const data = snapshot.val() || {};
+    const oldFriends = { ...STATE.friends };
+    STATE.friends = {};
+    Object.entries(data).forEach(([id, info]) => {
+      if (id === currentUserKey()) return;
+      const friend = { ...info, id, nickname: info.nickname || info.name || id };
+      STATE.friends[id] = friend;
+      if (friend.atCorner && (!oldFriends[id] || oldFriends[id].atCorner !== friend.atCorner)) {
+        const corner = getAllCorners().find((c) => c.id === friend.atCorner);
+        if (corner) friendAtCornerAlarm(friend, corner);
+      }
+    });
+    renderFriendsBar();
+  });
+}
+
+function friendAtCornerAlarm(friend, corner) {
+  if (STATE.notifPref === "off") return;
+  if (STATE.notifPref === "team" && friend.team !== STATE.team) return;
+  toast(`🍻 <strong>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</strong> ist am <strong>${escapeHtml(corner.name)}</strong>!`, "friend-alert");
+  if ("Notification" in window) {
+    if (Notification.permission === "granted") {
+      new Notification("Minga Corner Guide", { body: `${friend.nickname} ist gerade am ${corner.name}!` });
+    } else if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }
+}
+
+function renderFriendsBar() {
+  const bar = $("#friends-bar");
+  const list = $("#friends-list");
+  const friends = Object.values(STATE.friends || {});
+  if (!friends.length) { bar.classList.remove("has-friends"); list.innerHTML = ""; return; }
+  bar.classList.add("has-friends");
+  list.innerHTML = friends.map((friend) => {
+    const corner = friend.atCorner ? getAllCorners().find((c) => c.id === friend.atCorner) : null;
+    const xp = STATE.points[friend.id]?.total || 0;
+    const { level } = getLevel(xp);
+    const tier = getLevelTier(level);
+    return `<li class="friend-chip ${corner ? "" : "away"}" style="border-color:${TEAMS[friend.team]?.color || 'var(--line)'};">
+      <span class="friend-dot" style="background:${TEAMS[friend.team]?.color || 'var(--fg-dim)'};"></span>
+      <span>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</span>
+      <span class="friend-corner">${corner ? "@ " + escapeHtml(corner.name) : "unterwegs"}</span>
+      <span class="friend-level">${tier.emoji} Lv.${level}</span>
+    </li>`;
+  }).join("");
+}
+
+function addComment(cornerId, author, text) {
+  if (!text.trim()) return;
+  const comment = { author: author || "Anonym", text: text.trim(), time: Date.now(), team: STATE.team || "" };
+  if (window.FB?.firebaseReady) {
+    const { db, ref, push, set } = window.FB;
+    const newRef = push(ref(db, "comments/" + cornerId));
+    set(newRef, comment);
+  } else {
+    if (!STATE.comments[cornerId]) STATE.comments[cornerId] = {};
+    STATE.comments[cornerId]["local-" + Date.now()] = comment;
+    saveLocalComments();
+    refreshAllCommentSections();
+  }
+  addXp(5, "Kommentar");
+}
+
+function addReply(cornerId, commentKey, author, text) {
+  const reply = { author: author || "Anonym", text: text.trim(), time: Date.now(), team: STATE.team || "" };
+  if (window.FB?.firebaseReady) {
+    const { db, ref, push, set } = window.FB;
+    const newRef = push(ref(db, `comments/${cornerId}/${commentKey}/replies`));
+    set(newRef, reply);
+  } else {
+    if (!STATE.comments[cornerId]?.[commentKey]) return;
+    if (!STATE.comments[cornerId][commentKey].replies) STATE.comments[cornerId][commentKey].replies = {};
+    STATE.comments[cornerId][commentKey].replies["reply-" + Date.now()] = reply;
+    saveLocalComments();
+    refreshAllCommentSections();
+  }
+  addXp(5, "Antwort");
+}
+
+function voteBarometer(cornerId, score) {
+  const today = getTodayKey();
+  const voteKey = currentUserKey();
+  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set } = window.FB;
+    set(ref(db, `barometer/${today}/${cornerId}/${voteKey}`), score);
+  } else {
+    if (!STATE.barometer[cornerId]) STATE.barometer[cornerId] = {};
+    STATE.barometer[cornerId][voteKey] = score;
+    saveLocalBarometer();
+    refreshAllBarometers();
+  }
+  addXp(2, "Barometer");
+}
+
+function getBarometerData(cornerId) {
+  const votes = STATE.barometer[cornerId] || {};
+  const values = Object.values(votes);
+  const myVote = votes[currentUserKey()] || 0;
+  const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+  return { avg, count: values.length, myVote };
+}
+
+function voteEmoji(cornerId, amenityKey) {
+  const voteKey = currentUserKey();
+  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set, remove: fbRemove } = window.FB;
+    const voteRef = ref(db, `emojiVotes/${cornerId}/${amenityKey}/${voteKey}`);
+    const currentVotes = STATE.emojiVotes?.[cornerId]?.[amenityKey] || {};
+    if (currentVotes[voteKey]) fbRemove(voteRef); else set(voteRef, true);
+  } else {
+    const votes = loadLocalEmojiVotes();
+    if (!votes[cornerId]) votes[cornerId] = {};
+    if (!votes[cornerId][amenityKey]) votes[cornerId][amenityKey] = {};
+    if (votes[cornerId][amenityKey][voteKey]) delete votes[cornerId][amenityKey][voteKey];
+    else votes[cornerId][amenityKey][voteKey] = true;
+    localStorage.setItem("cg.emojiVotes", JSON.stringify(votes));
+    STATE.emojiVotes = votes;
+    refreshAllEmojiVotes();
+  }
+  addXp(2, "Emoji Vote");
+}
+
+function getEmojiVoteData(cornerId, amenityKey) {
+  const votes = window.FB?.firebaseReady ? (STATE.emojiVotes?.[cornerId]?.[amenityKey] || {}) : (loadLocalEmojiVotes()[cornerId]?.[amenityKey] || {});
+  return { count: Object.keys(votes).length, myVote: !!votes[currentUserKey()] };
+}
+
+function getStatusCounts(cornerId) {
+  const source = STATE.cornerStatuses?.[cornerId] || {};
+  const now = Date.now();
+  return Object.entries(CORNER_STATUSES).map(([key, info]) => {
+    const votes = source[key] || {};
+    const activeEntries = Object.entries(votes).filter(([, value]) => now - Number(value || 0) <= STATUS_WINDOW_MS);
+    return { key, ...info, count: activeEntries.length, active: activeEntries.some(([user]) => user === currentUserKey()) };
+  });
+}
+
+function toggleCornerStatus(cornerId, statusKey) {
+  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  const active = getStatusCounts(cornerId).find((s) => s.key === statusKey)?.active;
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set, remove } = window.FB;
+    const statusRef = ref(db, `cornerStatus/${cornerId}/${statusKey}/${currentUserKey()}`);
+    if (active) remove(statusRef); else set(statusRef, Date.now());
+  } else {
+    if (!STATE.cornerStatuses[cornerId]) STATE.cornerStatuses[cornerId] = {};
+    if (!STATE.cornerStatuses[cornerId][statusKey]) STATE.cornerStatuses[cornerId][statusKey] = {};
+    if (active) delete STATE.cornerStatuses[cornerId][statusKey][currentUserKey()]; else STATE.cornerStatuses[cornerId][statusKey][currentUserKey()] = Date.now();
+  }
+  addXp(2, "Corner Status");
+  refreshAllCornerStatusSections();
+}
+
+function renderCornerStatusSection(cornerId, container) {
+  if (!container) return;
+  const buttons = getStatusCounts(cornerId).map((status) => `
+    <button class="status-btn ${status.active ? "active" : ""}" data-status="${status.key}">
+      <span class="status-emoji">${status.emoji}</span>
+      <span class="status-count">${status.count}</span>
+    </button>
+  `).join("");
+  container.innerHTML = `<h4>Status · letzte 2h</h4><div class="status-buttons">${buttons}</div>`;
+  container.querySelectorAll(".status-btn").forEach((btn) => btn.addEventListener("click", () => toggleCornerStatus(cornerId, btn.dataset.status)));
+}
+
+function refreshAllCornerStatusSections() {
+  $$(".corner-status-section").forEach((section) => renderCornerStatusSection(section.dataset.cornerId, section));
+}
+
+function getPeopleAtCorner(cornerId) {
+  const people = [];
+  const meAtCorner = STATE.manualCheckinId === cornerId || STATE.atCornerId === cornerId;
+  if (meAtCorner) people.push(getDisplayName(STATE.nickname || "Du", STATE.team));
+  Object.values(STATE.friends).forEach((friend) => { if (friend.atCorner === cornerId) people.push(getDisplayName(friend.nickname || friend.name, friend.team)); });
+  return people;
+}
+
+function checkCaptureCondition(cornerId) {
+  if (!STATE.team) return;
+  const occupants = [];
+  if (STATE.manualCheckinId === cornerId || STATE.atCornerId === cornerId) occupants.push({ id: currentUserKey(), team: STATE.team });
+  Object.entries(STATE.friends).forEach(([id, friend]) => { if (friend.atCorner === cornerId && friend.team) occupants.push({ id, team: friend.team }); });
+  const sameTeam = occupants.filter((person) => person.team === STATE.team);
+  if (sameTeam.length < 3) return;
+  if (STATE.captured[cornerId]?.team === STATE.team) return;
+  const capture = { team: STATE.team, capturedAt: Date.now(), capturedBy: sameTeam.map((person) => person.id) };
+  STATE.captured[cornerId] = capture;
+  const captureKey = cornerId + "-" + capture.capturedAt;
+  STATE.captureHistory[captureKey] = { ...capture, cornerId };
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set } = window.FB;
+    set(ref(db, "captured/" + cornerId), capture);
+    set(ref(db, "captureHistory/" + captureKey), { ...capture, cornerId });
+  }
+  renderCards();
+  rebuildMainMarkers();
+  if (STATE.view === "leaderboard") renderLeaderboard();
+  if (STATE.view === "profile") renderProfile();
+}
+
+function logEncounters(cornerId) {
+  const people = [];
+  if (STATE.manualCheckinId === cornerId || STATE.atCornerId === cornerId) people.push({ id: currentUserKey(), nickname: STATE.nickname });
+  Object.entries(STATE.friends).forEach(([id, friend]) => { if (friend.atCorner === cornerId) people.push({ id, nickname: friend.nickname || friend.name || id }); });
+  for (let i = 0; i < people.length; i++) {
+    for (let j = i + 1; j < people.length; j++) {
+      const ids = [people[i].id, people[j].id].sort();
+      const pairKey = ids.join("__");
+      const prev = STATE.encounters[pairKey] || { count: 0, users: {} };
+      if (Date.now() - Number(prev.lastSeen || 0) < 5 * 60 * 1000 && prev.lastCorner === cornerId) continue;
+      const next = { count: prev.count + 1, lastSeen: Date.now(), lastCorner: cornerId, users: { [people[i].id]: people[i].nickname, [people[j].id]: people[j].nickname } };
+      STATE.encounters[pairKey] = next;
+      if (window.FB?.firebaseReady) {
+        const { db, ref, set } = window.FB;
+        set(ref(db, "encounters/" + pairKey), next);
+      }
+    }
+  }
+}
+
+function manualCheckin(cornerId) {
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  if (!corner) return;
+  const wasCheckedIn = STATE.manualCheckinId === cornerId;
+  if (!wasCheckedIn && STATE.lastCheckinCorner && STATE.lastCheckinCorner !== cornerId) {
+    const elapsed = Date.now() - STATE.lastCheckinTime;
+    if (elapsed < COOLDOWN_MS) {
+      const remaining = COOLDOWN_MS - elapsed;
+      toast(`⏳ ${Math.floor(remaining / 60000)}:${String(Math.floor((remaining % 60000) / 1000)).padStart(2, "0")} bis zum nächsten Spot`);
+      updateCheckinButtons();
+      return;
+    }
+  }
+  if (STATE.manualCheckinId) {
+    document.getElementById("card-" + STATE.manualCheckinId)?.classList.remove("at-here");
+    refreshMainMarker(STATE.manualCheckinId);
+  }
+  if (wasCheckedIn) {
+    STATE.manualCheckinId = null;
+    toast("Ausgecheckt 👋");
+  } else {
+    STATE.manualCheckinId = cornerId;
+    STATE.lastCheckinTime = Date.now();
+    STATE.lastCheckinCorner = cornerId;
+    localStorage.setItem("cg.lastCheckinTime", String(STATE.lastCheckinTime));
+    localStorage.setItem("cg.lastCheckinCorner", cornerId);
+    document.getElementById("card-" + cornerId)?.classList.add("at-here");
+    refreshMainMarker(cornerId);
+    toast(`Eingecheckt am <strong>${escapeHtml(corner.name)}</strong> 🍻`, "at-corner");
+    recordVisit(cornerId);
+    addXp(5, "Check-in");
+    const isFirstVisit = !STATE.visitedCorners.includes(cornerId);
+    if (isFirstVisit) {
+      STATE.visitedCorners.push(cornerId);
+      saveVisitedCorners();
+      setTimeout(() => showCheckinPrompt(cornerId), 800);
+      addXp(10, `Neuer Corner: ${corner.name}`);
+    }
+    if (STATE.visitedCorners.length === 1) unlockAchievement("first-checkin", "Erster Besuch", "📍", 20);
+    if (STATE.visitedCorners.length >= 5) unlockAchievement("five-checkins", "Stammgast", "🔥", 50);
+    if (STATE.visitedCorners.length >= 10) unlockAchievement("ten-checkins", "Local Legend", "👑", 100);
+    if (corner.isCustom && corner.createdBy && corner.createdBy !== STATE.nickname) addPoints(corner.createdById || corner.createdBy, 3, "Jemand hat deinen Corner besucht");
+    checkCaptureCondition(cornerId);
+    logEncounters(cornerId);
+    startCooldownDisplay();
+  }
+  updateCheckinButtons();
+  broadcastPresence();
+}
+
+function updateCheckinButtons() {
+  const hasCooldown = STATE.lastCheckinCorner && (Date.now() - STATE.lastCheckinTime) < COOLDOWN_MS;
+  const remaining = hasCooldown ? COOLDOWN_MS - (Date.now() - STATE.lastCheckinTime) : 0;
+  const cooldownStr = hasCooldown ? `${Math.floor(remaining / 60000)}:${String(Math.floor((remaining % 60000) / 1000)).padStart(2, "0")}` : "";
+  $$(".checkin-btn").forEach((btn) => {
+    const cId = btn.dataset.id;
+    const isThis = cId === STATE.manualCheckinId;
+    const corner = getAllCorners().find((c) => c.id === cId);
+    const blocked = hasCooldown && cId !== STATE.lastCheckinCorner && !isThis;
+    btn.classList.toggle("checked-in", isThis);
+    btn.classList.toggle("cooldown", blocked);
+    if (isThis) btn.innerHTML = "✅ Ich bin hier!";
+    else if (blocked) btn.innerHTML = `⏳ ${cooldownStr}`;
+    else if (STATE.geoActive && STATE.userPos && corner) {
+      const dist = haversine(STATE.userPos.lat, STATE.userPos.lng, corner.lat, corner.lng);
+      btn.innerHTML = `📍 Einchecken <span class="checkin-distance">${dist < 1000 ? Math.round(dist) + "m" : (dist/1000).toFixed(1) + "km"}</span>`;
+    } else btn.innerHTML = "📍 Einchecken";
+  });
+}
+
+function openDetail(cornerId) {
+  const c = getAllCorners().find((x) => x.id === cornerId);
+  if (!c) return;
+  if (detailXpCornerId !== cornerId) addXp(2, "Spot-Detail angesehen");
+  detailXpCornerId = cornerId;
+  const overlay = $("#detail-overlay");
+  $("#detail-title").textContent = c.name;
+  const photoSrc = localStorage.getItem("cg.photo." + c.id);
+  const effectiveDesc = getDescription(c);
+  const visits = getVisitCount(cornerId);
+  const { avg, count: baroCount } = getBarometerData(cornerId);
+  const peopleHere = getPeopleAtCorner(cornerId);
+  const capturedInfo = STATE.captured[cornerId];
+  const capturedHtml = capturedInfo?.team ? `<div class="detail-people-here" style="border-color:${TEAMS[capturedInfo.team]?.color || 'var(--line)'};color:${TEAMS[capturedInfo.team]?.color || 'var(--fg)'};background:rgba(255,255,255,0.05);">${TEAMS[capturedInfo.team]?.emoji || ''} Eingenommen von Team ${TEAMS[capturedInfo.team]?.name || capturedInfo.team}</div>` : "";
+  const teamPickerHtml = STATE.manualCheckinId === cornerId ? renderTeamPickerHtml() : "";
+  $("#detail-content").innerHTML = `
+    <div class="detail-hero-photo">${photoSrc ? `<img src="${photoSrc}" alt="${escapeHtml(c.name)}" />` : `<div class="card-photo-empty" style="height:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg></div>`}</div>
+    <div class="detail-stats">
+      <div class="detail-stat"><span class="stat-num">${visits}</span><span class="stat-label">Besuche</span></div>
+      <div class="detail-stat"><span class="stat-num">${baroCount > 0 ? avg.toFixed(1) : "—"}</span><span class="stat-label">Rating</span></div>
+      <div class="detail-stat"><span class="stat-num">${peopleHere.length}</span><span class="stat-label">Hier jetzt</span></div>
+      <div class="detail-stat"><span class="stat-num">${Object.keys(STATE.comments[cornerId] || {}).length}</span><span class="stat-label">Kommentare</span></div>
+    </div>
+    ${capturedHtml}
+    ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} gerade hier: ${peopleHere.map((p) => escapeHtml(p)).join(", ")}</div>` : ""}
+    <p class="card-area" style="margin-top:14px;">${c.area || "—"}</p>
+    <h2 class="card-name" style="margin-bottom:14px;">${c.name}</h2>
+    ${effectiveDesc ? `<p class="card-desc">${escapeHtml(effectiveDesc)}</p>` : ""}
+    <ul class="card-tags" style="margin-bottom:14px;">${(c.tags || []).map((t) => `<li>#${escapeHtml(t)}</li>`).join("")}</ul>
+    ${teamPickerHtml}
+    <div class="corner-status-section" data-corner-id="${c.id}"></div>
+    <div class="emoji-votes" data-corner-id="${c.id}"></div>
+    <div class="barometer-section" data-corner-id="${c.id}"></div>
+    <div class="photo-gallery" data-corner-id="${c.id}"></div>
+    <div class="visit-trail" data-corner-id="${c.id}"></div>
+    <div class="comments-section" data-corner-id="${c.id}"></div>
+    <div class="card-actions" style="padding:18px 0;">
+      <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier!" : "📍 Einchecken"}</button>
+      <button class="action-btn primary" data-action="map-detail" data-id="${c.id}">📍 Auf Karte</button>
+      <button class="action-btn" data-action="route-detail" data-id="${c.id}">🧭 Route</button>
+    </div>`;
+  const detailContent = $("#detail-content");
+  detailContent.querySelector(".checkin-btn")?.addEventListener("click", (e) => { manualCheckin(e.target.closest("[data-id]").dataset.id); setTimeout(() => openDetail(cornerId), 100); });
+  detailContent.querySelector('[data-action="map-detail"]')?.addEventListener("click", () => { closeDetail(); $(`.tab[data-view="map"]`).click(); setTimeout(() => STATE.mainMap?.flyTo([c.lat, c.lng], 17, { duration: 0.7 }), 250); });
+  detailContent.querySelector('[data-action="route-detail"]')?.addEventListener("click", () => { window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank"); });
+  detailContent.querySelectorAll(".team-btn").forEach((btn) => btn.addEventListener("click", () => { selectTeam(btn.dataset.team); setTimeout(() => openDetail(cornerId), 50); }));
+  renderCornerStatusSection(cornerId, detailContent.querySelector(".corner-status-section"));
+  renderEmojiVotes(cornerId, detailContent.querySelector(".emoji-votes"));
+  renderBarometer(cornerId, detailContent.querySelector(".barometer-section"));
+  renderPhotoGallery(cornerId, detailContent.querySelector(".photo-gallery"));
+  renderVisitTrail(cornerId, detailContent.querySelector(".visit-trail"));
+  renderCommentSection(cornerId, detailContent.querySelector(".comments-section"));
+  overlay.classList.add("open");
+}
+
+function closeDetail() { detailXpCornerId = null; $("#detail-overlay").classList.remove("open"); }
+
+function renderCards() {
+  const root = $("#cards");
+  root.innerHTML = "";
+  let all = getAllCorners().map((corner) => ({ ...corner, _visits: getVisitCount(corner.id) }));
+  all.sort((a, b) => b._visits - a._visits);
+  all.forEach((c, i) => {
+    const photoSrc = localStorage.getItem("cg.photo." + c.id);
+    const peopleHere = getPeopleAtCorner(c.id);
+    const capture = STATE.captured[c.id];
+    const card = document.createElement("article");
+    card.className = "card" + (c.isCustom ? " custom" : "") + (STATE.manualCheckinId === c.id ? " at-here" : "");
+    card.id = "card-" + c.id;
+    card.innerHTML = `
+      <div class="card-photo">
+        <div class="card-num">${String(i + 1).padStart(2, "0")}</div>
+        <span class="mine-badge">Mein Spot</span>
+        <span class="at-badge">Du bist hier</span>
+        ${capture ? `<span class="captured-badge"><span class="cap-emoji">${TEAMS[capture.team]?.emoji || "🏳️"}</span><span class="cap-label">Captured</span></span>` : ""}
+        ${c._visits > 0 ? `<span class="card-visit-rank">🔥 ${c._visits}</span>` : ""}
+        ${photoSrc ? `<img src="${photoSrc}" alt="${escapeHtml(c.name)}">` : `<div class="card-photo-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg><span>Foto hochladen</span></div>`}
+        <input type="file" accept="image/*" class="photo-input" data-id="${c.id}">
+        <button class="photo-btn" data-id="${c.id}">📷 ${photoSrc ? "Ändern" : "Hinzufügen"}</button>
+      </div>
+      <div class="card-body">
+        <p class="card-area">${c.area || "—"} ${c.isCustom && c.createdBy ? `<span class="creator-label"> · von ${escapeHtml(c.createdBy)}</span>` : ""}</p>
+        <h2 class="card-name">${c.name}</h2>
+        ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} hier: ${peopleHere.map((n) => escapeHtml(n)).join(", ")}</div>` : ""}
+        ${getDescription(c) ? `<p class="card-desc short-desc">${escapeHtml(getDescription(c))}</p>` : ""}
+        <button class="detail-link" data-id="${c.id}">Mehr Details →</button>
+      </div>
+      <div class="card-actions">
+        <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier!" : "📍 Einchecken"}</button>
+        <button class="action-btn primary" data-action="map" data-id="${c.id}">📍 Karte</button>
+        <button class="action-btn" data-action="route" data-id="${c.id}">🧭 Route</button>
+      </div>`;
+    root.appendChild(card);
+  });
+  $$(".photo-btn").forEach((btn) => btn.addEventListener("click", () => $(`.photo-input[data-id="${btn.dataset.id}"]`).click()));
+  $$(".photo-input").forEach((inp) => inp.addEventListener("change", (e) => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(f, inp.dataset.id); }));
+  $$(".detail-link").forEach((btn) => btn.addEventListener("click", () => openDetail(btn.dataset.id)));
+  $$('[data-action="map"]').forEach((btn) => btn.addEventListener("click", () => { const c = getAllCorners().find((x) => x.id === btn.dataset.id); $(`.tab[data-view="map"]`).click(); setTimeout(() => { if (STATE.mainMap) { STATE.mainMap.flyTo([c.lat, c.lng], 17, { duration: 0.7 }); STATE.mainMarkers[c.id]?.openPopup?.(); } }, 250); }));
+  $$('[data-action="route"]').forEach((btn) => btn.addEventListener("click", () => { const c = getAllCorners().find((x) => x.id === btn.dataset.id); window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank"); }));
+  $$(".checkin-btn").forEach((btn) => btn.addEventListener("click", () => manualCheckin(btn.dataset.id)));
+  updateCheckinButtons();
+}
+
+function rebuildMainMarkers() {
+  if (!STATE.mainMap) return;
+  Object.values(STATE.mainMarkers).forEach((m) => STATE.mainMap.removeLayer(m));
+  STATE.mainMarkers = {};
+  getAllCorners().forEach((c, i) => {
+    const capture = STATE.captured[c.id];
+    const icon = L.divIcon({ className: "", html: `<div class="corner-marker ${c.isCustom ? "custom" : ""}" data-id="${c.id}"><span class="num">${i + 1}</span>${capture ? `<span class="team-badge">${TEAMS[capture.team]?.emoji || "🏳️"}</span>` : ""}</div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
+    const marker = L.marker([c.lat, c.lng], { icon }).addTo(STATE.mainMap);
+    marker.bindPopup(`<strong>${escapeHtml(c.name)}</strong><br><small>${escapeHtml(c.area || "")}</small>${capture ? `<br><small>${TEAMS[capture.team]?.emoji || ''} ${TEAMS[capture.team]?.name || ''}</small>` : ""}`);
+    marker.on("click", () => { $(`.tab[data-view="list"]`).click(); setTimeout(() => document.getElementById("card-" + c.id)?.scrollIntoView({ behavior: "smooth", block: "center" }), 150); });
+    STATE.mainMarkers[c.id] = marker;
+  });
+  renderLiveLocationMarkers();
+}
+
+function startGeo() {
+  if (!navigator.geolocation) { toast("Geolocation wird nicht unterstützt."); return; }
+  if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
+  setGeoStatus("Suche…", "");
+  STATE.geoWatch = navigator.geolocation.watchPosition(onGeoUpdate, onGeoError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+  STATE.geoActive = true;
+  $("#locate-btn").classList.add("active");
+  $("#locate-btn").textContent = "📍 Standort aus";
+  $("#list-locate-btn").classList.add("active");
+  $("#list-locate-btn").textContent = "📍 Standort aus";
+}
+
+function stopGeo() {
+  if (STATE.geoWatch !== null) navigator.geolocation.clearWatch(STATE.geoWatch);
+  STATE.geoWatch = null;
+  STATE.geoActive = false;
+  $("#locate-btn").classList.remove("active");
+  $("#locate-btn").textContent = "📍 Standort an";
+  $("#list-locate-btn").classList.remove("active");
+  $("#list-locate-btn").textContent = "📍 Standort an";
+  setGeoStatus("Standort aus", "");
+  $("#me-position-meta").textContent = "Standort aus";
+  if (STATE.userMainMarker && STATE.mainMap) { STATE.mainMap.removeLayer(STATE.userMainMarker); STATE.userMainMarker = null; }
+  if (STATE.atCornerId) { const old = STATE.atCornerId; STATE.atCornerId = null; refreshMainMarker(old); document.getElementById("card-" + old)?.classList.remove("at-here"); }
+  updateCheckinButtons();
+  broadcastPresence();
+  broadcastLiveLocation();
+}
+
+function onGeoUpdate(pos) {
+  const { latitude, longitude } = pos.coords;
+  STATE.userPos = { lat: latitude, lng: longitude };
+  if (STATE.mainMap) {
+    const team = getTeamInfo(STATE.team);
+    const icon = L.divIcon({ className: "", html: `<div class="live-user-marker" style="background:${team?.color || '#6cb6ff'};"><span class="live-nick">${escapeHtml(STATE.nickname || 'Du')}</span>${team?.emoji || '📍'}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
+    if (!STATE.userMainMarker) STATE.userMainMarker = L.marker([latitude, longitude], { icon, zIndexOffset: 1000 }).addTo(STATE.mainMap); else { STATE.userMainMarker.setIcon(icon); STATE.userMainMarker.setLatLng([latitude, longitude]); }
+  }
+  let nearest = null, nDist = Infinity;
+  getAllCorners().forEach((c) => { const d = haversine(latitude, longitude, c.lat, c.lng); if (d < nDist) { nDist = d; nearest = c; } });
+  const newAt = nDist <= STATE.PROXIMITY_M ? nearest.id : null;
+  if (newAt !== STATE.atCornerId) {
+    const prev = STATE.atCornerId;
+    STATE.atCornerId = newAt;
+    if (prev) {
+      refreshMainMarker(prev);
+      document.getElementById("card-" + prev)?.classList.remove("at-here");
+    }
+    if (newAt) {
+      refreshMainMarker(newAt);
+      document.getElementById("card-" + newAt)?.classList.add("at-here");
+      checkCaptureCondition(newAt);
+      logEncounters(newAt);
+    }
+    broadcastPresence();
+  }
+  if (STATE.atCornerId) { setGeoStatus(`AM SPOT: ${nearest.name.toUpperCase()}`, "at-corner"); $("#me-position-meta").innerHTML = `<span style="color:var(--green)">📍 ${escapeHtml(nearest.name)}</span>`; } else { const dStr = nDist < 1000 ? `${Math.round(nDist)} m` : `${(nDist / 1000).toFixed(1)} km`; setGeoStatus(`${dStr} bis ${nearest.name}`, "live"); $("#me-position-meta").innerHTML = `<span style="color:var(--blue)">📍 ${dStr} bis ${escapeHtml(nearest.name)}</span>`; }
+  updateCheckinButtons();
+  broadcastLiveLocation();
+}
+
+function saveNewSpot() {
+  const name = $("#f-name").value.trim();
+  const desc = $("#f-desc").value.trim();
+  const lat = parseFloat($("#f-lat").value);
+  const lng = parseFloat($("#f-lng").value);
+  if (!name) { toast("Name fehlt."); return; }
+  if (!desc) { toast("Beschreibung fehlt."); return; }
+  if (isNaN(lat) || isNaN(lng)) { toast("Koordinaten fehlen."); return; }
+  const spot = { id: "custom-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7), name, area: $("#f-area").value.trim() || "Eigener Spot", lat, lng, description: desc, tags: $("#f-tags").value.split(",").map((s) => s.trim()).filter(Boolean), amenities: [], isCustom: true, createdBy: STATE.nickname || "Anonym", createdById: currentUserKey(), createdAt: Date.now() };
+  if (window.FB?.firebaseReady) { const { db, ref, set } = window.FB; set(ref(db, "corners/" + spot.id), spot); }
+  else { STATE.customSpots.push(spot); saveCustomSpots(); }
+  closeModal(); renderCards(); updateCounts(); rebuildMainMarkers(); toast(`Spot <strong>${escapeHtml(name)}</strong> hinzugefügt 🍻`); unlockAchievement("first-corner", "Entdecker", "🗺️", 30); addXp(50, `Corner hinzugefügt: ${name}`); if (STATE.customSpots.filter((s) => (s.createdById || s.createdBy) === currentUserKey()).length >= 3) unlockAchievement("three-corners", "Kartograph", "🧭", 50);
+}
+
+function openLightbox(src, author) { $("#lightbox-img").src = src; $("#lightbox-author").textContent = author ? `📸 von ${author}` : ""; $("#lightbox").classList.add("open"); addXp(2, "Lightbox"); }
+
+function listenPoints() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "points"), (snapshot) => { STATE.points = snapshot.val() || {}; ensurePointIdentity(); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); });
+}
+
+function renderPointsLeaderboard() {
+  const container = $("#leaderboard-points");
+  const sorted = Object.entries(STATE.points).map(([user, data]) => ({ user, total: data.total || 0, nickname: data.nickname || user })).filter((x) => x.total > 0).sort((a, b) => b.total - a.total).slice(0, 10);
+  if (!sorted.length) { container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Level-Ranking</h3><p style="color:var(--fg-dim);font-size:13px;">Noch keine XP gesammelt.</p></div>`; return; }
+  container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Level-Ranking</h3><ul class="leaderboard-list">${sorted.map((x, i) => { const level = getLevel(x.total).level; const tier = getLevelTier(level); const team = TEAMS[STATE.teams[x.user]?.team] || TEAMS[x.user === currentUserKey() ? STATE.team : ""]; return `<li class="leaderboard-item ${x.user === currentUserKey() ? 'current-user' : ''}"><span class="lb-rank">${i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</span><span class="lb-name">${team?.emoji || '👤'} ${escapeHtml(x.nickname)} ${x.user === currentUserKey() ? '(du)' : ''}</span><span class="lb-score">${tier.emoji} Lv.${level}</span></li>`; }).join("")}</ul></div>`;
+}
+
+function getAchievementCardsHtml() {
+  const items = [
+    { id: "first-login", name: "Willkommen", emoji: "👋", desc: "Account erstellt" },
+    { id: "first-checkin", name: "Erster Besuch", emoji: "📍", desc: "Erstes Check-in" },
+    { id: "first-corner", name: "Entdecker", emoji: "🗺️", desc: "Ersten Corner hinzugefügt" },
+    { id: "first-photo", name: "Fotograf", emoji: "📸", desc: "Erstes Foto hochgeladen" },
+    { id: "first-comment", name: "Kommentator", emoji: "💬", desc: "Erster Kommentar" },
+    { id: "five-checkins", name: "Stammgast", emoji: "🔥", desc: "5 Check-ins" },
+    { id: "ten-checkins", name: "Local Legend", emoji: "👑", desc: "10 Check-ins" },
+    { id: "three-corners", name: "Kartograph", emoji: "🧭", desc: "3 Corners hinzugefügt" }
+  ];
+  return items.map((a) => `<div class="achievement-card ${STATE.achievements.includes(a.id) ? 'unlocked' : 'locked'}"><div class="achievement-emoji">${a.emoji}</div><div class="achievement-name">${a.name}</div><div class="achievement-pts">${a.desc}</div></div>`).join("");
+}
+
+function renderAchievementsSection() {
+  $("#achievements-section").innerHTML = `<div class="leaderboard-section"><h3>🏆 Achievements</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 14px;">Schalte Achievements frei durch Aktivität!</p><div class="achievements-grid">${getAchievementCardsHtml()}</div></div>`;
+}
+
+function getTeamBattleRows() {
+  return TEAM_ORDER.map((teamId) => {
+    const held = Object.entries(STATE.captured).filter(([, capture]) => capture?.team === teamId);
+    const total = Math.max(held.length, Object.values(STATE.captureHistory).filter((entry) => entry.team === teamId).length);
+    return { teamId, total, held };
+  }).sort((a, b) => b.total - a.total || b.held.length - a.held.length);
+}
+
+function renderTeamBattleSection() {
+  const rows = getTeamBattleRows();
+  $("#team-battle-section").innerHTML = `<div class="team-battle-section"><h3>⚔️ Team Battles</h3>${rows.map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}<br><small>${row.held.length ? row.held.map(([cornerId]) => escapeHtml(getAllCorners().find((c) => c.id === cornerId)?.name || cornerId)).join(', ') : 'Noch keine gehaltenen Corner'}</small></span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.max(6, row.total * 16)}px;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>`;
+}
+
+function renderLeaderboard() {
+  renderPopularCorner();
+  renderTeamBattleSection();
+  renderVisitLeaderboard();
+  renderContributorsLeaderboard();
+  renderPointsLeaderboard();
+  renderAchievementsSection();
+}
+
+function renderProfile() {
+  const xp = getCurrentXp();
+  const { level, progress } = getLevel(xp);
+  const tier = getLevelTier(level);
+  const teamInfo = getTeamInfo(STATE.team);
+  const captureCount = Object.values(STATE.captureHistory).filter((entry) => entry.capturedBy?.includes(currentUserKey())).length;
+  const commentCount = Object.values(STATE.comments).reduce((sum, entry) => sum + Object.values(entry || {}).filter((comment) => comment.author === STATE.nickname).length, 0);
+  const totalCheckins = Object.values(STATE.visits).reduce((sum, entry) => sum + Object.values(entry || {}).filter((visit) => visit.user === STATE.nickname).length, 0);
+  const bestFriends = Object.entries(STATE.encounters).filter(([, entry]) => entry.users && Object.keys(entry.users).includes(currentUserKey())).map(([, entry]) => { const other = Object.entries(entry.users).find(([id]) => id !== currentUserKey()); return { id: other?.[0], name: other?.[1] || 'Anonym', count: entry.count || 0 }; }).sort((a, b) => b.count - a.count).slice(0, 8);
+  $("#profile-content").innerHTML = `
+    <div class="profile-header">
+      <div class="profile-avatar">${teamInfo?.emoji || '👤'}</div>
+      <h2 class="profile-name">${escapeHtml(STATE.nickname || 'Anonym')}</h2>
+      <div class="profile-level-info">${teamInfo ? teamInfo.emoji + ' ' + teamInfo.name + ' · ' : ''}${tier.emoji} Lv.${level} · ${tier.name}</div>
+      <div class="profile-progress"><div class="profile-progress-fill" style="width:${Math.round(progress * 100)}%"></div></div>
+    </div>
+    <div class="profile-stats">
+      <div class="profile-stat"><div class="stat-icon">📍</div><div class="stat-value">${STATE.visitedCorners.length}</div><div class="stat-label">Corners besucht</div></div>
+      <div class="profile-stat"><div class="stat-icon">🍻</div><div class="stat-value">${totalCheckins}</div><div class="stat-label">Check-ins total</div></div>
+      <div class="profile-stat"><div class="stat-icon">⚔️</div><div class="stat-value">${captureCount}</div><div class="stat-label">Captures dabei</div></div>
+      <div class="profile-stat"><div class="stat-icon">💬</div><div class="stat-value">${commentCount}</div><div class="stat-label">Kommentare</div></div>
+    </div>
+    <div class="team-history"><h3>🧬 Team History</h3><div class="team-history-grid">${TEAM_ORDER.map((teamId) => { const count = STATE.teamHistory.filter((entry) => entry.team === teamId).length; return `<div class="team-history-item"><div class="th-emoji">${TEAMS[teamId].emoji}</div><div class="th-count">${count}</div><div class="th-name">${TEAMS[teamId].name}</div></div>`; }).join("")}</div></div>
+    <div class="team-battle-section"><h3>🏆 Team Leaderboard</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.max(6, row.total * 16)}px;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
+    <div class="best-friends-section"><h3>🤝 Best Friends</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Begegnungen geloggt.</p>`}</div>
+    <div class="notification-toggle"><h3>🔔 Notifications</h3><div class="notif-options"><button class="notif-opt ${STATE.notifPref === 'all' ? 'active' : ''}" data-pref="all">All</button><button class="notif-opt ${STATE.notifPref === 'team' ? 'active' : ''}" data-pref="team">Team only</button><button class="notif-opt ${STATE.notifPref === 'off' ? 'active' : ''}" data-pref="off">Off</button></div></div>
+    <div class="leaderboard-section"><h3>🏆 Achievements</h3><div class="achievements-grid">${getAchievementCardsHtml()}</div></div>`;
+  $$(".notif-opt").forEach((btn) => btn.addEventListener("click", () => { STATE.notifPref = btn.dataset.pref; localStorage.setItem(NOTIF_STORAGE_KEY, STATE.notifPref); localStorage.setItem("cg.notifPref", STATE.notifPref); renderProfile(); }));
+}
+
+function bindTabs() {
+  $$(".tab").forEach((t) => {
+    t.addEventListener("click", () => {
+      const v = t.dataset.view;
+      STATE.view = v;
+      $$(".tab").forEach((x) => x.classList.toggle("active", x === t));
+      $$(".view").forEach((x) => x.classList.toggle("active", x.id === "view-" + v));
+      if (v === "map") { if (!STATE.mainMap) initMainMap(); setTimeout(() => STATE.mainMap?.invalidateSize(), 50); }
+      if (v === "leaderboard") renderLeaderboard();
+      if (v === "profile") renderProfile();
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  let lastClickXp = 0;
+  document.addEventListener("click", (e) => { if (e.isTrusted && Date.now() - lastClickXp > 10000) { lastClickXp = Date.now(); addXp(1, "Tap"); } }, { passive: true });
+  if (STATE.lastCheckinCorner && Date.now() - STATE.lastCheckinTime < COOLDOWN_MS) startCooldownDisplay();
+});
+
 let toastTimer = null;
 function toast(html, variant) {
   const el = $("#toast");
