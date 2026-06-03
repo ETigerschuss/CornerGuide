@@ -2280,25 +2280,7 @@ const CORNER_STATUSES = {
 
 const COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
 
-function getLevel(xp) {
-  // Each level requires level*100 XP cumulative
-  let level = 1;
-  let totalNeeded = 100;
-  while (xp >= totalNeeded) {
-    level++;
-    totalNeeded += level * 100;
-  }
-  const prevThreshold = totalNeeded - level * 100;
-  const progress = (xp - prevThreshold) / (level * 100);
-  return { level, progress: Math.min(1, Math.max(0, progress)) };
-}
-
-function getLevelTier(level) {
-  for (const tier of LEVEL_TIERS) {
-    if (level <= tier.maxLvl) return tier;
-  }
-  return LEVEL_TIERS[LEVEL_TIERS.length - 1];
-}
+// getLevel and getLevelTier defined in enhanced section below
 
 function loadTeamHistory() {
   try { return JSON.parse(localStorage.getItem("cg.teamHistory") || "{}"); }
@@ -4852,16 +4834,7 @@ function shouldNotify(friendInfo) {
 
 /* ====================== SUBTLE XP / GAMIFICATION ====================== */
 function bindGlobalXp() {
-  // Award 1 XP for general clicks (throttled)
-  let lastXpClick = 0;
-  document.addEventListener("click", () => {
-    const now = Date.now();
-    if (now - lastXpClick > 10000 && STATE.nickname) { // Max once per 10s
-      lastXpClick = now;
-      addPoints(STATE.nickname, 1, "Interaktion");
-      updateNicknameBar();
-    }
-  });
+  // Handled by the global click listener in the final feature overrides.
 }
 
 /* ====================== TOAST ====================== */
@@ -5149,6 +5122,7 @@ function initFirebase() {
     loadLocalComments();
     loadLocalBarometer();
     STATE.emojiVotes = loadLocalEmojiVotes();
+    STATE.visits = loadLocalVisits();
     updateNicknameBar();
     return;
   }
@@ -5646,7 +5620,21 @@ function onGeoUpdate(pos) {
   let nearest = null, nDist = Infinity;
   getAllCorners().forEach((c) => { const d = haversine(latitude, longitude, c.lat, c.lng); if (d < nDist) { nDist = d; nearest = c; } });
   const newAt = nDist <= STATE.PROXIMITY_M ? nearest.id : null;
-  if (newAt !== STATE.atCornerId) { const prev = STATE.atCornerId; STATE.atCornerId = newAt; if (prev) { refreshMainMarker(prev); document.getElementById("card-" + prev)?.classList.remove("at-here"); } if (newAt) { refreshMainMarker(newAt); document.getElementById("card-" + newAt)?.classList.add("at-here"); } broadcastPresence(); }
+  if (newAt !== STATE.atCornerId) {
+    const prev = STATE.atCornerId;
+    STATE.atCornerId = newAt;
+    if (prev) {
+      refreshMainMarker(prev);
+      document.getElementById("card-" + prev)?.classList.remove("at-here");
+    }
+    if (newAt) {
+      refreshMainMarker(newAt);
+      document.getElementById("card-" + newAt)?.classList.add("at-here");
+      checkCaptureCondition(newAt);
+      logEncounters(newAt);
+    }
+    broadcastPresence();
+  }
   if (STATE.atCornerId) { setGeoStatus(`AM SPOT: ${nearest.name.toUpperCase()}`, "at-corner"); $("#me-position-meta").innerHTML = `<span style="color:var(--green)">📍 ${escapeHtml(nearest.name)}</span>`; } else { const dStr = nDist < 1000 ? `${Math.round(nDist)} m` : `${(nDist / 1000).toFixed(1)} km`; setGeoStatus(`${dStr} bis ${nearest.name}`, "live"); $("#me-position-meta").innerHTML = `<span style="color:var(--blue)">📍 ${dStr} bis ${escapeHtml(nearest.name)}</span>`; }
   updateCheckinButtons();
   broadcastLiveLocation();
@@ -5766,7 +5754,8 @@ function bindTabs() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.addEventListener("click", (e) => { if (e.isTrusted) addXp(1, "Tap"); }, { passive: true });
+  let lastClickXp = 0;
+  document.addEventListener("click", (e) => { if (e.isTrusted && Date.now() - lastClickXp > 10000) { lastClickXp = Date.now(); addXp(1, "Tap"); } }, { passive: true });
   if (STATE.lastCheckinCorner && Date.now() - STATE.lastCheckinTime < COOLDOWN_MS) startCooldownDisplay();
 });
 
