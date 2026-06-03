@@ -1312,6 +1312,517 @@ input, textarea { cursor: text; }
 }
 .firebase-status.online { color: var(--green); }
 .firebase-status.offline { color: var(--pink); }
+
+/* ====================== LEADERBOARD TAB ====================== */
+#view-leaderboard {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px calc(120px + var(--safe-bottom));
+}
+.leaderboard-section {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+.leaderboard-section h3 {
+  font-family: "Anton", sans-serif;
+  font-weight: 400;
+  font-size: 22px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.leaderboard-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+}
+.leaderboard-item.gold { border-color: var(--amber); background: rgba(232,169,62,0.08); }
+.leaderboard-item.silver { border-color: #aaa; }
+.leaderboard-item.bronze { border-color: #cd7f32; }
+.lb-rank {
+  font-family: "Anton", sans-serif;
+  font-size: 22px;
+  color: var(--amber);
+  min-width: 32px;
+  text-align: center;
+}
+.lb-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 15px;
+}
+.lb-score {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  color: var(--amber);
+  font-weight: 700;
+}
+.lb-badge {
+  font-size: 18px;
+}
+.popular-corner {
+  background: var(--bg-2);
+  border: 2px solid var(--amber);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 18px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.popular-corner::before {
+  content: "👑";
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 50px;
+  opacity: 0.15;
+}
+.popular-corner h3 {
+  font-family: "Anton", sans-serif;
+  font-size: 20px;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+  color: var(--amber);
+}
+.popular-corner .popular-name {
+  font-family: "Anton", sans-serif;
+  font-size: 32px;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+}
+.popular-corner .popular-visits {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--fg-dim);
+  letter-spacing: 1.5px;
+}
+
+/* ====================== ACHIEVEMENTS ====================== */
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+.achievement-card {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.achievement-card.unlocked {
+  border-color: var(--amber);
+  background: rgba(232,169,62,0.06);
+}
+.achievement-card.locked { opacity: 0.4; filter: grayscale(0.8); }
+.achievement-emoji { font-size: 28px; margin-bottom: 6px; }
+.achievement-name {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin-top: 4px;
+}
+.achievement-pts {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  color: var(--amber);
+  margin-top: 2px;
+}
+
+/* ====================== CORNER DETAIL PAGE ====================== */
+.detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: var(--bg);
+  overflow-y: auto;
+  display: none;
+  animation: fade 0.2s;
+}
+.detail-overlay.open { display: block; }
+.detail-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.detail-back {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+.detail-back:hover { border-color: var(--amber); }
+.detail-title {
+  font-family: "Anton", sans-serif;
+  font-size: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.detail-content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px 100px;
+}
+.detail-hero-photo {
+  width: 100%;
+  height: 260px;
+  background: linear-gradient(135deg, #1a1a1a, #252525);
+  overflow: hidden;
+  position: relative;
+}
+.detail-hero-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.detail-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 18px;
+}
+.detail-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.detail-stat .stat-num {
+  font-family: "Anton", sans-serif;
+  font-size: 24px;
+  color: var(--amber);
+}
+.detail-stat .stat-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.detail-people-here {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(184,255,58,0.1);
+  border: 1px solid var(--green);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--green);
+  margin-bottom: 14px;
+}
+
+/* ====================== LIGHTBOX ====================== */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  background: rgba(0,0,0,0.95);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  animation: fade 0.2s;
+}
+.lightbox.open { display: flex; }
+.lightbox img {
+  max-width: 95vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.lightbox-controls {
+  display: flex;
+  gap: 12px;
+}
+.lightbox-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+}
+.lightbox-btn:hover { background: var(--amber); color: #111; border-color: var(--amber); }
+.lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 20px;
+  display: grid;
+  place-items: center;
+}
+.lightbox-close:hover { background: var(--pink); border-color: var(--pink); }
+.lightbox-author {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 1px;
+}
+
+/* ====================== COLLAPSIBLE COMMENTS ====================== */
+.comments-collapsed .comment-list {
+  max-height: 120px;
+  overflow: hidden;
+  position: relative;
+}
+.comments-collapsed .comment-list::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(transparent, var(--bg-2));
+  pointer-events: none;
+}
+.comments-toggle {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--amber);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 999px;
+  margin-top: 8px;
+  cursor: pointer;
+}
+.comments-toggle:hover { border-color: var(--amber); }
+
+/* ====================== CHANGE NICKNAME ====================== */
+.nickname-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.nickname-bar .nick-label { color: var(--fg-dim); letter-spacing: 1px; text-transform: uppercase; }
+.nickname-bar .nick-name { color: var(--amber); font-weight: 700; }
+.nickname-bar .nick-change {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--fg-dim);
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  margin-left: auto;
+}
+.nickname-bar .nick-change:hover { border-color: var(--amber); color: var(--amber); }
+.nickname-bar .nick-pts {
+  color: var(--green);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* ====================== FIRST CHECK-IN PROMPT ====================== */
+.checkin-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  animation: fade 0.2s;
+}
+.checkin-prompt.open { display: flex; }
+.checkin-prompt-card {
+  background: var(--bg-2);
+  border: 2px solid var(--green);
+  border-radius: 16px;
+  padding: 24px 20px;
+  max-width: 400px;
+  width: calc(100vw - 40px);
+}
+.checkin-prompt-card h2 {
+  font-family: "Anton", sans-serif;
+  font-size: 24px;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+  color: var(--green);
+}
+.checkin-prompt-card p {
+  color: var(--fg-dim);
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+.checkin-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.checkin-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.checkin-option label {
+  flex: 1;
+  font-size: 13px;
+}
+.checkin-option select, .checkin-option input[type="range"] {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.checkin-highlights {
+  width: 100%;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  resize: none;
+  min-height: 60px;
+  margin-bottom: 14px;
+}
+.checkin-highlights:focus { outline: none; border-color: var(--green); }
+.checkin-prompt-actions {
+  display: flex;
+  gap: 10px;
+}
+.checkin-prompt-actions button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+}
+.checkin-prompt-actions .btn-submit {
+  background: var(--green);
+  color: #111;
+}
+.checkin-prompt-actions .btn-skip {
+  background: var(--bg-3);
+  color: var(--fg-dim);
+  border: 1px solid var(--line);
+}
+
+/* ====================== CARD SHORT MODE ====================== */
+.card .card-desc.short-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card .detail-link {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--amber);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  margin-top: 8px;
+  display: inline-block;
+}
+.card .detail-link:hover { border-color: var(--amber); background: rgba(232,169,62,0.08); }
+
+/* ====================== VISIT RANK BADGE ====================== */
+.card-visit-rank {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(232,169,62,0.9);
+  color: #111;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 999px;
+  letter-spacing: 1px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.card.at-here .card-visit-rank { display: none; }
+
+/* ====================== MISC UTILITY CLASSES ====================== */
+.creator-label { color: var(--bayern); font-size: 9px; }
+.leaderboard-item.current-user { border-color: var(--bayern); }
+.feedback-box {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.feedback-title {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin: 0 0 8px;
+}
+.feedback-tags { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.feedback-highlights { margin-top: 8px; }
+.feedback-highlights-title { font-size: 12px; color: var(--fg-dim); margin: 0 0 4px; }
+.feedback-quote { font-size: 13px; color: var(--fg); margin: 2px 0; font-style: italic; }
 </style>
 </head>
 <body>
@@ -1338,6 +1849,7 @@ input, textarea { cursor: text; }
     <nav class="tabs" role="tablist">
       <button class="tab active" data-view="list">Liste</button>
       <button class="tab" data-view="map">Karte</button>
+      <button class="tab" data-view="leaderboard">🏆 Ranking</button>
     </nav>
   </div>
 </header>
@@ -1346,6 +1858,14 @@ input, textarea { cursor: text; }
 <main>
   <!-- Firebase connection status -->
   <div id="fb-status" class="firebase-status" style="display:none;"></div>
+
+  <!-- Nickname bar with change option -->
+  <div id="nickname-bar" class="nickname-bar" style="display:none;">
+    <span class="nick-label">👤</span>
+    <span class="nick-name" id="nick-display"></span>
+    <span class="nick-pts" id="nick-pts"></span>
+    <button class="nick-change" id="nick-change-btn">✏️ Ändern</button>
+  </div>
 
   <!-- Friends presence bar -->
   <div id="friends-bar" class="friends-bar">
@@ -1371,12 +1891,20 @@ input, textarea { cursor: text; }
     </div>
     <div class="map-shell"><div id="main-map"></div></div>
   </section>
+
+  <section id="view-leaderboard" class="view">
+    <div id="popular-corner-section"></div>
+    <div id="leaderboard-visits"></div>
+    <div id="leaderboard-contributors"></div>
+    <div id="leaderboard-points"></div>
+    <div id="achievements-section"></div>
+  </section>
 </main>
 
 <footer class="foot">
   Basiert auf der Maps-Liste <strong>Cornern als Lebensstil 🙌🍻</strong> von Florencia Porta<br>
   Gegründet vom Gossips Stammtisch: <strong>F · G · A · ÉT</strong><br>
-  Repo: CornerGuide · Alpha v0.5 · Echtzeit-Features powered by Firebase
+  Repo: CornerGuide · Alpha v0.6 · Echtzeit-Features powered by Firebase · 🏆 Gamification aktiv
 </footer>
 
 <!-- ============ FAB ============ -->
@@ -1436,6 +1964,70 @@ input, textarea { cursor: text; }
 </div>
 
 <div id="toast" class="toast" hidden></div>
+
+<!-- Corner Detail Overlay -->
+<div id="detail-overlay" class="detail-overlay">
+  <div class="detail-header">
+    <button class="detail-back" id="detail-back">←</button>
+    <span class="detail-title" id="detail-title"></span>
+  </div>
+  <div class="detail-content" id="detail-content"></div>
+</div>
+
+<!-- Photo Lightbox -->
+<div id="lightbox" class="lightbox">
+  <button class="lightbox-close" id="lightbox-close">✕</button>
+  <img id="lightbox-img" src="" alt="Foto" />
+  <span class="lightbox-author" id="lightbox-author"></span>
+  <div class="lightbox-controls">
+    <button class="lightbox-btn" id="lightbox-download">⬇️ Herunterladen</button>
+    <button class="lightbox-btn" id="lightbox-close-btn">Schließen</button>
+  </div>
+</div>
+
+<!-- First Check-in Experience Prompt -->
+<div id="checkin-prompt" class="checkin-prompt">
+  <div class="checkin-prompt-card">
+    <h2>🎉 Erster Besuch!</h2>
+    <p>Wie war deine Erfahrung? Bewerte den Corner und beschreib deine Highlights!</p>
+    <div class="checkin-options">
+      <div class="checkin-option">
+        <span>🏪</span>
+        <label>Kiosk in der Nähe?</label>
+        <select id="checkin-kiosk">
+          <option value="">—</option>
+          <option value="ja">Ja</option>
+          <option value="nein">Nein</option>
+        </select>
+      </div>
+      <div class="checkin-option">
+        <span>🌿</span>
+        <label>Grün / Natur?</label>
+        <select id="checkin-green">
+          <option value="">—</option>
+          <option value="sehr">Sehr grün</option>
+          <option value="etwas">Etwas</option>
+          <option value="nein">Eher urban</option>
+        </select>
+      </div>
+      <div class="checkin-option">
+        <span>🚶</span>
+        <label>Wie viel los?</label>
+        <select id="checkin-busy">
+          <option value="">—</option>
+          <option value="ruhig">Ruhig</option>
+          <option value="normal">Normal</option>
+          <option value="viel">Sehr viel los</option>
+        </select>
+      </div>
+    </div>
+    <textarea id="checkin-highlights" class="checkin-highlights" placeholder="Deine Highlights... Was macht diesen Corner aus?"></textarea>
+    <div class="checkin-prompt-actions">
+      <button class="btn-skip" id="checkin-skip">Überspringen</button>
+      <button class="btn-submit" id="checkin-submit">✓ Speichern</button>
+    </div>
+  </div>
+</div>
 
 <!-- Nickname prompt (shown on first visit) -->
 <div id="nickname-prompt" class="nickname-prompt" style="display:none;">
@@ -1591,7 +2183,11 @@ const STATE = {
   barometer: {},
   visits: {},
   emojiVotes: {},
-  photos: {}
+  photos: {},
+  achievements: loadAchievements(),
+  points: loadPoints(),
+  visitedCorners: loadVisitedCorners(),
+  checkinFeedback: loadCheckinFeedback()
 };
 
 function getAllCorners() {
@@ -1614,6 +2210,64 @@ function saveCustomSpots() {
   localStorage.setItem("cg.custom-spots", JSON.stringify(STATE.customSpots));
 }
 
+function loadAchievements() {
+  try { return JSON.parse(localStorage.getItem("cg.achievements") || "[]"); }
+  catch (e) { return []; }
+}
+function saveAchievements() {
+  localStorage.setItem("cg.achievements", JSON.stringify(STATE.achievements));
+}
+
+function loadPoints() {
+  try { return JSON.parse(localStorage.getItem("cg.points") || "{}"); }
+  catch (e) { return {}; }
+}
+function savePoints() {
+  localStorage.setItem("cg.points", JSON.stringify(STATE.points));
+}
+
+function loadVisitedCorners() {
+  try { return JSON.parse(localStorage.getItem("cg.visitedCorners") || "[]"); }
+  catch (e) { return []; }
+}
+function saveVisitedCorners() {
+  localStorage.setItem("cg.visitedCorners", JSON.stringify(STATE.visitedCorners));
+}
+
+function loadCheckinFeedback() {
+  try { return JSON.parse(localStorage.getItem("cg.checkinFeedback") || "{}"); }
+  catch (e) { return {}; }
+}
+function saveCheckinFeedback() {
+  localStorage.setItem("cg.checkinFeedback", JSON.stringify(STATE.checkinFeedback));
+}
+
+function addPoints(user, pts, reason) {
+  if (!user) return;
+  if (!STATE.points[user]) STATE.points[user] = { total: 0, history: [] };
+  STATE.points[user].total += pts;
+  STATE.points[user].history.push({ pts, reason, time: Date.now() });
+  savePoints();
+
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set } = window.FB;
+    set(ref(db, "points/" + user), STATE.points[user]);
+  }
+}
+
+function unlockAchievement(id, name, emoji, pts) {
+  if (STATE.achievements.includes(id)) return;
+  STATE.achievements.push(id);
+  saveAchievements();
+  addPoints(STATE.nickname, pts, name);
+  toast(`🏆 Achievement freigeschaltet: ${emoji} <strong>${name}</strong> (+${pts} Punkte)`);
+
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set } = window.FB;
+    set(ref(db, "achievements/" + STATE.nickname + "/" + id), { name, emoji, time: Date.now() });
+  }
+}
+
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
@@ -1624,6 +2278,10 @@ document.addEventListener("DOMContentLoaded", () => {
   bindTabs();
   bindGeo();
   bindModal();
+  bindDetailOverlay();
+  bindLightbox();
+  bindCheckinPrompt();
+  bindNicknameBar();
   updateCounts();
   initFirebase();
 });
@@ -1647,6 +2305,36 @@ function saveNickname() {
   $("#nickname-prompt").style.display = "none";
   toast(`Willkommen, <strong>${escapeHtml(name)}</strong>! 🍻`);
   broadcastPresence();
+  updateNicknameBar();
+  // Achievement: first login
+  unlockAchievement("first-login", "Willkommen!", "👋", 10);
+}
+
+function bindNicknameBar() {
+  updateNicknameBar();
+  $("#nick-change-btn").addEventListener("click", () => {
+    const newName = prompt("Neuer Nickname:", STATE.nickname);
+    if (newName && newName.trim()) {
+      const old = STATE.nickname;
+      STATE.nickname = newName.trim();
+      localStorage.setItem("cg.nickname", STATE.nickname);
+      toast(`Nickname geändert: <strong>${escapeHtml(STATE.nickname)}</strong>`);
+      broadcastPresence();
+      updateNicknameBar();
+    }
+  });
+}
+
+function updateNicknameBar() {
+  const bar = $("#nickname-bar");
+  if (STATE.nickname) {
+    bar.style.display = "flex";
+    $("#nick-display").textContent = STATE.nickname;
+    const myPts = STATE.points[STATE.nickname]?.total || 0;
+    $("#nick-pts").textContent = myPts > 0 ? `⭐ ${myPts} Pts` : "";
+  } else {
+    bar.style.display = "none";
+  }
 }
 
 /* ====================== FIREBASE REALTIME ====================== */
@@ -1682,6 +2370,8 @@ function initFirebase() {
   listenEmojiVotes();
   // Listen for photos
   listenPhotos();
+  // Listen for points
+  listenPoints();
   // Broadcast own presence
   broadcastPresence();
 }
@@ -1787,6 +2477,18 @@ function refreshAllPhotoGalleries() {
   });
 }
 
+/* ====================== POINTS (Firebase) ====================== */
+function listenPoints() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  const ptsRef = ref(db, "points");
+  onValue(ptsRef, (snapshot) => {
+    STATE.points = snapshot.val() || {};
+    updateNicknameBar();
+    if (STATE.view === "leaderboard") renderLeaderboard();
+  });
+}
+
 function renderPhotoGallery(cornerId, container) {
   let photos;
   if (window.FB?.firebaseReady) {
@@ -1814,9 +2516,9 @@ function renderPhotoGallery(cornerId, container) {
       ).join("");
 
       return `<div class="gallery-item">
-        <img src="${p.src}" alt="Foto" class="gallery-img" />
+        <img src="${p.src}" alt="Foto" class="gallery-img" data-author="${escapeHtml(p.author)}" style="cursor:pointer;" />
         <div class="gallery-meta">
-          <span class="gallery-author">${escapeHtml(p.author)}</span>
+          <span class="gallery-author">📸 ${escapeHtml(p.author)}</span>
           <span class="gallery-time">${timeAgo(p.time)}</span>
           ${p.caption ? `<span class="gallery-caption">${escapeHtml(p.caption)}</span>` : ""}
         </div>
@@ -1870,6 +2572,13 @@ function renderPhotoGallery(cornerId, container) {
     btn.addEventListener("click", () => {
       ratePhoto(btn.dataset.corner, btn.dataset.photo, parseInt(btn.dataset.score));
       toast("Foto bewertet ⭐");
+    });
+  });
+
+  // Bind lightbox on gallery images
+  container.querySelectorAll(".gallery-img").forEach((img) => {
+    img.addEventListener("click", () => {
+      openLightbox(img.src, img.dataset.author || "");
     });
   });
 }
@@ -2037,6 +2746,7 @@ function refreshAllCommentSections() {
 function renderCommentSection(cornerId, container) {
   const comments = STATE.comments[cornerId] || {};
   const commentEntries = Object.entries(comments).sort((a, b) => a[1].time - b[1].time);
+  const isCollapsed = commentEntries.length > 3;
 
   const listHtml = commentEntries.map(([key, c]) => {
     const isMine = c.author === STATE.nickname;
@@ -2073,13 +2783,32 @@ function renderCommentSection(cornerId, container) {
       <h3>💬 Kommentare</h3>
       ${commentEntries.length > 0 ? `<span class="comment-count">${commentEntries.length}</span>` : ""}
     </div>
-    <ul class="comment-list">${listHtml || '<li style="color:var(--fg-dim);font-size:13px;padding:8px 0;">Noch keine Kommentare — sei der Erste!</li>'}</ul>
+    <div class="${isCollapsed ? "comments-collapsed" : ""}">
+      <ul class="comment-list">${listHtml || '<li style="color:var(--fg-dim);font-size:13px;padding:8px 0;">Noch keine Kommentare — sei der Erste!</li>'}</ul>
+      ${isCollapsed ? `<button class="comments-toggle" data-corner="${cornerId}">▼ Alle ${commentEntries.length} anzeigen</button>` : ""}
+    </div>
     <div class="comment-form">
       <input type="text" class="comment-name-input" placeholder="Name" value="${escapeHtml(STATE.nickname)}" maxlength="20" aria-label="Dein Name" />
       <textarea class="comment-text-input" placeholder="Dein Kommentar..." maxlength="300" aria-label="Kommentar schreiben"></textarea>
       <button class="comment-submit" data-corner="${cornerId}">Senden</button>
     </div>
   `;
+
+  // Bind collapse toggle
+  const toggleBtn = container.querySelector(".comments-toggle");
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      const collapsedDiv = toggleBtn.previousElementSibling ? toggleBtn.closest(".comments-collapsed") || toggleBtn.parentElement : toggleBtn.parentElement;
+      const wrapper = toggleBtn.parentElement;
+      if (wrapper.classList.contains("comments-collapsed")) {
+        wrapper.classList.remove("comments-collapsed");
+        toggleBtn.textContent = "▲ Weniger anzeigen";
+      } else {
+        wrapper.classList.add("comments-collapsed");
+        toggleBtn.textContent = `▼ Alle ${commentEntries.length} anzeigen`;
+      }
+    });
+  }
 
   // Bind submit
   container.querySelector(".comment-submit").addEventListener("click", () => {
@@ -2088,6 +2817,10 @@ function renderCommentSection(cornerId, container) {
     addComment(cornerId, nameInput.value, textInput.value);
     textInput.value = "";
     toast("Kommentar gesendet 💬");
+    // Achievement
+    if (!STATE.achievements.includes("first-comment")) {
+      unlockAchievement("first-comment", "Kommentator", "💬", 10);
+    }
   });
 
   const textInput = container.querySelector(".comment-text-input");
@@ -2326,6 +3059,26 @@ function manualCheckin(cornerId) {
     toast(`Eingecheckt am <strong>${escapeHtml(corner?.name || "")}</strong> 🍻`, "at-corner");
     // Record visit in trail
     recordVisit(cornerId);
+
+    // Check if first time visiting this corner
+    const isFirstVisit = !STATE.visitedCorners.includes(cornerId);
+    if (isFirstVisit) {
+      STATE.visitedCorners.push(cornerId);
+      saveVisitedCorners();
+      // Show first check-in prompt after short delay
+      setTimeout(() => showCheckinPrompt(cornerId), 800);
+      // Award first check-in achievement
+      if (STATE.visitedCorners.length === 1) {
+        unlockAchievement("first-checkin", "Erster Besuch", "📍", 20);
+      }
+      // Points for visiting new corner
+      addPoints(STATE.nickname, 10, `Neuer Corner: ${corner.name}`);
+    }
+
+    // Check visit count achievements
+    const totalVisits = STATE.visitedCorners.length;
+    if (totalVisits >= 5) unlockAchievement("five-checkins", "Stammgast", "🔥", 50);
+    if (totalVisits >= 10) unlockAchievement("ten-checkins", "Local Legend", "👑", 100);
   }
 
   // Update all checkin buttons
@@ -2543,6 +3296,361 @@ function updateCounts() {
   $("#header-count").textContent = String(total);
 }
 
+/* ====================== DETAIL OVERLAY ====================== */
+function bindDetailOverlay() {
+  $("#detail-back").addEventListener("click", closeDetail);
+}
+
+function openDetail(cornerId) {
+  const c = getAllCorners().find((x) => x.id === cornerId);
+  if (!c) return;
+
+  const overlay = $("#detail-overlay");
+  $("#detail-title").textContent = c.name;
+
+  const photoSrc = localStorage.getItem("cg.photo." + c.id);
+  const effectiveDesc = getDescription(c);
+  const visits = getVisitCount(cornerId);
+  const { avg, count: baroCount } = getBarometerData(cornerId);
+  const peopleHere = getPeopleAtCorner(cornerId);
+
+  let peopleHtml = "";
+  if (peopleHere.length > 0) {
+    peopleHtml = `<div class="detail-people-here">🟢 ${peopleHere.length} ${peopleHere.length === 1 ? "Person" : "Personen"} gerade hier: ${peopleHere.map(n => escapeHtml(n)).join(", ")}</div>`;
+  }
+
+  const feedbackHtml = STATE.checkinFeedback[cornerId] ? renderFeedbackSummary(cornerId) : "";
+
+  $("#detail-content").innerHTML = `
+    <div class="detail-hero-photo">
+      ${photoSrc ? `<img src="${photoSrc}" alt="${escapeHtml(c.name)}" />` : `<div class="card-photo-empty" style="height:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg></div>`}
+    </div>
+    <div class="detail-stats">
+      <div class="detail-stat"><span class="stat-num">${visits}</span><span class="stat-label">Besuche</span></div>
+      <div class="detail-stat"><span class="stat-num">${baroCount > 0 ? avg.toFixed(1) : "—"}</span><span class="stat-label">Rating</span></div>
+      <div class="detail-stat"><span class="stat-num">${peopleHere.length}</span><span class="stat-label">Hier jetzt</span></div>
+      <div class="detail-stat"><span class="stat-num">${Object.keys(STATE.comments[cornerId] || {}).length}</span><span class="stat-label">Kommentare</span></div>
+    </div>
+    ${peopleHtml}
+    <p class="card-area" style="margin-top:14px;">${c.area || "—"}</p>
+    <h2 class="card-name" style="margin-bottom:14px;">${c.name}</h2>
+    ${effectiveDesc ? `<p class="card-desc">${escapeHtml(effectiveDesc)}</p>` : ""}
+    <ul class="card-tags" style="margin-bottom:14px;">${(c.tags || []).map((t) => `<li>#${escapeHtml(t)}</li>`).join("")}</ul>
+    ${feedbackHtml}
+    <div class="emoji-votes" data-corner-id="${c.id}"></div>
+    <div class="barometer-section" data-corner-id="${c.id}"></div>
+    <div class="photo-gallery" data-corner-id="${c.id}"></div>
+    <div class="visit-trail" data-corner-id="${c.id}"></div>
+    <div class="comments-section" data-corner-id="${c.id}"></div>
+    <div class="card-actions" style="padding:18px 0;">
+      <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier!" : "📍 Einchecken"}</button>
+      <button class="action-btn primary" data-action="map-detail" data-id="${c.id}">📍 Auf Karte</button>
+      <button class="action-btn" data-action="route-detail" data-id="${c.id}">🧭 Route</button>
+    </div>
+  `;
+
+  // Bind actions in detail view
+  const detailContent = $("#detail-content");
+  detailContent.querySelector(".checkin-btn")?.addEventListener("click", (e) => {
+    manualCheckin(e.target.closest("[data-id]").dataset.id);
+    setTimeout(() => openDetail(cornerId), 100);
+  });
+  detailContent.querySelector('[data-action="map-detail"]')?.addEventListener("click", () => {
+    closeDetail();
+    $(`.tab[data-view="map"]`).click();
+    setTimeout(() => {
+      if (STATE.mainMap) {
+        STATE.mainMap.flyTo([c.lat, c.lng], 17, { duration: 0.7 });
+      }
+    }, 250);
+  });
+  detailContent.querySelector('[data-action="route-detail"]')?.addEventListener("click", () => {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank");
+  });
+
+  // Render sub-sections
+  const emojiSection = detailContent.querySelector(".emoji-votes");
+  if (emojiSection) renderEmojiVotes(cornerId, emojiSection);
+  const baroSection = detailContent.querySelector(".barometer-section");
+  if (baroSection) renderBarometer(cornerId, baroSection);
+  const photoSection = detailContent.querySelector(".photo-gallery");
+  if (photoSection) renderPhotoGallery(cornerId, photoSection);
+  const visitSection = detailContent.querySelector(".visit-trail");
+  if (visitSection) renderVisitTrail(cornerId, visitSection);
+  const commentSection = detailContent.querySelector(".comments-section");
+  if (commentSection) renderCommentSection(cornerId, commentSection);
+
+  overlay.classList.add("open");
+}
+
+function closeDetail() {
+  $("#detail-overlay").classList.remove("open");
+}
+
+function getVisitCount(cornerId) {
+  if (window.FB?.firebaseReady) {
+    return Object.keys(STATE.visits?.[cornerId] || {}).length;
+  }
+  return (loadLocalVisits()[cornerId] || []).length;
+}
+
+function getPeopleAtCorner(cornerId) {
+  const people = [];
+  if (STATE.manualCheckinId === cornerId || STATE.atCornerId === cornerId) {
+    people.push(STATE.nickname || "Du");
+  }
+  Object.values(STATE.friends).forEach((f) => {
+    if (f.atCorner === cornerId) people.push(f.name);
+  });
+  return people;
+}
+
+function renderFeedbackSummary(cornerId) {
+  const feedback = STATE.checkinFeedback[cornerId];
+  if (!feedback || !Object.keys(feedback).length) return "";
+
+  const entries = Object.values(feedback);
+  const kioskYes = entries.filter(f => f.kiosk === "ja").length;
+  const greenVery = entries.filter(f => f.green === "sehr").length;
+  const busyHigh = entries.filter(f => f.busy === "viel").length;
+  const highlights = entries.filter(f => f.highlights).map(f => f.highlights);
+
+  let html = `<div class="feedback-box">
+    <p class="feedback-title">📋 Community-Feedback (${entries.length} Bewertungen)</p>
+    <div class="feedback-tags">
+      ${kioskYes > 0 ? `<span class="spot-icon"><span class="icon-emoji">🏪</span><span class="icon-label">Kiosk: ${kioskYes}x ja</span></span>` : ""}
+      ${greenVery > 0 ? `<span class="spot-icon"><span class="icon-emoji">🌿</span><span class="icon-label">Grün: ${greenVery}x sehr</span></span>` : ""}
+      ${busyHigh > 0 ? `<span class="spot-icon"><span class="icon-emoji">🚶</span><span class="icon-label">Belebt: ${busyHigh}x</span></span>` : ""}
+    </div>
+    ${highlights.length > 0 ? `<div class="feedback-highlights"><p class="feedback-highlights-title">💬 Highlights:</p>${highlights.slice(0, 3).map(h => `<p class="feedback-quote">"${escapeHtml(h)}"</p>`).join("")}</div>` : ""}
+  </div>`;
+  return html;
+}
+
+/* ====================== LIGHTBOX ====================== */
+function bindLightbox() {
+  $("#lightbox-close").addEventListener("click", closeLightbox);
+  $("#lightbox-close-btn").addEventListener("click", closeLightbox);
+  $("#lightbox-download").addEventListener("click", downloadLightboxPhoto);
+  $("#lightbox").addEventListener("click", (e) => { if (e.target.id === "lightbox") closeLightbox(); });
+}
+
+function openLightbox(src, author) {
+  $("#lightbox-img").src = src;
+  $("#lightbox-author").textContent = author ? `📸 von ${author}` : "";
+  $("#lightbox").classList.add("open");
+}
+
+function closeLightbox() {
+  $("#lightbox").classList.remove("open");
+}
+
+function downloadLightboxPhoto() {
+  const src = $("#lightbox-img").src;
+  if (!src) return;
+  const a = document.createElement("a");
+  a.href = src;
+  a.download = "corner-photo-" + Date.now() + ".jpg";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast("Foto wird heruntergeladen ⬇️");
+}
+
+/* ====================== FIRST CHECK-IN PROMPT ====================== */
+let pendingCheckinCorner = null;
+
+function bindCheckinPrompt() {
+  $("#checkin-skip").addEventListener("click", () => {
+    $("#checkin-prompt").classList.remove("open");
+    pendingCheckinCorner = null;
+  });
+  $("#checkin-submit").addEventListener("click", submitCheckinFeedback);
+}
+
+function showCheckinPrompt(cornerId) {
+  pendingCheckinCorner = cornerId;
+  $("#checkin-kiosk").value = "";
+  $("#checkin-green").value = "";
+  $("#checkin-busy").value = "";
+  $("#checkin-highlights").value = "";
+  $("#checkin-prompt").classList.add("open");
+}
+
+function submitCheckinFeedback() {
+  if (!pendingCheckinCorner) return;
+  const feedback = {
+    kiosk: $("#checkin-kiosk").value,
+    green: $("#checkin-green").value,
+    busy: $("#checkin-busy").value,
+    highlights: $("#checkin-highlights").value.trim(),
+    user: STATE.nickname || "Anonym",
+    time: Date.now()
+  };
+
+  if (!STATE.checkinFeedback[pendingCheckinCorner]) STATE.checkinFeedback[pendingCheckinCorner] = {};
+  const key = STATE.nickname + "-" + Date.now();
+  STATE.checkinFeedback[pendingCheckinCorner][key] = feedback;
+  saveCheckinFeedback();
+
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set } = window.FB;
+    set(ref(db, "checkinFeedback/" + pendingCheckinCorner + "/" + key), feedback);
+  }
+
+  $("#checkin-prompt").classList.remove("open");
+  toast("Danke für dein Feedback! 🙌 (+5 Punkte)");
+  addPoints(STATE.nickname, 5, "Check-in Feedback");
+  pendingCheckinCorner = null;
+}
+
+/* ====================== LEADERBOARD ====================== */
+function renderLeaderboard() {
+  renderPopularCorner();
+  renderVisitLeaderboard();
+  renderContributorsLeaderboard();
+  renderPointsLeaderboard();
+  renderAchievementsSection();
+}
+
+function renderPopularCorner() {
+  const container = $("#popular-corner-section");
+  const all = getAllCorners();
+  let maxVisits = 0;
+  let popular = null;
+
+  all.forEach((c) => {
+    const v = getVisitCount(c.id);
+    if (v > maxVisits) { maxVisits = v; popular = c; }
+  });
+
+  if (!popular || maxVisits === 0) {
+    container.innerHTML = `<div class="popular-corner"><h3>👑 Beliebtester Corner</h3><p style="color:var(--fg-dim);">Noch keine Besuche — checke als Erster ein!</p></div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="popular-corner">
+      <h3>👑 Beliebtester Corner</h3>
+      <p class="popular-name">${escapeHtml(popular.name)}</p>
+      <p class="popular-visits">🔥 ${maxVisits}x besucht · ${popular.area || "—"}</p>
+    </div>
+  `;
+}
+
+function renderVisitLeaderboard() {
+  const container = $("#leaderboard-visits");
+  const all = getAllCorners();
+  const cornerVisits = all.map((c) => ({
+    corner: c,
+    visits: getVisitCount(c.id)
+  })).filter(x => x.visits > 0).sort((a, b) => b.visits - a.visits).slice(0, 10);
+
+  if (cornerVisits.length === 0) {
+    container.innerHTML = `<div class="leaderboard-section"><h3>📊 Meistbesucht</h3><p style="color:var(--fg-dim);font-size:13px;">Noch keine Besuche.</p></div>`;
+    return;
+  }
+
+  const listHtml = cornerVisits.map((x, i) => {
+    const cls = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
+    const badge = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
+    return `<li class="leaderboard-item ${cls}">
+      <span class="lb-rank">${badge || (i + 1)}</span>
+      <span class="lb-name">${escapeHtml(x.corner.name)}</span>
+      <span class="lb-score">${x.visits}x</span>
+    </li>`;
+  }).join("");
+
+  container.innerHTML = `<div class="leaderboard-section"><h3>📊 Meistbesucht</h3><ul class="leaderboard-list">${listHtml}</ul></div>`;
+}
+
+function renderContributorsLeaderboard() {
+  const container = $("#leaderboard-contributors");
+  // Count corners added by each user
+  const contributors = {};
+  STATE.customSpots.forEach((s) => {
+    const user = s.createdBy || "Anonym";
+    contributors[user] = (contributors[user] || 0) + 1;
+  });
+
+  const sorted = Object.entries(contributors).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+  if (sorted.length === 0) {
+    container.innerHTML = `<div class="leaderboard-section"><h3>🗺️ Top Entdecker</h3><p style="color:var(--fg-dim);font-size:13px;">Noch niemand hat Corners hinzugefügt.</p></div>`;
+    return;
+  }
+
+  const listHtml = sorted.map(([user, count], i) => {
+    const cls = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
+    const badge = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
+    return `<li class="leaderboard-item ${cls}">
+      <span class="lb-rank">${badge || (i + 1)}</span>
+      <span class="lb-name">${escapeHtml(user)}</span>
+      <span class="lb-score">${count} Corner${count > 1 ? "s" : ""}</span>
+    </li>`;
+  }).join("");
+
+  container.innerHTML = `<div class="leaderboard-section"><h3>🗺️ Top Entdecker</h3><ul class="leaderboard-list">${listHtml}</ul></div>`;
+}
+
+function renderPointsLeaderboard() {
+  const container = $("#leaderboard-points");
+  const sorted = Object.entries(STATE.points)
+    .map(([user, data]) => ({ user, total: data.total || 0 }))
+    .filter(x => x.total > 0)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10);
+
+  if (sorted.length === 0) {
+    container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Punkte-Ranking</h3><p style="color:var(--fg-dim);font-size:13px;">Noch keine Punkte vergeben.</p></div>`;
+    return;
+  }
+
+  const listHtml = sorted.map((x, i) => {
+    const cls = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
+    const badge = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
+    const isMe = x.user === STATE.nickname;
+    return `<li class="leaderboard-item ${cls} ${isMe ? "current-user" : ""}">
+      <span class="lb-rank">${badge || (i + 1)}</span>
+      <span class="lb-name">${escapeHtml(x.user)} ${isMe ? "(du)" : ""}</span>
+      <span class="lb-score">${x.total} Pts</span>
+    </li>`;
+  }).join("");
+
+  container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Punkte-Ranking</h3><ul class="leaderboard-list">${listHtml}</ul></div>`;
+}
+
+function renderAchievementsSection() {
+  const container = $("#achievements-section");
+  const allAchievements = [
+    { id: "first-login", name: "Willkommen", emoji: "👋", pts: 10, desc: "Account erstellt" },
+    { id: "first-checkin", name: "Erster Besuch", emoji: "📍", pts: 20, desc: "Erstes Check-in" },
+    { id: "first-corner", name: "Entdecker", emoji: "🗺️", pts: 30, desc: "Ersten Corner hinzugefügt" },
+    { id: "first-photo", name: "Fotograf", emoji: "📸", pts: 15, desc: "Erstes Foto hochgeladen" },
+    { id: "first-comment", name: "Kommentator", emoji: "💬", pts: 10, desc: "Erster Kommentar" },
+    { id: "five-checkins", name: "Stammgast", emoji: "🔥", pts: 50, desc: "5 Check-ins" },
+    { id: "ten-checkins", name: "Local Legend", emoji: "👑", pts: 100, desc: "10 Check-ins" },
+    { id: "three-corners", name: "Kartograph", emoji: "🧭", pts: 50, desc: "3 Corners hinzugefügt" },
+    { id: "friend-referral", name: "Networker", emoji: "🤝", pts: 25, desc: "Freund eingeladen" },
+    { id: "five-ratings", name: "Kritiker", emoji: "⭐", pts: 20, desc: "5 Bewertungen abgegeben" },
+  ];
+
+  const cardsHtml = allAchievements.map((a) => {
+    const unlocked = STATE.achievements.includes(a.id);
+    return `<div class="achievement-card ${unlocked ? "unlocked" : "locked"}">
+      <div class="achievement-emoji">${a.emoji}</div>
+      <div class="achievement-name">${a.name}</div>
+      <div class="achievement-pts">+${a.pts} Pts</div>
+    </div>`;
+  }).join("");
+
+  container.innerHTML = `<div class="leaderboard-section">
+    <h3>🏆 Achievements</h3>
+    <p style="font-size:12px;color:var(--fg-dim);margin:0 0 14px;">Schalte Achievements frei durch Aktivität!</p>
+    <div class="achievements-grid">${cardsHtml}</div>
+  </div>`;
+}
+
 /* ====================== TABS ====================== */
 function bindTabs() {
   $$(".tab").forEach((t) => {
@@ -2555,6 +3663,9 @@ function bindTabs() {
         if (!STATE.mainMap) initMainMap();
         setTimeout(() => STATE.mainMap?.invalidateSize(), 50);
       }
+      if (v === "leaderboard") {
+        renderLeaderboard();
+      }
     });
   });
 }
@@ -2563,7 +3674,11 @@ function bindTabs() {
 function renderCards() {
   const root = $("#cards");
   root.innerHTML = "";
-  const all = getAllCorners();
+  let all = getAllCorners();
+
+  // Sort corners by visit count (most visited first)
+  all = all.map((c) => ({ ...c, _visits: getVisitCount(c.id) }));
+  all.sort((a, b) => b._visits - a._visits);
 
   all.forEach((c, i) => {
     const isCustom = !!c.isCustom;
@@ -2574,14 +3689,18 @@ function renderCards() {
 
     const effectiveDesc = getDescription(c);
     const hasDesc = !!effectiveDesc;
-    const isEdited = !isCustom && localStorage.getItem("cg.desc." + c.id) !== null;
 
+    // Short description for list view (max 2 lines)
     const descBlock = hasDesc
-      ? `<p class="card-desc">${escapeHtml(effectiveDesc)}${isEdited ? '<span class="edited-tag">bearbeitet</span>' : ""}</p>`
-      : `<button class="desc-add-cta" data-action="edit-desc" data-id="${c.id}"><span>✏️</span> Beschreibung hinzufügen</button>`;
+      ? `<p class="card-desc short-desc">${escapeHtml(effectiveDesc)}</p>`
+      : "";
 
     // Check-in button state
     const isCheckedIn = STATE.manualCheckinId === c.id;
+
+    // People here count
+    const peopleHere = getPeopleAtCorner(c.id);
+    const visitCount = c._visits || 0;
 
     const card = document.createElement("article");
     card.className = "card" + (isCustom ? " custom" : "") + (isCheckedIn ? " at-here" : "");
@@ -2593,32 +3712,23 @@ function renderCards() {
         <div class="card-num">${String(i + 1).padStart(2, "0")}</div>
         <span class="mine-badge">Mein Spot</span>
         <span class="at-badge">Du bist hier</span>
+        ${visitCount > 0 ? `<span class="card-visit-rank">🔥 ${visitCount}</span>` : ""}
         ${photoEl}
         <input type="file" accept="image/*" class="photo-input" data-id="${c.id}">
         <button class="photo-btn" data-id="${c.id}">📷 ${photoSrc ? "Ändern" : "Hinzufügen"}</button>
       </div>
       <div class="card-body">
-        <p class="card-area">${c.area || "—"}</p>
+        <p class="card-area">${c.area || "—"} ${isCustom && c.createdBy ? `<span class="creator-label"> · von ${escapeHtml(c.createdBy)}</span>` : ""}</p>
         <h2 class="card-name">${c.name}</h2>
-        <div class="emoji-votes" data-corner-id="${c.id}"></div>
-        <div class="desc-container" id="desc-container-${c.id}">${descBlock}</div>
-        <ul class="card-tags">${(c.tags || []).map((t) => `<li>#${escapeHtml(t)}</li>`).join("")}</ul>
-      </div>
-      <div class="barometer-section" data-corner-id="${c.id}"></div>
-      <div class="minimap-wrap">
-        <div class="minimap" data-lat="${c.lat}" data-lng="${c.lng}" data-id="${c.id}" data-custom="${isCustom}"></div>
-        <span class="minimap-label">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span>
+        ${peopleHere.length > 0 ? `<div class="detail-people-here">🟢 ${peopleHere.length} hier: ${peopleHere.map(n => escapeHtml(n)).join(", ")}</div>` : ""}
+        ${descBlock}
+        <button class="detail-link" data-id="${c.id}">Mehr Details →</button>
       </div>
       <div class="card-actions">
         <button class="checkin-btn ${isCheckedIn ? "checked-in" : ""}" data-id="${c.id}">${isCheckedIn ? "✅ Ich bin hier!" : "📍 Einchecken"}</button>
-        <button class="action-btn primary" data-action="map" data-id="${c.id}">📍 Auf Karte</button>
+        <button class="action-btn primary" data-action="map" data-id="${c.id}">📍 Karte</button>
         <button class="action-btn" data-action="route" data-id="${c.id}">🧭 Route</button>
-        ${hasDesc ? `<button class="action-btn" data-action="edit-desc" data-id="${c.id}">✏️ Bearbeiten</button>` : ""}
-        ${isCustom ? `<button class="action-btn danger" data-action="delete" data-id="${c.id}">🗑 Löschen</button>` : ""}
       </div>
-      <div class="photo-gallery" data-corner-id="${c.id}"></div>
-      <div class="visit-trail" data-corner-id="${c.id}"></div>
-      <div class="comments-section" data-corner-id="${c.id}"></div>
     `;
     root.appendChild(card);
   });
@@ -2629,6 +3739,9 @@ function renderCards() {
     const f = e.target.files?.[0];
     if (f) handlePhotoUpload(f, inp.dataset.id);
   }));
+
+  // Detail link
+  $$(".detail-link").forEach((btn) => btn.addEventListener("click", () => openDetail(btn.dataset.id)));
 
   // Action buttons
   $$('[data-action="map"]').forEach((btn) => btn.addEventListener("click", () => {
@@ -2645,47 +3758,11 @@ function renderCards() {
     const c = getAllCorners().find((x) => x.id === btn.dataset.id);
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank");
   }));
-  $$('[data-action="delete"]').forEach((btn) => btn.addEventListener("click", () => {
-    if (confirm("Wirklich löschen?")) deleteCustomSpot(btn.dataset.id);
-  }));
-
-  $$('[data-action="edit-desc"]').forEach((btn) => btn.addEventListener("click", () => startEditDescription(btn.dataset.id)));
 
   // Bind check-in buttons
   $$(".checkin-btn").forEach((btn) => btn.addEventListener("click", () => manualCheckin(btn.dataset.id)));
 
-  // Lazy-init minimaps
-  initMinimaps();
-
-  // Render comment sections
-  $$(".comments-section").forEach((section) => {
-    renderCommentSection(section.dataset.cornerId, section);
-  });
-
-  // Render barometer sections
-  $$(".barometer-section").forEach((section) => {
-    renderBarometer(section.dataset.cornerId, section);
-  });
-
-  // Render emoji vote sections
-  $$(".emoji-votes").forEach((section) => {
-    renderEmojiVotes(section.dataset.cornerId, section);
-  });
-
-  // Render visit trails
-  $$(".visit-trail").forEach((section) => {
-    renderVisitTrail(section.dataset.cornerId, section);
-  });
-
-  // Render photo galleries
-  $$(".photo-gallery").forEach((section) => {
-    renderPhotoGallery(section.dataset.cornerId, section);
-  });
-
-  // Load local barometer if offline
-  if (!window.FB?.firebaseReady) {
-    loadLocalBarometer();
-  }
+  // Lazy-init minimaps (removed from cards for cleaner view — in detail page now)
 }
 
 function escapeHtml(s) {
@@ -2834,6 +3911,8 @@ function handlePhotoUpload(file, cornerId) {
         savePhoto(cornerId, dataUrl, "");
         renderCards();
         toast("Foto gespeichert 📸");
+        // Achievement
+        unlockAchievement("first-photo", "Fotograf", "📸", 15);
       } catch (err) { toast("Speicher voll. Lösch ein altes Foto."); }
     };
     img.src = e.target.result;
@@ -3080,6 +4159,12 @@ function saveNewSpot() {
   updateCounts();
   rebuildMainMarkers();
   toast(`Spot <strong>${escapeHtml(name)}</strong> hinzugefügt 🍻`);
+
+  // Achievements for adding corners
+  unlockAchievement("first-corner", "Entdecker", "🗺️", 30);
+  addPoints(STATE.nickname, 15, `Corner hinzugefügt: ${name}`);
+  const myCorners = STATE.customSpots.filter(s => s.createdBy === STATE.nickname).length;
+  if (myCorners >= 3) unlockAchievement("three-corners", "Kartograph", "🧭", 50);
 }
 
 function deleteCustomSpot(id) {
