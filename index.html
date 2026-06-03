@@ -1800,6 +1800,29 @@ input, textarea { cursor: text; }
   gap: 4px;
 }
 .card.at-here .card-visit-rank { display: none; }
+
+/* ====================== MISC UTILITY CLASSES ====================== */
+.creator-label { color: var(--bayern); font-size: 9px; }
+.leaderboard-item.current-user { border-color: var(--bayern); }
+.feedback-box {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.feedback-title {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin: 0 0 8px;
+}
+.feedback-tags { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.feedback-highlights { margin-top: 8px; }
+.feedback-highlights-title { font-size: 12px; color: var(--fg-dim); margin: 0 0 4px; }
+.feedback-quote { font-size: 13px; color: var(--fg); margin: 2px 0; font-style: italic; }
 </style>
 </head>
 <body>
@@ -2775,14 +2798,14 @@ function renderCommentSection(cornerId, container) {
   const toggleBtn = container.querySelector(".comments-toggle");
   if (toggleBtn) {
     toggleBtn.addEventListener("click", () => {
-      const collapsedDiv = container.querySelector(".comments-collapsed");
-      if (collapsedDiv) {
-        collapsedDiv.classList.remove("comments-collapsed");
+      const collapsedDiv = toggleBtn.previousElementSibling ? toggleBtn.closest(".comments-collapsed") || toggleBtn.parentElement : toggleBtn.parentElement;
+      const wrapper = toggleBtn.parentElement;
+      if (wrapper.classList.contains("comments-collapsed")) {
+        wrapper.classList.remove("comments-collapsed");
         toggleBtn.textContent = "▲ Weniger anzeigen";
-        toggleBtn.addEventListener("click", () => {
-          collapsedDiv.classList.add("comments-collapsed");
-          toggleBtn.textContent = `▼ Alle ${commentEntries.length} anzeigen`;
-        }, { once: true });
+      } else {
+        wrapper.classList.add("comments-collapsed");
+        toggleBtn.textContent = `▼ Alle ${commentEntries.length} anzeigen`;
       }
     });
   }
@@ -3392,14 +3415,14 @@ function renderFeedbackSummary(cornerId) {
   const busyHigh = entries.filter(f => f.busy === "viel").length;
   const highlights = entries.filter(f => f.highlights).map(f => f.highlights);
 
-  let html = `<div style="background:var(--bg-3);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;">
-    <p style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--fg-dim);margin:0 0 8px;">📋 Community-Feedback (${entries.length} Bewertungen)</p>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+  let html = `<div class="feedback-box">
+    <p class="feedback-title">📋 Community-Feedback (${entries.length} Bewertungen)</p>
+    <div class="feedback-tags">
       ${kioskYes > 0 ? `<span class="spot-icon"><span class="icon-emoji">🏪</span><span class="icon-label">Kiosk: ${kioskYes}x ja</span></span>` : ""}
       ${greenVery > 0 ? `<span class="spot-icon"><span class="icon-emoji">🌿</span><span class="icon-label">Grün: ${greenVery}x sehr</span></span>` : ""}
       ${busyHigh > 0 ? `<span class="spot-icon"><span class="icon-emoji">🚶</span><span class="icon-label">Belebt: ${busyHigh}x</span></span>` : ""}
     </div>
-    ${highlights.length > 0 ? `<div style="margin-top:8px;"><p style="font-size:12px;color:var(--fg-dim);margin:0 0 4px;">💬 Highlights:</p>${highlights.slice(0, 3).map(h => `<p style="font-size:13px;color:var(--fg);margin:2px 0;font-style:italic;">"${escapeHtml(h)}"</p>`).join("")}</div>` : ""}
+    ${highlights.length > 0 ? `<div class="feedback-highlights"><p class="feedback-highlights-title">💬 Highlights:</p>${highlights.slice(0, 3).map(h => `<p class="feedback-quote">"${escapeHtml(h)}"</p>`).join("")}</div>` : ""}
   </div>`;
   return html;
 }
@@ -3587,7 +3610,7 @@ function renderPointsLeaderboard() {
     const cls = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
     const badge = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
     const isMe = x.user === STATE.nickname;
-    return `<li class="leaderboard-item ${cls}" ${isMe ? 'style="border-color:var(--bayern)"' : ""}>
+    return `<li class="leaderboard-item ${cls} ${isMe ? "current-user" : ""}">
       <span class="lb-rank">${badge || (i + 1)}</span>
       <span class="lb-name">${escapeHtml(x.user)} ${isMe ? "(du)" : ""}</span>
       <span class="lb-score">${x.total} Pts</span>
@@ -3695,9 +3718,9 @@ function renderCards() {
         <button class="photo-btn" data-id="${c.id}">📷 ${photoSrc ? "Ändern" : "Hinzufügen"}</button>
       </div>
       <div class="card-body">
-        <p class="card-area">${c.area || "—"} ${isCustom && c.createdBy ? `<span style="color:var(--bayern);font-size:9px;"> · von ${escapeHtml(c.createdBy)}</span>` : ""}</p>
+        <p class="card-area">${c.area || "—"} ${isCustom && c.createdBy ? `<span class="creator-label"> · von ${escapeHtml(c.createdBy)}</span>` : ""}</p>
         <h2 class="card-name">${c.name}</h2>
-        ${peopleHere.length > 0 ? `<div class="detail-people-here" style="margin-bottom:10px;">🟢 ${peopleHere.length} hier: ${peopleHere.map(n => escapeHtml(n)).join(", ")}</div>` : ""}
+        ${peopleHere.length > 0 ? `<div class="detail-people-here">🟢 ${peopleHere.length} hier: ${peopleHere.map(n => escapeHtml(n)).join(", ")}</div>` : ""}
         ${descBlock}
         <button class="detail-link" data-id="${c.id}">Mehr Details →</button>
       </div>
