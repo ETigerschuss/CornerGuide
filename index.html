@@ -2124,7 +2124,7 @@ input, textarea { cursor: text; }
 <div id="nickname-prompt" class="nickname-prompt" style="display:none;">
   <div class="prompt-card">
     <h2>Wer bist du?</h2>
-    <p>Gib deinen Namen ein, damit deine Freunde sehen wenn du an einem Corner bist.</p>
+    <p>Gib deinen Namen ein, damit deine Freunde dich sehen. <strong>Cornern als Lebensstil</strong> heißt: Drinks holen und draußen genießen (explizit nicht in der Bar), mentale Gesundheit stärken und soziale Kontakte pflegen sowie neue Leute kennenlernen.</p>
     <input type="text" id="nickname-input" placeholder="Dein Name" maxlength="20" />
     <button id="nickname-save">Los geht's 🍻</button>
   </div>
@@ -2595,6 +2595,7 @@ function listenPhotos() {
   onValue(photosRef, (snapshot) => {
     STATE.photos = snapshot.val() || {};
     refreshAllPhotoGalleries();
+    renderCards();
   });
 }
 
@@ -2612,6 +2613,8 @@ function savePhoto(cornerId, dataUrl, caption) {
   const photo = {
     src: dataUrl,
     author: STATE.nickname || "Anonym",
+    authorId: (typeof currentUserKey === "function" ? currentUserKey() : "") || (STATE.nickname || "Anonym"),
+    authorTeam: STATE.team || "",
     time: Date.now(),
     caption: caption || "",
     ratings: {}
@@ -4845,6 +4848,11 @@ const TEAM_STORAGE_KEY = "cg.team";
 const TEAM_HISTORY_KEY = "cg.teamHistory";
 const NOTIF_STORAGE_KEY = "cg.notifications";
 const USER_ID_STORAGE_KEY = "cg.userId";
+const CORNER_VOTES_STORAGE_KEY = "cg.cornerVotes";
+const DIRECT_MESSAGES_STORAGE_KEY = "cg.directMessages";
+const MAX_DIRECT_MESSAGES = 120;
+const PRESENCE_HEARTBEAT_INTERVAL_MS = 20000;
+const MIN_CORNER_DISTANCE_METERS = 50;
 const STATUS_WINDOW_MS = 2 * 60 * 60 * 1000;
 let detailXpCornerId = null;
 
@@ -4858,6 +4866,11 @@ STATE.captureHistory = STATE.captureHistory || {};
 STATE.encounters = STATE.encounters || {};
 STATE.liveLocations = STATE.liveLocations || {};
 STATE.liveMarkers = STATE.liveMarkers || {};
+STATE.cornerVotes = STATE.cornerVotes || loadLocalCornerVotes();
+STATE.directMessages = STATE.directMessages || loadLocalDirectMessages();
+STATE.presenceHeartbeat = null;
+STATE.presenceVisibilityHookBound = !!STATE.presenceVisibilityHookBound;
+STATE.lastDirectMessageAt = parseInt(localStorage.getItem("cg.lastDirectMessageAt") || "0");
 ensurePointIdentity();
 
 function getOrCreateUserId() {
@@ -4875,6 +4888,24 @@ function normalizeTeamHistory(value) {
     return Object.entries(value).map(([team, count]) => ({ team, count, changedAt: Date.now() - ((count || 0) * 1000) }));
   }
   return [];
+}
+
+function loadLocalCornerVotes() {
+  try { return JSON.parse(localStorage.getItem(CORNER_VOTES_STORAGE_KEY) || "{}"); }
+  catch (e) { return {}; }
+}
+
+function saveLocalCornerVotes() {
+  localStorage.setItem(CORNER_VOTES_STORAGE_KEY, JSON.stringify(STATE.cornerVotes || {}));
+}
+
+function loadLocalDirectMessages() {
+  try { return JSON.parse(localStorage.getItem(DIRECT_MESSAGES_STORAGE_KEY) || "[]"); }
+  catch (e) { return []; }
+}
+
+function saveLocalDirectMessages() {
+  localStorage.setItem(DIRECT_MESSAGES_STORAGE_KEY, JSON.stringify((STATE.directMessages || []).slice(-MAX_DIRECT_MESSAGES)));
 }
 
 function saveTeamHistoryValue() {
@@ -5108,7 +5139,12 @@ function renderLiveLocationMarkers() {
       iconAnchor: [14, 14]
     });
     const marker = L.marker([info.lat, info.lng], { icon, zIndexOffset: 1200 }).addTo(STATE.mainMap);
-    marker.bindPopup(`<strong>${escapeHtml(info.nickname || userId)}</strong>`);
+    marker.bindPopup(`<strong>${escapeHtml(info.nickname || userId)}</strong><br><button class="action-btn meetup-msg-btn" style="margin-top:6px;padding:6px 10px;font-size:11px;" data-user="${encodeURIComponent(userId)}">💬 Treffen?</button>`);
+    marker.on("popupopen", (event) => {
+      const btn = event.popup?.getElement()?.querySelector(".meetup-msg-btn");
+      if (!btn) return;
+      btn.addEventListener("click", () => sendDirectMessagePrompt(decodeURIComponent(btn.dataset.user), info.nickname || userId), { once: true });
+    });
     STATE.liveMarkers[userId] = marker;
   });
 }
@@ -5123,6 +5159,8 @@ function initFirebase() {
     loadLocalBarometer();
     STATE.emojiVotes = loadLocalEmojiVotes();
     STATE.visits = loadLocalVisits();
+    STATE.cornerVotes = loadLocalCornerVotes();
+    STATE.directMessages = loadLocalDirectMessages();
     updateNicknameBar();
     return;
   }
@@ -5143,7 +5181,10 @@ function initFirebase() {
   listenCaptured();
   listenEncounters();
   listenLiveLocations();
+  listenCornerVotes();
+  listenDirectMessages();
   syncIdentity();
+  startPresenceHeartbeat();
 }
 
 function broadcastPresence() {
@@ -5162,6 +5203,23 @@ function broadcastLiveLocation() {
   if (!STATE.geoActive || !STATE.userPos || !STATE.nickname) { remove(liveRef); return; }
   set(liveRef, { lat: STATE.userPos.lat, lng: STATE.userPos.lng, nickname: STATE.nickname, team: STATE.team || "", timestamp: Date.now() });
   onDisconnect(liveRef).remove();
+}
+
+function startPresenceHeartbeat() {
+  if (STATE.presenceHeartbeat) clearInterval(STATE.presenceHeartbeat);
+  STATE.presenceHeartbeat = setInterval(() => {
+    broadcastPresence();
+    broadcastLiveLocation();
+  }, PRESENCE_HEARTBEAT_INTERVAL_MS);
+  if (!STATE.presenceVisibilityHookBound) {
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        broadcastPresence();
+        broadcastLiveLocation();
+      }
+    });
+    STATE.presenceVisibilityHookBound = true;
+  }
 }
 
 function listenFriendPresence() {
@@ -5213,8 +5271,208 @@ function renderFriendsBar() {
       <span>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</span>
       <span class="friend-corner">${corner ? "@ " + escapeHtml(corner.name) : "unterwegs"}</span>
       <span class="friend-level">${tier.emoji} Lv.${level}</span>
+      <button class="action-btn" style="padding:4px 8px;font-size:10px;" data-dm-user="${friend.id}">💬</button>
     </li>`;
   }).join("");
+  list.querySelectorAll("[data-dm-user]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const friend = STATE.friends[btn.dataset.dmUser];
+      sendDirectMessagePrompt(btn.dataset.dmUser, friend?.nickname || friend?.name || btn.dataset.dmUser);
+    });
+  });
+}
+
+function sendDirectMessagePrompt(toId, toName, cornerId) {
+  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  if (!toId || toId === currentUserKey()) return;
+  const text = prompt(`Nachricht an ${toName || "diese Person"}:`, "Ich bin in 10 Minuten da 👋");
+  if (!text || !text.trim()) return;
+  const payload = {
+    fromId: currentUserKey(),
+    fromName: STATE.nickname,
+    fromTeam: STATE.team || "",
+    toId,
+    toName: toName || toId,
+    text: text.trim(),
+    time: Date.now(),
+    cornerId: cornerId || STATE.manualCheckinId || STATE.atCornerId || null
+  };
+  if (window.FB?.firebaseReady) {
+    const { db, ref, push, set } = window.FB;
+    const msgRef = push(ref(db, "messages/" + toId));
+    set(msgRef, payload);
+  } else {
+    STATE.directMessages.push({ ...payload, local: true, incoming: false });
+    saveLocalDirectMessages();
+  }
+  toast(`💬 Nachricht an <strong>${escapeHtml(toName || toId)}</strong> gesendet`);
+}
+
+function listenDirectMessages() {
+  if (!window.FB?.firebaseReady || !STATE.nickname) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "messages/" + currentUserKey()), (snapshot) => {
+    const data = snapshot.val() || {};
+    const messages = Object.entries(data).map(([id, msg]) => ({ id, ...msg })).sort((a, b) => (a.time || 0) - (b.time || 0));
+    STATE.directMessages = messages.slice(-MAX_DIRECT_MESSAGES);
+    saveLocalDirectMessages();
+    const newest = messages[messages.length - 1];
+    if (newest?.time && newest.time > STATE.lastDirectMessageAt && newest.fromId !== currentUserKey()) {
+      toast(`💬 Nachricht von <strong>${escapeHtml(newest.fromName || newest.fromId || "Unbekannt")}</strong>`);
+    }
+    STATE.lastDirectMessageAt = Math.max(STATE.lastDirectMessageAt || 0, Number(newest?.time || 0));
+    localStorage.setItem("cg.lastDirectMessageAt", String(STATE.lastDirectMessageAt || 0));
+    if (STATE.view === "profile") renderProfile();
+  });
+}
+
+function getSortedCorners() {
+  return getAllCorners().map((corner) => ({
+    ...corner,
+    _visits: getVisitCount(corner.id),
+    _active: getPeopleAtCorner(corner.id).length
+  })).sort((a, b) => b._active - a._active || b._visits - a._visits || a.name.localeCompare(b.name));
+}
+
+function getCornerVoteStats(cornerId) {
+  const votes = STATE.cornerVotes?.[cornerId] || {};
+  let up = 0, down = 0, mine = 0;
+  Object.entries(votes).forEach(([userId, value]) => {
+    const num = Number(value || 0);
+    if (num > 0) up += 1;
+    if (num < 0) down += 1;
+    if (userId === currentUserKey()) mine = num;
+  });
+  return { up, down, mine };
+}
+
+function listenCornerVotes() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "cornerVotes"), (snapshot) => {
+    STATE.cornerVotes = snapshot.val() || {};
+    saveLocalCornerVotes();
+    if ($("#detail-overlay")?.classList.contains("open")) {
+      const activeId = $("#detail-content .corner-voting")?.dataset.cornerId;
+      if (activeId) renderCornerVotingSection(activeId, $("#detail-content .corner-voting"));
+    }
+  });
+}
+
+function setCornerVote(cornerId, nextValue) {
+  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  if (!corner) return;
+  const voteKey = currentUserKey();
+  const currentValue = Number(STATE.cornerVotes?.[cornerId]?.[voteKey] || 0);
+  const normalized = Number(nextValue || 0);
+  const finalValue = currentValue === normalized ? 0 : normalized;
+  const ownerId = corner.createdById || corner.createdBy || null;
+  if (ownerId && ownerId !== voteKey) {
+    if (currentValue <= 0 && finalValue > 0) addPoints(ownerId, 2, "Corner positiv bewertet");
+    if (currentValue > 0 && finalValue <= 0) addPoints(ownerId, -2, "Positive Corner-Stimme entfernt");
+  }
+  if (!STATE.cornerVotes[cornerId]) STATE.cornerVotes[cornerId] = {};
+  if (finalValue === 0) delete STATE.cornerVotes[cornerId][voteKey];
+  else STATE.cornerVotes[cornerId][voteKey] = finalValue;
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set, remove } = window.FB;
+    const voteRef = ref(db, "cornerVotes/" + cornerId + "/" + voteKey);
+    if (finalValue === 0) remove(voteRef);
+    else set(voteRef, finalValue);
+  } else {
+    saveLocalCornerVotes();
+  }
+  const stats = getCornerVoteStats(cornerId);
+  const checkins = getVisitCount(cornerId);
+  if (corner.isCustom && stats.down > checkins) {
+    if (ownerId) addPoints(ownerId, -30, "Corner von Community entfernt");
+    const { db, ref, remove } = window.FB || {};
+    if (window.FB?.firebaseReady) {
+      remove(ref(db, "corners/" + corner.id));
+      remove(ref(db, "cornerVotes/" + corner.id));
+    } else {
+      STATE.customSpots = STATE.customSpots.filter((spot) => spot.id !== corner.id);
+      saveCustomSpots();
+      delete STATE.cornerVotes[corner.id];
+      saveLocalCornerVotes();
+      renderCards();
+      rebuildMainMarkers();
+      updateCounts();
+    }
+    toast("🗑️ Corner wurde durch Community-Voting entfernt");
+    return;
+  }
+  renderCornerVotingSection(cornerId, $("#detail-content .corner-voting"));
+}
+
+function renderCornerVotingSection(cornerId, container) {
+  if (!container) return;
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  if (!corner) return;
+  const stats = getCornerVoteStats(cornerId);
+  const checkins = getVisitCount(cornerId);
+  const deleteHint = corner.isCustom ? ` · Löschung wenn Downvotes höher als Check-ins sind (${stats.down}/${checkins})` : "";
+  container.dataset.cornerId = cornerId;
+  container.innerHTML = `
+    <h4>Community Voting</h4>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button class="action-btn ${stats.mine > 0 ? "primary" : ""}" data-vote="1">👍 Corner (${stats.up})</button>
+      <button class="action-btn ${stats.mine < 0 ? "primary" : ""}" data-vote="-1">🤨 Hä, kein Corner (${stats.down})</button>
+      <span style="font-size:11px;color:var(--fg-dim);">${deleteHint}</span>
+    </div>
+  `;
+  container.querySelectorAll("[data-vote]").forEach((btn) => btn.addEventListener("click", () => setCornerVote(cornerId, Number(btn.dataset.vote))));
+}
+
+function getCornerCoverPhoto(cornerId) {
+  let photos = [];
+  if (window.FB?.firebaseReady) {
+    const raw = STATE.photos?.[cornerId] || {};
+    photos = Object.values(raw);
+  } else {
+    photos = getPhotos(cornerId) || [];
+  }
+  if (photos.length) {
+    const ranked = photos.map((photo) => {
+      const ratings = Object.values(photo.ratings || {});
+      const avg = ratings.length ? ratings.reduce((a, b) => a + Number(b || 0), 0) / ratings.length : 0;
+      return { photo, avg, votes: ratings.length };
+    }).sort((a, b) => b.avg - a.avg || b.votes - a.votes || Number(b.photo.time || 0) - Number(a.photo.time || 0));
+    const src = ranked[0]?.photo?.src;
+    if (src) return src;
+  }
+  return localStorage.getItem("cg.photo." + cornerId);
+}
+
+function playTeamCheckinSound(teamId) {
+  if (!teamId) return;
+  const toneMap = {
+    plant: [440, 554],
+    insect: [392, 523],
+    alien: [330, 495],
+    wolf: [294, 392],
+    bird: [523, 659],
+    octopus: [262, 349]
+  };
+  const tones = toneMap[teamId] || [440, 554];
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+    tones.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, now + idx * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.07, now + idx * 0.12 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.12 + 0.16);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + idx * 0.12);
+      osc.stop(now + idx * 0.12 + 0.17);
+    });
+  } catch (e) {}
 }
 
 function addComment(cornerId, author, text) {
@@ -5418,6 +5676,7 @@ function manualCheckin(cornerId) {
     STATE.lastCheckinCorner = cornerId;
     localStorage.setItem("cg.lastCheckinTime", String(STATE.lastCheckinTime));
     localStorage.setItem("cg.lastCheckinCorner", cornerId);
+    playTeamCheckinSound(STATE.team);
     document.getElementById("card-" + cornerId)?.classList.add("at-here");
     refreshMainMarker(cornerId);
     toast(`Eingecheckt am <strong>${escapeHtml(corner.name)}</strong> 🍻`, "at-corner");
@@ -5469,11 +5728,12 @@ function openDetail(cornerId) {
   detailXpCornerId = cornerId;
   const overlay = $("#detail-overlay");
   $("#detail-title").textContent = c.name;
-  const photoSrc = localStorage.getItem("cg.photo." + c.id);
+  const photoSrc = getCornerCoverPhoto(c.id);
   const effectiveDesc = getDescription(c);
   const visits = getVisitCount(cornerId);
   const { avg, count: baroCount } = getBarometerData(cornerId);
   const peopleHere = getPeopleAtCorner(cornerId);
+  const peopleMessageTargets = Object.values(STATE.friends).filter((friend) => friend.atCorner === cornerId);
   const capturedInfo = STATE.captured[cornerId];
   const capturedHtml = capturedInfo?.team ? `<div class="detail-people-here" style="border-color:${TEAMS[capturedInfo.team]?.color || 'var(--line)'};color:${TEAMS[capturedInfo.team]?.color || 'var(--fg)'};background:rgba(255,255,255,0.05);">${TEAMS[capturedInfo.team]?.emoji || ''} Eingenommen von Team ${TEAMS[capturedInfo.team]?.name || capturedInfo.team}</div>` : "";
   const teamPickerHtml = STATE.manualCheckinId === cornerId ? renderTeamPickerHtml() : "";
@@ -5487,11 +5747,13 @@ function openDetail(cornerId) {
     </div>
     ${capturedHtml}
     ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} gerade hier: ${peopleHere.map((p) => escapeHtml(p)).join(", ")}</div>` : ""}
+    ${peopleMessageTargets.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">${peopleMessageTargets.map((friend) => `<button class="action-btn" data-dm-user="${friend.id}">💬 ${escapeHtml(friend.nickname || friend.name || friend.id)}</button>`).join("")}</div>` : ""}
     <p class="card-area" style="margin-top:14px;">${c.area || "—"}</p>
     <h2 class="card-name" style="margin-bottom:14px;">${c.name}</h2>
     ${effectiveDesc ? `<p class="card-desc">${escapeHtml(effectiveDesc)}</p>` : ""}
     <ul class="card-tags" style="margin-bottom:14px;">${(c.tags || []).map((t) => `<li>#${escapeHtml(t)}</li>`).join("")}</ul>
     ${teamPickerHtml}
+    <div class="corner-voting" data-corner-id="${c.id}"></div>
     <div class="corner-status-section" data-corner-id="${c.id}"></div>
     <div class="emoji-votes" data-corner-id="${c.id}"></div>
     <div class="barometer-section" data-corner-id="${c.id}"></div>
@@ -5508,6 +5770,11 @@ function openDetail(cornerId) {
   detailContent.querySelector('[data-action="map-detail"]')?.addEventListener("click", () => { closeDetail(); $(`.tab[data-view="map"]`).click(); setTimeout(() => STATE.mainMap?.flyTo([c.lat, c.lng], 17, { duration: 0.7 }), 250); });
   detailContent.querySelector('[data-action="route-detail"]')?.addEventListener("click", () => { window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank"); });
   detailContent.querySelectorAll(".team-btn").forEach((btn) => btn.addEventListener("click", () => { selectTeam(btn.dataset.team); setTimeout(() => openDetail(cornerId), 50); }));
+  detailContent.querySelectorAll("[data-dm-user]").forEach((btn) => btn.addEventListener("click", () => {
+    const friend = STATE.friends[btn.dataset.dmUser];
+    sendDirectMessagePrompt(btn.dataset.dmUser, friend?.nickname || friend?.name || btn.dataset.dmUser, c.id);
+  }));
+  renderCornerVotingSection(cornerId, detailContent.querySelector(".corner-voting"));
   renderCornerStatusSection(cornerId, detailContent.querySelector(".corner-status-section"));
   renderEmojiVotes(cornerId, detailContent.querySelector(".emoji-votes"));
   renderBarometer(cornerId, detailContent.querySelector(".barometer-section"));
@@ -5522,10 +5789,9 @@ function closeDetail() { detailXpCornerId = null; $("#detail-overlay").classList
 function renderCards() {
   const root = $("#cards");
   root.innerHTML = "";
-  let all = getAllCorners().map((corner) => ({ ...corner, _visits: getVisitCount(corner.id) }));
-  all.sort((a, b) => b._visits - a._visits);
+  const all = getSortedCorners();
   all.forEach((c, i) => {
-    const photoSrc = localStorage.getItem("cg.photo." + c.id);
+    const photoSrc = getCornerCoverPhoto(c.id);
     const peopleHere = getPeopleAtCorner(c.id);
     const capture = STATE.captured[c.id];
     const card = document.createElement("article");
@@ -5569,7 +5835,7 @@ function rebuildMainMarkers() {
   if (!STATE.mainMap) return;
   Object.values(STATE.mainMarkers).forEach((m) => STATE.mainMap.removeLayer(m));
   STATE.mainMarkers = {};
-  getAllCorners().forEach((c, i) => {
+  getSortedCorners().forEach((c, i) => {
     const capture = STATE.captured[c.id];
     const icon = L.divIcon({ className: "", html: `<div class="corner-marker ${c.isCustom ? "custom" : ""}" data-id="${c.id}"><span class="num">${i + 1}</span>${capture ? `<span class="team-badge">${TEAMS[capture.team]?.emoji || "🏳️"}</span>` : ""}</div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
     const marker = L.marker([c.lat, c.lng], { icon }).addTo(STATE.mainMap);
@@ -5648,6 +5914,8 @@ function saveNewSpot() {
   if (!name) { toast("Name fehlt."); return; }
   if (!desc) { toast("Beschreibung fehlt."); return; }
   if (isNaN(lat) || isNaN(lng)) { toast("Koordinaten fehlen."); return; }
+  const tooClose = getAllCorners().find((corner) => haversine(lat, lng, corner.lat, corner.lng) < MIN_CORNER_DISTANCE_METERS);
+  if (tooClose) { toast(`Zu nah an <strong>${escapeHtml(tooClose.name)}</strong> — bitte mindestens ${MIN_CORNER_DISTANCE_METERS}m Abstand.`); return; }
   const spot = { id: "custom-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7), name, area: $("#f-area").value.trim() || "Eigener Spot", lat, lng, description: desc, tags: $("#f-tags").value.split(",").map((s) => s.trim()).filter(Boolean), amenities: [], isCustom: true, createdBy: STATE.nickname || "Anonym", createdById: currentUserKey(), createdAt: Date.now() };
   if (window.FB?.firebaseReady) { const { db, ref, set } = window.FB; set(ref(db, "corners/" + spot.id), spot); }
   else { STATE.customSpots.push(spot); saveCustomSpots(); }
@@ -5718,6 +5986,7 @@ function renderProfile() {
   const commentCount = Object.values(STATE.comments).reduce((sum, entry) => sum + Object.values(entry || {}).filter((comment) => comment.author === STATE.nickname).length, 0);
   const totalCheckins = Object.values(STATE.visits).reduce((sum, entry) => sum + Object.values(entry || {}).filter((visit) => visit.user === STATE.nickname).length, 0);
   const bestFriends = Object.entries(STATE.encounters).filter(([, entry]) => entry.users && Object.keys(entry.users).includes(currentUserKey())).map(([, entry]) => { const other = Object.entries(entry.users).find(([id]) => id !== currentUserKey()); return { id: other?.[0], name: other?.[1] || 'Anonym', count: entry.count || 0 }; }).sort((a, b) => b.count - a.count).slice(0, 8);
+  const recentMessages = (STATE.directMessages || []).slice(-8).reverse();
   $("#profile-content").innerHTML = `
     <div class="profile-header">
       <div class="profile-avatar">${teamInfo?.emoji || '👤'}</div>
@@ -5735,8 +6004,13 @@ function renderProfile() {
     <div class="team-battle-section"><h3>🏆 Team Leaderboard</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.max(6, row.total * 16)}px;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
     <div class="best-friends-section"><h3>🤝 Best Friends</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Begegnungen geloggt.</p>`}</div>
     <div class="notification-toggle"><h3>🔔 Notifications</h3><div class="notif-options"><button class="notif-opt ${STATE.notifPref === 'all' ? 'active' : ''}" data-pref="all">All</button><button class="notif-opt ${STATE.notifPref === 'team' ? 'active' : ''}" data-pref="team">Team only</button><button class="notif-opt ${STATE.notifPref === 'off' ? 'active' : ''}" data-pref="off">Off</button></div></div>
+    <div class="best-friends-section"><h3>💬 Direktnachrichten</h3>${recentMessages.length ? recentMessages.map((msg) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(msg.fromName || msg.fromId || "Unbekannt")}: ${escapeHtml(msg.text || "")}</span><button class="action-btn" style="padding:4px 8px;font-size:10px;" data-reply-id="${msg.fromId}">Antworten</button></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Direktnachrichten.</p>`}</div>
     <div class="leaderboard-section"><h3>🏆 Achievements</h3><div class="achievements-grid">${getAchievementCardsHtml()}</div></div>`;
   $$(".notif-opt").forEach((btn) => btn.addEventListener("click", () => { STATE.notifPref = btn.dataset.pref; localStorage.setItem(NOTIF_STORAGE_KEY, STATE.notifPref); localStorage.setItem("cg.notifPref", STATE.notifPref); renderProfile(); }));
+  $$("#profile-content [data-reply-id]").forEach((btn) => btn.addEventListener("click", () => {
+    const msg = recentMessages.find((entry) => entry.fromId === btn.dataset.replyId);
+    sendDirectMessagePrompt(btn.dataset.replyId, msg?.fromName || btn.dataset.replyId);
+  }));
 }
 
 function bindTabs() {
