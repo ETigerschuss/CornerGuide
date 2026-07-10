@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0d0d0d" />
 <title>Minga Corner Guide · vom gossips Stammtisch 🍻</title>
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="./icons/icon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,wght@1,600;1,800&family=Caveat:wght@600;700&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
@@ -13,6 +16,8 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, set, push, onValue, onChildAdded, onDisconnect, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getMessaging, getToken, onMessage, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCIHeM2laZTAUF9BIJRjCAUb2ZGqlKjto8",
@@ -26,20 +31,73 @@
   };
 
   let db = null;
+  let auth = null;
   let firebaseReady = false;
+  let authUid = "";
+  let messaging = null;
+  let pushSupported = false;
+  const authListeners = new Set();
+  let resolveAuthReady = null;
+  const authReady = new Promise((resolve) => { resolveAuthReady = resolve; });
 
   try {
     if (!firebaseConfig.apiKey.startsWith("YOUR_")) {
       const app = initializeApp(firebaseConfig);
       db = getDatabase(app);
+      auth = getAuth(app);
       firebaseReady = true;
+      onAuthStateChanged(auth, (user) => {
+        authUid = user?.uid || "";
+        authListeners.forEach((listener) => {
+          try { listener(authUid); } catch (err) { console.warn("Auth listener failed:", err); }
+        });
+        if (resolveAuthReady) resolveAuthReady(authUid);
+      });
+      signInAnonymously(auth).catch((err) => {
+        console.warn("Firebase anonymous auth failed:", err);
+        if (resolveAuthReady) resolveAuthReady("");
+      });
+      isMessagingSupported().then((supported) => {
+        pushSupported = !!supported;
+        if (pushSupported) {
+          try { messaging = getMessaging(app); } catch (err) { console.warn("FCM init failed:", err); }
+        }
+      }).catch(() => {});
     }
   } catch (e) {
     console.warn("Firebase not configured:", e);
+    if (resolveAuthReady) resolveAuthReady("");
   }
 
   // Expose Firebase functions globally for use in the main script
-  window.FB = { db, ref, set, push, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, firebaseReady };
+  window.FB = {
+    db, auth, ref, set, push, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, firebaseReady, authReady,
+    getAuthUid: () => authUid,
+    onAuthChange: (listener) => {
+      if (typeof listener !== "function") return () => {};
+      authListeners.add(listener);
+      try { listener(authUid); } catch (err) { console.warn("Initial auth listener failed:", err); }
+      return () => authListeners.delete(listener);
+    },
+    enablePushNotifications: async (vapidKey = "", serviceWorkerRegistration = null) => {
+      if (!pushSupported || !messaging) throw new Error("Push wird in diesem Browser nicht unterstützt.");
+      if (!authUid) throw new Error("Kein Firebase-Login aktiv.");
+      if (!vapidKey) throw new Error("VAPID-Key fehlt. Hinterlege ihn in der App, um FCM zu aktivieren.");
+      if (!("Notification" in window)) throw new Error("Notifications werden nicht unterstützt.");
+      if (Notification.permission !== "granted") {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") throw new Error("Notification-Berechtigung wurde nicht erteilt.");
+      }
+      const registration = serviceWorkerRegistration || await navigator.serviceWorker.ready;
+      const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
+      if (!token) throw new Error("FCM-Token konnte nicht erstellt werden.");
+      return token;
+    },
+    bindForegroundPush: (listener) => {
+      if (!pushSupported || !messaging || typeof listener !== "function") return () => {};
+      return onMessage(messaging, listener);
+    }
+  };
 </script>
 <style>
 :root {
@@ -1950,6 +2008,7 @@ input, textarea { cursor: text; }
     <span class="nick-label">👤</span>
     <span class="nick-name" id="nick-display"></span>
     <span class="nick-pts" id="nick-pts"></span><span class="level-bar" id="nick-level-bar"><span class="level-badge" id="nick-level-badge"></span><span class="level-progress"><span class="level-progress-fill" id="nick-level-fill"></span></span></span>
+    <button class="nick-change" id="invite-btn" aria-label="Freunde einladen">📨 Einladen</button>
     <button class="nick-change" id="nick-change-btn">✏️ Ändern</button>
   </div>
 
@@ -2431,6 +2490,12 @@ document.addEventListener("DOMContentLoaded", () => {
   updateCounts();
   initFirebase();
   bindGlobalXp();
+  setupServiceWorker();
+  openPendingSharedCorner();
+  if (STATE.pendingInviteName) {
+    toast(`🍻 Einladung von <strong>${escapeHtml(STATE.pendingInviteName)}</strong>`);
+    clearHandledQueryParam(INVITE_PARAM);
+  }
   // Start cooldown display if active
   if (STATE.lastCheckinTime && (Date.now() - STATE.lastCheckinTime) < COOLDOWN_MS) {
     startCooldownDisplay();
@@ -2441,6 +2506,7 @@ function checkNickname() {
   if (!STATE.nickname) {
     const prompt = $("#nickname-prompt");
     prompt.style.display = "flex";
+    if (STATE.pendingInviteName) $("#nickname-input").placeholder = `z.B. ${STATE.pendingInviteName}s Crew`;
     $("#nickname-save").addEventListener("click", saveNickname);
     $("#nickname-input").addEventListener("keydown", (e) => {
       if (e.key === "Enter") saveNickname();
@@ -2463,6 +2529,7 @@ function saveNickname() {
 
 function bindNicknameBar() {
   updateNicknameBar();
+  $("#invite-btn").addEventListener("click", inviteFriends);
   $("#nick-change-btn").addEventListener("click", () => {
     const newName = prompt("Neuer Nickname:", STATE.nickname);
     if (newName && newName.trim()) {
@@ -2496,7 +2563,8 @@ function updateNicknameBar() {
 }
 
 /* ====================== FIREBASE REALTIME ====================== */
-function initFirebase() {
+async function initFirebase() {
+  applyIncomingLinks();
   if (!window.FB || !window.FB.firebaseReady) {
     const status = $("#fb-status");
     status.style.display = "block";
@@ -2584,6 +2652,7 @@ function listenSharedCorners() {
     renderCards();
     updateCounts();
     rebuildMainMarkers();
+    openPendingSharedCorner();
   });
 }
 
@@ -4850,10 +4919,15 @@ const NOTIF_STORAGE_KEY = "cg.notifications";
 const USER_ID_STORAGE_KEY = "cg.userId";
 const CORNER_VOTES_STORAGE_KEY = "cg.cornerVotes";
 const DIRECT_MESSAGES_STORAGE_KEY = "cg.directMessages";
+const FCM_TOKEN_STORAGE_KEY = "cg.fcmToken";
 const MAX_DIRECT_MESSAGES = 120;
 const PRESENCE_HEARTBEAT_INTERVAL_MS = 20000;
 const MIN_CORNER_DISTANCE_METERS = 50;
 const STATUS_WINDOW_MS = 2 * 60 * 60 * 1000;
+const MAX_INVITE_NAME_LENGTH = 40;
+const SHARE_CORNER_PARAM = "corner";
+const INVITE_PARAM = "invite";
+const FCM_VAPID_PUBLIC_KEY = ""; // REQUIRED: Firebase Console → Project Settings → Cloud Messaging → Web Push certificates.
 let detailXpCornerId = null;
 
 STATE.userId = getOrCreateUserId();
@@ -4871,6 +4945,8 @@ STATE.directMessages = STATE.directMessages || loadLocalDirectMessages();
 STATE.presenceHeartbeat = null;
 STATE.presenceVisibilityHookBound = !!STATE.presenceVisibilityHookBound;
 STATE.lastDirectMessageAt = parseInt(localStorage.getItem("cg.lastDirectMessageAt") || "0");
+STATE.pendingShareCornerId = null;
+STATE.pendingInviteName = "";
 ensurePointIdentity();
 
 function getOrCreateUserId() {
@@ -4880,6 +4956,155 @@ function getOrCreateUserId() {
     localStorage.setItem(USER_ID_STORAGE_KEY, id);
   }
   return id;
+}
+
+function migrateUserIdentity(oldId, newId) {
+  if (!oldId || !newId || oldId === newId) return;
+  if (STATE.points?.[oldId] && !STATE.points?.[newId]) {
+    STATE.points[newId] = { ...STATE.points[oldId] };
+    delete STATE.points[oldId];
+    savePoints();
+  }
+}
+
+function sanitizeInviteName(value) {
+  return String(value || "")
+    .replace(/[<>"'`]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildShareUrl(cornerId, inviteName) {
+  const url = new URL(window.location.href);
+  if (cornerId) url.searchParams.set(SHARE_CORNER_PARAM, cornerId);
+  else url.searchParams.delete(SHARE_CORNER_PARAM);
+  if (inviteName) url.searchParams.set(INVITE_PARAM, inviteName);
+  else url.searchParams.delete(INVITE_PARAM);
+  return url.toString();
+}
+
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.setAttribute("readonly", "");
+  area.style.position = "absolute";
+  area.style.left = "-9999px";
+  document.body.appendChild(area);
+  area.select();
+  const success = document.execCommand("copy");
+  document.body.removeChild(area);
+  return success;
+}
+
+function applyIncomingLinks() {
+  const params = new URLSearchParams(window.location.search);
+  const cornerId = (params.get(SHARE_CORNER_PARAM) || "").trim();
+  const inviteName = sanitizeInviteName((params.get(INVITE_PARAM) || "").trim());
+  if (cornerId) STATE.pendingShareCornerId = cornerId;
+  if (inviteName) STATE.pendingInviteName = inviteName.slice(0, MAX_INVITE_NAME_LENGTH);
+}
+
+function clearHandledQueryParam(name) {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(name)) return;
+  url.searchParams.delete(name);
+  window.history.replaceState({}, "", url.toString());
+}
+
+function openPendingSharedCorner() {
+  if (!STATE.pendingShareCornerId) return false;
+  const corner = getAllCorners().find((item) => item.id === STATE.pendingShareCornerId);
+  if (!corner) return false;
+  openDetail(corner.id);
+  STATE.pendingShareCornerId = null;
+  clearHandledQueryParam(SHARE_CORNER_PARAM);
+  return true;
+}
+
+async function shareCornerLink(cornerId) {
+  const corner = getAllCorners().find((item) => item.id === cornerId);
+  if (!corner) return;
+  const url = buildShareUrl(corner.id, STATE.nickname || "");
+  const text = `Komm zum Corner: ${corner.name} 🍻`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: "Minga Corner Guide", text, url });
+      toast("🔗 Corner-Link geteilt");
+      return;
+    }
+    await copyText(url);
+    toast("🔗 Corner-Link kopiert");
+  } catch (err) {
+    toast("Link konnte nicht geteilt werden.");
+  }
+}
+
+async function inviteFriends() {
+  if (!STATE.nickname) {
+    toast("Bitte gib zuerst einen Namen ein.");
+    return;
+  }
+  const url = buildShareUrl("", STATE.nickname);
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: "Minga Corner Guide", text: `${STATE.nickname} lädt dich zum Cornern ein 🍻`, url });
+      toast("📨 Einladung geteilt");
+      return;
+    }
+    await copyText(url);
+    toast("📨 Einladungs-Link kopiert");
+  } catch (err) {
+    toast("Einladung konnte nicht geteilt werden.");
+  }
+}
+
+async function setupServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  try {
+    await navigator.serviceWorker.register("./service-worker.js");
+  } catch (err) {
+    console.warn("Service worker registration failed:", err);
+  }
+}
+
+async function enableFirebasePush() {
+  if (!window.FB?.firebaseReady) {
+    toast("Push nur mit Firebase verfügbar.");
+    return;
+  }
+  if (!FCM_VAPID_PUBLIC_KEY) {
+    toast("🔔 Push ist vorbereitet, aber der VAPID-Key fehlt noch.");
+    return;
+  }
+  if (!window.FB?.enablePushNotifications) {
+    toast("Push wird in diesem Browser nicht unterstützt.");
+    return;
+  }
+  try {
+    await setupServiceWorker();
+    const registration = await navigator.serviceWorker.getRegistration("./");
+    if (!registration) {
+      toast("Service Worker nicht bereit.");
+      return;
+    }
+    const token = await window.FB.enablePushNotifications(FCM_VAPID_PUBLIC_KEY, registration);
+    localStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
+    if (window.FB?.db && window.FB?.ref && window.FB?.set && currentUserKey()) {
+      await window.FB.set(window.FB.ref(window.FB.db, "pushTokens/" + currentUserKey()), {
+        token,
+        nickname: STATE.nickname || "Anonym",
+        updatedAt: Date.now()
+      });
+    }
+    toast("🔔 Push aktiviert");
+  } catch (err) {
+    const message = err?.message || "Push konnte nicht aktiviert werden.";
+    toast(`🔔 ${escapeHtml(message)}`);
+  }
 }
 
 function normalizeTeamHistory(value) {
@@ -5149,7 +5374,7 @@ function renderLiveLocationMarkers() {
   });
 }
 
-function initFirebase() {
+async function initFirebase() {
   if (!window.FB || !window.FB.firebaseReady) {
     const status = $("#fb-status");
     status.style.display = "block";
@@ -5164,10 +5389,43 @@ function initFirebase() {
     updateNicknameBar();
     return;
   }
+  if (window.FB.authReady) await window.FB.authReady;
+  const authUid = window.FB.getAuthUid?.() || "";
+  if (!authUid) {
+    const status = $("#fb-status");
+    status.style.display = "block";
+    status.className = "firebase-status offline";
+    status.textContent = "⚡ Offline-Modus — Firebase Auth fehlgeschlagen";
+    loadLocalComments();
+    loadLocalBarometer();
+    STATE.emojiVotes = loadLocalEmojiVotes();
+    STATE.visits = loadLocalVisits();
+    STATE.cornerVotes = loadLocalCornerVotes();
+    STATE.directMessages = loadLocalDirectMessages();
+    updateNicknameBar();
+    openPendingSharedCorner();
+    return;
+  }
+  const previousUserId = STATE.userId;
+  migrateUserIdentity(previousUserId, authUid);
+  STATE.userId = authUid;
+  localStorage.setItem(USER_ID_STORAGE_KEY, authUid);
+  ensurePointIdentity();
   const status = $("#fb-status");
   status.style.display = "block";
   status.className = "firebase-status online";
-  status.textContent = "⚡ Live — verbunden mit deinen Freunden";
+  status.textContent = "⚡ Live — Firebase aktiv & authentifiziert";
+  window.FB.onAuthChange?.((uid) => {
+    if (!uid || uid === STATE.userId) return;
+    STATE.userId = uid;
+    localStorage.setItem(USER_ID_STORAGE_KEY, uid);
+    ensurePointIdentity();
+    syncIdentity();
+  });
+  window.FB.bindForegroundPush?.((payload) => {
+    const body = payload?.notification?.body || payload?.data?.body;
+    if (body) toast(`🔔 ${escapeHtml(body)}`);
+  });
   listenFriendPresence();
   listenSharedCorners();
   listenComments();
@@ -5764,11 +6022,18 @@ function openDetail(cornerId) {
       <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier!" : "📍 Einchecken"}</button>
       <button class="action-btn primary" data-action="map-detail" data-id="${c.id}">📍 Auf Karte</button>
       <button class="action-btn" data-action="route-detail" data-id="${c.id}">🧭 Route</button>
+      <button class="action-btn" data-action="share-corner" data-id="${c.id}">🔗 Teilen</button>
+      <button class="action-btn" data-action="qr-corner" data-id="${c.id}">🧾 QR</button>
     </div>`;
   const detailContent = $("#detail-content");
   detailContent.querySelector(".checkin-btn")?.addEventListener("click", (e) => { manualCheckin(e.target.closest("[data-id]").dataset.id); setTimeout(() => openDetail(cornerId), 100); });
   detailContent.querySelector('[data-action="map-detail"]')?.addEventListener("click", () => { closeDetail(); $(`.tab[data-view="map"]`).click(); setTimeout(() => STATE.mainMap?.flyTo([c.lat, c.lng], 17, { duration: 0.7 }), 250); });
   detailContent.querySelector('[data-action="route-detail"]')?.addEventListener("click", () => { window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank"); });
+  detailContent.querySelector('[data-action="share-corner"]')?.addEventListener("click", () => { shareCornerLink(c.id); });
+  detailContent.querySelector('[data-action="qr-corner"]')?.addEventListener("click", () => {
+    const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=" + encodeURIComponent(buildShareUrl(c.id, STATE.nickname || ""));
+    window.open(qrUrl, "_blank");
+  });
   detailContent.querySelectorAll(".team-btn").forEach((btn) => btn.addEventListener("click", () => { selectTeam(btn.dataset.team); setTimeout(() => openDetail(cornerId), 50); }));
   detailContent.querySelectorAll("[data-dm-user]").forEach((btn) => btn.addEventListener("click", () => {
     const friend = STATE.friends[btn.dataset.dmUser];
@@ -5906,7 +6171,7 @@ function onGeoUpdate(pos) {
   broadcastLiveLocation();
 }
 
-function saveNewSpot() {
+async function saveNewSpot() {
   const name = $("#f-name").value.trim();
   const desc = $("#f-desc").value.trim();
   const lat = parseFloat($("#f-lat").value);
@@ -5917,9 +6182,22 @@ function saveNewSpot() {
   const tooClose = getAllCorners().find((corner) => haversine(lat, lng, corner.lat, corner.lng) < MIN_CORNER_DISTANCE_METERS);
   if (tooClose) { toast(`Zu nah an <strong>${escapeHtml(tooClose.name)}</strong> — bitte mindestens ${MIN_CORNER_DISTANCE_METERS}m Abstand.`); return; }
   const spot = { id: "custom-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7), name, area: $("#f-area").value.trim() || "Eigener Spot", lat, lng, description: desc, tags: $("#f-tags").value.split(",").map((s) => s.trim()).filter(Boolean), amenities: [], isCustom: true, createdBy: STATE.nickname || "Anonym", createdById: currentUserKey(), createdAt: Date.now() };
-  if (window.FB?.firebaseReady) { const { db, ref, set } = window.FB; set(ref(db, "corners/" + spot.id), spot); }
-  else { STATE.customSpots.push(spot); saveCustomSpots(); }
-  closeModal(); renderCards(); updateCounts(); rebuildMainMarkers(); toast(`Spot <strong>${escapeHtml(name)}</strong> hinzugefügt 🍻`); unlockAchievement("first-corner", "Entdecker", "🗺️", 30); addXp(50, `Corner hinzugefügt: ${name}`); if (STATE.customSpots.filter((s) => (s.createdById || s.createdBy) === currentUserKey()).length >= 3) unlockAchievement("three-corners", "Kartograph", "🧭", 50);
+  if (window.FB?.firebaseReady) {
+    try {
+      const { db, ref, set } = window.FB;
+      await set(ref(db, "corners/" + spot.id), spot);
+      toast(`✅ Spot <strong>${escapeHtml(name)}</strong> live gespeichert`);
+    } catch (err) {
+      const reason = err?.message ? ` (${escapeHtml(err.message)})` : "";
+      toast(`❌ Spot konnte nicht in Firebase gespeichert werden${reason}`);
+      return;
+    }
+  } else {
+    STATE.customSpots.push(spot);
+    saveCustomSpots();
+    toast(`💾 Spot <strong>${escapeHtml(name)}</strong> lokal gespeichert (nur auf diesem Gerät)`);
+  }
+  closeModal(); renderCards(); updateCounts(); rebuildMainMarkers(); unlockAchievement("first-corner", "Entdecker", "🗺️", 30); addXp(50, `Corner hinzugefügt: ${name}`); if (STATE.customSpots.filter((s) => (s.createdById || s.createdBy) === currentUserKey()).length >= 3) unlockAchievement("three-corners", "Kartograph", "🧭", 50);
 }
 
 function openLightbox(src, author) { $("#lightbox-img").src = src; $("#lightbox-author").textContent = author ? `📸 von ${author}` : ""; $("#lightbox").classList.add("open"); addXp(2, "Lightbox"); }
@@ -6003,10 +6281,16 @@ function renderProfile() {
     <div class="team-history"><h3>🧬 Team History</h3><div class="team-history-grid">${TEAM_ORDER.map((teamId) => { const count = STATE.teamHistory.filter((entry) => entry.team === teamId).length; return `<div class="team-history-item"><div class="th-emoji">${TEAMS[teamId].emoji}</div><div class="th-count">${count}</div><div class="th-name">${TEAMS[teamId].name}</div></div>`; }).join("")}</div></div>
     <div class="team-battle-section"><h3>🏆 Team Leaderboard</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.max(6, row.total * 16)}px;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
     <div class="best-friends-section"><h3>🤝 Best Friends</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Begegnungen geloggt.</p>`}</div>
-    <div class="notification-toggle"><h3>🔔 Notifications</h3><div class="notif-options"><button class="notif-opt ${STATE.notifPref === 'all' ? 'active' : ''}" data-pref="all">All</button><button class="notif-opt ${STATE.notifPref === 'team' ? 'active' : ''}" data-pref="team">Team only</button><button class="notif-opt ${STATE.notifPref === 'off' ? 'active' : ''}" data-pref="off">Off</button></div></div>
+    <div class="notification-toggle"><h3>🔔 Notifications</h3><div class="notif-options"><button class="notif-opt ${STATE.notifPref === 'all' ? 'active' : ''}" data-pref="all">All</button><button class="notif-opt ${STATE.notifPref === 'team' ? 'active' : ''}" data-pref="team">Team only</button><button class="notif-opt ${STATE.notifPref === 'off' ? 'active' : ''}" data-pref="off">Off</button><button class="notif-opt" id="enable-push-btn">Push verbinden</button></div></div>
     <div class="best-friends-section"><h3>💬 Direktnachrichten</h3>${recentMessages.length ? recentMessages.map((msg) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(msg.fromName || msg.fromId || "Unbekannt")}: ${escapeHtml(msg.text || "")}</span><button class="action-btn" style="padding:4px 8px;font-size:10px;" data-reply-id="${msg.fromId}">Antworten</button></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Direktnachrichten.</p>`}</div>
     <div class="leaderboard-section"><h3>🏆 Achievements</h3><div class="achievements-grid">${getAchievementCardsHtml()}</div></div>`;
-  $$(".notif-opt").forEach((btn) => btn.addEventListener("click", () => { STATE.notifPref = btn.dataset.pref; localStorage.setItem(NOTIF_STORAGE_KEY, STATE.notifPref); localStorage.setItem("cg.notifPref", STATE.notifPref); renderProfile(); }));
+  $$('[data-pref]').forEach((btn) => btn.addEventListener("click", () => {
+    STATE.notifPref = btn.dataset.pref;
+    localStorage.setItem(NOTIF_STORAGE_KEY, STATE.notifPref);
+    localStorage.setItem("cg.notifPref", STATE.notifPref); // Backward-compatible key used by legacy `loadNotifPref()`.
+    renderProfile();
+  }));
+  $("#enable-push-btn")?.addEventListener("click", enableFirebasePush);
   $$("#profile-content [data-reply-id]").forEach((btn) => btn.addEventListener("click", () => {
     const msg = recentMessages.find((entry) => entry.fromId === btn.dataset.replyId);
     sendDirectMessagePrompt(btn.dataset.replyId, msg?.fromName || btn.dataset.replyId);
