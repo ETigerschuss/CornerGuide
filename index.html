@@ -51,21 +51,22 @@
         authListeners.forEach((listener) => {
           try { listener(authUid); } catch (err) { console.warn("Auth listener failed:", err); }
         });
-        if (resolveAuthReady) { resolveAuthReady(authUid); resolveAuthReady = null; }
+        // Fires on every auth state change; the Promise itself only ever resolves once
+        if (resolveAuthReady) resolveAuthReady(authUid);
       });
-      let _authRetry = 0;
-      const _trySignIn = () => {
+      let authRetryCount = 0;
+      const trySignIn = () => {
         signInAnonymously(auth).catch((err) => {
-          _authRetry++;
-          console.warn(`Firebase anonymous auth failed (attempt ${_authRetry}):`, err);
-          if (_authRetry < 3) {
-            setTimeout(_trySignIn, _authRetry * 2000);
+          authRetryCount++;
+          console.warn(`Firebase anonymous auth failed (attempt ${authRetryCount}):`, err);
+          if (authRetryCount < 3) {
+            setTimeout(trySignIn, authRetryCount * 2000);
           } else {
-            if (resolveAuthReady) { resolveAuthReady(""); resolveAuthReady = null; }
+            if (resolveAuthReady) resolveAuthReady("");
           }
         });
       };
-      _trySignIn();
+      trySignIn();
       isMessagingSupported().then((supported) => {
         pushSupported = !!supported;
         if (pushSupported) {
@@ -2534,11 +2535,13 @@ function saveNickname() {
   updateNicknameBar();
   // Achievement: first login
   unlockAchievement("first-login", "Willkommen!", "👋", 10);
-  // Auto-checkin if this session was opened via a corner QR code
+  // Auto-checkin if this session was opened via a corner QR code (checkin=1 URL param).
+  // pendingAutoCheckinCornerId is set in applyIncomingLinks() and kept alive by
+  // openPendingSharedCorner() when no nickname was present yet.
   if (STATE.pendingAutoCheckinCornerId) {
     const cid = STATE.pendingAutoCheckinCornerId;
     STATE.pendingAutoCheckinCornerId = null;
-    setTimeout(() => manualCheckin(cid), AUTO_CHECKIN_DELAY_MS);
+    scheduleAutoCheckin(cid);
   }
 }
 
@@ -4943,7 +4946,7 @@ const MAX_INVITE_NAME_LENGTH = 40;
 const SHARE_CORNER_PARAM = "corner";
 const INVITE_PARAM = "invite";
 const CHECKIN_PARAM = "checkin";
-const AUTO_CHECKIN_DELAY_MS = 400;
+const AUTO_CHECKIN_DELAY_MS = 400; // Allow the detail overlay animation to settle before triggering check-in
 let FCM_VAPID_PUBLIC_KEY = ""; // Loaded at runtime from Firebase /config/vapidKey
 let detailXpCornerId = null;
 
@@ -4964,7 +4967,6 @@ STATE.presenceVisibilityHookBound = !!STATE.presenceVisibilityHookBound;
 STATE.lastDirectMessageAt = parseInt(localStorage.getItem("cg.lastDirectMessageAt") || "0");
 STATE.pendingShareCornerId = null;
 STATE.pendingInviteName = "";
-STATE.pendingAutoCheckin = false;
 STATE.pendingAutoCheckinCornerId = null;
 ensurePointIdentity();
 
@@ -5021,6 +5023,10 @@ async function copyText(text) {
   return success;
 }
 
+function scheduleAutoCheckin(cornerId) {
+  setTimeout(() => manualCheckin(cornerId), AUTO_CHECKIN_DELAY_MS);
+}
+
 function applyIncomingLinks() {
   const params = new URLSearchParams(window.location.search);
   const cornerId = (params.get(SHARE_CORNER_PARAM) || "").trim();
@@ -5028,7 +5034,8 @@ function applyIncomingLinks() {
   const autoCheckin = params.get(CHECKIN_PARAM) === "1";
   if (cornerId) STATE.pendingShareCornerId = cornerId;
   if (inviteName) STATE.pendingInviteName = inviteName.slice(0, MAX_INVITE_NAME_LENGTH);
-  if (autoCheckin) STATE.pendingAutoCheckin = true;
+  // When autoCheckin=true, store the target corner for later (resolved after nickname is confirmed)
+  if (autoCheckin && cornerId) STATE.pendingAutoCheckinCornerId = cornerId;
 }
 
 function clearHandledQueryParam(name) {
@@ -5046,14 +5053,13 @@ function openPendingSharedCorner() {
   const cornerId = STATE.pendingShareCornerId;
   STATE.pendingShareCornerId = null;
   clearHandledQueryParam(SHARE_CORNER_PARAM);
-  if (STATE.pendingAutoCheckin) {
-    STATE.pendingAutoCheckin = false;
+  if (STATE.pendingAutoCheckinCornerId === cornerId) {
     clearHandledQueryParam(CHECKIN_PARAM);
     if (STATE.nickname) {
-      setTimeout(() => manualCheckin(cornerId), AUTO_CHECKIN_DELAY_MS);
-    } else {
-      STATE.pendingAutoCheckinCornerId = cornerId;
+      STATE.pendingAutoCheckinCornerId = null;
+      scheduleAutoCheckin(cornerId);
     }
+    // else: leave pendingAutoCheckinCornerId set; saveNickname() will pick it up
   }
   return true;
 }
@@ -5110,7 +5116,7 @@ async function enableFirebasePush() {
     return;
   }
   if (!FCM_VAPID_PUBLIC_KEY) {
-    toast("🔔 VAPID-Key noch nicht geladen. Bitte setze ihn in Firebase unter /config/vapidKey.");
+    toast("🔔 Push-Schlüssel wird noch geladen — bitte kurz warten und erneut versuchen.");
     return;
   }
   if (!window.FB?.enablePushNotifications) {
@@ -5415,6 +5421,22 @@ function _activateAuthDependentFeatures(uid, status) {
     status.className = "firebase-status online";
     status.textContent = "⚡ Live — Firebase aktiv & authentifiziert";
   }
+  // Load VAPID key from database config (needed for push notifications)
+  if (window.FB?.db && window.FB?.ref && window.FB?.onValue) {
+    try {
+      window.FB.onValue(window.FB.ref(window.FB.db, "config/vapidKey"), (snap) => {
+        const key = snap.val();
+        if (key && typeof key === "string" && key.trim()) {
+          FCM_VAPID_PUBLIC_KEY = key.trim();
+          console.log("VAPID key loaded from Firebase config.");
+        } else {
+          console.warn("VAPID key not found in Firebase /config/vapidKey. Push notifications will not work until it is set.");
+        }
+      }, { onlyOnce: true });
+    } catch (err) {
+      console.warn("Failed to load VAPID key from config:", err);
+    }
+  }
   listenEncounters();
   listenLiveLocations();
   listenDirectMessages();
@@ -5465,33 +5487,23 @@ async function initFirebase() {
     listenCaptured();
     listenCornerVotes();
     openPendingSharedCorner();
-    // Activate write-dependent features once auth succeeds
+    // This onAuthChange handler covers the case where auth was initially absent.
+    // It activates write-gated features once auth eventually succeeds.
     window.FB.onAuthChange?.((uid) => {
       if (!uid) return;
       migrateUserIdentity(STATE.userId, uid);
-      _activateAuthDependentFeatures(uid, status);
+      _activateAuthDependentFeatures(uid, $("#fb-status"));
     });
     return;
   }
   const previousUserId = STATE.userId;
   migrateUserIdentity(previousUserId, authUid);
-  STATE.userId = authUid;
-  localStorage.setItem(USER_ID_STORAGE_KEY, authUid);
-  ensurePointIdentity();
   const status = $("#fb-status");
   status.style.display = "block";
-  status.className = "firebase-status online";
-  status.textContent = "⚡ Live — Firebase aktiv & authentifiziert";
-  // Load VAPID key from database config
-  try {
-    const { db, ref, onValue } = window.FB;
-    onValue(ref(db, "config/vapidKey"), (snap) => {
-      const key = snap.val();
-      if (key && typeof key === "string" && key.trim()) FCM_VAPID_PUBLIC_KEY = key.trim();
-    }, { onlyOnce: true });
-  } catch (err) {
-    console.warn("Failed to load VAPID key from config:", err);
-  }
+  // Set up status, VAPID key, presence and auth-gated listeners via shared helper
+  _activateAuthDependentFeatures(authUid, status);
+  // This onAuthChange handler covers the case where the UID changes after initial auth
+  // (e.g., anonymous session gets upgraded). Not the same scenario as the handler above.
   window.FB.onAuthChange?.((uid) => {
     if (!uid || uid === STATE.userId) return;
     STATE.userId = uid;
@@ -5514,12 +5526,7 @@ async function initFirebase() {
   listenTeams();
   listenCornerStatuses();
   listenCaptured();
-  listenEncounters();
-  listenLiveLocations();
   listenCornerVotes();
-  listenDirectMessages();
-  syncIdentity();
-  startPresenceHeartbeat();
 }
 
 function broadcastPresence() {
