@@ -51,12 +51,22 @@
         authListeners.forEach((listener) => {
           try { listener(authUid); } catch (err) { console.warn("Auth listener failed:", err); }
         });
+        // Fires on every auth state change; the Promise itself only ever resolves once
         if (resolveAuthReady) resolveAuthReady(authUid);
       });
-      signInAnonymously(auth).catch((err) => {
-        console.warn("Firebase anonymous auth failed:", err);
-        if (resolveAuthReady) resolveAuthReady("");
-      });
+      let authRetryCount = 0;
+      const trySignIn = () => {
+        signInAnonymously(auth).catch((err) => {
+          authRetryCount++;
+          console.warn(`Firebase anonymous auth failed (attempt ${authRetryCount}):`, err);
+          if (authRetryCount < 3) {
+            setTimeout(trySignIn, authRetryCount * 2000);
+          } else {
+            if (resolveAuthReady) resolveAuthReady("");
+          }
+        });
+      };
+      trySignIn();
       isMessagingSupported().then((supported) => {
         pushSupported = !!supported;
         if (pushSupported) {
@@ -2525,6 +2535,14 @@ function saveNickname() {
   updateNicknameBar();
   // Achievement: first login
   unlockAchievement("first-login", "Willkommen!", "👋", 10);
+  // Auto-checkin if this session was opened via a corner QR code (checkin=1 URL param).
+  // pendingAutoCheckinCornerId is set in applyIncomingLinks() and kept alive by
+  // openPendingSharedCorner() when no nickname was present yet.
+  if (STATE.pendingAutoCheckinCornerId) {
+    const cid = STATE.pendingAutoCheckinCornerId;
+    STATE.pendingAutoCheckinCornerId = null;
+    scheduleAutoCheckin(cid);
+  }
 }
 
 function bindNicknameBar() {
@@ -4927,7 +4945,9 @@ const STATUS_WINDOW_MS = 2 * 60 * 60 * 1000;
 const MAX_INVITE_NAME_LENGTH = 40;
 const SHARE_CORNER_PARAM = "corner";
 const INVITE_PARAM = "invite";
-const FCM_VAPID_PUBLIC_KEY = ""; // REQUIRED: Firebase Console → Project Settings → Cloud Messaging → Web Push certificates.
+const CHECKIN_PARAM = "checkin";
+const AUTO_CHECKIN_DELAY_MS = 400; // Allow the detail overlay animation to settle before triggering check-in
+let FCM_VAPID_PUBLIC_KEY = ""; // Loaded at runtime from Firebase /config/vapidKey
 let detailXpCornerId = null;
 
 STATE.userId = getOrCreateUserId();
@@ -4947,6 +4967,7 @@ STATE.presenceVisibilityHookBound = !!STATE.presenceVisibilityHookBound;
 STATE.lastDirectMessageAt = parseInt(localStorage.getItem("cg.lastDirectMessageAt") || "0");
 STATE.pendingShareCornerId = null;
 STATE.pendingInviteName = "";
+STATE.pendingAutoCheckinCornerId = null;
 ensurePointIdentity();
 
 function getOrCreateUserId() {
@@ -4974,12 +4995,14 @@ function sanitizeInviteName(value) {
     .trim();
 }
 
-function buildShareUrl(cornerId, inviteName) {
+function buildShareUrl(cornerId, inviteName, autoCheckin = false) {
   const url = new URL(window.location.href);
   if (cornerId) url.searchParams.set(SHARE_CORNER_PARAM, cornerId);
   else url.searchParams.delete(SHARE_CORNER_PARAM);
   if (inviteName) url.searchParams.set(INVITE_PARAM, inviteName);
   else url.searchParams.delete(INVITE_PARAM);
+  if (autoCheckin) url.searchParams.set(CHECKIN_PARAM, "1");
+  else url.searchParams.delete(CHECKIN_PARAM);
   return url.toString();
 }
 
@@ -5000,12 +5023,19 @@ async function copyText(text) {
   return success;
 }
 
+function scheduleAutoCheckin(cornerId) {
+  setTimeout(() => manualCheckin(cornerId), AUTO_CHECKIN_DELAY_MS);
+}
+
 function applyIncomingLinks() {
   const params = new URLSearchParams(window.location.search);
   const cornerId = (params.get(SHARE_CORNER_PARAM) || "").trim();
   const inviteName = sanitizeInviteName((params.get(INVITE_PARAM) || "").trim());
+  const autoCheckin = params.get(CHECKIN_PARAM) === "1";
   if (cornerId) STATE.pendingShareCornerId = cornerId;
   if (inviteName) STATE.pendingInviteName = inviteName.slice(0, MAX_INVITE_NAME_LENGTH);
+  // When autoCheckin=true, store the target corner for later (resolved after nickname is confirmed)
+  if (autoCheckin && cornerId) STATE.pendingAutoCheckinCornerId = cornerId;
 }
 
 function clearHandledQueryParam(name) {
@@ -5020,8 +5050,17 @@ function openPendingSharedCorner() {
   const corner = getAllCorners().find((item) => item.id === STATE.pendingShareCornerId);
   if (!corner) return false;
   openDetail(corner.id);
+  const cornerId = STATE.pendingShareCornerId;
   STATE.pendingShareCornerId = null;
   clearHandledQueryParam(SHARE_CORNER_PARAM);
+  if (STATE.pendingAutoCheckinCornerId === cornerId) {
+    clearHandledQueryParam(CHECKIN_PARAM);
+    if (STATE.nickname) {
+      STATE.pendingAutoCheckinCornerId = null;
+      scheduleAutoCheckin(cornerId);
+    }
+    // else: leave pendingAutoCheckinCornerId set; saveNickname() will pick it up
+  }
   return true;
 }
 
@@ -5077,7 +5116,7 @@ async function enableFirebasePush() {
     return;
   }
   if (!FCM_VAPID_PUBLIC_KEY) {
-    toast("🔔 Push ist vorbereitet, aber der VAPID-Key fehlt noch.");
+    toast("🔔 Push-Schlüssel wird noch geladen — bitte kurz warten und erneut versuchen.");
     return;
   }
   if (!window.FB?.enablePushNotifications) {
@@ -5374,6 +5413,37 @@ function renderLiveLocationMarkers() {
   });
 }
 
+function _activateAuthDependentFeatures(uid, status) {
+  STATE.userId = uid;
+  localStorage.setItem(USER_ID_STORAGE_KEY, uid);
+  ensurePointIdentity();
+  if (status) {
+    status.className = "firebase-status online";
+    status.textContent = "⚡ Live — Firebase aktiv & authentifiziert";
+  }
+  // Load VAPID key from database config (needed for push notifications)
+  if (window.FB?.db && window.FB?.ref && window.FB?.onValue) {
+    try {
+      window.FB.onValue(window.FB.ref(window.FB.db, "config/vapidKey"), (snap) => {
+        const key = snap.val();
+        if (key && typeof key === "string" && key.trim()) {
+          FCM_VAPID_PUBLIC_KEY = key.trim();
+          console.log("VAPID key loaded from Firebase config.");
+        } else {
+          console.warn("VAPID key not found in Firebase /config/vapidKey. Push notifications will not work until it is set.");
+        }
+      }, { onlyOnce: true });
+    } catch (err) {
+      console.warn("Failed to load VAPID key from config:", err);
+    }
+  }
+  listenEncounters();
+  listenLiveLocations();
+  listenDirectMessages();
+  syncIdentity();
+  startPresenceHeartbeat();
+}
+
 async function initFirebase() {
   if (!window.FB || !window.FB.firebaseReady) {
     const status = $("#fb-status");
@@ -5392,10 +5462,11 @@ async function initFirebase() {
   if (window.FB.authReady) await window.FB.authReady;
   const authUid = window.FB.getAuthUid?.() || "";
   if (!authUid) {
+    // Auth not yet ready but DB reads are public — still attach listeners so content is visible
     const status = $("#fb-status");
     status.style.display = "block";
     status.className = "firebase-status offline";
-    status.textContent = "⚡ Offline-Modus — Firebase Auth fehlgeschlagen";
+    status.textContent = "⚡ Verbindung wird hergestellt — Inhalte werden geladen";
     loadLocalComments();
     loadLocalBarometer();
     STATE.emojiVotes = loadLocalEmojiVotes();
@@ -5403,18 +5474,36 @@ async function initFirebase() {
     STATE.cornerVotes = loadLocalCornerVotes();
     STATE.directMessages = loadLocalDirectMessages();
     updateNicknameBar();
+    // Attach read-only listeners
+    listenSharedCorners();
+    listenComments();
+    listenBarometer();
+    listenVisits();
+    listenEmojiVotes();
+    listenPhotos();
+    listenPoints();
+    listenTeams();
+    listenCornerStatuses();
+    listenCaptured();
+    listenCornerVotes();
     openPendingSharedCorner();
+    // This onAuthChange handler covers the case where auth was initially absent.
+    // It activates write-gated features once auth eventually succeeds.
+    window.FB.onAuthChange?.((uid) => {
+      if (!uid) return;
+      migrateUserIdentity(STATE.userId, uid);
+      _activateAuthDependentFeatures(uid, $("#fb-status"));
+    });
     return;
   }
   const previousUserId = STATE.userId;
   migrateUserIdentity(previousUserId, authUid);
-  STATE.userId = authUid;
-  localStorage.setItem(USER_ID_STORAGE_KEY, authUid);
-  ensurePointIdentity();
   const status = $("#fb-status");
   status.style.display = "block";
-  status.className = "firebase-status online";
-  status.textContent = "⚡ Live — Firebase aktiv & authentifiziert";
+  // Set up status, VAPID key, presence and auth-gated listeners via shared helper
+  _activateAuthDependentFeatures(authUid, status);
+  // This onAuthChange handler covers the case where the UID changes after initial auth
+  // (e.g., anonymous session gets upgraded). Not the same scenario as the handler above.
   window.FB.onAuthChange?.((uid) => {
     if (!uid || uid === STATE.userId) return;
     STATE.userId = uid;
@@ -5437,12 +5526,7 @@ async function initFirebase() {
   listenTeams();
   listenCornerStatuses();
   listenCaptured();
-  listenEncounters();
-  listenLiveLocations();
   listenCornerVotes();
-  listenDirectMessages();
-  syncIdentity();
-  startPresenceHeartbeat();
 }
 
 function broadcastPresence() {
@@ -6031,7 +6115,7 @@ function openDetail(cornerId) {
   detailContent.querySelector('[data-action="route-detail"]')?.addEventListener("click", () => { window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank"); });
   detailContent.querySelector('[data-action="share-corner"]')?.addEventListener("click", () => { shareCornerLink(c.id); });
   detailContent.querySelector('[data-action="qr-corner"]')?.addEventListener("click", () => {
-    const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=" + encodeURIComponent(buildShareUrl(c.id, STATE.nickname || ""));
+    const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=" + encodeURIComponent(buildShareUrl(c.id, STATE.nickname || "", true));
     window.open(qrUrl, "_blank");
   });
   detailContent.querySelectorAll(".team-btn").forEach((btn) => btn.addEventListener("click", () => { selectTeam(btn.dataset.team); setTimeout(() => openDetail(cornerId), 50); }));
