@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Corner Guide Icon">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e8a93e"/>
+      <stop offset="100%" stop-color="#ff2e6c"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0d0d0d"/>
+  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#g)" stroke-width="28"/>
+  <path d="M256 132c-58 0-104 46-104 104 0 73 104 176 104 176s104-103 104-176c0-58-46-104-104-104zm0 148a44 44 0 1 1 0-88 44 44 0 0 1 0 88z" fill="#f4e9d1"/>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "name": "Minga Corner Guide",
+  "short_name": "CornerGuide",
+  "description": "Realtime Corner spots in München mit Freunden.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ]
+}
