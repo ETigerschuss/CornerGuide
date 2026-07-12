@@ -4328,14 +4328,14 @@ function focusMainMapOnMunich() {
   }
 }
 
-function focusMainMapOnUser(lat, lng) {
+function focusMainMapOnUser(lat, lng, forceAnimate = false) {
   if (!STATE.mainMap) return;
   const target = L.latLng(lat, lng);
   const current = STATE.mainMap.getCenter();
   const isFirstCenter = !STATE.hasCenteredOnUser;
   const hasMovedSignificantly = current.distanceTo(target) > USER_RECENTER_DISTANCE_M;
-  const shouldAnimate = isFirstCenter || hasMovedSignificantly;
-  const currentZoom = STATE.mainMap.getZoom?.() || MIN_USER_ZOOM_LEVEL;
+  const shouldAnimate = forceAnimate || isFirstCenter || hasMovedSignificantly;
+  const currentZoom = STATE.mainMap.getZoom();
   const targetZoom = Math.max(currentZoom, MIN_USER_ZOOM_LEVEL);
   if (shouldAnimate) STATE.mainMap.flyTo([lat, lng], targetZoom, { duration: USER_CENTER_ANIMATION_DURATION });
   else STATE.mainMap.setView([lat, lng], targetZoom);
@@ -6236,8 +6236,7 @@ function startGeo() {
   if (!navigator.geolocation) { toast("Geolocation wird nicht unterstützt."); return; }
   if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
   setGeoStatus("Suche…", "");
-  STATE.hasCenteredOnUser = false;
-  if (STATE.userPos && STATE.mainMap) focusMainMapOnUser(STATE.userPos.lat, STATE.userPos.lng);
+  if (STATE.userPos && STATE.mainMap) focusMainMapOnUser(STATE.userPos.lat, STATE.userPos.lng, true);
   STATE.geoWatch = navigator.geolocation.watchPosition(onGeoUpdate, onGeoError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
   STATE.geoActive = true;
   $("#locate-btn").classList.add("active");
