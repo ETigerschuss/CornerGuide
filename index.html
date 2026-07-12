@@ -4310,6 +4310,7 @@ const MUNICH_MAX_ZOOM = 13;
 const MUNICH_FALLBACK_ZOOM = 12;
 const MIN_USER_ZOOM_LEVEL = 14;
 const USER_RECENTER_DISTANCE_M = 200;
+const USER_CENTER_ANIMATION_DURATION = 0.6;
 
 function getMunichCorners() {
   return getAllCorners().filter((corner) => haversine(MUNICH_CENTER[0], MUNICH_CENTER[1], corner.lat, corner.lng) <= MUNICH_CORNER_RADIUS_M);
@@ -4331,7 +4332,7 @@ function focusMainMapOnUser(lat, lng) {
   const target = L.latLng(lat, lng);
   const current = STATE.mainMap.getCenter();
   const shouldAnimate = !STATE.hasCenteredOnUser || current.distanceTo(target) > USER_RECENTER_DISTANCE_M;
-  STATE.mainMap.flyTo([lat, lng], Math.max(STATE.mainMap.getZoom(), MIN_USER_ZOOM_LEVEL), { duration: shouldAnimate ? 0.6 : 0 });
+  STATE.mainMap.flyTo([lat, lng], Math.max(STATE.mainMap.getZoom(), MIN_USER_ZOOM_LEVEL), { duration: shouldAnimate ? USER_CENTER_ANIMATION_DURATION : 0 });
   STATE.hasCenteredOnUser = true;
 }
 
