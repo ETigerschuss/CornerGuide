@@ -4314,7 +4314,7 @@ const USER_CENTER_ANIMATION_DURATION = 0.6;
 
 function getMunichCorners() {
   const [munichLat, munichLng] = MUNICH_CENTER;
-  return getAllCorners().filter((currentCorner) => haversine(munichLat, munichLng, currentCorner.lat, currentCorner.lng) <= MUNICH_CORNER_RADIUS_M);
+  return getAllCorners().filter((corner) => haversine(munichLat, munichLng, corner.lat, corner.lng) <= MUNICH_CORNER_RADIUS_M);
 }
 
 function focusMainMapOnMunich() {
@@ -4335,7 +4335,8 @@ function focusMainMapOnUser(lat, lng) {
   const isFirstCenter = !STATE.hasCenteredOnUser;
   const hasMovedSignificantly = current.distanceTo(target) > USER_RECENTER_DISTANCE_M;
   const shouldAnimate = isFirstCenter || hasMovedSignificantly;
-  const targetZoom = Math.max(STATE.mainMap.getZoom(), MIN_USER_ZOOM_LEVEL);
+  const currentZoom = STATE.mainMap.getZoom?.() || MIN_USER_ZOOM_LEVEL;
+  const targetZoom = Math.max(currentZoom, MIN_USER_ZOOM_LEVEL);
   if (shouldAnimate) STATE.mainMap.flyTo([lat, lng], targetZoom, { duration: USER_CENTER_ANIMATION_DURATION });
   else STATE.mainMap.setView([lat, lng], targetZoom);
   STATE.hasCenteredOnUser = true;
