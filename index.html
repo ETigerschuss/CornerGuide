@@ -2894,7 +2894,11 @@ function compressImageFile(file, options = {}) {
     reader.onload = (ev) => {
       const img = new Image();
       img.onload = () => {
-        const longest = Math.max(img.width, img.height) || 1;
+        const longest = Math.max(img.width, img.height);
+        if (!Number.isFinite(longest) || longest <= 0) {
+          reject(new Error("Ungültige Bildgröße."));
+          return;
+        }
         const scale = Math.min(1, maxDim / longest);
         const width = Math.max(1, Math.round(img.width * scale));
         const height = Math.max(1, Math.round(img.height * scale));
@@ -3260,7 +3264,7 @@ function renderCommentSection(cornerId, container) {
       <span class="comment-time">${timeAgo(c.time)}</span>
       <p class="comment-text" id="comment-text-${key}">${escapeHtml(c.text)}</p>
       <div class="comment-actions">
-        <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="Kommentar liken">👍 ${likeCount}</button>
+        <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="${likedByMe ? "Like entfernen" : "Kommentar liken"}">👍 ${likeCount}</button>
         <button class="reply-btn" data-corner="${cornerId}" data-key="${key}">💬 Antworten</button>
         ${isMine ? `<button class="edit-btn" data-corner="${cornerId}" data-key="${key}">✏️ Edit</button>
         <button class="delete-btn" data-corner="${cornerId}" data-key="${key}">🗑 Löschen</button>` : ""}
