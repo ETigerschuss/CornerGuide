@@ -2374,6 +2374,7 @@ const STATE = {
   userMainMarker: null,
   geoWatch: null,
   geoActive: false,
+  hasCenteredOnUser: false,
   userPos: null,
   atCornerId: null,
   manualCheckinId: null,
@@ -4298,11 +4299,35 @@ function initMainMap() {
   }).addTo(map);
   STATE.mainMap = map;
   rebuildMainMarkers();
-  const muc = getAllCorners().filter((c) => Math.abs(c.lat - 48.135) < 2);
-  if (muc.length) {
-    const bounds = L.latLngBounds(muc.map((c) => [c.lat, c.lng]));
-    map.fitBounds(bounds, { padding: [40, 40] });
+  if (STATE.geoActive && STATE.userPos) focusMainMapOnUser(STATE.userPos.lat, STATE.userPos.lng);
+  else focusMainMapOnMunich();
+}
+
+const MUNICH_CENTER = [48.137154, 11.576124];
+const MUNICH_CORNER_RADIUS_M = 35000;
+
+function getMunichCorners() {
+  return getAllCorners().filter((corner) => haversine(MUNICH_CENTER[0], MUNICH_CENTER[1], corner.lat, corner.lng) <= MUNICH_CORNER_RADIUS_M);
+}
+
+function focusMainMapOnMunich() {
+  if (!STATE.mainMap) return;
+  const munichCorners = getMunichCorners();
+  if (munichCorners.length) {
+    const bounds = L.latLngBounds(munichCorners.map((corner) => [corner.lat, corner.lng]));
+    STATE.mainMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+  } else {
+    STATE.mainMap.setView(MUNICH_CENTER, 12);
   }
+}
+
+function focusMainMapOnUser(lat, lng) {
+  if (!STATE.mainMap) return;
+  const target = L.latLng(lat, lng);
+  const current = STATE.mainMap.getCenter();
+  const shouldAnimate = !STATE.hasCenteredOnUser || current.distanceTo(target) > 200;
+  STATE.mainMap.flyTo([lat, lng], Math.max(STATE.mainMap.getZoom(), 14), { duration: shouldAnimate ? 0.6 : 0 });
+  STATE.hasCenteredOnUser = true;
 }
 
 function rebuildMainMarkers() {
@@ -6199,6 +6224,8 @@ function startGeo() {
   if (!navigator.geolocation) { toast("Geolocation wird nicht unterstützt."); return; }
   if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
   setGeoStatus("Suche…", "");
+  STATE.hasCenteredOnUser = false;
+  if (STATE.userPos && STATE.mainMap) focusMainMapOnUser(STATE.userPos.lat, STATE.userPos.lng);
   STATE.geoWatch = navigator.geolocation.watchPosition(onGeoUpdate, onGeoError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
   STATE.geoActive = true;
   $("#locate-btn").classList.add("active");
@@ -6219,14 +6246,17 @@ function stopGeo() {
   $("#me-position-meta").textContent = "Standort aus";
   if (STATE.userMainMarker && STATE.mainMap) { STATE.mainMap.removeLayer(STATE.userMainMarker); STATE.userMainMarker = null; }
   if (STATE.atCornerId) { const old = STATE.atCornerId; STATE.atCornerId = null; refreshMainMarker(old); document.getElementById("card-" + old)?.classList.remove("at-here"); }
+  STATE.hasCenteredOnUser = false;
   updateCheckinButtons();
   broadcastPresence();
   broadcastLiveLocation();
+  focusMainMapOnMunich();
 }
 
 function onGeoUpdate(pos) {
   const { latitude, longitude } = pos.coords;
   STATE.userPos = { lat: latitude, lng: longitude };
+  focusMainMapOnUser(latitude, longitude);
   if (STATE.mainMap) {
     const team = getTeamInfo(STATE.team);
     const icon = L.divIcon({ className: "", html: `<div class="live-user-marker" style="background:${team?.color || '#6cb6ff'};"><span class="live-nick">${escapeHtml(STATE.nickname || 'Du')}</span>${team?.emoji || '📍'}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
