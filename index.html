@@ -2646,7 +2646,7 @@ function checkAccessGranted() {
     }
     const { db, ref, get } = window.FB;
     get(ref(db, "accessGranted/" + uid)).then((snap) => {
-      if (snap.val() === true) {
+      if (snap.val() !== null) {
         localStorage.setItem("cg.accessGranted", "1");
         // Already granted – make sure the prompt stays hidden
         return;
@@ -2666,40 +2666,36 @@ function showAccessPrompt() {
 
 async function submitAccessCode() {
   if (!window.FB?.firebaseReady) return;
-  const { db, ref, get, set } = window.FB;
+  const { db, ref, set } = window.FB;
   const input = $("#access-code-input");
   const btn = $("#access-code-save");
   const errEl = $("#access-error");
-  const code = input.value.trim().toUpperCase();
+  // Sanitize: strip characters illegal in Firebase paths and normalise to uppercase
+  const code = input.value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
   if (!code) { errEl.textContent = "Bitte einen Code eingeben."; return; }
 
   btn.disabled = true;
   errEl.textContent = "";
 
+  const uid = window.FB.getAuthUid();
+  if (!uid) {
+    errEl.textContent = "Kein Anmelde-Status. Bitte Seite neu laden.";
+    btn.disabled = false;
+    return;
+  }
+
   try {
-    const snap = await get(ref(db, "accessCodes/" + code));
-    if (!snap.exists()) {
-      errEl.textContent = "Ungültiger Code. Bitte erneut versuchen.";
-      btn.disabled = false;
-      input.focus();
-      return;
-    }
-
-    const uid = window.FB.getAuthUid();
-    if (!uid) {
-      errEl.textContent = "Kein Anmelde-Status. Bitte Seite neu laden.";
-      btn.disabled = false;
-      return;
-    }
-
-    await set(ref(db, "accessGranted/" + uid), true);
+    // Write the code as the value; the Firebase .validate rule confirms it exists
+    // under accessCodes/{code} before allowing the write.
+    await set(ref(db, "accessGranted/" + uid), code);
     localStorage.setItem("cg.accessGranted", "1");
     $("#access-prompt").style.display = "none";
     toast("✅ Zugang gewährt – willkommen!");
   } catch (err) {
     console.warn("Access code validation failed:", err);
-    errEl.textContent = "Fehler beim Prüfen des Codes. Bitte erneut versuchen.";
+    errEl.textContent = "Ungültiger Code. Bitte erneut versuchen.";
     btn.disabled = false;
+    input.focus();
   }
 }
 
