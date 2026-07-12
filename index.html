@@ -3209,7 +3209,8 @@ function toggleCommentLike(cornerId, commentKey) {
     return;
   }
   if (!STATE.comments?.[cornerId]?.[commentKey]) return;
-  if (!STATE.comments[cornerId][commentKey].likes) STATE.comments[cornerId][commentKey].likes = {};
+  const comment = STATE.comments[cornerId][commentKey];
+  if (!comment.likes) comment.likes = {};
   if (hasLiked) delete STATE.comments[cornerId][commentKey].likes[voteKey];
   else STATE.comments[cornerId][commentKey].likes[voteKey] = true;
   saveLocalComments();
@@ -3225,17 +3226,20 @@ function refreshAllCommentSections() {
 
 function renderCommentSection(cornerId, container) {
   const comments = STATE.comments[cornerId] || {};
-  const commentEntries = Object.entries(comments).sort((a, b) => {
-    const likesDiff = getCommentLikeCount(b[1]) - getCommentLikeCount(a[1]);
+  const commentEntries = Object.entries(comments).map(([key, comment]) => ({
+    key,
+    comment,
+    likeCount: getCommentLikeCount(comment)
+  })).sort((a, b) => {
+    const likesDiff = b.likeCount - a.likeCount;
     if (likesDiff !== 0) return likesDiff;
-    return (a[1].time || 0) - (b[1].time || 0);
+    return (a.comment.time || 0) - (b.comment.time || 0);
   });
   const isCollapsed = commentEntries.length > 3;
 
-  const listHtml = commentEntries.map(([key, c]) => {
+  const listHtml = commentEntries.map(({ key, comment: c, likeCount }) => {
     const isMine = c.author === STATE.nickname;
     const myLikeKey = currentUserKey();
-    const likesCount = getCommentLikeCount(c);
     const likedByMe = !!c?.likes?.[myLikeKey];
     const replies = c.replies ? Object.entries(c.replies).sort((a, b) => a[1].time - b[1].time) : [];
     const repliesHtml = replies.length > 0 ? `
@@ -3256,7 +3260,7 @@ function renderCommentSection(cornerId, container) {
       <span class="comment-time">${timeAgo(c.time)}</span>
       <p class="comment-text" id="comment-text-${key}">${escapeHtml(c.text)}</p>
       <div class="comment-actions">
-        <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="Kommentar liken">👍 ${likesCount}</button>
+        <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="Kommentar liken">👍 ${likeCount}</button>
         <button class="reply-btn" data-corner="${cornerId}" data-key="${key}">💬 Antworten</button>
         ${isMine ? `<button class="edit-btn" data-corner="${cornerId}" data-key="${key}">✏️ Edit</button>
         <button class="delete-btn" data-corner="${cornerId}" data-key="${key}">🗑 Löschen</button>` : ""}
