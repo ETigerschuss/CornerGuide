@@ -1,11 +1,26 @@
 {
   "rules": {
     ".read": true,
-    ".write": "auth != null",
+    ".write": "auth != null && root.child('accessGranted').child(auth.uid).val() != null",
+    "accessGranted": {
+      "$uid": {
+        ".write": "auth != null && auth.uid == $uid",
+        ".validate": "newData.isString() && newData.val().length > 0 && root.child('accessCodes').child(newData.val()).exists()"
+      }
+    },
+    "accessCodes": {
+      ".write": false
+    },
     "pushTokens": {
       ".read": false,
       "$uid": {
-        ".write": "auth != null && auth.uid == $uid"
+        ".write": "auth != null && auth.uid == $uid && root.child('accessGranted').child(auth.uid).val() != null"
+      }
+    },
+    "userPrefs": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid && root.child('accessGranted').child(auth.uid).val() != null"
       }
     }
   }

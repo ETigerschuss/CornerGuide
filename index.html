@@ -15,7 +15,7 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, set, push, onValue, onChildAdded, onDisconnect, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getDatabase, ref, set, get, push, onValue, onChildAdded, onDisconnect, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getMessaging, getToken, onMessage, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
@@ -81,7 +81,7 @@
 
   // Expose Firebase functions globally for use in the main script
   window.FB = {
-    db, auth, ref, set, push, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, firebaseReady, authReady,
+    db, auth, ref, set, get, push, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, firebaseReady, authReady,
     getAuthUid: () => authUid,
     onAuthChange: (listener) => {
       if (typeof listener !== "function") return () => {};
@@ -1274,6 +1274,70 @@ input, textarea { cursor: text; }
 }
 .nickname-prompt button:hover { background: var(--pink); color: #fff; }
 
+/* ====================== ACCESS CODE PROMPT ====================== */
+.access-prompt {
+  position: fixed; inset: 0; z-index: 4000;
+  background: rgba(0,0,0,0.92);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center; justify-content: center;
+  animation: fade 0.2s;
+}
+.access-prompt .prompt-card {
+  background: var(--bg-2);
+  border: 2px solid var(--amber);
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 360px;
+  width: calc(100vw - 40px);
+  text-align: center;
+}
+.access-prompt h2 {
+  font-family: "Anton", sans-serif;
+  font-weight: 400;
+  font-size: 26px;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+.access-prompt p {
+  color: var(--fg-dim);
+  font-size: 14px;
+  margin: 0 0 18px;
+}
+.access-prompt input {
+  width: 100%;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 18px;
+  text-align: center;
+  letter-spacing: 3px;
+  font-family: "JetBrains Mono", monospace;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+.access-prompt input:focus { outline: none; border-color: var(--amber); }
+.access-prompt .access-error {
+  color: var(--pink);
+  font-size: 13px;
+  min-height: 20px;
+  margin-bottom: 10px;
+}
+.access-prompt button {
+  background: var(--amber);
+  color: #111;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  width: 100%;
+}
+.access-prompt button:hover { background: var(--pink); color: #fff; }
+.access-prompt button:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* ====================== PHOTO GALLERY ====================== */
 .photo-gallery {
   padding: 10px 18px 14px;
@@ -1957,6 +2021,15 @@ input, textarea { cursor: text; }
 .notif-opt { background: var(--bg-3); border: 1.5px solid var(--line); color: var(--fg-dim); padding: 8px 14px; border-radius: 999px; font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
 .notif-opt:hover { border-color: var(--fg-dim); }
 .notif-opt.active { border-color: var(--green); color: var(--green); background: rgba(184,255,58,0.08); }
+.notif-settings-label { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-dim); margin: 14px 0 7px; }
+.team-filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.team-chip { background: var(--bg-3); border: 1.5px solid var(--line); color: var(--fg-dim); padding: 6px 10px; border-radius: 999px; font-size: 12px; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px; }
+.team-chip:hover { border-color: var(--fg-dim); }
+.team-chip.muted { border-color: #ff4d4d; color: #ff4d4d; background: rgba(255,77,77,0.08); }
+.user-filter-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px; }
+.user-filter-item .ufi-name { flex: 1; font-size: 13px; font-weight: 600; }
+.ufi-toggle { background: transparent; border: 1.5px solid var(--line); color: var(--fg-dim); padding: 4px 10px; border-radius: 999px; font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.ufi-toggle.muted { border-color: #ff4d4d; color: #ff4d4d; }
 
 /* ====================== TEAM LEADERBOARD ====================== */
 .team-battle-section { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 18px; }
@@ -2189,7 +2262,17 @@ input, textarea { cursor: text; }
   </div>
 </div>
 
-<!-- Nickname prompt (shown on first visit) -->
+<!-- Access code gate (shown on first visit until code is validated) -->
+<div id="access-prompt" class="access-prompt" style="display:none;">
+  <div class="prompt-card">
+    <h2>🔒 Zugang</h2>
+    <p>Gib den Einladungscode ein, um Zugang zu erhalten.</p>
+    <input type="text" id="access-code-input" placeholder="CODE" maxlength="30" autocomplete="off" autocapitalize="characters" />
+    <div class="access-error" id="access-error"></div>
+    <button id="access-code-save">Bestätigen</button>
+  </div>
+</div>
+
 <div id="nickname-prompt" class="nickname-prompt" style="display:none;">
   <div class="prompt-card">
     <h2>Wer bist du?</h2>
@@ -2374,6 +2457,7 @@ const STATE = {
   userMainMarker: null,
   geoWatch: null,
   geoActive: false,
+  hasCenteredOnUser: false,
   userPos: null,
   atCornerId: null,
   manualCheckinId: null,
@@ -2488,6 +2572,7 @@ const $$ = (s) => document.querySelectorAll(s);
 
 /* ====================== INIT ====================== */
 document.addEventListener("DOMContentLoaded", () => {
+  checkAccessGranted();
   checkNickname();
   renderCards();
   bindTabs();
@@ -2542,6 +2627,85 @@ function saveNickname() {
     const cid = STATE.pendingAutoCheckinCornerId;
     STATE.pendingAutoCheckinCornerId = null;
     scheduleAutoCheckin(cid);
+  }
+}
+
+/* ====================== ACCESS CODE GATE ====================== */
+function checkAccessGranted() {
+  // Fast path: already granted in localStorage
+  if (localStorage.getItem("cg.accessGranted") === "1") return;
+
+  // Bind the modal immediately so UI is responsive
+  const input = $("#access-code-input");
+  const btn = $("#access-code-save");
+  const errEl = $("#access-error");
+  btn.addEventListener("click", () => submitAccessCode());
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") submitAccessCode(); });
+
+  if (!window.FB?.firebaseReady) {
+    // Firebase not configured – allow access so app works in offline/dev mode
+    return;
+  }
+
+  // Async: wait for auth UID, then verify Firebase flag
+  window.FB.authReady.then((uid) => {
+    if (!uid) {
+      showAccessPrompt();
+      return;
+    }
+    const { db, ref, get } = window.FB;
+    get(ref(db, "accessGranted/" + uid)).then((snap) => {
+      if (snap.val() !== null) {
+        localStorage.setItem("cg.accessGranted", "1");
+        // Already granted – make sure the prompt stays hidden
+        return;
+      }
+      showAccessPrompt();
+    }).catch((err) => {
+      console.warn("checkAccessGranted: failed to read accessGranted flag:", err);
+      // Network error – show prompt to be safe
+      showAccessPrompt();
+    });
+  });
+}
+
+function showAccessPrompt() {
+  $("#access-prompt").style.display = "flex";
+  setTimeout(() => $("#access-code-input").focus(), 100);
+}
+
+async function submitAccessCode() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, set } = window.FB;
+  const input = $("#access-code-input");
+  const btn = $("#access-code-save");
+  const errEl = $("#access-error");
+  // Sanitize: strip characters illegal in Firebase paths and normalise to uppercase
+  const code = input.value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+  if (!code) { errEl.textContent = "Bitte einen Code eingeben."; return; }
+
+  btn.disabled = true;
+  errEl.textContent = "";
+
+  const uid = window.FB.getAuthUid();
+  if (!uid) {
+    errEl.textContent = "Kein Anmelde-Status. Bitte Seite neu laden.";
+    btn.disabled = false;
+    return;
+  }
+
+  try {
+    // Write the code as the value; the Firebase .validate rule confirms it exists
+    // under accessCodes/{code} before allowing the write.
+    await set(ref(db, "accessGranted/" + uid), code);
+    localStorage.setItem("cg.accessGranted", "1");
+    $("#access-prompt").style.display = "none";
+    toast("✅ Zugang gewährt – willkommen!");
+  } catch (err) {
+    console.warn("Access code validation failed:", err);
+    errEl.textContent = "Ungültiger Code. Bitte erneut versuchen.";
+    btn.disabled = false;
+    input.focus();
   }
 }
 
@@ -4298,11 +4462,47 @@ function initMainMap() {
   }).addTo(map);
   STATE.mainMap = map;
   rebuildMainMarkers();
-  const muc = getAllCorners().filter((c) => Math.abs(c.lat - 48.135) < 2);
-  if (muc.length) {
-    const bounds = L.latLngBounds(muc.map((c) => [c.lat, c.lng]));
-    map.fitBounds(bounds, { padding: [40, 40] });
+  if (STATE.geoActive && STATE.userPos) focusMainMapOnUser(STATE.userPos.lat, STATE.userPos.lng);
+  else focusMainMapOnMunich();
+}
+
+const MUNICH_CENTER = [48.137154, 11.576124];
+const MUNICH_CORNER_RADIUS_M = 35000;
+const MUNICH_MAP_PADDING = [40, 40];
+const MUNICH_MAX_ZOOM = 13;
+const MUNICH_FALLBACK_ZOOM = 12;
+const MIN_USER_ZOOM_LEVEL = 14;
+const USER_RECENTER_DISTANCE_M = 200;
+const USER_CENTER_ANIMATION_DURATION = 0.6;
+
+function getMunichCorners() {
+  const [munichLat, munichLng] = MUNICH_CENTER;
+  return getAllCorners().filter((corner) => haversine(munichLat, munichLng, corner.lat, corner.lng) <= MUNICH_CORNER_RADIUS_M);
+}
+
+function focusMainMapOnMunich() {
+  if (!STATE.mainMap) return;
+  const munichCorners = getMunichCorners();
+  if (munichCorners.length) {
+    const bounds = L.latLngBounds(munichCorners.map((corner) => [corner.lat, corner.lng]));
+    STATE.mainMap.fitBounds(bounds, { padding: MUNICH_MAP_PADDING, maxZoom: MUNICH_MAX_ZOOM });
+  } else {
+    STATE.mainMap.setView(MUNICH_CENTER, MUNICH_FALLBACK_ZOOM);
   }
+}
+
+function focusMainMapOnUser(lat, lng, forceAnimate = false) {
+  if (!STATE.mainMap) return;
+  const target = L.latLng(lat, lng);
+  const current = STATE.mainMap.getCenter();
+  const isFirstCenter = !STATE.hasCenteredOnUser;
+  const hasMovedSignificantly = current.distanceTo(target) > USER_RECENTER_DISTANCE_M;
+  const shouldAnimate = forceAnimate || isFirstCenter || hasMovedSignificantly;
+  const currentZoom = STATE.mainMap.getZoom();
+  const targetZoom = Math.max(currentZoom, MIN_USER_ZOOM_LEVEL);
+  if (shouldAnimate) STATE.mainMap.flyTo([lat, lng], targetZoom, { duration: USER_CENTER_ANIMATION_DURATION });
+  else STATE.mainMap.setView([lat, lng], targetZoom);
+  STATE.hasCenteredOnUser = true;
 }
 
 function rebuildMainMarkers() {
@@ -4917,8 +5117,12 @@ function renderAchievementsInProfile(container) {
 
 /* ====================== NOTIFICATIONS ====================== */
 function shouldNotify(friendInfo) {
-  if (STATE.notifPref === "off") return false;
-  if (STATE.notifPref === "team" && friendInfo.team !== STATE.team) return false;
+  const mode = STATE.notifPref;
+  if (mode === "off") return false;
+  if (mode === "team" && friendInfo.team !== STATE.team) return false;
+  const blocked = STATE.notifSettings || {};
+  if ((blocked.blockedTeams || []).includes(friendInfo.team)) return false;
+  if (friendInfo.id && (blocked.blockedUsers || []).includes(friendInfo.id)) return false;
   return true;
 }
 
@@ -4938,6 +5142,27 @@ const USER_ID_STORAGE_KEY = "cg.userId";
 const CORNER_VOTES_STORAGE_KEY = "cg.cornerVotes";
 const DIRECT_MESSAGES_STORAGE_KEY = "cg.directMessages";
 const FCM_TOKEN_STORAGE_KEY = "cg.fcmToken";
+const NOTIF_SETTINGS_KEY = "cg.notifSettings";
+
+function loadNotifSettings() {
+  try { return JSON.parse(localStorage.getItem(NOTIF_SETTINGS_KEY) || "{}"); }
+  catch (e) { return {}; }
+}
+function saveNotifSettings() {
+  localStorage.setItem(NOTIF_SETTINGS_KEY, JSON.stringify(STATE.notifSettings || {}));
+  syncNotifSettingsToFirebase();
+}
+function syncNotifSettingsToFirebase() {
+  if (!window.FB?.firebaseReady || !currentUserKey()) return;
+  try {
+    const { db, ref, set } = window.FB;
+    set(ref(db, "userPrefs/" + currentUserKey() + "/notifSettings"), {
+      mode: STATE.notifPref || "all",
+      blockedTeams: STATE.notifSettings?.blockedTeams || [],
+      blockedUsers: STATE.notifSettings?.blockedUsers || []
+    });
+  } catch (e) { console.warn("Failed to sync notif settings:", e); }
+}
 const MAX_DIRECT_MESSAGES = 120;
 const PRESENCE_HEARTBEAT_INTERVAL_MS = 20000;
 const MIN_CORNER_DISTANCE_METERS = 50;
@@ -4968,6 +5193,11 @@ STATE.lastDirectMessageAt = parseInt(localStorage.getItem("cg.lastDirectMessageA
 STATE.pendingShareCornerId = null;
 STATE.pendingInviteName = "";
 STATE.pendingAutoCheckinCornerId = null;
+const _savedNotifSettings = loadNotifSettings();
+STATE.notifSettings = {
+  blockedTeams: Array.isArray(_savedNotifSettings.blockedTeams) ? _savedNotifSettings.blockedTeams : [],
+  blockedUsers: Array.isArray(_savedNotifSettings.blockedUsers) ? _savedNotifSettings.blockedUsers : []
+};
 ensurePointIdentity();
 
 function getOrCreateUserId() {
@@ -5436,6 +5666,24 @@ function _activateAuthDependentFeatures(uid, status) {
     } catch (err) {
       console.warn("Failed to load VAPID key from config:", err);
     }
+    // Load notification settings from Firebase (cross-device sync)
+    try {
+      window.FB.onValue(window.FB.ref(window.FB.db, "userPrefs/" + uid + "/notifSettings"), (snap) => {
+        const remote = snap.val();
+        if (remote && typeof remote === "object") {
+          if (remote.mode && ["all", "team", "off"].includes(remote.mode)) {
+            STATE.notifPref = remote.mode;
+            localStorage.setItem(NOTIF_STORAGE_KEY, STATE.notifPref);
+            localStorage.setItem("cg.notifPref", STATE.notifPref);
+          }
+          if (Array.isArray(remote.blockedTeams)) STATE.notifSettings.blockedTeams = remote.blockedTeams;
+          if (Array.isArray(remote.blockedUsers)) STATE.notifSettings.blockedUsers = remote.blockedUsers;
+          saveNotifSettings();
+        }
+      }, { onlyOnce: true });
+    } catch (err) {
+      console.warn("Failed to load notif settings from Firebase:", err);
+    }
   }
   listenEncounters();
   listenLiveLocations();
@@ -5585,8 +5833,7 @@ function listenFriendPresence() {
 }
 
 function friendAtCornerAlarm(friend, corner) {
-  if (STATE.notifPref === "off") return;
-  if (STATE.notifPref === "team" && friend.team !== STATE.team) return;
+  if (!shouldNotify(friend)) return;
   toast(`🍻 <strong>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</strong> ist am <strong>${escapeHtml(corner.name)}</strong>!`, "friend-alert");
   if ("Notification" in window) {
     if (Notification.permission === "granted") {
@@ -6199,6 +6446,7 @@ function startGeo() {
   if (!navigator.geolocation) { toast("Geolocation wird nicht unterstützt."); return; }
   if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
   setGeoStatus("Suche…", "");
+  if (STATE.userPos && STATE.mainMap) focusMainMapOnUser(STATE.userPos.lat, STATE.userPos.lng, true);
   STATE.geoWatch = navigator.geolocation.watchPosition(onGeoUpdate, onGeoError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
   STATE.geoActive = true;
   $("#locate-btn").classList.add("active");
@@ -6219,14 +6467,17 @@ function stopGeo() {
   $("#me-position-meta").textContent = "Standort aus";
   if (STATE.userMainMarker && STATE.mainMap) { STATE.mainMap.removeLayer(STATE.userMainMarker); STATE.userMainMarker = null; }
   if (STATE.atCornerId) { const old = STATE.atCornerId; STATE.atCornerId = null; refreshMainMarker(old); document.getElementById("card-" + old)?.classList.remove("at-here"); }
+  STATE.hasCenteredOnUser = false;
   updateCheckinButtons();
   broadcastPresence();
   broadcastLiveLocation();
+  focusMainMapOnMunich();
 }
 
 function onGeoUpdate(pos) {
   const { latitude, longitude } = pos.coords;
   STATE.userPos = { lat: latitude, lng: longitude };
+  focusMainMapOnUser(latitude, longitude);
   if (STATE.mainMap) {
     const team = getTeamInfo(STATE.team);
     const icon = L.divIcon({ className: "", html: `<div class="live-user-marker" style="background:${team?.color || '#6cb6ff'};"><span class="live-nick">${escapeHtml(STATE.nickname || 'Du')}</span>${team?.emoji || '📍'}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
@@ -6339,6 +6590,45 @@ function renderLeaderboard() {
   renderAchievementsSection();
 }
 
+function buildNotifSettingsHtml() {
+  const pref = STATE.notifPref;
+  const blocked = STATE.notifSettings || {};
+  const blockedTeams = blocked.blockedTeams || [];
+  const blockedUsers = blocked.blockedUsers || [];
+  const teamChips = Object.entries(TEAMS).map(([id, t]) =>
+    `<button class="team-chip ${blockedTeams.includes(id) ? "muted" : ""}" data-team="${id}">${t.emoji} ${t.name}</button>`
+  ).join("");
+  const knownUsers = Object.values(STATE.friends || {});
+  const userRows = knownUsers.length
+    ? knownUsers.map((f) => {
+        const fid = f.id;
+        if (!fid) return "";
+        const isMuted = blockedUsers.includes(fid);
+        const teamEmoji = TEAMS[f.team]?.emoji || "👤";
+        return `<div class="user-filter-item">
+          <span>${teamEmoji}</span>
+          <span class="ufi-name">${escapeHtml(f.nickname || f.name || fid)}</span>
+          <button class="ufi-toggle ${isMuted ? "muted" : ""}" data-user="${fid}">${isMuted ? "🔕 Stumm" : "🔔 Aktiv"}</button>
+        </div>`;
+      }).join("")
+    : `<p style="color:var(--fg-dim);font-size:13px;margin:4px 0 0;">Keine Nutzer derzeit online.</p>`;
+  return `
+    <div class="notif-settings-label">Modus</div>
+    <div class="notif-options">
+      <button class="notif-opt ${pref === "all" ? "active" : ""}" data-pref="all">Alle</button>
+      <button class="notif-opt ${pref === "team" ? "active" : ""}" data-pref="team">Nur mein Team</button>
+      <button class="notif-opt ${pref === "off" ? "active" : ""}" data-pref="off">Aus</button>
+    </div>
+    ${pref !== "off" ? `
+    <div class="notif-settings-label">Teams stummschalten</div>
+    <div class="team-filter-chips">${teamChips}</div>
+    <div class="notif-settings-label">Nutzer stummschalten</div>
+    <div class="user-filter-list">${userRows}</div>` : ""}
+    <div style="margin-top:14px;">
+      <button class="notif-opt" id="enable-push-btn">🔔 Push verbinden</button>
+    </div>`;
+}
+
 function renderProfile() {
   const xp = getCurrentXp();
   const { level, progress } = getLevel(xp);
@@ -6365,15 +6655,38 @@ function renderProfile() {
     <div class="team-history"><h3>🧬 Team History</h3><div class="team-history-grid">${TEAM_ORDER.map((teamId) => { const count = STATE.teamHistory.filter((entry) => entry.team === teamId).length; return `<div class="team-history-item"><div class="th-emoji">${TEAMS[teamId].emoji}</div><div class="th-count">${count}</div><div class="th-name">${TEAMS[teamId].name}</div></div>`; }).join("")}</div></div>
     <div class="team-battle-section"><h3>🏆 Team Leaderboard</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.max(6, row.total * 16)}px;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
     <div class="best-friends-section"><h3>🤝 Best Friends</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Begegnungen geloggt.</p>`}</div>
-    <div class="notification-toggle"><h3>🔔 Notifications</h3><div class="notif-options"><button class="notif-opt ${STATE.notifPref === 'all' ? 'active' : ''}" data-pref="all">All</button><button class="notif-opt ${STATE.notifPref === 'team' ? 'active' : ''}" data-pref="team">Team only</button><button class="notif-opt ${STATE.notifPref === 'off' ? 'active' : ''}" data-pref="off">Off</button><button class="notif-opt" id="enable-push-btn">Push verbinden</button></div></div>
+    <div class="notification-toggle"><h3>🔔 Benachrichtigungen</h3>${buildNotifSettingsHtml()}</div>
     <div class="best-friends-section"><h3>💬 Direktnachrichten</h3>${recentMessages.length ? recentMessages.map((msg) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(msg.fromName || msg.fromId || "Unbekannt")}: ${escapeHtml(msg.text || "")}</span><button class="action-btn" style="padding:4px 8px;font-size:10px;" data-reply-id="${msg.fromId}">Antworten</button></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Direktnachrichten.</p>`}</div>
     <div class="leaderboard-section"><h3>🏆 Achievements</h3><div class="achievements-grid">${getAchievementCardsHtml()}</div></div>`;
   $$('[data-pref]').forEach((btn) => btn.addEventListener("click", () => {
     STATE.notifPref = btn.dataset.pref;
     localStorage.setItem(NOTIF_STORAGE_KEY, STATE.notifPref);
     localStorage.setItem("cg.notifPref", STATE.notifPref); // Backward-compatible key used by legacy `loadNotifPref()`.
+    saveNotifSettings();
     renderProfile();
   }));
+  $$("#profile-content .team-chip[data-team]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const team = btn.dataset.team;
+      const list = STATE.notifSettings.blockedTeams;
+      const idx = list.indexOf(team);
+      if (idx >= 0) list.splice(idx, 1); else list.push(team);
+      saveNotifSettings();
+      btn.classList.toggle("muted", list.includes(team));
+    });
+  });
+  $$("#profile-content .ufi-toggle[data-user]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const uid = btn.dataset.user;
+      const list = STATE.notifSettings.blockedUsers;
+      const idx = list.indexOf(uid);
+      if (idx >= 0) list.splice(idx, 1); else list.push(uid);
+      saveNotifSettings();
+      const isMuted = list.includes(uid);
+      btn.classList.toggle("muted", isMuted);
+      btn.textContent = isMuted ? "🔕 Stumm" : "🔔 Aktiv";
+    });
+  });
   $("#enable-push-btn")?.addEventListener("click", enableFirebasePush);
   $$("#profile-content [data-reply-id]").forEach((btn) => btn.addEventListener("click", () => {
     const msg = recentMessages.find((entry) => entry.fromId === btn.dataset.replyId);
