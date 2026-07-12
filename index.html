@@ -2886,6 +2886,38 @@ function savePhoto(cornerId, dataUrl, caption) {
   }
 }
 
+function compressImageFile(file, options = {}) {
+  const parsedMaxDim = parseInt(options.maxDim, 10);
+  const parsedQuality = parseFloat(options.quality);
+  const maxDim = Number.isFinite(parsedMaxDim) && parsedMaxDim > 0 ? parsedMaxDim : 800;
+  const quality = Number.isFinite(parsedQuality) && parsedQuality > 0 && parsedQuality <= 1 ? parsedQuality : 0.7;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const longest = Math.max(img.width, img.height);
+        if (!Number.isFinite(longest) || longest <= 0) {
+          reject(new Error("Bilddimensionen konnten nicht bestimmt werden."));
+          return;
+        }
+        const scale = Math.min(1, maxDim / longest);
+        const width = Math.max(1, Math.round(img.width * scale));
+        const height = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => reject(new Error("Bildformat wird nicht unterstützt oder Datei ist beschädigt."));
+      img.src = ev.target.result;
+    };
+    reader.onerror = () => reject(new Error("Bilddatei konnte nicht gelesen werden (ggf. beschädigt oder nicht zugreifbar)."));
+    reader.readAsDataURL(file);
+  });
+}
+
 function ratePhoto(cornerId, photoKey, score) {
   if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
 
@@ -2982,23 +3014,13 @@ function renderPhotoGallery(cornerId, container) {
     if (!files?.length) return;
     Array.from(files).forEach((f) => {
       if (!f.type.startsWith("image/")) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const maxW = 900;
-          const scale = Math.min(1, maxW / img.width);
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.78);
-          savePhoto(cornerId, dataUrl, "");
-          toast("Foto hochgeladen 📸");
-        };
-        img.src = ev.target.result;
-      };
-      reader.readAsDataURL(f);
+      compressImageFile(f, { maxDim: 800, quality: 0.7 }).then((dataUrl) => {
+        savePhoto(cornerId, dataUrl, "");
+        toast("Foto hochgeladen 📸");
+      }).catch((err) => {
+        console.warn("Gallery image compression failed:", err);
+        toast("Bild konnte nicht verarbeitet werden.");
+      });
     });
     fileInput.value = "";
   });
@@ -3178,6 +3200,31 @@ function deleteComment(cornerId, commentKey) {
   }
 }
 
+function getCommentLikeCount(comment) {
+  return Object.values(comment?.likes || {}).filter(Boolean).length;
+}
+
+function toggleCommentLike(cornerId, commentKey) {
+  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  const voteKey = currentUserKey();
+  const hasLiked = !!STATE.comments?.[cornerId]?.[commentKey]?.likes?.[voteKey];
+  const shouldLike = !hasLiked;
+  if (window.FB?.firebaseReady) {
+    const { db, ref, set, remove } = window.FB;
+    const likeRef = ref(db, `comments/${cornerId}/${commentKey}/likes/${voteKey}`);
+    if (shouldLike) set(likeRef, true);
+    else remove(likeRef);
+    return;
+  }
+  if (!STATE.comments?.[cornerId]?.[commentKey]) return;
+  const comment = STATE.comments[cornerId][commentKey];
+  if (!comment.likes) comment.likes = {};
+  if (shouldLike) comment.likes[voteKey] = true;
+  else delete comment.likes[voteKey];
+  saveLocalComments();
+  refreshAllCommentSections();
+}
+
 function refreshAllCommentSections() {
   $$(".comments-section").forEach((section) => {
     const cornerId = section.dataset.cornerId;
@@ -3187,11 +3234,21 @@ function refreshAllCommentSections() {
 
 function renderCommentSection(cornerId, container) {
   const comments = STATE.comments[cornerId] || {};
-  const commentEntries = Object.entries(comments).sort((a, b) => a[1].time - b[1].time);
+  const myLikeKey = currentUserKey();
+  const commentEntries = Object.entries(comments).map(([key, comment]) => ({
+    key,
+    comment,
+    likeCount: getCommentLikeCount(comment)
+  })).sort((a, b) => {
+    const likesDiff = b.likeCount - a.likeCount;
+    if (likesDiff !== 0) return likesDiff;
+    return (a.comment.time || 0) - (b.comment.time || 0);
+  });
   const isCollapsed = commentEntries.length > 3;
 
-  const listHtml = commentEntries.map(([key, c]) => {
+  const listHtml = commentEntries.map(({ key, comment: c, likeCount }) => {
     const isMine = c.author === STATE.nickname;
+    const likedByMe = !!c?.likes?.[myLikeKey];
     const replies = c.replies ? Object.entries(c.replies).sort((a, b) => a[1].time - b[1].time) : [];
     const repliesHtml = replies.length > 0 ? `
       <div class="comment-replies">
@@ -3211,6 +3268,7 @@ function renderCommentSection(cornerId, container) {
       <span class="comment-time">${timeAgo(c.time)}</span>
       <p class="comment-text" id="comment-text-${key}">${escapeHtml(c.text)}</p>
       <div class="comment-actions">
+        <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="${likedByMe ? "Like entfernen" : "Kommentar liken"}" aria-pressed="${likedByMe ? "true" : "false"}">👍 ${likeCount} Likes</button>
         <button class="reply-btn" data-corner="${cornerId}" data-key="${key}">💬 Antworten</button>
         ${isMine ? `<button class="edit-btn" data-corner="${cornerId}" data-key="${key}">✏️ Edit</button>
         <button class="delete-btn" data-corner="${cornerId}" data-key="${key}">🗑 Löschen</button>` : ""}
@@ -3308,6 +3366,13 @@ function renderCommentSection(cornerId, container) {
         }
         if (e.key === "Escape") replyForm.remove();
       });
+    });
+  });
+
+  // Bind like buttons
+  container.querySelectorAll(".comment-like-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggleCommentLike(btn.dataset.corner, btn.dataset.key);
     });
   });
 
@@ -4424,31 +4489,21 @@ function createMinimap(el) {
 /* ====================== PHOTO UPLOAD ====================== */
 function handlePhotoUpload(file, cornerId) {
   if (!file.type.startsWith("image/")) { toast("Das ist kein Bild."); return; }
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const maxW = 900;
-      const scale = Math.min(1, maxW / img.width);
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.78);
-      try {
-        // Save as cover photo in localStorage
-        localStorage.setItem("cg.photo." + cornerId, dataUrl);
-        // Also save to Firebase/gallery
-        savePhoto(cornerId, dataUrl, "");
-        renderCards();
-        toast("Foto gespeichert 📸");
-        // Achievement
-        unlockAchievement("first-photo", "Fotograf", "📸", 15);
-      } catch (err) { toast("Speicher voll. Lösch ein altes Foto."); }
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+  compressImageFile(file, { maxDim: 800, quality: 0.7 }).then((dataUrl) => {
+    try {
+      // Save as cover photo in localStorage
+      localStorage.setItem("cg.photo." + cornerId, dataUrl);
+      // Also save to Firebase/gallery
+      savePhoto(cornerId, dataUrl, "");
+      renderCards();
+      toast("Foto gespeichert 📸");
+      // Achievement
+      unlockAchievement("first-photo", "Fotograf", "📸", 15);
+    } catch (err) { toast("Speicher voll. Lösch ein altes Foto."); }
+  }).catch((err) => {
+    console.warn("Cover image compression failed:", err);
+    toast("Bild konnte nicht verarbeitet werden.");
+  });
 }
 
 /* ====================== MAIN MAP ====================== */
