@@ -2887,8 +2887,10 @@ function savePhoto(cornerId, dataUrl, caption) {
 }
 
 function compressImageFile(file, options = {}) {
-  const maxDim = Number(options.maxDim || 800);
-  const quality = Number(options.quality || 0.7);
+  const parsedMaxDim = parseInt(options.maxDim, 10);
+  const parsedQuality = parseFloat(options.quality);
+  const maxDim = Number.isFinite(parsedMaxDim) && parsedMaxDim > 0 ? parsedMaxDim : 800;
+  const quality = Number.isFinite(parsedQuality) && parsedQuality > 0 && parsedQuality <= 1 ? parsedQuality : 0.7;
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -3205,18 +3207,19 @@ function toggleCommentLike(cornerId, commentKey) {
   if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
   const voteKey = currentUserKey();
   const hasLiked = !!STATE.comments?.[cornerId]?.[commentKey]?.likes?.[voteKey];
+  const shouldLike = !hasLiked;
   if (window.FB?.firebaseReady) {
     const { db, ref, set, remove } = window.FB;
     const likeRef = ref(db, `comments/${cornerId}/${commentKey}/likes/${voteKey}`);
-    if (hasLiked) remove(likeRef);
-    else set(likeRef, true);
+    if (shouldLike) set(likeRef, true);
+    else remove(likeRef);
     return;
   }
   if (!STATE.comments?.[cornerId]?.[commentKey]) return;
   const comment = STATE.comments[cornerId][commentKey];
   if (!comment.likes) comment.likes = {};
-  if (hasLiked) delete STATE.comments[cornerId][commentKey].likes[voteKey];
-  else STATE.comments[cornerId][commentKey].likes[voteKey] = true;
+  if (shouldLike) comment.likes[voteKey] = true;
+  else delete comment.likes[voteKey];
   saveLocalComments();
   refreshAllCommentSections();
 }
@@ -3264,7 +3267,7 @@ function renderCommentSection(cornerId, container) {
       <span class="comment-time">${timeAgo(c.time)}</span>
       <p class="comment-text" id="comment-text-${key}">${escapeHtml(c.text)}</p>
       <div class="comment-actions">
-        <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="${likedByMe ? "Like entfernen" : "Kommentar liken"}">👍 ${likeCount}</button>
+        <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="${likedByMe ? "Like entfernen" : "Kommentar liken"}">👍 ${likeCount} Likes</button>
         <button class="reply-btn" data-corner="${cornerId}" data-key="${key}">💬 Antworten</button>
         ${isMine ? `<button class="edit-btn" data-corner="${cornerId}" data-key="${key}">✏️ Edit</button>
         <button class="delete-btn" data-corner="${cornerId}" data-key="${key}">🗑 Löschen</button>` : ""}
