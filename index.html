@@ -3233,6 +3233,7 @@ function refreshAllCommentSections() {
 
 function renderCommentSection(cornerId, container) {
   const comments = STATE.comments[cornerId] || {};
+  const myLikeKey = currentUserKey();
   const commentEntries = Object.entries(comments).map(([key, comment]) => ({
     key,
     comment,
@@ -3246,7 +3247,6 @@ function renderCommentSection(cornerId, container) {
 
   const listHtml = commentEntries.map(({ key, comment: c, likeCount }) => {
     const isMine = c.author === STATE.nickname;
-    const myLikeKey = currentUserKey();
     const likedByMe = !!c?.likes?.[myLikeKey];
     const replies = c.replies ? Object.entries(c.replies).sort((a, b) => a[1].time - b[1].time) : [];
     const repliesHtml = replies.length > 0 ? `
@@ -3267,7 +3267,7 @@ function renderCommentSection(cornerId, container) {
       <span class="comment-time">${timeAgo(c.time)}</span>
       <p class="comment-text" id="comment-text-${key}">${escapeHtml(c.text)}</p>
       <div class="comment-actions">
-        <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="${likedByMe ? "Like entfernen" : "Kommentar liken"}">👍 ${likeCount} Likes</button>
+        <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="${likeCount} Likes, ${likedByMe ? "Like entfernen" : "Kommentar liken"}">👍 ${likeCount} Likes</button>
         <button class="reply-btn" data-corner="${cornerId}" data-key="${key}">💬 Antworten</button>
         ${isMine ? `<button class="edit-btn" data-corner="${cornerId}" data-key="${key}">✏️ Edit</button>
         <button class="delete-btn" data-corner="${cornerId}" data-key="${key}">🗑 Löschen</button>` : ""}
