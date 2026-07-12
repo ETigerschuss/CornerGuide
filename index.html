@@ -2652,7 +2652,8 @@ function checkAccessGranted() {
         return;
       }
       showAccessPrompt();
-    }).catch(() => {
+    }).catch((err) => {
+      console.warn("checkAccessGranted: failed to read accessGranted flag:", err);
       // Network error – show prompt to be safe
       showAccessPrompt();
     });
