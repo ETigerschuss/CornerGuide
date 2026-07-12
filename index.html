@@ -3228,7 +3228,7 @@ function renderCommentSection(cornerId, container) {
   const commentEntries = Object.entries(comments).sort((a, b) => {
     const likesDiff = getCommentLikeCount(b[1]) - getCommentLikeCount(a[1]);
     if (likesDiff !== 0) return likesDiff;
-    return (b[1].time || 0) - (a[1].time || 0);
+    return (a[1].time || 0) - (b[1].time || 0);
   });
   const isCollapsed = commentEntries.length > 3;
 
@@ -3256,7 +3256,7 @@ function renderCommentSection(cornerId, container) {
       <span class="comment-time">${timeAgo(c.time)}</span>
       <p class="comment-text" id="comment-text-${key}">${escapeHtml(c.text)}</p>
       <div class="comment-actions">
-        <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}">👍 ${likesCount}</button>
+        <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="Kommentar liken">👍 ${likesCount}</button>
         <button class="reply-btn" data-corner="${cornerId}" data-key="${key}">💬 Antworten</button>
         ${isMine ? `<button class="edit-btn" data-corner="${cornerId}" data-key="${key}">✏️ Edit</button>
         <button class="delete-btn" data-corner="${cornerId}" data-key="${key}">🗑 Löschen</button>` : ""}
@@ -6108,7 +6108,7 @@ function playTeamCheckinSound(teamId) {
 
 function addComment(cornerId, author, text) {
   if (!text.trim()) return;
-  const comment = { author: author || "Anonym", text: text.trim(), time: Date.now(), team: STATE.team || "", likes: {} };
+  const comment = { author: author || "Anonym", text: text.trim(), time: Date.now(), team: STATE.team || "" };
   if (window.FB?.firebaseReady) {
     const { db, ref, push, set } = window.FB;
     const newRef = push(ref(db, "comments/" + cornerId));
