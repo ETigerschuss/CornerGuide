@@ -4305,6 +4305,11 @@ function initMainMap() {
 
 const MUNICH_CENTER = [48.137154, 11.576124];
 const MUNICH_CORNER_RADIUS_M = 35000;
+const MUNICH_MAP_PADDING = [40, 40];
+const MUNICH_MAX_ZOOM = 13;
+const MUNICH_FALLBACK_ZOOM = 12;
+const MIN_USER_ZOOM_LEVEL = 14;
+const USER_RECENTER_DISTANCE_M = 200;
 
 function getMunichCorners() {
   return getAllCorners().filter((corner) => haversine(MUNICH_CENTER[0], MUNICH_CENTER[1], corner.lat, corner.lng) <= MUNICH_CORNER_RADIUS_M);
@@ -4315,9 +4320,9 @@ function focusMainMapOnMunich() {
   const munichCorners = getMunichCorners();
   if (munichCorners.length) {
     const bounds = L.latLngBounds(munichCorners.map((corner) => [corner.lat, corner.lng]));
-    STATE.mainMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+    STATE.mainMap.fitBounds(bounds, { padding: MUNICH_MAP_PADDING, maxZoom: MUNICH_MAX_ZOOM });
   } else {
-    STATE.mainMap.setView(MUNICH_CENTER, 12);
+    STATE.mainMap.setView(MUNICH_CENTER, MUNICH_FALLBACK_ZOOM);
   }
 }
 
@@ -4325,8 +4330,8 @@ function focusMainMapOnUser(lat, lng) {
   if (!STATE.mainMap) return;
   const target = L.latLng(lat, lng);
   const current = STATE.mainMap.getCenter();
-  const shouldAnimate = !STATE.hasCenteredOnUser || current.distanceTo(target) > 200;
-  STATE.mainMap.flyTo([lat, lng], Math.max(STATE.mainMap.getZoom(), 14), { duration: shouldAnimate ? 0.6 : 0 });
+  const shouldAnimate = !STATE.hasCenteredOnUser || current.distanceTo(target) > USER_RECENTER_DISTANCE_M;
+  STATE.mainMap.flyTo([lat, lng], Math.max(STATE.mainMap.getZoom(), MIN_USER_ZOOM_LEVEL), { duration: shouldAnimate ? 0.6 : 0 });
   STATE.hasCenteredOnUser = true;
 }
 
