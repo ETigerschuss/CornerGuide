@@ -5122,8 +5122,7 @@ function shouldNotify(friendInfo) {
   if (mode === "team" && friendInfo.team !== STATE.team) return false;
   const blocked = STATE.notifSettings || {};
   if ((blocked.blockedTeams || []).includes(friendInfo.team)) return false;
-  const friendId = friendInfo.id || friendInfo.nickname;
-  if (friendId && (blocked.blockedUsers || []).includes(friendId)) return false;
+  if (friendInfo.id && (blocked.blockedUsers || []).includes(friendInfo.id)) return false;
   return true;
 }
 
@@ -5158,6 +5157,7 @@ function syncNotifSettingsToFirebase() {
   try {
     const { db, ref, set } = window.FB;
     set(ref(db, "userPrefs/" + currentUserKey() + "/notifSettings"), {
+      mode: STATE.notifPref || "all",
       blockedTeams: STATE.notifSettings?.blockedTeams || [],
       blockedUsers: STATE.notifSettings?.blockedUsers || []
     });
@@ -5671,6 +5671,11 @@ function _activateAuthDependentFeatures(uid, status) {
       window.FB.onValue(window.FB.ref(window.FB.db, "userPrefs/" + uid + "/notifSettings"), (snap) => {
         const remote = snap.val();
         if (remote && typeof remote === "object") {
+          if (remote.mode && ["all", "team", "off"].includes(remote.mode)) {
+            STATE.notifPref = remote.mode;
+            localStorage.setItem(NOTIF_STORAGE_KEY, STATE.notifPref);
+            localStorage.setItem("cg.notifPref", STATE.notifPref);
+          }
           if (Array.isArray(remote.blockedTeams)) STATE.notifSettings.blockedTeams = remote.blockedTeams;
           if (Array.isArray(remote.blockedUsers)) STATE.notifSettings.blockedUsers = remote.blockedUsers;
           saveNotifSettings();
@@ -6596,13 +6601,14 @@ function buildNotifSettingsHtml() {
   const knownUsers = Object.values(STATE.friends || {});
   const userRows = knownUsers.length
     ? knownUsers.map((f) => {
-        const fid = f.id || f.nickname;
+        const fid = f.id;
+        if (!fid) return "";
         const isMuted = blockedUsers.includes(fid);
         const teamEmoji = TEAMS[f.team]?.emoji || "👤";
         return `<div class="user-filter-item">
           <span>${teamEmoji}</span>
           <span class="ufi-name">${escapeHtml(f.nickname || f.name || fid)}</span>
-          <button class="ufi-toggle ${isMuted ? "muted" : ""}" data-user="${escapeHtml(fid)}">${isMuted ? "🔕 Stumm" : "🔔 Aktiv"}</button>
+          <button class="ufi-toggle ${isMuted ? "muted" : ""}" data-user="${fid}">${isMuted ? "🔕 Stumm" : "🔔 Aktiv"}</button>
         </div>`;
       }).join("")
     : `<p style="color:var(--fg-dim);font-size:13px;margin:4px 0 0;">Keine Nutzer derzeit online.</p>`;
