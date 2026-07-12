@@ -2898,7 +2898,7 @@ function compressImageFile(file, options = {}) {
       img.onload = () => {
         const longest = Math.max(img.width, img.height);
         if (!Number.isFinite(longest) || longest <= 0) {
-          reject(new Error("Ungültige Bildgröße."));
+          reject(new Error("Bilddimensionen konnten nicht bestimmt werden."));
           return;
         }
         const scale = Math.min(1, maxDim / longest);
@@ -2910,10 +2910,10 @@ function compressImageFile(file, options = {}) {
         canvas.getContext("2d").drawImage(img, 0, 0, width, height);
         resolve(canvas.toDataURL("image/jpeg", quality));
       };
-      img.onerror = () => reject(new Error("Bild konnte nicht geladen werden."));
+      img.onerror = () => reject(new Error("Bildformat wird nicht unterstützt oder Datei ist beschädigt."));
       img.src = ev.target.result;
     };
-    reader.onerror = () => reject(new Error("Datei konnte nicht gelesen werden."));
+    reader.onerror = () => reject(new Error("Bilddatei konnte nicht gelesen werden (ggf. beschädigt oder nicht zugreifbar)."));
     reader.readAsDataURL(file);
   });
 }
@@ -3017,7 +3017,8 @@ function renderPhotoGallery(cornerId, container) {
       compressImageFile(f, { maxDim: 800, quality: 0.7 }).then((dataUrl) => {
         savePhoto(cornerId, dataUrl, "");
         toast("Foto hochgeladen 📸");
-      }).catch(() => {
+      }).catch((err) => {
+        console.warn("Gallery image compression failed:", err);
         toast("Bild konnte nicht verarbeitet werden.");
       });
     });
@@ -3267,7 +3268,7 @@ function renderCommentSection(cornerId, container) {
       <span class="comment-time">${timeAgo(c.time)}</span>
       <p class="comment-text" id="comment-text-${key}">${escapeHtml(c.text)}</p>
       <div class="comment-actions">
-        <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="${likeCount} Likes, ${likedByMe ? "Like entfernen" : "Kommentar liken"}">👍 ${likeCount} Likes</button>
+        <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="${likedByMe ? "Like entfernen" : "Kommentar liken"}" aria-pressed="${likedByMe ? "true" : "false"}">👍 ${likeCount} Likes</button>
         <button class="reply-btn" data-corner="${cornerId}" data-key="${key}">💬 Antworten</button>
         ${isMine ? `<button class="edit-btn" data-corner="${cornerId}" data-key="${key}">✏️ Edit</button>
         <button class="delete-btn" data-corner="${cornerId}" data-key="${key}">🗑 Löschen</button>` : ""}
@@ -4499,7 +4500,8 @@ function handlePhotoUpload(file, cornerId) {
       // Achievement
       unlockAchievement("first-photo", "Fotograf", "📸", 15);
     } catch (err) { toast("Speicher voll. Lösch ein altes Foto."); }
-  }).catch(() => {
+  }).catch((err) => {
+    console.warn("Cover image compression failed:", err);
     toast("Bild konnte nicht verarbeitet werden.");
   });
 }
