@@ -1,5 +1,12 @@
-const CACHE_NAME = "cornerguide-v2";
-const APP_SHELL = ["./index.html", "./manifest.webmanifest", "./icons/icon.svg"];
+const CACHE_NAME = "cornerguide-v3";
+const APP_SHELL = [
+  "./index.html",
+  "./manifest.webmanifest",
+  "./icons/icon.svg",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/apple-touch-icon.png"
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

@@ -7,6 +7,12 @@
 <title>Minga Corner Guide · vom gossips Stammtisch 🍻</title>
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+<!-- iOS: enable standalone PWA install (required for web push on iOS 16.4+) -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="CornerGuide" />
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
 <link rel="apple-touch-icon" href="./icons/icon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -2299,6 +2305,15 @@ input, textarea { cursor: text; }
         </select>
       </div>
       <div class="checkin-option">
+        <span>🚻</span>
+        <label>Toilette in der Nähe?</label>
+        <select id="checkin-toilet">
+          <option value="">—</option>
+          <option value="ja">Ja</option>
+          <option value="nein">Nein</option>
+        </select>
+      </div>
+      <div class="checkin-option">
         <span>🌿</span>
         <label>Grün / Natur?</label>
         <select id="checkin-green">
@@ -4088,6 +4103,7 @@ function renderFeedbackSummary(cornerId) {
 
   const entries = Object.values(feedback);
   const kioskYes = entries.filter(f => f.kiosk === "ja").length;
+  const toiletYes = entries.filter(f => f.toilet === "ja").length;
   const greenVery = entries.filter(f => f.green === "sehr").length;
   const busyHigh = entries.filter(f => f.busy === "viel").length;
   const highlights = entries.filter(f => f.highlights).map(f => f.highlights);
@@ -4096,6 +4112,7 @@ function renderFeedbackSummary(cornerId) {
     <p class="feedback-title">📋 Community-Feedback (${entries.length} Bewertungen)</p>
     <div class="feedback-tags">
       ${kioskYes > 0 ? `<span class="spot-icon"><span class="icon-emoji">🏪</span><span class="icon-label">Kiosk: ${kioskYes}x ja</span></span>` : ""}
+      ${toiletYes > 0 ? `<span class="spot-icon"><span class="icon-emoji">🚻</span><span class="icon-label">Toilette: ${toiletYes}x ja</span></span>` : ""}
       ${greenVery > 0 ? `<span class="spot-icon"><span class="icon-emoji">🌿</span><span class="icon-label">Grün: ${greenVery}x sehr</span></span>` : ""}
       ${busyHigh > 0 ? `<span class="spot-icon"><span class="icon-emoji">🚶</span><span class="icon-label">Belebt: ${busyHigh}x</span></span>` : ""}
     </div>
@@ -4150,6 +4167,7 @@ function bindCheckinPrompt() {
 function showCheckinPrompt(cornerId) {
   pendingCheckinCorner = cornerId;
   $("#checkin-kiosk").value = "";
+  $("#checkin-toilet").value = "";
   $("#checkin-green").value = "";
   $("#checkin-busy").value = "";
   $("#checkin-highlights").value = "";
@@ -4160,6 +4178,7 @@ function submitCheckinFeedback() {
   if (!pendingCheckinCorner) return;
   const feedback = {
     kiosk: $("#checkin-kiosk").value,
+    toilet: $("#checkin-toilet").value,
     green: $("#checkin-green").value,
     busy: $("#checkin-busy").value,
     highlights: $("#checkin-highlights").value.trim(),
@@ -6179,6 +6198,7 @@ function renderFriendsBar() {
       <span>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</span>
       <span class="friend-corner">${corner ? "@ " + escapeHtml(corner.name) : "unterwegs"}</span>
       <span class="friend-level">${tier.emoji} Lv.${level}</span>
+      ${corner ? `<button class="action-btn" style="padding:4px 8px;font-size:10px;" data-supply-user="${friend.id}" title="Frag ob Nachschub gebraucht wird">🛒 Nachschub?</button>` : ""}
       <button class="action-btn" style="padding:4px 8px;font-size:10px;" data-dm-user="${friend.id}">💬</button>
     </li>`;
   }).join("");
@@ -6188,6 +6208,38 @@ function renderFriendsBar() {
       sendDirectMessagePrompt(btn.dataset.dmUser, friend?.nickname || friend?.name || btn.dataset.dmUser);
     });
   });
+  list.querySelectorAll("[data-supply-user]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const friend = STATE.friends[btn.dataset.supplyUser];
+      const name = friend?.nickname || friend?.name || btn.dataset.supplyUser;
+      sendQuickMessage(btn.dataset.supplyUser, name, "Brauchst du Nachschub? 🍺🛒");
+    });
+  });
+}
+
+// One-tap preset message (used by the Nachschub button). Sends immediately,
+// no prompt — the recipient gets a push via the messages Cloud Function.
+function sendQuickMessage(toId, toName, text) {
+  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  if (!toId || toId === currentUserKey()) return;
+  const payload = {
+    fromId: currentUserKey(),
+    fromName: STATE.nickname,
+    fromTeam: STATE.team || "",
+    toId,
+    toName: toName || toId,
+    text,
+    time: Date.now(),
+    cornerId: STATE.manualCheckinId || STATE.atCornerId || null
+  };
+  if (window.FB?.firebaseReady) {
+    const { db, ref, push, set } = window.FB;
+    set(push(ref(db, "messages/" + toId)), payload);
+  } else {
+    STATE.directMessages.push({ ...payload, local: true, incoming: false });
+    saveLocalDirectMessages();
+  }
+  toast(`🛒 Nachschub-Frage an <strong>${escapeHtml(toName || toId)}</strong> gesendet`);
 }
 
 function sendDirectMessagePrompt(toId, toName, cornerId) {
@@ -6604,9 +6656,27 @@ function manualCheckin(cornerId) {
     checkCaptureCondition(cornerId);
     logEncounters(cornerId);
     startCooldownDisplay();
+    broadcastCheckinPush(corner);
   }
   updateCheckinButtons();
   broadcastPresence();
+}
+
+// Fan-out push: writes a lightweight event that the Cloud Function delivers to
+// everyone's push token (so friends get pinged even with the app closed).
+function broadcastCheckinPush(corner) {
+  if (!window.FB?.firebaseReady || !STATE.nickname || !corner) return;
+  try {
+    const { db, ref, push, set } = window.FB;
+    set(push(ref(db, "notify")), {
+      type: "checkin",
+      title: "🍻 Minga Corner Guide",
+      body: `${STATE.nickname} ist gerade am ${corner.name}!`,
+      fromId: currentUserKey(),
+      fromTeam: STATE.team || "",
+      createdAt: Date.now()
+    });
+  } catch (err) { console.warn("broadcastCheckinPush failed:", err); }
 }
 
 function updateCheckinButtons() {

@@ -17,7 +17,22 @@ messaging.onBackgroundMessage((payload) => {
   const title = payload?.notification?.title || "Minga Corner Guide";
   const options = {
     body: payload?.notification?.body || "Neue Nachricht von deinen Corner-Friends.",
-    icon: "/icons/icon.svg"
+    icon: "https://etigerschuss.github.io/CornerGuide/icons/icon-192.png",
+    data: { url: "https://etigerschuss.github.io/CornerGuide/" }
   };
   self.registration.showNotification(title, options);
+});
+
+// Focus an existing tab or open the app when a notification is tapped.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = event.notification?.data?.url || "https://etigerschuss.github.io/CornerGuide/";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if (client.url.includes("CornerGuide") && "focus" in client) return client.focus();
+      }
+      return self.clients.openWindow(target);
+    })
+  );
 });

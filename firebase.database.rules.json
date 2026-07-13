@@ -56,6 +56,13 @@
       }
     },
 
+    "notify": {
+      ".read": false,
+      "$eventId": {
+        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()"
+      }
+    },
+
     "comments":        { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
     "teams":           { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
     "presence":        { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
