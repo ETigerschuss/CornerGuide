@@ -32,14 +32,12 @@ Damit Kommentare und Freunde-Standorte zwischen allen Nutzern synchronisiert wer
 2. Öffne das Projekt `cornerguide` (oder erstelle ein neues)
 3. Prüfe **Realtime Database** (Region: `europe-west1`) und aktiviere sie
 4. Aktiviere unter **Authentication → Sign-in method** mindestens **Anonymous**
-5. Verwende sichere Realtime-Regeln (Datei: `firebase.database.rules.json`):
-   ```json
-   {
-     "rules": {
-       ".read": true,
-       ".write": "auth != null"
-     }
-   }
+5. Veröffentliche die Regeln aus `firebase.database.rules.json`. **Wichtig:** Diese Regeln
+   sperren den früher offenen `".read": true`-Zugriff. Jetzt können nur Nutzer mit gültigem
+   Access-Code die geteilten Daten lesen; Direktnachrichten, Push-Tokens und Profile sind
+   pro Owner privat. Deployen mit:
+   ```bash
+   firebase deploy --only database
    ```
 6. Geh zu Projekteinstellungen → Web-App und übernimm die Config in `index.html`
 
@@ -68,10 +66,46 @@ Das Projekt ist eine einzelne `index.html` — kein Build-Tool nötig. Einfach �
 npx serve .
 ```
 
-## 📲 PWA / Push / App Stores
+## 🔔 Push-Nachrichten (komplett aktivieren)
+
+Push braucht **zwei** Dinge, die beide vorhanden sein müssen — sonst passiert nichts:
+
+1. **VAPID Web-Push-Key** (damit der Browser ein Token bekommt)
+   - Firebase Console → Project Settings → **Cloud Messaging → Web Push certificates → „Generate key pair"**
+   - Den *öffentlichen* Key in der Datenbank unter `config/vapidKey` als String eintragen.
+     Die App lädt ihn beim Start automatisch von dort.
+
+2. **Ein Sender** (ein Browser darf aus Sicherheitsgründen keine Pushes verschicken).
+   Die Cloud Function in `functions/index.js` übernimmt das: sie lauscht auf neue
+   Direktnachrichten unter `messages/{uid}` und schickt eine Push an das gespeicherte
+   Token des Empfängers.
+   ```bash
+   cd functions && npm install && cd ..
+   firebase deploy --only functions
+   ```
+   > Cloud Functions brauchen den **Blaze-Plan** (kostenlos bis zu großzügigen Limits,
+   > aber eine Kreditkarte muss hinterlegt sein).
+
+Ohne (2) landen Nachrichten nur in der DB und werden erst sichtbar, wenn die App offen ist.
+
+## 🔐 Konto & Profil-Portabilität
+
+Nutzer starten weiterhin **anonym**. Im Profil-Tab (und direkt im Zugangs-Screen) können sie ihr
+Profil jetzt sichern und auf jedem Browser/Gerät übernehmen — ohne Neu-Registrierung:
+
+- **Recovery-Code** — einen Code erzeugen, auf dem neuen Gerät eingeben. Der Code stellt Profil
+  *und* Zugang in einem Schritt wieder her (anonym, kein Konto nötig).
+- **Mit Google / E-Mail sichern** — verknüpft den anonymen Account mit einem festen Login
+  (Firebase `linkWithPopup` / E-Mail-Link). Die UID und damit das Profil bleiben erhalten;
+  auf neuen Geräten reicht der gleiche Login.
+
+Voraussetzung: unter **Authentication → Sign-in method** zusätzlich **Google** und
+**E-Mail-Link (passwortlos)** aktivieren, und die Domain (`ETigerschuss.github.io`) unter den
+autorisierten Domains eintragen. Profile werden in der DB unter `userProfiles/{uid}` gespiegelt.
+
+## 📲 PWA / App Stores
 
 - **PWA** ist integriert über `manifest.webmanifest` + `service-worker.js`
-- **Push-Grundlage** ist vorbereitet (Firebase Messaging + `firebase-messaging-sw.js`), für produktive Pushes fehlt noch ein gültiger Web Push VAPID Key
 - **App Store / Play Store**: Das Webprojekt kann mit Capacitor als Native Shell verpackt werden
 
 Beispiel-Start:
