@@ -5410,12 +5410,19 @@ async function enableFirebasePush() {
   }
   try {
     await setupServiceWorker();
-    const registration = await navigator.serviceWorker.getRegistration("./");
-    if (!registration) {
+    // FCM requires the firebase-messaging service worker, not the cache-only one
+    let fmswReg;
+    try {
+      fmswReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "./" });
+    } catch (err) {
+      console.warn("firebase-messaging-sw.js registration failed, falling back to default service worker:", err);
+      fmswReg = await navigator.serviceWorker.getRegistration("./");
+    }
+    if (!fmswReg) {
       toast("Service Worker nicht bereit.");
       return;
     }
-    const token = await window.FB.enablePushNotifications(FCM_VAPID_PUBLIC_KEY, registration);
+    const token = await window.FB.enablePushNotifications(FCM_VAPID_PUBLIC_KEY, fmswReg);
     localStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
     if (window.FB?.db && window.FB?.ref && window.FB?.set && currentUserKey()) {
       await window.FB.set(window.FB.ref(window.FB.db, "pushTokens/" + currentUserKey()), {
@@ -5549,6 +5556,7 @@ function saveNickname() {
 
 function bindNicknameBar() {
   updateNicknameBar();
+  $("#invite-btn").addEventListener("click", inviteFriends);
   $("#nick-change-btn").addEventListener("click", () => {
     const newName = prompt("Neuer Nickname:", STATE.nickname);
     if (!newName || !newName.trim()) return;
