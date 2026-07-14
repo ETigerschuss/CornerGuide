@@ -1395,6 +1395,7 @@ input, textarea { cursor: text; }
   text-transform: uppercase;
 }
 .access-prompt input:focus { outline: none; border-color: var(--amber); }
+#team-create-name, #team-create-emoji { text-transform: none; letter-spacing: 0; text-align: left; font-family: "DM Sans", sans-serif; font-size: 15px; }
 .access-prompt .access-error {
   color: var(--pink);
   font-size: 13px;
@@ -2388,6 +2389,21 @@ input, textarea { cursor: text; }
     <p style="font-size:13px;color:var(--fg-dim);">Warst du schon dabei? Wähle dein altes Profil — Punkte, Level und Achievements werden dir zugeordnet.</p>
     <div id="claim-list" style="margin:14px 0;"></div>
     <button id="claim-close" class="action-btn">Schließen</button>
+  </div>
+</div>
+
+<!-- Create a custom team -->
+<div id="team-create-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:360px;text-align:left;">
+    <h2>➕ Eigenes Team</h2>
+    <input type="text" id="team-create-name" placeholder="Team-Name" maxlength="24" autocomplete="off" />
+    <input type="text" id="team-create-emoji" placeholder="Emoji (z.B. 🦊)" maxlength="4" autocomplete="off" style="margin-top:8px;" />
+    <div style="margin:14px 0 8px;font-size:12px;color:var(--fg-dim);">Farbe wählen</div>
+    <div id="team-create-colors" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+    <div style="display:flex;gap:8px;margin-top:18px;">
+      <button class="action-btn" id="team-create-cancel">Abbrechen</button>
+      <button class="action-btn primary" id="team-create-save">Erstellen</button>
+    </div>
   </div>
 </div>
 
@@ -4093,6 +4109,7 @@ function openDetail(cornerId) {
   // Bind team picker buttons
   detailContent.querySelectorAll(".team-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (btn.dataset.teamCreate) { openTeamCreate(cornerId); return; }
       selectTeam(btn.dataset.team);
       setTimeout(() => openDetail(cornerId), 100);
     });
@@ -5361,6 +5378,12 @@ function bindGlobalXp() {
 
 /* ====================== FEATURE OVERRIDES ====================== */
 const TEAM_ORDER = ["plant", "insect", "alien", "wolf", "bird", "octopus"];
+// User-created teams are merged into TEAMS at runtime from the customTeams node.
+let CUSTOM_TEAM_KEYS = [];
+function allTeamKeys() { return [...TEAM_ORDER, ...CUSTOM_TEAM_KEYS]; }
+const CUSTOM_TEAM_COLORS = ["#e8a93e", "#ff2e6c", "#b8ff3a", "#6cb6ff", "#ff8c42", "#c77dff", "#4ecdc4", "#f9c74f"];
+let _teamCreateColor = CUSTOM_TEAM_COLORS[0];
+let _teamCreateReturnCorner = null;
 const TEAM_STORAGE_KEY = "cg.team";
 const TEAM_HISTORY_KEY = "cg.teamHistory";
 const NOTIF_STORAGE_KEY = "cg.notifications";
@@ -5769,12 +5792,16 @@ function renderTeamPickerHtml() {
     <div class="team-select-section">
       <h4>Für welches Team checkst du ein?</h4>
       <div class="team-buttons">
-        ${TEAM_ORDER.map((teamId) => `
-          <button class="team-btn ${STATE.team === teamId ? "active" : ""}" data-team="${teamId}" title="${TEAMS[teamId].name}" style="border-color:${STATE.team === teamId ? TEAMS[teamId].color : "var(--line)"};">
-            <span>${TEAMS[teamId].emoji}</span>
-            <span class="team-label">${TEAMS[teamId].name}</span>
+        ${allTeamKeys().map((teamId) => `
+          <button class="team-btn ${STATE.team === teamId ? "active" : ""}" data-team="${teamId}" title="${escapeHtml(TEAMS[teamId]?.name || teamId)}" style="border-color:${STATE.team === teamId ? (TEAMS[teamId]?.color || "var(--amber)") : "var(--line)"};">
+            <span>${TEAMS[teamId]?.emoji || "🚩"}</span>
+            <span class="team-label">${escapeHtml(TEAMS[teamId]?.name || teamId)}</span>
           </button>
         `).join("")}
+        <button class="team-btn team-create-btn" data-team-create="1" title="Eigenes Team erstellen" style="border-style:dashed;">
+          <span>➕</span>
+          <span class="team-label">Team</span>
+        </button>
       </div>
     </div>
   `;
@@ -5808,6 +5835,72 @@ function listenTeams() {
     renderFriendsBar();
     if (STATE.view === "profile") renderProfile();
   });
+  listenCustomTeams();
+}
+
+let _customTeamsBound = false;
+function listenCustomTeams() {
+  if (!window.FB?.firebaseReady || _customTeamsBound) return;
+  _customTeamsBound = true;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "customTeams"), (snap) => {
+    const data = snap.val() || {};
+    CUSTOM_TEAM_KEYS = [];
+    for (const [key, t] of Object.entries(data)) {
+      if (!t || !t.name) continue;
+      TEAMS[key] = { emoji: t.emoji || "🚩", color: t.color || "#e8a93e", name: t.name, custom: true };
+      CUSTOM_TEAM_KEYS.push(key);
+    }
+    renderFriendsBar();
+    if (STATE.view === "profile") renderProfile();
+    if (STATE.view === "leaderboard") renderLeaderboard();
+  });
+}
+
+function openTeamCreate(cornerId) {
+  if (!STATE.nickname) { toast("Bitte zuerst einen Namen wählen."); return; }
+  if (!window.FB?.firebaseReady) { toast("Teams erstellen nur online möglich."); return; }
+  _teamCreateReturnCorner = cornerId || null;
+  _teamCreateColor = CUSTOM_TEAM_COLORS[0];
+  const overlay = $("#team-create-overlay");
+  $("#team-create-name").value = "";
+  $("#team-create-emoji").value = "";
+  const colorWrap = $("#team-create-colors");
+  colorWrap.innerHTML = CUSTOM_TEAM_COLORS.map((c, i) =>
+    `<button type="button" class="team-color-swatch" data-color="${c}" style="width:34px;height:34px;border-radius:50%;background:${c};border:3px solid ${i === 0 ? "#fff" : "transparent"};cursor:pointer;padding:0;"></button>`
+  ).join("");
+  colorWrap.querySelectorAll("[data-color]").forEach((b) => {
+    b.addEventListener("click", () => {
+      _teamCreateColor = b.dataset.color;
+      colorWrap.querySelectorAll("[data-color]").forEach((x) => { x.style.borderColor = "transparent"; });
+      b.style.borderColor = "#fff";
+    });
+  });
+  $("#team-create-cancel").onclick = () => { overlay.style.display = "none"; };
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
+  $("#team-create-save").onclick = saveTeamCreate;
+  overlay.style.display = "flex";
+  setTimeout(() => $("#team-create-name").focus(), 100);
+}
+
+async function saveTeamCreate() {
+  const name = $("#team-create-name").value.trim();
+  const emoji = ($("#team-create-emoji").value.trim() || "🚩").slice(0, 4);
+  if (!name) { toast("Bitte einen Team-Namen eingeben."); return; }
+  const key = "custom-" + name.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 16) + "-" + Math.random().toString(36).slice(2, 6);
+  const team = { name: name.slice(0, 24), emoji, color: _teamCreateColor, createdBy: STATE.nickname, createdAt: Date.now() };
+  try {
+    await window.FB.set(window.FB.ref(window.FB.db, "customTeams/" + key), team);
+    TEAMS[key] = { emoji: team.emoji, color: team.color, name: team.name, custom: true };
+    if (!CUSTOM_TEAM_KEYS.includes(key)) CUSTOM_TEAM_KEYS.push(key);
+    $("#team-create-overlay").style.display = "none";
+    selectTeam(key);
+    toast(`✅ Team „${escapeHtml(team.name)}" erstellt & ausgewählt`);
+    if (_teamCreateReturnCorner) setTimeout(() => openDetail(_teamCreateReturnCorner), 120);
+  } catch (err) {
+    console.warn("saveTeamCreate failed:", err);
+    toast("Team konnte nicht erstellt werden.");
+  }
 }
 
 function listenCornerStatuses() {
@@ -5972,7 +6065,10 @@ function syncProfileToCloud() {
   } catch (err) { console.warn("syncProfileToCloud failed:", err); }
 }
 
-let _profileSyncTimer = null;
+// var (not let): scheduleProfileSync is reachable during top-level init via
+// ensurePointIdentity() -> savePoints(), which runs before this line. A `let`
+// here would be in the temporal dead zone and throw, halting the rest of the script.
+var _profileSyncTimer = null;
 function scheduleProfileSync() {
   clearTimeout(_profileSyncTimer);
   _profileSyncTimer = setTimeout(syncProfileToCloud, 1500);
@@ -6124,6 +6220,18 @@ async function openClaimOverlay() {
   }
 }
 
+// Reconstruct which corners a nickname has visited from the shared visits node.
+function visitedCornersForNickname(nickname) {
+  if (!nickname) return [];
+  const result = [];
+  const visits = STATE.visits || {};
+  for (const [cornerId, entries] of Object.entries(visits)) {
+    const list = entries ? Object.values(entries) : [];
+    if (list.some((v) => v && v.user === nickname)) result.push(cornerId);
+  }
+  return result;
+}
+
 async function claimExistingProfile(oldKey) {
   if (!oldKey || !window.FB?.firebaseReady) return;
   const newKey = currentUserKey();
@@ -6144,6 +6252,12 @@ async function claimExistingProfile(oldKey) {
     STATE.points[newKey] = { ...oldPoints, nickname };
     savePoints();
     set(ref(db, "points/" + newKey), STATE.points[newKey]);
+    // Carry over visited corners (reconstructed from the shared visits node by nickname).
+    const claimedVisited = visitedCornersForNickname(nickname);
+    if (claimedVisited.length) {
+      STATE.visitedCorners = Array.from(new Set([...(STATE.visitedCorners || []), ...claimedVisited]));
+      saveVisitedCorners();
+    }
     const oldAch = aSnap.val() || {};
     const achIds = Object.keys(oldAch);
     if (achIds.length) {

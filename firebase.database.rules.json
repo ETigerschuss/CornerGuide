@@ -70,6 +70,7 @@
 
     "comments":        { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
     "teams":           { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "customTeams":     { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
     "presence":        { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
     "points":          { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
     "encounters":      { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
