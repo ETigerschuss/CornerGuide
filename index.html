@@ -7,6 +7,12 @@
 <title>Minga Corner Guide · vom gossips Stammtisch 🍻</title>
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+<!-- iOS: enable standalone PWA install (required for web push on iOS 16.4+) -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="CornerGuide" />
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
 <link rel="apple-touch-icon" href="./icons/icon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,7 +22,10 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, set, get, push, onValue, onChildAdded, onDisconnect, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged,
+           GoogleAuthProvider, linkWithPopup, signInWithPopup,
+           EmailAuthProvider, linkWithCredential,
+           sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getMessaging, getToken, onMessage, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
   const firebaseConfig = {
@@ -106,6 +115,68 @@
     bindForegroundPush: (listener) => {
       if (!pushSupported || !messaging || typeof listener !== "function") return () => {};
       return onMessage(messaging, listener);
+    },
+    // ---- Account portability (link the anonymous account to a permanent one) ----
+    getAccountInfo: () => {
+      const user = auth?.currentUser || null;
+      if (!user) return { signedIn: false, anonymous: true, email: "", providers: [] };
+      const providers = (user.providerData || []).map((p) => p.providerId);
+      return {
+        signedIn: true,
+        anonymous: !!user.isAnonymous,
+        email: user.email || "",
+        providers
+      };
+    },
+    linkGoogle: async () => {
+      const user = auth?.currentUser;
+      if (!user) throw new Error("Kein Login aktiv.");
+      const provider = new GoogleAuthProvider();
+      // Anonymous users get upgraded in place (UID stays). Already-permanent users
+      // that hit a "credential-already-in-use" fall back to a normal sign-in.
+      try {
+        const result = user.isAnonymous ? await linkWithPopup(user, provider) : await signInWithPopup(auth, provider);
+        return result.user?.email || "";
+      } catch (err) {
+        if (err?.code === "auth/credential-already-in-use" || err?.code === "auth/email-already-in-use") {
+          const result = await signInWithPopup(auth, provider);
+          return result.user?.email || "";
+        }
+        throw err;
+      }
+    },
+    sendEmailLink: async (email) => {
+      if (!email) throw new Error("Bitte eine E-Mail-Adresse eingeben.");
+      const actionCodeSettings = { url: window.location.href.split("#")[0], handleCodeInApp: true };
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      window.localStorage.setItem("cg.emailForSignIn", email);
+    },
+    // Called on every load; completes an email-link sign-in if the URL is one.
+    completeEmailLinkSignIn: async () => {
+      if (!auth || !isSignInWithEmailLink(auth, window.location.href)) return null;
+      let email = window.localStorage.getItem("cg.emailForSignIn");
+      if (!email) email = window.prompt("Bitte bestätige deine E-Mail für die Anmeldung:") || "";
+      if (!email) return null;
+      const user = auth.currentUser;
+      try {
+        if (user && user.isAnonymous) {
+          // Preserve the anonymous UID (and thus the profile) by linking.
+          const cred = EmailAuthProvider.credentialWithLink(email, window.location.href);
+          const result = await linkWithCredential(user, cred);
+          window.localStorage.removeItem("cg.emailForSignIn");
+          return result.user?.email || email;
+        }
+        const result = await signInWithEmailLink(auth, email, window.location.href);
+        window.localStorage.removeItem("cg.emailForSignIn");
+        return result.user?.email || email;
+      } catch (err) {
+        if (err?.code === "auth/credential-already-in-use" || err?.code === "auth/email-already-in-use") {
+          const result = await signInWithEmailLink(auth, email, window.location.href);
+          window.localStorage.removeItem("cg.emailForSignIn");
+          return result.user?.email || email;
+        }
+        throw err;
+      }
     }
   };
 </script>
@@ -2234,6 +2305,15 @@ input, textarea { cursor: text; }
         </select>
       </div>
       <div class="checkin-option">
+        <span>🚻</span>
+        <label>Toilette in der Nähe?</label>
+        <select id="checkin-toilet">
+          <option value="">—</option>
+          <option value="ja">Ja</option>
+          <option value="nein">Nein</option>
+        </select>
+      </div>
+      <div class="checkin-option">
         <span>🌿</span>
         <label>Grün / Natur?</label>
         <select id="checkin-green">
@@ -2270,6 +2350,11 @@ input, textarea { cursor: text; }
     <input type="text" id="access-code-input" placeholder="CODE" maxlength="30" autocomplete="off" autocapitalize="characters" />
     <div class="access-error" id="access-error"></div>
     <button id="access-code-save">Bestätigen</button>
+    <div class="access-restore" style="margin-top:18px;border-top:1px solid var(--line,#2a2a2a);padding-top:14px;">
+      <p style="font-size:13px;color:var(--fg-dim,#9a9285);margin-bottom:10px;">Schon mal dabei gewesen? Übernimm dein Profil ohne neuen Code:</p>
+      <button id="access-recover-code" style="margin-bottom:8px;">📥 Recovery-Code eingeben</button>
+      <button id="access-recover-google">🔗 Mit Google anmelden</button>
+    </div>
   </div>
 </div>
 
@@ -2515,6 +2600,7 @@ function loadAchievements() {
 }
 function saveAchievements() {
   localStorage.setItem("cg.achievements", JSON.stringify(STATE.achievements));
+  if (typeof scheduleProfileSync === "function") scheduleProfileSync();
 }
 
 function loadPoints() {
@@ -2523,6 +2609,7 @@ function loadPoints() {
 }
 function savePoints() {
   localStorage.setItem("cg.points", JSON.stringify(STATE.points));
+  if (typeof scheduleProfileSync === "function") scheduleProfileSync();
 }
 
 function loadVisitedCorners() {
@@ -2531,6 +2618,7 @@ function loadVisitedCorners() {
 }
 function saveVisitedCorners() {
   localStorage.setItem("cg.visitedCorners", JSON.stringify(STATE.visitedCorners));
+  if (typeof scheduleProfileSync === "function") scheduleProfileSync();
 }
 
 function loadCheckinFeedback() {
@@ -2641,6 +2729,24 @@ function checkAccessGranted() {
   const errEl = $("#access-error");
   btn.addEventListener("click", () => submitAccessCode());
   input.addEventListener("keydown", (e) => { if (e.key === "Enter") submitAccessCode(); });
+  // Recovery paths so a new browser/device doesn't need a fresh invite code.
+  $("#access-recover-code")?.addEventListener("click", async () => {
+    const code = prompt("Recovery-Code eingeben, um dein Profil & deinen Zugang zu übernehmen:");
+    if (code && code.trim()) await claimRecoveryCode(code);
+  });
+  $("#access-recover-google")?.addEventListener("click", async () => {
+    try {
+      await window.FB.linkGoogle();
+      await refreshAccessForCurrentUser();
+      const uid = window.FB.getAuthUid?.();
+      if (uid) loadProfileFromCloud(uid);
+      if (localStorage.getItem("cg.accessGranted") === "1") toast("✅ Willkommen zurück!");
+      else toast("Angemeldet — aber dieses Google-Konto hat noch keinen Zugang. Bitte Code eingeben.");
+    } catch (err) {
+      if (err?.code === "auth/popup-closed-by-user") return;
+      toast(`Google-Login fehlgeschlagen: ${escapeHtml(err?.message || "")}`);
+    }
+  });
 
   if (!window.FB?.firebaseReady) {
     // Firebase not configured – allow access so app works in offline/dev mode
@@ -3997,6 +4103,7 @@ function renderFeedbackSummary(cornerId) {
 
   const entries = Object.values(feedback);
   const kioskYes = entries.filter(f => f.kiosk === "ja").length;
+  const toiletYes = entries.filter(f => f.toilet === "ja").length;
   const greenVery = entries.filter(f => f.green === "sehr").length;
   const busyHigh = entries.filter(f => f.busy === "viel").length;
   const highlights = entries.filter(f => f.highlights).map(f => f.highlights);
@@ -4005,6 +4112,7 @@ function renderFeedbackSummary(cornerId) {
     <p class="feedback-title">📋 Community-Feedback (${entries.length} Bewertungen)</p>
     <div class="feedback-tags">
       ${kioskYes > 0 ? `<span class="spot-icon"><span class="icon-emoji">🏪</span><span class="icon-label">Kiosk: ${kioskYes}x ja</span></span>` : ""}
+      ${toiletYes > 0 ? `<span class="spot-icon"><span class="icon-emoji">🚻</span><span class="icon-label">Toilette: ${toiletYes}x ja</span></span>` : ""}
       ${greenVery > 0 ? `<span class="spot-icon"><span class="icon-emoji">🌿</span><span class="icon-label">Grün: ${greenVery}x sehr</span></span>` : ""}
       ${busyHigh > 0 ? `<span class="spot-icon"><span class="icon-emoji">🚶</span><span class="icon-label">Belebt: ${busyHigh}x</span></span>` : ""}
     </div>
@@ -4059,6 +4167,7 @@ function bindCheckinPrompt() {
 function showCheckinPrompt(cornerId) {
   pendingCheckinCorner = cornerId;
   $("#checkin-kiosk").value = "";
+  $("#checkin-toilet").value = "";
   $("#checkin-green").value = "";
   $("#checkin-busy").value = "";
   $("#checkin-highlights").value = "";
@@ -4069,6 +4178,7 @@ function submitCheckinFeedback() {
   if (!pendingCheckinCorner) return;
   const feedback = {
     kiosk: $("#checkin-kiosk").value,
+    toilet: $("#checkin-toilet").value,
     green: $("#checkin-green").value,
     busy: $("#checkin-busy").value,
     highlights: $("#checkin-highlights").value.trim(),
@@ -5575,6 +5685,7 @@ function syncIdentity() {
   syncTeam();
   broadcastPresence();
   broadcastLiveLocation();
+  if (typeof scheduleProfileSync === "function") scheduleProfileSync();
 }
 
 function updateNicknameBar() {
@@ -5753,6 +5864,159 @@ function _activateAuthDependentFeatures(uid, status) {
   listenDirectMessages();
   syncIdentity();
   startPresenceHeartbeat();
+  loadProfileFromCloud(uid);
+}
+
+/* ====================== PROFILE CLOUD SYNC & ACCOUNT PORTABILITY ====================== */
+function buildProfileSnapshot() {
+  const key = currentUserKey();
+  return {
+    nickname: STATE.nickname || "",
+    team: STATE.team || "",
+    points: STATE.points[key] || { total: 0, history: [] },
+    achievements: Array.isArray(STATE.achievements) ? STATE.achievements : [],
+    visitedCorners: Array.isArray(STATE.visitedCorners) ? STATE.visitedCorners : [],
+    teamHistory: Array.isArray(STATE.teamHistory) ? STATE.teamHistory : [],
+    updatedAt: Date.now()
+  };
+}
+
+function applyProfileSnapshot(p, { silent = false } = {}) {
+  if (!p || typeof p !== "object") return false;
+  const key = currentUserKey();
+  if (p.nickname) { STATE.nickname = p.nickname; localStorage.setItem("cg.nickname", p.nickname); }
+  if (p.team) { STATE.team = p.team; localStorage.setItem(TEAM_STORAGE_KEY, p.team); }
+  if (p.points && typeof p.points === "object") {
+    STATE.points[key] = { ...p.points, nickname: STATE.nickname || p.points.nickname };
+    savePoints();
+  }
+  if (Array.isArray(p.achievements)) { STATE.achievements = p.achievements; saveAchievements(); }
+  if (Array.isArray(p.visitedCorners)) { STATE.visitedCorners = p.visitedCorners; saveVisitedCorners(); }
+  if (Array.isArray(p.teamHistory) && p.teamHistory.length) { STATE.teamHistory = p.teamHistory; saveTeamHistoryValue(); }
+  ensurePointIdentity();
+  updateNicknameBar();
+  if (typeof renderFriendsBar === "function") renderFriendsBar();
+  if (STATE.view === "profile") renderProfile();
+  syncIdentity();
+  if (!silent) toast("✅ Profil übernommen");
+  return true;
+}
+
+function syncProfileToCloud() {
+  const uid = window.FB?.getAuthUid?.();
+  if (!uid || !window.FB?.firebaseReady || !STATE.nickname) return;
+  try {
+    window.FB.set(window.FB.ref(window.FB.db, "userProfiles/" + uid), buildProfileSnapshot());
+  } catch (err) { console.warn("syncProfileToCloud failed:", err); }
+}
+
+let _profileSyncTimer = null;
+function scheduleProfileSync() {
+  clearTimeout(_profileSyncTimer);
+  _profileSyncTimer = setTimeout(syncProfileToCloud, 1500);
+}
+
+function loadProfileFromCloud(uid) {
+  if (!uid || !window.FB?.firebaseReady) return;
+  try {
+    window.FB.get(window.FB.ref(window.FB.db, "userProfiles/" + uid)).then((snap) => {
+      const remote = snap.val();
+      if (!remote) { if (STATE.nickname) syncProfileToCloud(); return; }
+      // Fresh browser but same (linked) account → no local profile yet: restore silently.
+      if (!STATE.nickname) { applyProfileSnapshot(remote, { silent: true }); return; }
+      // Both exist → keep whichever has more XP, then re-sync so cloud stays current.
+      const localTotal = STATE.points[currentUserKey()]?.total || 0;
+      const remoteTotal = remote.points?.total || 0;
+      if (remoteTotal > localTotal) applyProfileSnapshot(remote, { silent: true });
+      else syncProfileToCloud();
+    }).catch((err) => console.warn("loadProfileFromCloud failed:", err));
+  } catch (err) { console.warn("loadProfileFromCloud failed:", err); }
+}
+
+// After linking to Google/Email the UID may switch to an existing account;
+// re-check the access grant so the code prompt doesn't reappear.
+async function refreshAccessForCurrentUser() {
+  const uid = window.FB?.getAuthUid?.();
+  if (!uid || !window.FB?.firebaseReady) return;
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, "accessGranted/" + uid));
+    if (snap.val() !== null) {
+      localStorage.setItem("cg.accessGranted", "1");
+      const prompt = $("#access-prompt");
+      if (prompt) prompt.style.display = "none";
+    }
+  } catch (err) { console.warn("refreshAccessForCurrentUser failed:", err); }
+}
+
+/* ---- Anonymous recovery via a portable code (no account required) ---- */
+async function createRecoveryCode() {
+  const uid = window.FB?.getAuthUid?.();
+  if (!uid || !window.FB?.firebaseReady) { toast("Recovery-Code nur online verfügbar."); return null; }
+  if (!STATE.nickname) { toast("Bitte zuerst einen Namen wählen."); return null; }
+  const code = (crypto?.randomUUID ? crypto.randomUUID().replace(/-/g, "") : (Date.now().toString(36) + Math.random().toString(36).slice(2)))
+    .slice(0, 10).toUpperCase();
+  const snapshot = { ...buildProfileSnapshot(), createdBy: uid };
+  try {
+    // Bundle the access grant so recovering also unlocks the app in one step.
+    const accessSnap = await window.FB.get(window.FB.ref(window.FB.db, "accessGranted/" + uid));
+    if (accessSnap.val()) snapshot.accessCode = accessSnap.val();
+  } catch (err) { /* access code is optional in the bundle */ }
+  try {
+    await window.FB.set(window.FB.ref(window.FB.db, "recoveryProfiles/" + code), snapshot);
+    localStorage.setItem("cg.recoveryCode", code);
+    return code;
+  } catch (err) {
+    console.warn("createRecoveryCode failed:", err);
+    toast("Recovery-Code konnte nicht erstellt werden.");
+    return null;
+  }
+}
+
+async function claimRecoveryCode(rawCode) {
+  const code = String(rawCode || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!code) { toast("Bitte einen gültigen Code eingeben."); return; }
+  if (!window.FB?.firebaseReady) { toast("Übernahme nur online möglich."); return; }
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, "recoveryProfiles/" + code));
+    const remote = snap.val();
+    if (!remote) { toast("Code nicht gefunden — bitte prüfen."); return; }
+    const uid = window.FB.getAuthUid?.();
+    // Restore access first (validate rule checks the code exists) so writes are allowed.
+    if (remote.accessCode && uid) {
+      try {
+        await window.FB.set(window.FB.ref(window.FB.db, "accessGranted/" + uid), remote.accessCode);
+        localStorage.setItem("cg.accessGranted", "1");
+        const prompt = $("#access-prompt");
+        if (prompt) prompt.style.display = "none";
+      } catch (err) { console.warn("recovery access grant failed:", err); }
+    }
+    applyProfileSnapshot(remote);   // move the profile onto this device's uid
+    syncProfileToCloud();           // persist under the new uid as well
+  } catch (err) {
+    console.warn("claimRecoveryCode failed:", err);
+    toast("Übernahme fehlgeschlagen.");
+  }
+}
+
+function buildAccountSectionHtml() {
+  const online = !!window.FB?.firebaseReady;
+  const info = window.FB?.getAccountInfo?.() || { anonymous: true, email: "", providers: [] };
+  const linked = online && !info.anonymous;
+  const providerLabel = info.email ? escapeHtml(info.email)
+    : (info.providers || []).includes("google.com") ? "Google-Konto" : "Verknüpftes Konto";
+  const statusLine = !online
+    ? `<p style="color:var(--fg-dim);font-size:13px;">Offline — Konto-Funktionen brauchen eine Verbindung.</p>`
+    : linked
+      ? `<p style="color:var(--green);font-size:13px;margin-bottom:10px;">✅ Gesichert als <strong>${providerLabel}</strong>. Dein Profil ist auf jedem Gerät mit diesem Login verfügbar.</p>`
+      : `<p style="color:var(--fg-dim);font-size:13px;margin-bottom:10px;">Du bist anonym unterwegs. Sichere dein Profil, damit es beim Browser- oder Gerätewechsel erhalten bleibt.</p>`;
+  const buttons = online ? `
+      <div class="account-actions" style="display:flex;flex-wrap:wrap;gap:8px;">
+        <button class="notif-opt" id="acct-google-btn">🔗 Mit Google sichern</button>
+        <button class="notif-opt" id="acct-email-btn">✉️ Mit E-Mail sichern</button>
+        <button class="notif-opt" id="acct-code-create-btn">🎟️ Recovery-Code erstellen</button>
+        <button class="notif-opt" id="acct-code-claim-btn">📥 Profil übernehmen</button>
+      </div>` : "";
+  return `<div class="notification-toggle account-section"><h3>🔐 Konto & Profil sichern</h3>${statusLine}${buttons}</div>`;
 }
 
 async function initFirebase() {
@@ -5771,6 +6035,17 @@ async function initFirebase() {
     return;
   }
   if (window.FB.authReady) await window.FB.authReady;
+  // If the page was opened via an email sign-in link, complete it now.
+  try {
+    const linkedEmail = await window.FB.completeEmailLinkSignIn?.();
+    if (linkedEmail) {
+      await refreshAccessForCurrentUser();
+      const luid = window.FB.getAuthUid?.();
+      if (luid) loadProfileFromCloud(luid);
+      try { window.history.replaceState({}, "", window.location.href.split("?")[0].split("#")[0]); } catch (e) {}
+      toast(`✅ Angemeldet als ${escapeHtml(linkedEmail)}`);
+    }
+  } catch (err) { console.warn("Email-link sign-in failed:", err); }
   const authUid = window.FB.getAuthUid?.() || "";
   if (!authUid) {
     // Auth not yet ready but DB reads are public — still attach listeners so content is visible
@@ -5923,6 +6198,7 @@ function renderFriendsBar() {
       <span>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</span>
       <span class="friend-corner">${corner ? "@ " + escapeHtml(corner.name) : "unterwegs"}</span>
       <span class="friend-level">${tier.emoji} Lv.${level}</span>
+      ${corner ? `<button class="action-btn" style="padding:4px 8px;font-size:10px;" data-supply-user="${friend.id}" title="Frag ob Nachschub gebraucht wird">🛒 Nachschub?</button>` : ""}
       <button class="action-btn" style="padding:4px 8px;font-size:10px;" data-dm-user="${friend.id}">💬</button>
     </li>`;
   }).join("");
@@ -5932,6 +6208,38 @@ function renderFriendsBar() {
       sendDirectMessagePrompt(btn.dataset.dmUser, friend?.nickname || friend?.name || btn.dataset.dmUser);
     });
   });
+  list.querySelectorAll("[data-supply-user]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const friend = STATE.friends[btn.dataset.supplyUser];
+      const name = friend?.nickname || friend?.name || btn.dataset.supplyUser;
+      sendQuickMessage(btn.dataset.supplyUser, name, "Brauchst du Nachschub? 🍺🛒");
+    });
+  });
+}
+
+// One-tap preset message (used by the Nachschub button). Sends immediately,
+// no prompt — the recipient gets a push via the messages Cloud Function.
+function sendQuickMessage(toId, toName, text) {
+  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  if (!toId || toId === currentUserKey()) return;
+  const payload = {
+    fromId: currentUserKey(),
+    fromName: STATE.nickname,
+    fromTeam: STATE.team || "",
+    toId,
+    toName: toName || toId,
+    text,
+    time: Date.now(),
+    cornerId: STATE.manualCheckinId || STATE.atCornerId || null
+  };
+  if (window.FB?.firebaseReady) {
+    const { db, ref, push, set } = window.FB;
+    set(push(ref(db, "messages/" + toId)), payload);
+  } else {
+    STATE.directMessages.push({ ...payload, local: true, incoming: false });
+    saveLocalDirectMessages();
+  }
+  toast(`🛒 Nachschub-Frage an <strong>${escapeHtml(toName || toId)}</strong> gesendet`);
 }
 
 function sendDirectMessagePrompt(toId, toName, cornerId) {
@@ -6348,9 +6656,27 @@ function manualCheckin(cornerId) {
     checkCaptureCondition(cornerId);
     logEncounters(cornerId);
     startCooldownDisplay();
+    broadcastCheckinPush(corner);
   }
   updateCheckinButtons();
   broadcastPresence();
+}
+
+// Fan-out push: writes a lightweight event that the Cloud Function delivers to
+// everyone's push token (so friends get pinged even with the app closed).
+function broadcastCheckinPush(corner) {
+  if (!window.FB?.firebaseReady || !STATE.nickname || !corner) return;
+  try {
+    const { db, ref, push, set } = window.FB;
+    set(push(ref(db, "notify")), {
+      type: "checkin",
+      title: "🍻 Minga Corner Guide",
+      body: `${STATE.nickname} ist gerade am ${corner.name}!`,
+      fromId: currentUserKey(),
+      fromTeam: STATE.team || "",
+      createdAt: Date.now()
+    });
+  } catch (err) { console.warn("broadcastCheckinPush failed:", err); }
 }
 
 function updateCheckinButtons() {
@@ -6718,6 +7044,7 @@ function renderProfile() {
     <div class="team-history"><h3>🧬 Team History</h3><div class="team-history-grid">${TEAM_ORDER.map((teamId) => { const count = STATE.teamHistory.filter((entry) => entry.team === teamId).length; return `<div class="team-history-item"><div class="th-emoji">${TEAMS[teamId].emoji}</div><div class="th-count">${count}</div><div class="th-name">${TEAMS[teamId].name}</div></div>`; }).join("")}</div></div>
     <div class="team-battle-section"><h3>🏆 Team Leaderboard</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.max(6, row.total * 16)}px;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
     <div class="best-friends-section"><h3>🤝 Best Friends</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Begegnungen geloggt.</p>`}</div>
+    ${buildAccountSectionHtml()}
     <div class="notification-toggle"><h3>🔔 Benachrichtigungen</h3>${buildNotifSettingsHtml()}</div>
     <div class="best-friends-section"><h3>💬 Direktnachrichten</h3>${recentMessages.length ? recentMessages.map((msg) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(msg.fromName || msg.fromId || "Unbekannt")}: ${escapeHtml(msg.text || "")}</span><button class="action-btn" style="padding:4px 8px;font-size:10px;" data-reply-id="${msg.fromId}">Antworten</button></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Direktnachrichten.</p>`}</div>
     <div class="leaderboard-section"><h3>🏆 Achievements</h3><div class="achievements-grid">${getAchievementCardsHtml()}</div></div>`;
@@ -6751,6 +7078,40 @@ function renderProfile() {
     });
   });
   $("#enable-push-btn")?.addEventListener("click", enableFirebasePush);
+  $("#acct-google-btn")?.addEventListener("click", async () => {
+    try {
+      const email = await window.FB.linkGoogle();
+      await refreshAccessForCurrentUser();
+      const uid = window.FB.getAuthUid?.();
+      if (uid) loadProfileFromCloud(uid);
+      syncProfileToCloud();
+      toast(`✅ Mit Google gesichert${email ? " (" + escapeHtml(email) + ")" : ""}`);
+      renderProfile();
+    } catch (err) {
+      if (err?.code === "auth/popup-closed-by-user") return;
+      toast(`Google-Login fehlgeschlagen: ${escapeHtml(err?.message || "")}`);
+    }
+  });
+  $("#acct-email-btn")?.addEventListener("click", async () => {
+    const email = prompt("E-Mail für den Anmelde-Link:");
+    if (!email || !email.trim()) return;
+    try {
+      await window.FB.sendEmailLink(email.trim());
+      toast("✉️ Link gesendet — öffne die Mail auf diesem Gerät und tippe den Link an.");
+    } catch (err) {
+      toast(`Konnte Link nicht senden: ${escapeHtml(err?.message || "")}`);
+    }
+  });
+  $("#acct-code-create-btn")?.addEventListener("click", async () => {
+    const code = await createRecoveryCode();
+    if (!code) return;
+    await copyText(code).catch(() => {});
+    toast(`🎟️ Recovery-Code: <strong>${code}</strong><br>Kopiert — sicher aufbewahren!`);
+  });
+  $("#acct-code-claim-btn")?.addEventListener("click", async () => {
+    const code = prompt("Recovery-Code eingeben, um dein Profil zu übernehmen:");
+    if (code && code.trim()) await claimRecoveryCode(code);
+  });
   $$("#profile-content [data-reply-id]").forEach((btn) => btn.addEventListener("click", () => {
     const msg = recentMessages.find((entry) => entry.fromId === btn.dataset.replyId);
     sendDirectMessagePrompt(btn.dataset.replyId, msg?.fromName || btn.dataset.replyId);

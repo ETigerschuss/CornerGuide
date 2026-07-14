@@ -1,27 +1,85 @@
 {
   "rules": {
-    ".read": true,
-    ".write": "auth != null && root.child('accessGranted').child(auth.uid).val() != null",
+    ".read": false,
+    ".write": false,
+
+    "config": {
+      ".read": true,
+      ".write": false
+    },
+
+    "accessCodes": {
+      ".read": false,
+      ".write": false
+    },
+
     "accessGranted": {
       "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
         ".write": "auth != null && auth.uid == $uid",
         ".validate": "newData.isString() && newData.val().length > 0 && root.child('accessCodes').child(newData.val()).exists()"
       }
     },
-    "accessCodes": {
-      ".write": false
-    },
+
     "pushTokens": {
       ".read": false,
       "$uid": {
-        ".write": "auth != null && auth.uid == $uid && root.child('accessGranted').child(auth.uid).val() != null"
+        ".write": "auth != null && auth.uid == $uid && root.child('accessGranted').child(auth.uid).exists()"
       }
     },
+
     "userPrefs": {
       "$uid": {
         ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null && auth.uid == $uid && root.child('accessGranted').child(auth.uid).val() != null"
+        ".write": "auth != null && auth.uid == $uid && root.child('accessGranted').child(auth.uid).exists()"
       }
-    }
+    },
+
+    "userProfiles": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid && root.child('accessGranted').child(auth.uid).exists()"
+      }
+    },
+
+    "recoveryProfiles": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()"
+      }
+    },
+
+    "messages": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()"
+      }
+    },
+
+    "notify": {
+      ".read": false,
+      "$eventId": {
+        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()"
+      }
+    },
+
+    "comments":        { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "teams":           { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "presence":        { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "points":          { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "liveLocations":   { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "encounters":      { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "corners":         { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "captured":        { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "captureHistory":  { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "photos":          { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "emojiVotes":      { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "cornerVotes":     { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "barometer":       { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "visits":          { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "cornerStatus":    { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "cornerStatuses":  { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "achievements":    { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "checkinFeedback": { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" }
   }
 }
