@@ -63,23 +63,28 @@
       }
     },
 
-    "comments":        { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "teams":           { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "presence":        { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "points":          { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "liveLocations":   { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "encounters":      { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "corners":         { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "captured":        { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "captureHistory":  { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "photos":          { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "emojiVotes":      { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "cornerVotes":     { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "barometer":       { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "visits":          { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "cornerStatus":    { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "cornerStatuses":  { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "achievements":    { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "checkinFeedback": { ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" }
+    "liveLocations": {
+      ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()",
+      ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()"
+    },
+
+    "comments":        { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "teams":           { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "customTeams":     { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "presence":        { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "points":          { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "encounters":      { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "corners":         { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "captured":        { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "captureHistory":  { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "photos":          { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "emojiVotes":      { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "cornerVotes":     { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "barometer":       { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "visits":          { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "cornerStatus":    { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "cornerStatuses":  { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "achievements":    { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
+    "checkinFeedback": { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" }
   }
 }

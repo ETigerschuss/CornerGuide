@@ -27,6 +27,7 @@
            EmailAuthProvider, linkWithCredential,
            sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getMessaging, getToken, onMessage, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+  import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCIHeM2laZTAUF9BIJRjCAUb2ZGqlKjto8",
@@ -41,6 +42,7 @@
 
   let db = null;
   let auth = null;
+  let storage = null;
   let firebaseReady = false;
   let authUid = "";
   let messaging = null;
@@ -53,6 +55,7 @@
     if (!firebaseConfig.apiKey.startsWith("YOUR_")) {
       const app = initializeApp(firebaseConfig);
       db = getDatabase(app);
+      try { storage = getStorage(app); } catch (err) { console.warn("Storage init failed:", err); }
       auth = getAuth(app);
       firebaseReady = true;
       onAuthStateChanged(auth, (user) => {
@@ -115,6 +118,13 @@
     bindForegroundPush: (listener) => {
       if (!pushSupported || !messaging || typeof listener !== "function") return () => {};
       return onMessage(messaging, listener);
+    },
+    // Upload a data-URL image to Storage and return its public download URL.
+    uploadImage: async (path, dataUrl) => {
+      if (!storage) throw new Error("Storage nicht verfügbar.");
+      const r = storageRef(storage, path);
+      await uploadString(r, dataUrl, "data_url");
+      return await getDownloadURL(r);
     },
     // ---- Account portability (link the anonymous account to a permanent one) ----
     getAccountInfo: () => {
@@ -292,6 +302,7 @@ input, textarea { cursor: text; }
   display: inline-block;
 }
 .subtitle .gossips { color: var(--pink); text-decoration: underline wavy var(--pink); text-underline-offset: 4px; }
+.title-intl { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--fg-dim); margin: 6px 0 0; opacity: 0.85; }
 
 .meta-line {
   display: flex;
@@ -332,6 +343,10 @@ input, textarea { cursor: text; }
   transition: all 0.15s;
 }
 .tab.active { background: var(--amber); color: #111; }
+@media (max-width: 480px) {
+  .tabs { display: flex; width: 100%; max-width: 100%; }
+  .tab { flex: 1 1 0; padding: 10px 4px; letter-spacing: 0.5px; font-size: 10px; white-space: nowrap; text-align: center; min-width: 0; }
+}
 
 /* ====================== VIEWS ====================== */
 .view { display: none; }
@@ -1390,6 +1405,7 @@ input, textarea { cursor: text; }
   text-transform: uppercase;
 }
 .access-prompt input:focus { outline: none; border-color: var(--amber); }
+#team-create-name, #team-create-emoji { text-transform: none; letter-spacing: 0; text-align: left; font-family: "DM Sans", sans-serif; font-size: 15px; }
 .access-prompt .access-error {
   color: var(--pink);
   font-size: 13px;
@@ -1926,6 +1942,29 @@ input, textarea { cursor: text; }
   border-radius: 6px;
   font-size: 13px;
 }
+.checkin-scale {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.scale-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.scale-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.scale-btn {
+  flex: 1 1 auto;
+  min-width: 56px;
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  color: var(--fg-dim);
+  padding: 9px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.scale-btn:hover { border-color: var(--fg-dim); }
+.scale-btn.selected { background: var(--amber); border-color: var(--amber); color: #111; }
 .checkin-highlights {
   width: 100%;
   background: var(--bg-3);
@@ -2135,13 +2174,12 @@ input, textarea { cursor: text; }
       <h1 class="title-mingas">Minga</h1>
       <span class="title-corner"><em>Corner</em> Guide</span>
     </div>
+    <p class="title-intl">Monaco di Baviera · Munich · München</p>
     <p class="subtitle">vom <span class="gossips">gossips</span> Stammtisch</p>
     <div class="meta-line">
       <span><strong id="header-count">12</strong> Spots</span>
       <span class="dot"></span>
       <span>München</span>
-      <span class="dot"></span>
-      <span>Stammtisch: F · G · A · ÉT</span>
     </div>
     <nav class="tabs" role="tablist">
       <button class="tab active" data-view="list">Liste</button>
@@ -2162,6 +2200,7 @@ input, textarea { cursor: text; }
     <span class="nick-label">👤</span>
     <span class="nick-name" id="nick-display"></span>
     <span class="nick-pts" id="nick-pts"></span><span class="level-bar" id="nick-level-bar"><span class="level-badge" id="nick-level-badge"></span><span class="level-progress"><span class="level-progress-fill" id="nick-level-fill"></span></span></span>
+    <button class="nick-change" id="supply-btn" aria-label="Nachschub-Ruf an alle">🆘 Nachschub</button>
     <button class="nick-change" id="invite-btn" aria-label="Freunde einladen">📨 Einladen</button>
     <button class="nick-change" id="nick-change-btn">✏️ Ändern</button>
   </div>
@@ -2295,43 +2334,37 @@ input, textarea { cursor: text; }
     <h2>🎉 Erster Besuch!</h2>
     <p>Wie war deine Erfahrung? Bewerte den Corner und beschreib deine Highlights!</p>
     <div class="checkin-options">
-      <div class="checkin-option">
-        <span>🏪</span>
-        <label>Kiosk in der Nähe?</label>
-        <select id="checkin-kiosk">
-          <option value="">—</option>
-          <option value="ja">Ja</option>
-          <option value="nein">Nein</option>
-        </select>
+      <div class="checkin-scale">
+        <div class="scale-label">🏪 Kiosk in der Nähe?</div>
+        <div class="scale-group" data-field="kiosk">
+          <button type="button" class="scale-btn" data-value="ja">Ja</button>
+          <button type="button" class="scale-btn" data-value="nein">Nein</button>
+        </div>
       </div>
-      <div class="checkin-option">
-        <span>🚻</span>
-        <label>Toilette in der Nähe?</label>
-        <select id="checkin-toilet">
-          <option value="">—</option>
-          <option value="ja">Ja</option>
-          <option value="nein">Nein</option>
-        </select>
+      <div class="checkin-scale">
+        <div class="scale-label">🚻 Toilette</div>
+        <div class="scale-group" data-field="toilet">
+          <button type="button" class="scale-btn" data-value="direkt">Direkt am Corner</button>
+          <button type="button" class="scale-btn" data-value="nah">In der Nähe</button>
+          <button type="button" class="scale-btn" data-value="weit">Weit weg</button>
+          <button type="button" class="scale-btn" data-value="keine">Keine</button>
+        </div>
       </div>
-      <div class="checkin-option">
-        <span>🌿</span>
-        <label>Grün / Natur?</label>
-        <select id="checkin-green">
-          <option value="">—</option>
-          <option value="sehr">Sehr grün</option>
-          <option value="etwas">Etwas</option>
-          <option value="nein">Eher urban</option>
-        </select>
+      <div class="checkin-scale">
+        <div class="scale-label">🌿 Grün / Natur?</div>
+        <div class="scale-group" data-field="green">
+          <button type="button" class="scale-btn" data-value="sehr">Sehr grün</button>
+          <button type="button" class="scale-btn" data-value="etwas">Etwas</button>
+          <button type="button" class="scale-btn" data-value="nein">Urban</button>
+        </div>
       </div>
-      <div class="checkin-option">
-        <span>🚶</span>
-        <label>Wie viel los?</label>
-        <select id="checkin-busy">
-          <option value="">—</option>
-          <option value="ruhig">Ruhig</option>
-          <option value="normal">Normal</option>
-          <option value="viel">Sehr viel los</option>
-        </select>
+      <div class="checkin-scale">
+        <div class="scale-label">🚶 Wie viel los?</div>
+        <div class="scale-group" data-field="busy">
+          <button type="button" class="scale-btn" data-value="ruhig">Ruhig</button>
+          <button type="button" class="scale-btn" data-value="normal">Normal</button>
+          <button type="button" class="scale-btn" data-value="viel">Viel los</button>
+        </div>
       </div>
     </div>
     <textarea id="checkin-highlights" class="checkin-highlights" placeholder="Deine Highlights... Was macht diesen Corner aus?"></textarea>
@@ -2354,6 +2387,32 @@ input, textarea { cursor: text; }
       <p style="font-size:13px;color:var(--fg-dim,#9a9285);margin-bottom:10px;">Schon mal dabei gewesen? Übernimm dein Profil ohne neuen Code:</p>
       <button id="access-recover-code" style="margin-bottom:8px;">📥 Recovery-Code eingeben</button>
       <button id="access-recover-google">🔗 Mit Google anmelden</button>
+    </div>
+    <p class="access-install-hint" id="access-install-hint" style="margin-top:16px;font-size:12px;color:var(--fg-dim);line-height:1.5;"></p>
+  </div>
+</div>
+
+<!-- Claim an existing (old) profile: pick yourself from the list of past users -->
+<div id="claim-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:440px;max-height:82vh;overflow-y:auto;text-align:left;">
+    <h2>👥 Altes Profil übernehmen</h2>
+    <p style="font-size:13px;color:var(--fg-dim);">Warst du schon dabei? Wähle dein altes Profil — Punkte, Level und Achievements werden dir zugeordnet.</p>
+    <div id="claim-list" style="margin:14px 0;"></div>
+    <button id="claim-close" class="action-btn">Schließen</button>
+  </div>
+</div>
+
+<!-- Create a custom team -->
+<div id="team-create-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:360px;text-align:left;">
+    <h2>➕ Eigenes Team</h2>
+    <input type="text" id="team-create-name" placeholder="Team-Name" maxlength="24" autocomplete="off" />
+    <input type="text" id="team-create-emoji" placeholder="Emoji (z.B. 🦊)" maxlength="4" autocomplete="off" style="margin-top:8px;" />
+    <div style="margin:14px 0 8px;font-size:12px;color:var(--fg-dim);">Farbe wählen</div>
+    <div id="team-create-colors" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+    <div style="display:flex;gap:8px;margin-top:18px;">
+      <button class="action-btn" id="team-create-cancel">Abbrechen</button>
+      <button class="action-btn primary" id="team-create-save">Erstellen</button>
     </div>
   </div>
 </div>
@@ -2729,6 +2788,15 @@ function checkAccessGranted() {
   const errEl = $("#access-error");
   btn.addEventListener("click", () => submitAccessCode());
   input.addEventListener("keydown", (e) => { if (e.key === "Enter") submitAccessCode(); });
+  // Install hint: on iOS, home-screen install is required for push notifications.
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const inStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  const hint = $("#access-install-hint");
+  if (hint && !inStandalone) {
+    hint.innerHTML = isIOS
+      ? "📲 <strong>iPhone-Tipp:</strong> Safari öffnen → Teilen-Symbol <span style=\"font-size:14px;\">&#x1F5D2;</span> → &bdquo;Zum Home-Bildschirm&ldquo;. Nur als installierte App gibt&#39;s Push-Nachrichten!"
+      : "📲 <strong>Tipp:</strong> Füg die App über das Browser-Menü zum Startbildschirm hinzu — für Push-Nachrichten und schnellen Zugriff.";
+  }
   // Recovery paths so a new browser/device doesn't need a fresh invite code.
   $("#access-recover-code")?.addEventListener("click", async () => {
     const code = prompt("Recovery-Code eingeben, um dein Profil & deinen Zugang zu übernehmen:");
@@ -2980,7 +3048,16 @@ function savePhoto(cornerId, dataUrl, caption) {
   if (window.FB?.firebaseReady) {
     const { db, ref, push, set } = window.FB;
     const newRef = push(ref(db, "photos/" + cornerId));
-    set(newRef, photo);
+    // Upload the image bytes to Storage and store only the URL in the DB (keeps
+    // the Realtime Database light). Falls back to inline base64 if upload fails.
+    if (window.FB.uploadImage && typeof dataUrl === "string" && dataUrl.startsWith("data:")) {
+      const key = newRef.key || ("p" + Date.now());
+      window.FB.uploadImage(`cornerPhotos/${cornerId}/${key}.jpg`, dataUrl)
+        .then((url) => { photo.src = url; photo.storage = true; set(newRef, photo); })
+        .catch((err) => { console.warn("Storage upload failed, storing inline:", err); set(newRef, photo); });
+    } else {
+      set(newRef, photo);
+    }
   } else {
     const photos = getPhotos(cornerId);
     photo.id = "photo-" + Date.now();
@@ -4051,6 +4128,7 @@ function openDetail(cornerId) {
   // Bind team picker buttons
   detailContent.querySelectorAll(".team-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (btn.dataset.teamCreate) { openTeamCreate(cornerId); return; }
       selectTeam(btn.dataset.team);
       setTimeout(() => openDetail(cornerId), 100);
     });
@@ -4103,7 +4181,7 @@ function renderFeedbackSummary(cornerId) {
 
   const entries = Object.values(feedback);
   const kioskYes = entries.filter(f => f.kiosk === "ja").length;
-  const toiletYes = entries.filter(f => f.toilet === "ja").length;
+  const toiletYes = entries.filter(f => f.toilet === "direkt" || f.toilet === "nah" || f.toilet === "ja").length;
   const greenVery = entries.filter(f => f.green === "sehr").length;
   const busyHigh = entries.filter(f => f.busy === "viel").length;
   const highlights = entries.filter(f => f.highlights).map(f => f.highlights);
@@ -4112,7 +4190,7 @@ function renderFeedbackSummary(cornerId) {
     <p class="feedback-title">📋 Community-Feedback (${entries.length} Bewertungen)</p>
     <div class="feedback-tags">
       ${kioskYes > 0 ? `<span class="spot-icon"><span class="icon-emoji">🏪</span><span class="icon-label">Kiosk: ${kioskYes}x ja</span></span>` : ""}
-      ${toiletYes > 0 ? `<span class="spot-icon"><span class="icon-emoji">🚻</span><span class="icon-label">Toilette: ${toiletYes}x ja</span></span>` : ""}
+      ${toiletYes > 0 ? `<span class="spot-icon"><span class="icon-emoji">🚻</span><span class="icon-label">Toilette: ${toiletYes}x in der Nähe</span></span>` : ""}
       ${greenVery > 0 ? `<span class="spot-icon"><span class="icon-emoji">🌿</span><span class="icon-label">Grün: ${greenVery}x sehr</span></span>` : ""}
       ${busyHigh > 0 ? `<span class="spot-icon"><span class="icon-emoji">🚶</span><span class="icon-label">Belebt: ${busyHigh}x</span></span>` : ""}
     </div>
@@ -4164,12 +4242,31 @@ function bindCheckinPrompt() {
   $("#checkin-submit").addEventListener("click", submitCheckinFeedback);
 }
 
+function getScaleValue(field) {
+  const el = document.querySelector(`#checkin-prompt .scale-group[data-field="${field}"] .scale-btn.selected`);
+  return el ? el.dataset.value : "";
+}
+function clearCheckinScales() {
+  document.querySelectorAll("#checkin-prompt .scale-btn.selected").forEach((b) => b.classList.remove("selected"));
+}
+let _checkinScalesBound = false;
+function bindCheckinScales() {
+  if (_checkinScalesBound) return;
+  const container = $("#checkin-prompt");
+  if (!container) return;
+  container.addEventListener("click", (e) => {
+    const btn = e.target.closest(".scale-btn");
+    if (!btn) return;
+    const group = btn.closest(".scale-group");
+    group.querySelectorAll(".scale-btn").forEach((b) => b.classList.toggle("selected", b === btn));
+  });
+  _checkinScalesBound = true;
+}
+
 function showCheckinPrompt(cornerId) {
   pendingCheckinCorner = cornerId;
-  $("#checkin-kiosk").value = "";
-  $("#checkin-toilet").value = "";
-  $("#checkin-green").value = "";
-  $("#checkin-busy").value = "";
+  bindCheckinScales();
+  clearCheckinScales();
   $("#checkin-highlights").value = "";
   $("#checkin-prompt").classList.add("open");
 }
@@ -4177,10 +4274,10 @@ function showCheckinPrompt(cornerId) {
 function submitCheckinFeedback() {
   if (!pendingCheckinCorner) return;
   const feedback = {
-    kiosk: $("#checkin-kiosk").value,
-    toilet: $("#checkin-toilet").value,
-    green: $("#checkin-green").value,
-    busy: $("#checkin-busy").value,
+    kiosk: getScaleValue("kiosk"),
+    toilet: getScaleValue("toilet"),
+    green: getScaleValue("green"),
+    busy: getScaleValue("busy"),
     highlights: $("#checkin-highlights").value.trim(),
     user: STATE.nickname || "Anonym",
     time: Date.now()
@@ -5300,6 +5397,12 @@ function bindGlobalXp() {
 
 /* ====================== FEATURE OVERRIDES ====================== */
 const TEAM_ORDER = ["plant", "insect", "alien", "wolf", "bird", "octopus"];
+// User-created teams are merged into TEAMS at runtime from the customTeams node.
+let CUSTOM_TEAM_KEYS = [];
+function allTeamKeys() { return [...TEAM_ORDER, ...CUSTOM_TEAM_KEYS]; }
+const CUSTOM_TEAM_COLORS = ["#e8a93e", "#ff2e6c", "#b8ff3a", "#6cb6ff", "#ff8c42", "#c77dff", "#4ecdc4", "#f9c74f"];
+let _teamCreateColor = CUSTOM_TEAM_COLORS[0];
+let _teamCreateReturnCorner = null;
 const TEAM_STORAGE_KEY = "cg.team";
 const TEAM_HISTORY_KEY = "cg.teamHistory";
 const NOTIF_STORAGE_KEY = "cg.notifications";
@@ -5666,6 +5769,7 @@ function saveNickname() {
 
 function bindNicknameBar() {
   updateNicknameBar();
+  $("#supply-btn")?.addEventListener("click", broadcastSupplyRequest);
   $("#invite-btn").addEventListener("click", inviteFriends);
   $("#nick-change-btn").addEventListener("click", () => {
     const newName = prompt("Neuer Nickname:", STATE.nickname);
@@ -5707,12 +5811,16 @@ function renderTeamPickerHtml() {
     <div class="team-select-section">
       <h4>Für welches Team checkst du ein?</h4>
       <div class="team-buttons">
-        ${TEAM_ORDER.map((teamId) => `
-          <button class="team-btn ${STATE.team === teamId ? "active" : ""}" data-team="${teamId}" title="${TEAMS[teamId].name}" style="border-color:${STATE.team === teamId ? TEAMS[teamId].color : "var(--line)"};">
-            <span>${TEAMS[teamId].emoji}</span>
-            <span class="team-label">${TEAMS[teamId].name}</span>
+        ${allTeamKeys().map((teamId) => `
+          <button class="team-btn ${STATE.team === teamId ? "active" : ""}" data-team="${teamId}" title="${escapeHtml(TEAMS[teamId]?.name || teamId)}" style="border-color:${STATE.team === teamId ? (TEAMS[teamId]?.color || "var(--amber)") : "var(--line)"};">
+            <span>${TEAMS[teamId]?.emoji || "🚩"}</span>
+            <span class="team-label">${escapeHtml(TEAMS[teamId]?.name || teamId)}</span>
           </button>
         `).join("")}
+        <button class="team-btn team-create-btn" data-team-create="1" title="Eigenes Team erstellen" style="border-style:dashed;">
+          <span>➕</span>
+          <span class="team-label">Team</span>
+        </button>
       </div>
     </div>
   `;
@@ -5746,6 +5854,72 @@ function listenTeams() {
     renderFriendsBar();
     if (STATE.view === "profile") renderProfile();
   });
+  listenCustomTeams();
+}
+
+let _customTeamsBound = false;
+function listenCustomTeams() {
+  if (!window.FB?.firebaseReady || _customTeamsBound) return;
+  _customTeamsBound = true;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "customTeams"), (snap) => {
+    const data = snap.val() || {};
+    CUSTOM_TEAM_KEYS = [];
+    for (const [key, t] of Object.entries(data)) {
+      if (!t || !t.name) continue;
+      TEAMS[key] = { emoji: t.emoji || "🚩", color: t.color || "#e8a93e", name: t.name, custom: true };
+      CUSTOM_TEAM_KEYS.push(key);
+    }
+    renderFriendsBar();
+    if (STATE.view === "profile") renderProfile();
+    if (STATE.view === "leaderboard") renderLeaderboard();
+  });
+}
+
+function openTeamCreate(cornerId) {
+  if (!STATE.nickname) { toast("Bitte zuerst einen Namen wählen."); return; }
+  if (!window.FB?.firebaseReady) { toast("Teams erstellen nur online möglich."); return; }
+  _teamCreateReturnCorner = cornerId || null;
+  _teamCreateColor = CUSTOM_TEAM_COLORS[0];
+  const overlay = $("#team-create-overlay");
+  $("#team-create-name").value = "";
+  $("#team-create-emoji").value = "";
+  const colorWrap = $("#team-create-colors");
+  colorWrap.innerHTML = CUSTOM_TEAM_COLORS.map((c, i) =>
+    `<button type="button" class="team-color-swatch" data-color="${c}" style="width:34px;height:34px;border-radius:50%;background:${c};border:3px solid ${i === 0 ? "#fff" : "transparent"};cursor:pointer;padding:0;"></button>`
+  ).join("");
+  colorWrap.querySelectorAll("[data-color]").forEach((b) => {
+    b.addEventListener("click", () => {
+      _teamCreateColor = b.dataset.color;
+      colorWrap.querySelectorAll("[data-color]").forEach((x) => { x.style.borderColor = "transparent"; });
+      b.style.borderColor = "#fff";
+    });
+  });
+  $("#team-create-cancel").onclick = () => { overlay.style.display = "none"; };
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
+  $("#team-create-save").onclick = saveTeamCreate;
+  overlay.style.display = "flex";
+  setTimeout(() => $("#team-create-name").focus(), 100);
+}
+
+async function saveTeamCreate() {
+  const name = $("#team-create-name").value.trim();
+  const emoji = ($("#team-create-emoji").value.trim() || "🚩").slice(0, 4);
+  if (!name) { toast("Bitte einen Team-Namen eingeben."); return; }
+  const key = "custom-" + name.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 16) + "-" + Math.random().toString(36).slice(2, 6);
+  const team = { name: name.slice(0, 24), emoji, color: _teamCreateColor, createdBy: STATE.nickname, createdAt: Date.now() };
+  try {
+    await window.FB.set(window.FB.ref(window.FB.db, "customTeams/" + key), team);
+    TEAMS[key] = { emoji: team.emoji, color: team.color, name: team.name, custom: true };
+    if (!CUSTOM_TEAM_KEYS.includes(key)) CUSTOM_TEAM_KEYS.push(key);
+    $("#team-create-overlay").style.display = "none";
+    selectTeam(key);
+    toast(`✅ Team „${escapeHtml(team.name)}" erstellt & ausgewählt`);
+    if (_teamCreateReturnCorner) setTimeout(() => openDetail(_teamCreateReturnCorner), 120);
+  } catch (err) {
+    console.warn("saveTeamCreate failed:", err);
+    toast("Team konnte nicht erstellt werden.");
+  }
 }
 
 function listenCornerStatuses() {
@@ -5910,7 +6084,10 @@ function syncProfileToCloud() {
   } catch (err) { console.warn("syncProfileToCloud failed:", err); }
 }
 
-let _profileSyncTimer = null;
+// var (not let): scheduleProfileSync is reachable during top-level init via
+// ensurePointIdentity() -> savePoints(), which runs before this line. A `let`
+// here would be in the temporal dead zone and throw, halting the rest of the script.
+var _profileSyncTimer = null;
 function scheduleProfileSync() {
   clearTimeout(_profileSyncTimer);
   _profileSyncTimer = setTimeout(syncProfileToCloud, 1500);
@@ -6014,9 +6191,117 @@ function buildAccountSectionHtml() {
         <button class="notif-opt" id="acct-google-btn">🔗 Mit Google sichern</button>
         <button class="notif-opt" id="acct-email-btn">✉️ Mit E-Mail sichern</button>
         <button class="notif-opt" id="acct-code-create-btn">🎟️ Recovery-Code erstellen</button>
-        <button class="notif-opt" id="acct-code-claim-btn">📥 Profil übernehmen</button>
+        <button class="notif-opt" id="acct-code-claim-btn">📥 Recovery-Code eingeben</button>
+        <button class="notif-opt" id="acct-claim-btn">👥 Altes Profil übernehmen</button>
       </div>` : "";
   return `<div class="notification-toggle account-section"><h3>🔐 Konto & Profil sichern</h3>${statusLine}${buttons}</div>`;
+}
+
+/* ---- Claim an existing profile: friends who already played pick their old identity ---- */
+async function openClaimOverlay() {
+  const overlay = $("#claim-overlay");
+  const list = $("#claim-list");
+  if (!overlay || !list) return;
+  overlay.style.display = "flex";
+  $("#claim-close").onclick = () => { overlay.style.display = "none"; };
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
+  if (!window.FB?.firebaseReady) { list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Nur online verfügbar.</p>`; return; }
+  list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Lade Profile…</p>`;
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, "points"));
+    const data = snap.val() || {};
+    const mine = currentUserKey();
+    const rows = Object.entries(data)
+      .map(([key, p]) => ({ key, nickname: (p && p.nickname) || key, total: (p && p.total) || 0 }))
+      .filter((r) => r.key !== mine && r.nickname)
+      .sort((a, b) => b.total - a.total);
+    if (!rows.length) { list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Keine früheren Profile gefunden.</p>`; return; }
+    list.innerHTML = rows.map((r) => {
+      const { level } = getLevel(r.total);
+      const tier = getLevelTier(level);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-3);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;">
+        <span style="flex:1;font-weight:600;">${escapeHtml(r.nickname)}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--fg-dim);white-space:nowrap;">${tier.emoji} Lv.${level} · ${r.total} XP</span>
+        <button class="action-btn primary" data-claim-key="${escapeHtml(r.key)}" style="padding:6px 10px;font-size:11px;white-space:nowrap;">Das war ich</button>
+      </div>`;
+    }).join("");
+    list.querySelectorAll("[data-claim-key]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const row = rows.find((x) => x.key === btn.dataset.claimKey);
+        if (confirm(`Profil „${row ? row.nickname : ""}" übernehmen? Punkte, Level & Achievements werden dir zugeordnet.`)) {
+          claimExistingProfile(btn.dataset.claimKey);
+        }
+      });
+    });
+  } catch (err) {
+    console.warn("openClaimOverlay failed:", err);
+    list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Konnte Profile nicht laden.</p>`;
+  }
+}
+
+// Reconstruct which corners a nickname has visited from the shared visits node.
+function visitedCornersForNickname(nickname) {
+  if (!nickname) return [];
+  const result = [];
+  const visits = STATE.visits || {};
+  for (const [cornerId, entries] of Object.entries(visits)) {
+    const list = entries ? Object.values(entries) : [];
+    if (list.some((v) => v && v.user === nickname)) result.push(cornerId);
+  }
+  return result;
+}
+
+async function claimExistingProfile(oldKey) {
+  if (!oldKey || !window.FB?.firebaseReady) return;
+  const newKey = currentUserKey();
+  if (!newKey) { toast("Bitte zuerst Zugang oder Login."); return; }
+  const { db, ref, get, set, remove } = window.FB;
+  try {
+    const [pSnap, aSnap, tSnap] = await Promise.all([
+      get(ref(db, "points/" + oldKey)),
+      get(ref(db, "achievements/" + oldKey)),
+      get(ref(db, "teams/" + oldKey))
+    ]);
+    const oldPoints = pSnap.val();
+    if (!oldPoints) { toast("Profil nicht gefunden."); return; }
+    const nickname = oldPoints.nickname || STATE.nickname || "";
+    if (nickname) { STATE.nickname = nickname; localStorage.setItem("cg.nickname", nickname); }
+    const team = tSnap.val() && tSnap.val().team;
+    if (team) { STATE.team = team; localStorage.setItem(TEAM_STORAGE_KEY, team); ensureTeamHistoryEntry(team); }
+    STATE.points[newKey] = { ...oldPoints, nickname };
+    savePoints();
+    set(ref(db, "points/" + newKey), STATE.points[newKey]);
+    // Carry over visited corners (reconstructed from the shared visits node by nickname).
+    const claimedVisited = visitedCornersForNickname(nickname);
+    if (claimedVisited.length) {
+      STATE.visitedCorners = Array.from(new Set([...(STATE.visitedCorners || []), ...claimedVisited]));
+      saveVisitedCorners();
+    }
+    const oldAch = aSnap.val() || {};
+    const achIds = Object.keys(oldAch);
+    if (achIds.length) {
+      STATE.achievements = Array.from(new Set([...(STATE.achievements || []), ...achIds]));
+      saveAchievements();
+      set(ref(db, "achievements/" + newKey), oldAch);
+    }
+    // Remove the old identity so the same person doesn't appear twice.
+    if (oldKey !== newKey) {
+      remove(ref(db, "points/" + oldKey));
+      remove(ref(db, "achievements/" + oldKey));
+      remove(ref(db, "teams/" + oldKey));
+    }
+    ensurePointIdentity();
+    syncIdentity();
+    syncProfileToCloud();
+    updateNicknameBar();
+    if (STATE.view === "profile") renderProfile();
+    const overlay = $("#claim-overlay");
+    if (overlay) overlay.style.display = "none";
+    toast(`✅ Profil „${escapeHtml(nickname)}" übernommen — willkommen zurück!`);
+  } catch (err) {
+    console.warn("claimExistingProfile failed:", err);
+    toast("Übernahme fehlgeschlagen.");
+  }
 }
 
 async function initFirebase() {
@@ -6679,6 +6964,27 @@ function broadcastCheckinPush(corner) {
   } catch (err) { console.warn("broadcastCheckinPush failed:", err); }
 }
 
+// A checked-in user can broadcast a "I need resupply" ping to everyone.
+function broadcastSupplyRequest() {
+  if (!STATE.nickname) { toast("Bitte zuerst einen Namen wählen."); return; }
+  if (!window.FB?.firebaseReady) { toast("Nachschub-Ruf braucht eine Verbindung."); return; }
+  const cid = STATE.manualCheckinId || STATE.atCornerId;
+  const corner = cid ? getAllCorners().find((c) => c.id === cid) : null;
+  const where = corner ? ` am ${corner.name}` : "";
+  try {
+    const { db, ref, push, set } = window.FB;
+    set(push(ref(db, "notify")), {
+      type: "supply",
+      title: "🆘 Nachschub gesucht!",
+      body: `${STATE.nickname} braucht Nachschub${where}! 🍺🛒`,
+      fromId: currentUserKey(),
+      fromTeam: STATE.team || "",
+      createdAt: Date.now()
+    });
+    toast("🆘 Nachschub-Ruf an alle gesendet!");
+  } catch (err) { console.warn("broadcastSupplyRequest failed:", err); toast("Konnte nicht senden."); }
+}
+
 function updateCheckinButtons() {
   const hasCooldown = STATE.lastCheckinCorner && (Date.now() - STATE.lastCheckinTime) < COOLDOWN_MS;
   const remaining = hasCooldown ? COOLDOWN_MS - (Date.now() - STATE.lastCheckinTime) : 0;
@@ -7112,6 +7418,7 @@ function renderProfile() {
     const code = prompt("Recovery-Code eingeben, um dein Profil zu übernehmen:");
     if (code && code.trim()) await claimRecoveryCode(code);
   });
+  $("#acct-claim-btn")?.addEventListener("click", openClaimOverlay);
   $$("#profile-content [data-reply-id]").forEach((btn) => btn.addEventListener("click", () => {
     const msg = recentMessages.find((entry) => entry.fromId === btn.dataset.replyId);
     sendDirectMessagePrompt(btn.dataset.replyId, msg?.fromName || btn.dataset.replyId);

@@ -6,6 +6,12 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="#0d0d0d"/>
-  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#g)" stroke-width="28"/>
-  <path d="M256 132c-58 0-104 46-104 104 0 73 104 176 104 176s104-103 104-176c0-58-46-104-104-104zm0 148a44 44 0 1 1 0-88 44 44 0 0 1 0 88z" fill="#f4e9d1"/>
+  <circle cx="256" cy="256" r="182" fill="none" stroke="url(#g)" stroke-width="26"/>
+  <!-- street corner (the "Ecke") -->
+  <rect x="148" y="350" width="226" height="48" rx="24" fill="#8f8574"/>
+  <rect x="148" y="150" width="48" height="248" rx="24" fill="#8f8574"/>
+  <!-- location pin nestled in the corner -->
+  <circle cx="262" cy="268" r="66" fill="#f4e9d1"/>
+  <polygon points="209,302 315,302 262,372" fill="#f4e9d1"/>
+  <circle cx="262" cy="268" r="27" fill="#0d0d0d"/>
 </svg>
