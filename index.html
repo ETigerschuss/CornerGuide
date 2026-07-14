@@ -2381,6 +2381,16 @@ input, textarea { cursor: text; }
   </div>
 </div>
 
+<!-- Claim an existing (old) profile: pick yourself from the list of past users -->
+<div id="claim-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:440px;max-height:82vh;overflow-y:auto;text-align:left;">
+    <h2>👥 Altes Profil übernehmen</h2>
+    <p style="font-size:13px;color:var(--fg-dim);">Warst du schon dabei? Wähle dein altes Profil — Punkte, Level und Achievements werden dir zugeordnet.</p>
+    <div id="claim-list" style="margin:14px 0;"></div>
+    <button id="claim-close" class="action-btn">Schließen</button>
+  </div>
+</div>
+
 <div id="nickname-prompt" class="nickname-prompt" style="display:none;">
   <div class="prompt-card">
     <h2>Wer bist du?</h2>
@@ -6066,9 +6076,99 @@ function buildAccountSectionHtml() {
         <button class="notif-opt" id="acct-google-btn">🔗 Mit Google sichern</button>
         <button class="notif-opt" id="acct-email-btn">✉️ Mit E-Mail sichern</button>
         <button class="notif-opt" id="acct-code-create-btn">🎟️ Recovery-Code erstellen</button>
-        <button class="notif-opt" id="acct-code-claim-btn">📥 Profil übernehmen</button>
+        <button class="notif-opt" id="acct-code-claim-btn">📥 Recovery-Code eingeben</button>
+        <button class="notif-opt" id="acct-claim-btn">👥 Altes Profil übernehmen</button>
       </div>` : "";
   return `<div class="notification-toggle account-section"><h3>🔐 Konto & Profil sichern</h3>${statusLine}${buttons}</div>`;
+}
+
+/* ---- Claim an existing profile: friends who already played pick their old identity ---- */
+async function openClaimOverlay() {
+  const overlay = $("#claim-overlay");
+  const list = $("#claim-list");
+  if (!overlay || !list) return;
+  overlay.style.display = "flex";
+  $("#claim-close").onclick = () => { overlay.style.display = "none"; };
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
+  if (!window.FB?.firebaseReady) { list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Nur online verfügbar.</p>`; return; }
+  list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Lade Profile…</p>`;
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, "points"));
+    const data = snap.val() || {};
+    const mine = currentUserKey();
+    const rows = Object.entries(data)
+      .map(([key, p]) => ({ key, nickname: (p && p.nickname) || key, total: (p && p.total) || 0 }))
+      .filter((r) => r.key !== mine && r.nickname)
+      .sort((a, b) => b.total - a.total);
+    if (!rows.length) { list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Keine früheren Profile gefunden.</p>`; return; }
+    list.innerHTML = rows.map((r) => {
+      const { level } = getLevel(r.total);
+      const tier = getLevelTier(level);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-3);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;">
+        <span style="flex:1;font-weight:600;">${escapeHtml(r.nickname)}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--fg-dim);white-space:nowrap;">${tier.emoji} Lv.${level} · ${r.total} XP</span>
+        <button class="action-btn primary" data-claim-key="${escapeHtml(r.key)}" style="padding:6px 10px;font-size:11px;white-space:nowrap;">Das war ich</button>
+      </div>`;
+    }).join("");
+    list.querySelectorAll("[data-claim-key]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const row = rows.find((x) => x.key === btn.dataset.claimKey);
+        if (confirm(`Profil „${row ? row.nickname : ""}" übernehmen? Punkte, Level & Achievements werden dir zugeordnet.`)) {
+          claimExistingProfile(btn.dataset.claimKey);
+        }
+      });
+    });
+  } catch (err) {
+    console.warn("openClaimOverlay failed:", err);
+    list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Konnte Profile nicht laden.</p>`;
+  }
+}
+
+async function claimExistingProfile(oldKey) {
+  if (!oldKey || !window.FB?.firebaseReady) return;
+  const newKey = currentUserKey();
+  if (!newKey) { toast("Bitte zuerst Zugang oder Login."); return; }
+  const { db, ref, get, set, remove } = window.FB;
+  try {
+    const [pSnap, aSnap, tSnap] = await Promise.all([
+      get(ref(db, "points/" + oldKey)),
+      get(ref(db, "achievements/" + oldKey)),
+      get(ref(db, "teams/" + oldKey))
+    ]);
+    const oldPoints = pSnap.val();
+    if (!oldPoints) { toast("Profil nicht gefunden."); return; }
+    const nickname = oldPoints.nickname || STATE.nickname || "";
+    if (nickname) { STATE.nickname = nickname; localStorage.setItem("cg.nickname", nickname); }
+    const team = tSnap.val() && tSnap.val().team;
+    if (team) { STATE.team = team; localStorage.setItem(TEAM_STORAGE_KEY, team); ensureTeamHistoryEntry(team); }
+    STATE.points[newKey] = { ...oldPoints, nickname };
+    savePoints();
+    set(ref(db, "points/" + newKey), STATE.points[newKey]);
+    const oldAch = aSnap.val() || {};
+    const achIds = Object.keys(oldAch);
+    if (achIds.length) {
+      STATE.achievements = Array.from(new Set([...(STATE.achievements || []), ...achIds]));
+      saveAchievements();
+      set(ref(db, "achievements/" + newKey), oldAch);
+    }
+    // Remove the old identity so the same person doesn't appear twice.
+    if (oldKey !== newKey) {
+      remove(ref(db, "points/" + oldKey));
+      remove(ref(db, "achievements/" + oldKey));
+      remove(ref(db, "teams/" + oldKey));
+    }
+    ensurePointIdentity();
+    syncIdentity();
+    syncProfileToCloud();
+    updateNicknameBar();
+    if (STATE.view === "profile") renderProfile();
+    const overlay = $("#claim-overlay");
+    if (overlay) overlay.style.display = "none";
+    toast(`✅ Profil „${escapeHtml(nickname)}" übernommen — willkommen zurück!`);
+  } catch (err) {
+    console.warn("claimExistingProfile failed:", err);
+    toast("Übernahme fehlgeschlagen.");
+  }
 }
 
 async function initFirebase() {
@@ -7185,6 +7285,7 @@ function renderProfile() {
     const code = prompt("Recovery-Code eingeben, um dein Profil zu übernehmen:");
     if (code && code.trim()) await claimRecoveryCode(code);
   });
+  $("#acct-claim-btn")?.addEventListener("click", openClaimOverlay);
   $$("#profile-content [data-reply-id]").forEach((btn) => btn.addEventListener("click", () => {
     const msg = recentMessages.find((entry) => entry.fromId === btn.dataset.replyId);
     sendDirectMessagePrompt(btn.dataset.replyId, msg?.fromName || btn.dataset.replyId);
