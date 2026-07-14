@@ -103,6 +103,20 @@ Voraussetzung: unter **Authentication → Sign-in method** zusätzlich **Google*
 **E-Mail-Link (passwortlos)** aktivieren, und die Domain (`ETigerschuss.github.io`) unter den
 autorisierten Domains eintragen. Profile werden in der DB unter `userProfiles/{uid}` gespiegelt.
 
+## 📷 Corner-Fotos (Firebase Storage)
+
+Fotos werden als Dateien in **Firebase Storage** abgelegt (nur die URL landet in der
+Datenbank, das hält die Realtime DB schlank). Einmalig einrichten:
+
+1. Firebase Console → **Storage** → aktivieren (Region passend wählen)
+2. Storage-Regeln deployen (Datei `storage.rules`):
+   ```bash
+   firebase deploy --only storage
+   ```
+   Regel: jeder darf Fotos ansehen, nur eingeloggte Nutzer dürfen Bilder < 5 MB hochladen.
+
+Fällt Storage aus, speichert die App das Bild als Fallback inline (Base64) in der DB.
+
 ## 📲 PWA / App Stores
 
 - **PWA** ist integriert über `manifest.webmanifest` + `service-worker.js`

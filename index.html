@@ -27,6 +27,7 @@
            EmailAuthProvider, linkWithCredential,
            sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getMessaging, getToken, onMessage, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+  import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCIHeM2laZTAUF9BIJRjCAUb2ZGqlKjto8",
@@ -41,6 +42,7 @@
 
   let db = null;
   let auth = null;
+  let storage = null;
   let firebaseReady = false;
   let authUid = "";
   let messaging = null;
@@ -53,6 +55,7 @@
     if (!firebaseConfig.apiKey.startsWith("YOUR_")) {
       const app = initializeApp(firebaseConfig);
       db = getDatabase(app);
+      try { storage = getStorage(app); } catch (err) { console.warn("Storage init failed:", err); }
       auth = getAuth(app);
       firebaseReady = true;
       onAuthStateChanged(auth, (user) => {
@@ -115,6 +118,13 @@
     bindForegroundPush: (listener) => {
       if (!pushSupported || !messaging || typeof listener !== "function") return () => {};
       return onMessage(messaging, listener);
+    },
+    // Upload a data-URL image to Storage and return its public download URL.
+    uploadImage: async (path, dataUrl) => {
+      if (!storage) throw new Error("Storage nicht verfügbar.");
+      const r = storageRef(storage, path);
+      await uploadString(r, dataUrl, "data_url");
+      return await getDownloadURL(r);
     },
     // ---- Account portability (link the anonymous account to a permanent one) ----
     getAccountInfo: () => {
@@ -3038,7 +3048,16 @@ function savePhoto(cornerId, dataUrl, caption) {
   if (window.FB?.firebaseReady) {
     const { db, ref, push, set } = window.FB;
     const newRef = push(ref(db, "photos/" + cornerId));
-    set(newRef, photo);
+    // Upload the image bytes to Storage and store only the URL in the DB (keeps
+    // the Realtime Database light). Falls back to inline base64 if upload fails.
+    if (window.FB.uploadImage && typeof dataUrl === "string" && dataUrl.startsWith("data:")) {
+      const key = newRef.key || ("p" + Date.now());
+      window.FB.uploadImage(`cornerPhotos/${cornerId}/${key}.jpg`, dataUrl)
+        .then((url) => { photo.src = url; photo.storage = true; set(newRef, photo); })
+        .catch((err) => { console.warn("Storage upload failed, storing inline:", err); set(newRef, photo); });
+    } else {
+      set(newRef, photo);
+    }
   } else {
     const photos = getPhotos(cornerId);
     photo.id = "photo-" + Date.now();
