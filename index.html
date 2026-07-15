@@ -4775,7 +4775,7 @@ function handlePhotoUpload(file, cornerId) {
       savePhoto(cornerId, dataUrl, "");
       renderCards();
       toast("Foto gespeichert 📸");
-      // Achievement
+      addXp(10, "Foto hochgeladen");
       unlockAchievement("first-photo", "Fotograf", "📸", 15);
     } catch (err) { toast("Speicher voll. Lösch ein altes Foto."); }
   }).catch((err) => {
@@ -5661,10 +5661,14 @@ async function inviteFriends() {
     if (navigator.share) {
       await navigator.share({ title: "Minga Corner Guide", text: `${STATE.nickname} lädt dich zum Cornern ein 🍻`, url });
       toast("📨 Einladung geteilt");
+      addXp(5, "Freunde eingeladen");
+      unlockAchievement("recruiter", "Anwerber", "📨", 15);
       return;
     }
     await copyText(url);
     toast("📨 Einladungs-Link kopiert");
+    addXp(5, "Freunde eingeladen");
+    unlockAchievement("recruiter", "Anwerber", "📨", 15);
   } catch (err) {
     toast("Einladung konnte nicht geteilt werden.");
   }
@@ -5716,6 +5720,8 @@ async function enableFirebasePush() {
       });
     }
     toast("🔔 Push aktiviert");
+    addXp(10, "Push aktiviert");
+    unlockAchievement("always-on", "Immer erreichbar", "🔔", 15);
   } catch (err) {
     const message = err?.message || "Push konnte nicht aktiviert werden.";
     toast(`🔔 ${escapeHtml(message)}`);
@@ -5899,9 +5905,12 @@ function renderTeamPickerHtml() {
 
 function selectTeam(teamId) {
   if (!TEAMS[teamId]) return;
+  const isFirstTeam = !STATE.team;
   STATE.team = teamId;
   localStorage.setItem(TEAM_STORAGE_KEY, teamId);
   ensureTeamHistoryEntry(teamId);
+  if (isFirstTeam) { addXp(5, "Team beigetreten"); }
+  unlockAchievement("team-spirit", "Teamgeist", "🧬", 10);
   syncIdentity();
   updateNicknameBar();
   renderFriendsBar();
@@ -5985,6 +5994,8 @@ async function saveTeamCreate() {
     if (!CUSTOM_TEAM_KEYS.includes(key)) CUSTOM_TEAM_KEYS.push(key);
     $("#team-create-overlay").style.display = "none";
     selectTeam(key);
+    addXp(15, `Team gegründet: ${team.name}`);
+    unlockAchievement("team-founder", "Gründer", "🚩", 25);
     toast(`✅ Team „${escapeHtml(team.name)}" erstellt & ausgewählt`);
     if (_teamCreateReturnCorner) setTimeout(() => openDetail(_teamCreateReturnCorner), 120);
   } catch (err) {
@@ -6404,6 +6415,7 @@ async function initFirebase() {
       if (luid) loadProfileFromCloud(luid);
       try { window.history.replaceState({}, "", window.location.href.split("?")[0].split("#")[0]); } catch (e) {}
       toast(`✅ Angemeldet als ${escapeHtml(linkedEmail)}`);
+      unlockAchievement("secured", "Abgesichert", "🔐", 20);
     }
   } catch (err) { console.warn("Email-link sign-in failed:", err); }
   const authUid = window.FB.getAuthUid?.() || "";
@@ -6591,6 +6603,40 @@ function loadChatActivity() {
   try { return JSON.parse(localStorage.getItem("cg.chatActivity") || "{}"); }
   catch (e) { return {}; }
 }
+
+/* ---- Social gamification: XP + achievements for chatting & meeting friends ---- */
+var _lastChatXpAt = 0;
+function grantChatXp(toName) {
+  // Small XP per message, max once per minute so spamming doesn't farm points.
+  if (Date.now() - _lastChatXpAt > 60 * 1000) {
+    _lastChatXpAt = Date.now();
+    addXp(2, `Nachricht an ${toName}`);
+  }
+  const partners = Object.keys(loadChatActivity()).length;
+  if (partners >= 1) unlockAchievement("first-dm", "Erste DM", "✉️", 10);
+  if (partners >= 3) unlockAchievement("three-chats", "Quasselstrippe", "🗣️", 30);
+  if (partners >= 5) unlockAchievement("five-chats", "Sozialer Schmetterling", "🦋", 60);
+}
+
+// Distinct friends I have checked in together with (from the encounters node).
+function distinctEncounterFriends() {
+  const me = currentUserKey();
+  const others = new Set();
+  Object.values(STATE.encounters || {}).forEach((entry) => {
+    const users = entry?.users || {};
+    if (!(me in users)) return;
+    Object.keys(users).forEach((id) => { if (id !== me) others.add(id); });
+  });
+  return others.size;
+}
+
+function checkEncounterAchievements() {
+  const n = distinctEncounterFriends();
+  if (n >= 1) unlockAchievement("first-encounter", "Nicht allein", "🤝", 15);
+  if (n >= 3) unlockAchievement("three-encounters", "Cliquen-Kern", "👥", 40);
+  if (n >= 5) unlockAchievement("five-encounters", "Rudelführer", "🐺", 75);
+  if (n >= 10) unlockAchievement("ten-encounters", "Ganz Minga kennt di", "🏙️", 150);
+}
 function recordChatActivity(peerId, peerName, text, time) {
   if (!peerId) return;
   const log = loadChatActivity();
@@ -6625,6 +6671,7 @@ function sendMessage(toId, toName, text, opts = {}) {
     Promise.resolve(set(push(ref(db, "chats/" + pairId)), payload))
       .catch((err) => console.warn("chat thread write failed (rules deployed?):", err));
     recordChatActivity(toId, toName, clean, payload.time);
+    grantChatXp(toName || toId);
   } else {
     STATE.directMessages.push({ ...payload, local: true, incoming: false });
     saveLocalDirectMessages();
@@ -6890,6 +6937,7 @@ function setCornerVote(cornerId, nextValue) {
   } else {
     saveLocalCornerVotes();
   }
+  if (finalValue !== 0) addXp(2, "Corner bewertet");
   const stats = getCornerVoteStats(cornerId);
   const checkins = getVisitCount(cornerId);
   if (corner.isCustom && stats.down > checkins) {
@@ -7149,6 +7197,12 @@ function logEncounters(cornerId) {
       if (Date.now() - Number(prev.lastSeen || 0) < 5 * 60 * 1000 && prev.lastCorner === cornerId) continue;
       const next = { count: prev.count + 1, lastSeen: Date.now(), lastCorner: cornerId, users: { [people[i].id]: people[i].nickname, [people[j].id]: people[j].nickname } };
       STATE.encounters[pairKey] = next;
+      // Meeting a friend at a corner is the heart of the app — reward it.
+      if (ids.includes(currentUserKey())) {
+        const other = people[i].id === currentUserKey() ? people[j] : people[i];
+        addXp(8, `Mit ${other.nickname || "einem Freund"} gecornert`);
+        setTimeout(checkEncounterAchievements, 50);
+      }
       if (window.FB?.firebaseReady) {
         const { db, ref, set } = window.FB;
         set(ref(db, "encounters/" + pairKey), next);
@@ -7244,6 +7298,8 @@ function broadcastSupplyRequest() {
       createdAt: Date.now()
     });
     toast("🆘 Nachschub-Ruf an alle gesendet!");
+    addXp(3, "Nachschub-Ruf");
+    unlockAchievement("first-supply", "Retter in der Not", "🆘", 15);
   } catch (err) { console.warn("broadcastSupplyRequest failed:", err); toast("Konnte nicht senden."); }
 }
 
@@ -7516,7 +7572,21 @@ function getAchievementCardsHtml() {
     { id: "first-comment", name: "Kommentator", emoji: "💬", desc: "Erster Kommentar" },
     { id: "five-checkins", name: "Stammgast", emoji: "🔥", desc: "5 Check-ins" },
     { id: "ten-checkins", name: "Local Legend", emoji: "👑", desc: "10 Check-ins" },
-    { id: "three-corners", name: "Kartograph", emoji: "🧭", desc: "3 Corners hinzugefügt" }
+    { id: "three-corners", name: "Kartograph", emoji: "🧭", desc: "3 Corners hinzugefügt" },
+    { id: "first-capture", name: "Eroberer", emoji: "🏴", desc: "Ersten Corner erobert" },
+    { id: "first-encounter", name: "Nicht allein", emoji: "🤝", desc: "Mit einem Freund eingecheckt" },
+    { id: "three-encounters", name: "Cliquen-Kern", emoji: "👥", desc: "Mit 3 Freunden gecornert" },
+    { id: "five-encounters", name: "Rudelführer", emoji: "🐺", desc: "Mit 5 Freunden gecornert" },
+    { id: "ten-encounters", name: "Ganz Minga kennt di", emoji: "🏙️", desc: "Mit 10 Freunden gecornert" },
+    { id: "first-dm", name: "Erste DM", emoji: "✉️", desc: "Erste Nachricht geschrieben" },
+    { id: "three-chats", name: "Quasselstrippe", emoji: "🗣️", desc: "Mit 3 Leuten geschrieben" },
+    { id: "five-chats", name: "Sozialer Schmetterling", emoji: "🦋", desc: "Mit 5 Leuten geschrieben" },
+    { id: "first-supply", name: "Retter in der Not", emoji: "🆘", desc: "Nachschub-Ruf gesendet" },
+    { id: "team-spirit", name: "Teamgeist", emoji: "🧬", desc: "Einem Team beigetreten" },
+    { id: "team-founder", name: "Gründer", emoji: "🚩", desc: "Eigenes Team gegründet" },
+    { id: "recruiter", name: "Anwerber", emoji: "📨", desc: "Freunde eingeladen" },
+    { id: "always-on", name: "Immer erreichbar", emoji: "🔔", desc: "Push aktiviert" },
+    { id: "secured", name: "Abgesichert", emoji: "🔐", desc: "Profil gesichert (Google/Code)" }
   ];
   return items.map((a) => `<div class="achievement-card ${STATE.achievements.includes(a.id) ? 'unlocked' : 'locked'}"><div class="achievement-emoji">${a.emoji}</div><div class="achievement-name">${a.name}</div><div class="achievement-pts">${a.desc}</div></div>`).join("");
 }
@@ -7694,6 +7764,7 @@ function renderProfile() {
       if (uid) loadProfileFromCloud(uid);
       syncProfileToCloud();
       toast(`✅ Mit Google gesichert${email ? " (" + escapeHtml(email) + ")" : ""}`);
+      unlockAchievement("secured", "Abgesichert", "🔐", 20);
       renderProfile();
     } catch (err) {
       if (err?.code === "auth/popup-closed-by-user") return;
@@ -7715,6 +7786,7 @@ function renderProfile() {
     if (!code) return;
     await copyText(code).catch(() => {});
     toast(`🎟️ Recovery-Code: <strong>${code}</strong><br>Kopiert — sicher aufbewahren!`);
+    unlockAchievement("secured", "Abgesichert", "🔐", 20);
   });
   $("#acct-code-claim-btn")?.addEventListener("click", async () => {
     const code = prompt("Recovery-Code eingeben, um dein Profil zu übernehmen:");
