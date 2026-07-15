@@ -103,6 +103,14 @@ Voraussetzung: unter **Authentication → Sign-in method** zusätzlich **Google*
 **E-Mail-Link (passwortlos)** aktivieren, und die Domain (`ETigerschuss.github.io`) unter den
 autorisierten Domains eintragen. Profile werden in der DB unter `userProfiles/{uid}` gespiegelt.
 
+### Empfohlener Weg für bestehende Nutzer (neues Gerät / neue Version)
+
+1. **Einladungscode eingeben** — direkt danach fragt die App: „Warst du schon mal dabei?"
+2. **Dein altes Profil antippen** („Das war ich") — Punkte, Level, Achievements und besuchte
+   Corners werden übernommen
+3. **„🔗 Mit Google sichern"** — ab jetzt ist das Profil an den Login gebunden und auf
+   jedem Gerät verfügbar. Das ist der sicherste Weg.
+
 ## 📷 Corner-Fotos (Firebase Storage)
 
 Fotos werden als Dateien in **Firebase Storage** abgelegt (nur die URL landet in der

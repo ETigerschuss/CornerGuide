@@ -63,6 +63,13 @@
       }
     },
 
+    "chats": {
+      "$pairId": {
+        ".read": "auth != null && $pairId.contains(auth.uid)",
+        ".write": "auth != null && $pairId.contains(auth.uid) && root.child('accessGranted').child(auth.uid).exists()"
+      }
+    },
+
     "liveLocations": {
       ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()",
       ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()"
