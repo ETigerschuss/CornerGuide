@@ -165,7 +165,7 @@
     completeEmailLinkSignIn: async () => {
       if (!auth || !isSignInWithEmailLink(auth, window.location.href)) return null;
       let email = window.localStorage.getItem("cg.emailForSignIn");
-      if (!email) email = window.prompt("Bitte bestätige deine E-Mail für die Anmeldung:") || "";
+      if (!email) email = (window.appPrompt ? await window.appPrompt("E-Mail bestätigen", "", "deine@mail.de") : window.prompt("Bitte bestätige deine E-Mail für die Anmeldung:")) || "";
       if (!email) return null;
       const user = auth.currentUser;
       try {
@@ -1439,7 +1439,8 @@ input, textarea { cursor: text; }
   text-transform: uppercase;
 }
 .access-prompt input:focus { outline: none; border-color: var(--amber); }
-#team-create-name, #team-create-emoji { text-transform: none; letter-spacing: 0; text-align: left; font-family: "DM Sans", sans-serif; font-size: 15px; }
+#team-create-name, #team-create-emoji, #app-dialog-input { text-transform: none; letter-spacing: 0; text-align: left; font-family: "DM Sans", sans-serif; font-size: 15px; }
+#app-dialog-input.code-input { text-transform: uppercase; letter-spacing: 2px; font-family: "JetBrains Mono", monospace; text-align: center; }
 .access-prompt .access-error {
   color: var(--pink);
   font-size: 13px;
@@ -2470,6 +2471,19 @@ input, textarea { cursor: text; }
   </div>
 </div>
 
+<!-- App dialog: styled replacement for native prompt()/confirm() -->
+<div id="app-dialog" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:340px;text-align:left;">
+    <h2 id="app-dialog-title" style="font-size:20px;"></h2>
+    <p id="app-dialog-text" style="font-size:13px;color:var(--fg-dim);margin:6px 0 0;"></p>
+    <input type="text" id="app-dialog-input" autocomplete="off" style="display:none;margin-top:12px;" />
+    <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end;">
+      <button class="action-btn" id="app-dialog-cancel">Abbrechen</button>
+      <button class="action-btn primary" id="app-dialog-ok">OK</button>
+    </div>
+  </div>
+</div>
+
 <!-- Admin panel (host only) -->
 <div id="admin-overlay" class="access-prompt" style="display:none;">
   <div class="prompt-card" style="max-width:480px;max-height:85vh;overflow-y:auto;text-align:left;">
@@ -2780,32 +2794,6 @@ function saveCheckinFeedback() {
   localStorage.setItem("cg.checkinFeedback", JSON.stringify(STATE.checkinFeedback));
 }
 
-function addPoints(user, pts, reason) {
-  if (!user) return;
-  if (!STATE.points[user]) STATE.points[user] = { total: 0, history: [] };
-  STATE.points[user].total += pts;
-  STATE.points[user].history.push({ pts, reason, time: Date.now() });
-  savePoints();
-
-  if (window.FB?.firebaseReady) {
-    const { db, ref, set } = window.FB;
-    set(ref(db, "points/" + user), STATE.points[user]);
-  }
-}
-
-function unlockAchievement(id, name, emoji, pts) {
-  if (STATE.achievements.includes(id)) return;
-  STATE.achievements.push(id);
-  saveAchievements();
-  addPoints(STATE.nickname, pts, name);
-  toast(`🏆 Achievement freigeschaltet: ${emoji} <strong>${name}</strong>`);
-
-  if (window.FB?.firebaseReady) {
-    const { db, ref, set } = window.FB;
-    set(ref(db, "achievements/" + STATE.nickname + "/" + id), { name, emoji, time: Date.now() });
-  }
-}
-
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
@@ -2839,35 +2827,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function checkNickname() {
   if (!STATE.nickname) {
-    const prompt = $("#nickname-prompt");
-    prompt.style.display = "flex";
     if (STATE.pendingInviteName) $("#nickname-input").placeholder = `z.B. ${STATE.pendingInviteName}s Crew`;
     $("#nickname-save").addEventListener("click", saveNickname);
     $("#nickname-input").addEventListener("keydown", (e) => {
       if (e.key === "Enter") saveNickname();
     });
+    maybeShowNicknamePrompt();
   }
 }
 
-function saveNickname() {
-  const name = $("#nickname-input").value.trim();
-  if (!name) { toast("Bitte gib einen Namen ein."); return; }
-  STATE.nickname = name;
-  localStorage.setItem("cg.nickname", name);
-  $("#nickname-prompt").style.display = "none";
-  toast(`Willkommen, <strong>${escapeHtml(name)}</strong>! 🍻`);
-  broadcastPresence();
-  updateNicknameBar();
-  // Achievement: first login
-  unlockAchievement("first-login", "Willkommen!", "👋", 10);
-  // Auto-checkin if this session was opened via a corner QR code (checkin=1 URL param).
-  // pendingAutoCheckinCornerId is set in applyIncomingLinks() and kept alive by
-  // openPendingSharedCorner() when no nickname was present yet.
-  if (STATE.pendingAutoCheckinCornerId) {
-    const cid = STATE.pendingAutoCheckinCornerId;
-    STATE.pendingAutoCheckinCornerId = null;
-    scheduleAutoCheckin(cid);
-  }
+// Onboarding chain: the nickname prompt only appears once the access gate is
+// passed and the welcome-claim overlay is closed — never stacked on top.
+function maybeShowNicknamePrompt() {
+  if (STATE.nickname) return;
+  if (window.FB?.firebaseReady && localStorage.getItem("cg.accessGranted") !== "1") return;
+  if ($("#claim-overlay")?.style.display === "flex") return;
+  if ($("#access-prompt")?.style.display === "flex") return;
+  $("#nickname-prompt").style.display = "flex";
+  setTimeout(() => $("#nickname-input")?.focus(), 100);
 }
 
 /* ====================== ACCESS CODE GATE ====================== */
@@ -2892,8 +2869,8 @@ function checkAccessGranted() {
   }
   // Recovery paths so a new browser/device doesn't need a fresh invite code.
   $("#access-recover-code")?.addEventListener("click", async () => {
-    const code = prompt("Recovery-Code eingeben, um dein Profil & deinen Zugang zu übernehmen:");
-    if (code && code.trim()) await claimRecoveryCode(code);
+    const code = await appPrompt("Recovery-Code", "", "CODE", { codeStyle: true, text: "Übernimmt dein Profil und deinen Zugang in einem Schritt.", okLabel: "Übernehmen" });
+    if (code) await claimRecoveryCode(code);
   });
   $("#access-recover-google")?.addEventListener("click", async () => {
     try {
@@ -2924,7 +2901,8 @@ function checkAccessGranted() {
     get(ref(db, "accessGranted/" + uid)).then((snap) => {
       if (snap.val() !== null) {
         localStorage.setItem("cg.accessGranted", "1");
-        // Already granted – make sure the prompt stays hidden
+        // Already granted – make sure the prompt stays hidden, continue onboarding
+        maybeShowNicknamePrompt();
         return;
       }
       showAccessPrompt();
@@ -2979,120 +2957,7 @@ async function submitAccessCode() {
   }
 }
 
-function bindNicknameBar() {
-  updateNicknameBar();
-  $("#invite-btn").addEventListener("click", inviteFriends);
-  $("#nick-change-btn").addEventListener("click", () => {
-    const newName = prompt("Neuer Nickname:", STATE.nickname);
-    if (newName && newName.trim()) {
-      const old = STATE.nickname;
-      STATE.nickname = newName.trim();
-      localStorage.setItem("cg.nickname", STATE.nickname);
-      toast(`Nickname geändert: <strong>${escapeHtml(STATE.nickname)}</strong>`);
-      broadcastPresence();
-      updateNicknameBar();
-    }
-  });
-}
-
-function updateNicknameBar() {
-  const bar = $("#nickname-bar");
-  if (STATE.nickname) {
-    bar.style.display = "flex";
-    const teamEmoji = STATE.team ? (TEAMS[STATE.team]?.emoji || "") + " " : "";
-    $("#nick-display").textContent = teamEmoji + STATE.nickname;
-    const myXp = STATE.points[STATE.nickname]?.total || 0;
-    const { level, progress } = getLevel(myXp);
-    const tier = getLevelTier(level);
-    $("#nick-pts").textContent = "";
-    const badge = document.getElementById("nick-level-badge");
-    const fill = document.getElementById("nick-level-fill");
-    if (badge) badge.textContent = `${tier.emoji} Lv.${level}`;
-    if (fill) fill.style.width = `${Math.round(progress * 100)}%`;
-  } else {
-    bar.style.display = "none";
-  }
-}
-
 /* ====================== FIREBASE REALTIME ====================== */
-async function initFirebase() {
-  applyIncomingLinks();
-  if (!window.FB || !window.FB.firebaseReady) {
-    const status = $("#fb-status");
-    status.style.display = "block";
-    status.className = "firebase-status offline";
-    status.textContent = "⚡ Offline-Modus — Firebase nicht konfiguriert (Kommentare & Freunde lokal)";
-    loadLocalComments();
-    loadLocalBarometer();
-    STATE.emojiVotes = loadLocalEmojiVotes();
-    // Photos loaded on demand via getPhotos()
-    return;
-  }
-
-  const status = $("#fb-status");
-  status.style.display = "block";
-  status.className = "firebase-status online";
-  status.textContent = "⚡ Live — verbunden mit deinen Freunden";
-
-  // Listen for friend presence
-  listenFriendPresence();
-  // Listen for shared corners
-  listenSharedCorners();
-  // Listen for comments
-  listenComments();
-  // Listen for barometer votes
-  listenBarometer();
-  // Listen for visits
-  listenVisits();
-  // Listen for emoji votes
-  listenEmojiVotes();
-  // Listen for photos
-  listenPhotos();
-  // Listen for points
-  listenPoints();
-  // Listen for teams
-  listenTeams();
-  // Listen for corner statuses
-  listenCornerStatuses();
-  // Listen for captured corners
-  listenCaptured();
-  // Listen for encounters
-  listenEncounters();
-  // Listen for live locations
-  listenLiveLocations();
-  // Broadcast own presence
-  broadcastPresence();
-}
-
-function broadcastPresence() {
-  if (!window.FB?.firebaseReady || !STATE.nickname) return;
-  const { db, ref, set, onDisconnect } = window.FB;
-  const myRef = ref(db, "presence/" + STATE.nickname);
-  const activeCorner = STATE.atCornerId || STATE.manualCheckinId || null;
-  set(myRef, {
-    name: STATE.nickname,
-    atCorner: activeCorner,
-    team: STATE.team || "",
-    lastSeen: Date.now()
-  });
-
-  // Use onDisconnect for reliable cleanup
-  onDisconnect(myRef).remove();
-
-  // Broadcast live location if geo active
-  if (STATE.geoActive && STATE.userPos) {
-    const liveRef = ref(db, "liveLocations/" + STATE.nickname);
-    set(liveRef, {
-      lat: STATE.userPos.lat,
-      lng: STATE.userPos.lng,
-      nickname: STATE.nickname,
-      team: STATE.team || "",
-      timestamp: Date.now()
-    });
-    onDisconnect(liveRef).remove();
-  }
-}
-
 /* ====================== SHARED CORNERS (Firebase) ====================== */
 function listenSharedCorners() {
   if (!window.FB?.firebaseReady) return;
@@ -3225,17 +3090,6 @@ function refreshAllPhotoGalleries() {
 }
 
 /* ====================== POINTS (Firebase) ====================== */
-function listenPoints() {
-  if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  const ptsRef = ref(db, "points");
-  onValue(ptsRef, (snapshot) => {
-    STATE.points = snapshot.val() || {};
-    updateNicknameBar();
-    if (STATE.view === "leaderboard") renderLeaderboard();
-  });
-}
-
 function renderPhotoGallery(cornerId, container) {
   let photos;
   if (window.FB?.firebaseReady) {
@@ -3320,53 +3174,6 @@ function renderPhotoGallery(cornerId, container) {
   });
 }
 
-function listenFriendPresence() {
-  if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  const presRef = ref(db, "presence");
-  onValue(presRef, (snapshot) => {
-    const data = snapshot.val() || {};
-    const oldFriends = { ...STATE.friends };
-    STATE.friends = {};
-    Object.entries(data).forEach(([name, info]) => {
-      if (name === STATE.nickname) return;
-      STATE.friends[name] = info;
-
-      // Check if friend just arrived at a corner (alarm!)
-      if (info.atCorner && (!oldFriends[name] || oldFriends[name].atCorner !== info.atCorner)) {
-        const corner = getAllCorners().find((c) => c.id === info.atCorner);
-        if (corner) {
-          friendAtCornerAlarm(name, corner, info);
-        }
-      }
-    });
-    renderFriendsBar();
-  });
-}
-
-function friendAtCornerAlarm(friendName, corner, friendInfo) {
-  // Check notification preference
-  if (STATE.notifPref === "off") return;
-  if (STATE.notifPref === "team" && friendInfo?.team !== STATE.team) return;
-
-  // Show toast notification
-  const teamEmoji = friendInfo?.team ? (TEAMS[friendInfo.team]?.emoji || "") + " " : "";
-  toast(`🚨 <strong>${teamEmoji}${escapeHtml(friendName)}</strong> ist am <strong>${escapeHtml(corner.name)}</strong>!`, "friend-alert");
-
-  // Browser notification (if permitted)
-  if (Notification.permission === "granted") {
-    new Notification("🍻 Minga Corner Guide", {
-      body: `${teamEmoji}${friendName} ist gerade am ${corner.name}!`,
-      icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍻</text></svg>"
-    });
-  } else if (Notification.permission !== "denied") {
-    Notification.requestPermission();
-  }
-
-  // Play alarm sound
-  playAlarmSound();
-}
-
 function playAlarmSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -3382,29 +3189,6 @@ function playAlarmSound() {
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.5);
   } catch (e) { /* audio not available */ }
-}
-
-function renderFriendsBar() {
-  const bar = $("#friends-bar");
-  const list = $("#friends-list");
-  const friends = Object.values(STATE.friends);
-
-  if (friends.length === 0) {
-    bar.classList.remove("has-friends");
-    return;
-  }
-
-  bar.classList.add("has-friends");
-  list.innerHTML = friends.map((f) => {
-    const corner = f.atCorner ? getAllCorners().find((c) => c.id === f.atCorner) : null;
-    const isAtCorner = !!corner;
-    const teamEmoji = f.team ? (TEAMS[f.team]?.emoji || "") + " " : "";
-    return `<li class="friend-chip ${isAtCorner ? "" : "away"}">
-      <span class="friend-dot"></span>
-      <span>${teamEmoji}${escapeHtml(f.name)}</span>
-      <span class="friend-corner">${isAtCorner ? "@ " + escapeHtml(corner.name) : "unterwegs"}</span>
-    </li>`;
-  }).join("");
 }
 
 /* ====================== COMMENTS (Firebase or localStorage) ====================== */
@@ -3428,27 +3212,6 @@ function loadLocalComments() {
 
 function saveLocalComments() {
   localStorage.setItem("cg.comments", JSON.stringify(STATE.comments));
-}
-
-function addComment(cornerId, author, text) {
-  if (!text.trim()) return;
-  const comment = {
-    author: author || "Anonym",
-    text: text.trim(),
-    time: Date.now()
-  };
-
-  if (window.FB?.firebaseReady) {
-    const { db, ref, push, set } = window.FB;
-    const newRef = push(ref(db, "comments/" + cornerId));
-    set(newRef, comment);
-  } else {
-    if (!STATE.comments[cornerId]) STATE.comments[cornerId] = {};
-    const key = "local-" + Date.now() + "-" + Math.random().toString(36).slice(2, 5);
-    STATE.comments[cornerId][key] = comment;
-    saveLocalComments();
-    refreshAllCommentSections();
-  }
 }
 
 function editComment(cornerId, commentKey, newText) {
@@ -3691,8 +3454,8 @@ function renderCommentSection(cornerId, container) {
 
   // Bind delete buttons
   container.querySelectorAll(".delete-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (confirm("Kommentar löschen?")) {
+    btn.addEventListener("click", async () => {
+      if (await appConfirm("Kommentar löschen?", "", "Löschen")) {
         deleteComment(btn.dataset.corner, btn.dataset.key);
         toast("Kommentar gelöscht 🗑");
       }
@@ -3701,27 +3464,6 @@ function renderCommentSection(cornerId, container) {
 }
 
 /* ====================== COMMENT REPLIES ====================== */
-function addReply(cornerId, commentKey, author, text) {
-  const reply = {
-    author: author || "Anonym",
-    text: text.trim(),
-    time: Date.now()
-  };
-
-  if (window.FB?.firebaseReady) {
-    const { db, ref, push, set } = window.FB;
-    const newRef = push(ref(db, "comments/" + cornerId + "/" + commentKey + "/replies"));
-    set(newRef, reply);
-  } else {
-    if (!STATE.comments[cornerId]?.[commentKey]) return;
-    if (!STATE.comments[cornerId][commentKey].replies) STATE.comments[cornerId][commentKey].replies = {};
-    const rKey = "reply-" + Date.now() + "-" + Math.random().toString(36).slice(2, 5);
-    STATE.comments[cornerId][commentKey].replies[rKey] = reply;
-    saveLocalComments();
-    refreshAllCommentSections();
-  }
-}
-
 /* ====================== BAROMETER (Daily Spot Rating) ====================== */
 function getTodayKey() {
   const d = new Date();
@@ -3748,30 +3490,6 @@ function loadLocalBarometer() {
 
 function saveLocalBarometer() {
   localStorage.setItem("cg.barometer", JSON.stringify(STATE.barometer));
-}
-
-function voteBarometer(cornerId, score) {
-  const today = getTodayKey();
-  const voteKey = STATE.nickname;
-  if (!voteKey) { toast("Bitte gib zuerst einen Namen ein."); return; }
-
-  if (window.FB?.firebaseReady) {
-    const { db, ref, set } = window.FB;
-    set(ref(db, "barometer/" + today + "/" + cornerId + "/" + voteKey), score);
-  } else {
-    if (!STATE.barometer[cornerId]) STATE.barometer[cornerId] = {};
-    STATE.barometer[cornerId][voteKey] = score;
-    saveLocalBarometer();
-    refreshAllBarometers();
-  }
-}
-
-function getBarometerData(cornerId) {
-  const votes = STATE.barometer[cornerId] || {};
-  const values = Object.values(votes);
-  const myVote = STATE.nickname ? (votes[STATE.nickname] || 0) : 0;
-  const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
-  return { avg, count: values.length, myVote };
 }
 
 function refreshAllBarometers() {
@@ -3812,128 +3530,6 @@ function renderBarometer(cornerId, container) {
 }
 
 /* ====================== MANUAL CHECK-IN (GPS optional) ====================== */
-function manualCheckin(cornerId) {
-  const corner = getAllCorners().find((c) => c.id === cornerId);
-  if (!corner) return;
-
-  const wasCheckedIn = STATE.manualCheckinId === cornerId;
-
-  // Cooldown check: only for DIFFERENT corners
-  if (!wasCheckedIn && STATE.lastCheckinCorner && STATE.lastCheckinCorner !== cornerId) {
-    const elapsed = Date.now() - STATE.lastCheckinTime;
-    if (elapsed < COOLDOWN_MS) {
-      const remaining = COOLDOWN_MS - elapsed;
-      const mins = Math.floor(remaining / 60000);
-      const secs = Math.floor((remaining % 60000) / 1000);
-      toast(`⏳ Cooldown: ${mins}:${String(secs).padStart(2,"0")} bis zum nächsten Spot`);
-      return;
-    }
-  }
-
-  if (STATE.geoActive && STATE.userPos) {
-    const dist = haversine(STATE.userPos.lat, STATE.userPos.lng, corner.lat, corner.lng);
-    if (dist > STATE.PROXIMITY_M) {
-      toast(`📍 Du bist <strong>${Math.round(dist)}m</strong> entfernt — manuell eingecheckt!`);
-    }
-  }
-
-  // Remove old checkin
-  if (STATE.manualCheckinId) {
-    const oldCard = document.getElementById("card-" + STATE.manualCheckinId);
-    oldCard?.classList.remove("at-here");
-    refreshMainMarker(STATE.manualCheckinId);
-  }
-
-  if (wasCheckedIn) {
-    // Toggle off (no cooldown triggered)
-    STATE.manualCheckinId = null;
-    toast("Ausgecheckt 👋");
-  } else {
-    // Check in
-    STATE.manualCheckinId = cornerId;
-    STATE.lastCheckinTime = Date.now();
-    STATE.lastCheckinCorner = cornerId;
-    localStorage.setItem("cg.lastCheckinTime", String(STATE.lastCheckinTime));
-    localStorage.setItem("cg.lastCheckinCorner", cornerId);
-
-    const card = document.getElementById("card-" + cornerId);
-    card?.classList.add("at-here");
-    refreshMainMarker(cornerId);
-    toast(`Eingecheckt am <strong>${escapeHtml(corner?.name || "")}</strong> 🍻`, "at-corner");
-    // Record visit in trail
-    recordVisit(cornerId);
-    // XP for check-in
-    addPoints(STATE.nickname, 5, "Check-in");
-
-    // Check if first time visiting this corner
-    const isFirstVisit = !STATE.visitedCorners.includes(cornerId);
-    if (isFirstVisit) {
-      STATE.visitedCorners.push(cornerId);
-      saveVisitedCorners();
-      setTimeout(() => showCheckinPrompt(cornerId), 800);
-      if (STATE.visitedCorners.length === 1) {
-        unlockAchievement("first-checkin", "Erster Besuch", "📍", 20);
-      }
-      addPoints(STATE.nickname, 10, `Neuer Corner: ${corner.name}`);
-    }
-
-    // Check visit count achievements
-    const totalVisits = STATE.visitedCorners.length;
-    if (totalVisits >= 5) unlockAchievement("five-checkins", "Stammgast", "🔥", 50);
-    if (totalVisits >= 10) unlockAchievement("ten-checkins", "Local Legend", "👑", 100);
-
-    // Passive XP: award corner creator
-    if (corner.isCustom && corner.createdBy && corner.createdBy !== STATE.nickname) {
-      addPoints(corner.createdBy, 3, "Jemand hat deinen Corner besucht");
-    }
-
-    // Check capture conditions
-    checkCaptureCondition(cornerId);
-
-    // Log encounters with others at this corner
-    logEncounters(cornerId);
-
-    // Start cooldown timer display
-    startCooldownDisplay();
-  }
-
-  updateCheckinButtons();
-  broadcastPresence();
-}
-
-function updateCheckinButtons() {
-  const hasCooldown = STATE.lastCheckinCorner && (Date.now() - STATE.lastCheckinTime) < COOLDOWN_MS;
-  const remaining = hasCooldown ? COOLDOWN_MS - (Date.now() - STATE.lastCheckinTime) : 0;
-  const cooldownStr = hasCooldown ? ` ⏳ ${Math.floor(remaining/60000)}:${String(Math.floor((remaining%60000)/1000)).padStart(2,"0")}` : "";
-
-  $$(".checkin-btn").forEach((btn) => {
-    const cId = btn.dataset.id;
-    const isThis = cId === STATE.manualCheckinId;
-    const corner = getAllCorners().find((c) => c.id === cId);
-    const isCooldownBlocked = hasCooldown && cId !== STATE.lastCheckinCorner && !isThis;
-
-    btn.classList.toggle("checked-in", isThis);
-    btn.classList.toggle("cooldown", isCooldownBlocked);
-    btn.classList.remove("disabled");
-
-    if (isThis) {
-      btn.innerHTML = "✅ Ich bin hier!";
-    } else if (isCooldownBlocked) {
-      btn.innerHTML = `📍 Einchecken<span class="cooldown-timer">${cooldownStr}</span>`;
-    } else if (STATE.geoActive && STATE.userPos && corner) {
-      const dist = haversine(STATE.userPos.lat, STATE.userPos.lng, corner.lat, corner.lng);
-      const inRange = dist <= STATE.PROXIMITY_M;
-      if (inRange) {
-        btn.innerHTML = `📍 Einchecken <span class="checkin-distance">${Math.round(dist)}m</span>`;
-      } else {
-        btn.innerHTML = `📍 Einchecken <span class="checkin-distance">${dist < 1000 ? Math.round(dist) + "m" : (dist/1000).toFixed(1) + "km"}</span>`;
-      }
-    } else {
-      btn.innerHTML = "📍 Einchecken";
-    }
-  });
-}
-
 function startCooldownDisplay() {
   if (STATE.cooldownInterval) clearInterval(STATE.cooldownInterval);
   STATE.cooldownInterval = setInterval(() => {
@@ -4037,45 +3633,6 @@ function loadLocalEmojiVotes() {
   } catch (e) { return {}; }
 }
 
-function voteEmoji(cornerId, amenityKey) {
-  const voteKey = STATE.nickname;
-  if (!voteKey) { toast("Bitte gib zuerst einen Namen ein."); return; }
-
-  if (window.FB?.firebaseReady) {
-    const { db, ref, set, remove: fbRemove } = window.FB;
-    const voteRef = ref(db, "emojiVotes/" + cornerId + "/" + amenityKey + "/" + voteKey);
-    // Toggle vote
-    const currentVotes = STATE.emojiVotes?.[cornerId]?.[amenityKey] || {};
-    if (currentVotes[voteKey]) {
-      fbRemove(voteRef);
-    } else {
-      set(voteRef, true);
-    }
-  } else {
-    const votes = loadLocalEmojiVotes();
-    if (!votes[cornerId]) votes[cornerId] = {};
-    if (!votes[cornerId][amenityKey]) votes[cornerId][amenityKey] = {};
-    // Toggle
-    if (votes[cornerId][amenityKey][voteKey]) {
-      delete votes[cornerId][amenityKey][voteKey];
-    } else {
-      votes[cornerId][amenityKey][voteKey] = true;
-    }
-    localStorage.setItem("cg.emojiVotes", JSON.stringify(votes));
-    STATE.emojiVotes = votes;
-    refreshAllEmojiVotes();
-  }
-}
-
-function getEmojiVoteData(cornerId, amenityKey) {
-  const votes = window.FB?.firebaseReady
-    ? (STATE.emojiVotes?.[cornerId]?.[amenityKey] || {})
-    : (loadLocalEmojiVotes()[cornerId]?.[amenityKey] || {});
-  const count = Object.keys(votes).length;
-  const myVote = STATE.nickname ? !!votes[STATE.nickname] : false;
-  return { count, myVote };
-}
-
 function refreshAllEmojiVotes() {
   $$(".emoji-votes").forEach((section) => {
     const cornerId = section.dataset.cornerId;
@@ -4137,138 +3694,11 @@ function bindDetailOverlay() {
   $("#detail-back").addEventListener("click", closeDetail);
 }
 
-function openDetail(cornerId) {
-  const c = getAllCorners().find((x) => x.id === cornerId);
-  if (!c) return;
-
-  // XP for viewing detail
-  addPoints(STATE.nickname, 2, "Spot-Detail angesehen");
-
-  const overlay = $("#detail-overlay");
-  $("#detail-title").textContent = c.name;
-
-  const photoSrc = localStorage.getItem("cg.photo." + c.id);
-  const effectiveDesc = getDescription(c);
-  const visits = getVisitCount(cornerId);
-  const { avg, count: baroCount } = getBarometerData(cornerId);
-  const peopleHere = getPeopleAtCorner(cornerId);
-  const capturedInfo = STATE.captured[cornerId];
-
-  let peopleHtml = "";
-  if (peopleHere.length > 0) {
-    peopleHtml = `<div class="detail-people-here">🟢 ${peopleHere.length} ${peopleHere.length === 1 ? "Person" : "Personen"} gerade hier: ${peopleHere.map(n => escapeHtml(n)).join(", ")}</div>`;
-  }
-
-  let capturedHtml = "";
-  if (capturedInfo && capturedInfo.team) {
-    const t = TEAMS[capturedInfo.team];
-    capturedHtml = `<div class="detail-people-here" style="border-color:${t?.color || 'var(--line)'};color:${t?.color || 'var(--fg)'};background:rgba(255,255,255,0.05);">${t?.emoji || ""} Eingenommen von Team ${t?.name || capturedInfo.team}</div>`;
-  }
-
-  const feedbackHtml = STATE.checkinFeedback[cornerId] ? renderFeedbackSummary(cornerId) : "";
-
-  // Team picker shown only if user is checked in here
-  const isCheckedInHere = STATE.manualCheckinId === cornerId;
-  const teamPickerHtml = isCheckedInHere ? renderTeamPickerHtml(cornerId) : "";
-
-  $("#detail-content").innerHTML = `
-    <div class="detail-hero-photo">
-      ${photoSrc ? `<img src="${photoSrc}" alt="${escapeHtml(c.name)}" />` : `<div class="card-photo-empty" style="height:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg></div>`}
-    </div>
-    <div class="detail-stats">
-      <div class="detail-stat"><span class="stat-num">${visits}</span><span class="stat-label">Besuche</span></div>
-      <div class="detail-stat"><span class="stat-num">${baroCount > 0 ? avg.toFixed(1) : "—"}</span><span class="stat-label">Rating</span></div>
-      <div class="detail-stat"><span class="stat-num">${peopleHere.length}</span><span class="stat-label">Hier jetzt</span></div>
-      <div class="detail-stat"><span class="stat-num">${Object.keys(STATE.comments[cornerId] || {}).length}</span><span class="stat-label">Kommentare</span></div>
-    </div>
-    ${capturedHtml}
-    ${peopleHtml}
-    <p class="card-area" style="margin-top:14px;">${c.area || "—"}</p>
-    <h2 class="card-name" style="margin-bottom:14px;">${c.name}</h2>
-    ${effectiveDesc ? `<p class="card-desc">${escapeHtml(effectiveDesc)}</p>` : ""}
-    <ul class="card-tags" style="margin-bottom:14px;">${(c.tags || []).map((t) => `<li>#${escapeHtml(t)}</li>`).join("")}</ul>
-    ${teamPickerHtml}
-    <div class="corner-status-section" data-corner-id="${c.id}"></div>
-    ${feedbackHtml}
-    <div class="emoji-votes" data-corner-id="${c.id}"></div>
-    <div class="barometer-section" data-corner-id="${c.id}"></div>
-    <div class="photo-gallery" data-corner-id="${c.id}"></div>
-    <div class="visit-trail" data-corner-id="${c.id}"></div>
-    <div class="comments-section" data-corner-id="${c.id}"></div>
-    <div class="card-actions" style="padding:18px 0;">
-      <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier!" : "📍 Einchecken"}</button>
-      <button class="action-btn primary" data-action="map-detail" data-id="${c.id}">📍 Auf Karte</button>
-      <button class="action-btn" data-action="route-detail" data-id="${c.id}">🧭 Route</button>
-    </div>
-  `;
-
-  // Bind actions in detail view
-  const detailContent = $("#detail-content");
-  detailContent.querySelector(".checkin-btn")?.addEventListener("click", (e) => {
-    manualCheckin(e.target.closest("[data-id]").dataset.id);
-    setTimeout(() => openDetail(cornerId), 100);
-  });
-  detailContent.querySelector('[data-action="map-detail"]')?.addEventListener("click", () => {
-    closeDetail();
-    $(`.tab[data-view="map"]`).click();
-    setTimeout(() => {
-      if (STATE.mainMap) {
-        STATE.mainMap.flyTo([c.lat, c.lng], 17, { duration: 0.7 });
-      }
-    }, 250);
-  });
-  detailContent.querySelector('[data-action="route-detail"]')?.addEventListener("click", () => {
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank");
-  });
-
-  // Bind team picker buttons
-  detailContent.querySelectorAll(".team-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (btn.dataset.teamCreate) { openTeamCreate(cornerId); return; }
-      selectTeam(btn.dataset.team);
-      setTimeout(() => openDetail(cornerId), 100);
-    });
-  });
-
-  // Render corner status section
-  const statusSection = detailContent.querySelector(".corner-status-section");
-  if (statusSection) renderCornerStatusSection(cornerId, statusSection);
-
-  // Render sub-sections
-  const emojiSection = detailContent.querySelector(".emoji-votes");
-  if (emojiSection) renderEmojiVotes(cornerId, emojiSection);
-  const baroSection = detailContent.querySelector(".barometer-section");
-  if (baroSection) renderBarometer(cornerId, baroSection);
-  const photoSection = detailContent.querySelector(".photo-gallery");
-  if (photoSection) renderPhotoGallery(cornerId, photoSection);
-  const visitSection = detailContent.querySelector(".visit-trail");
-  if (visitSection) renderVisitTrail(cornerId, visitSection);
-  const commentSection = detailContent.querySelector(".comments-section");
-  if (commentSection) renderCommentSection(cornerId, commentSection);
-
-  overlay.classList.add("open");
-}
-
-function closeDetail() {
-  $("#detail-overlay").classList.remove("open");
-}
-
 function getVisitCount(cornerId) {
   if (window.FB?.firebaseReady) {
     return Object.keys(STATE.visits?.[cornerId] || {}).length;
   }
   return (loadLocalVisits()[cornerId] || []).length;
-}
-
-function getPeopleAtCorner(cornerId) {
-  const people = [];
-  if (STATE.manualCheckinId === cornerId || STATE.atCornerId === cornerId) {
-    people.push(STATE.nickname || "Du");
-  }
-  Object.values(STATE.friends).forEach((f) => {
-    if (f.atCorner === cornerId) people.push(f.name);
-  });
-  return people;
 }
 
 function renderFeedbackSummary(cornerId) {
@@ -4301,14 +3731,6 @@ function bindLightbox() {
   $("#lightbox-close-btn").addEventListener("click", closeLightbox);
   $("#lightbox-download").addEventListener("click", downloadLightboxPhoto);
   $("#lightbox").addEventListener("click", (e) => { if (e.target.id === "lightbox") closeLightbox(); });
-}
-
-function openLightbox(src, author) {
-  $("#lightbox-img").src = src;
-  $("#lightbox-author").textContent = author ? `📸 von ${author}` : "";
-  $("#lightbox").classList.add("open");
-  // XP for viewing photo
-  addPoints(STATE.nickname, 2, "Foto angesehen");
 }
 
 function closeLightbox() {
@@ -4396,15 +3818,6 @@ function submitCheckinFeedback() {
 }
 
 /* ====================== LEADERBOARD ====================== */
-function renderLeaderboard() {
-  renderPopularCorner();
-  renderTeamBattles();
-  renderVisitLeaderboard();
-  renderContributorsLeaderboard();
-  renderPointsLeaderboard();
-  renderAchievementsSection();
-}
-
 function renderPopularCorner() {
   const container = $("#popular-corner-section");
   const all = getAllCorners();
@@ -4485,185 +3898,8 @@ function renderContributorsLeaderboard() {
   container.innerHTML = `<div class="leaderboard-section"><h3>🗺️ Top Entdecker</h3><ul class="leaderboard-list">${listHtml}</ul></div>`;
 }
 
-function renderPointsLeaderboard() {
-  const container = $("#leaderboard-points");
-  const sorted = Object.entries(STATE.points)
-    .map(([user, data]) => ({ user, total: data.total || 0 }))
-    .filter(x => x.total > 0)
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 10);
-
-  if (sorted.length === 0) {
-    container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Level-Ranking</h3><p style="color:var(--fg-dim);font-size:13px;">Noch keine Aktivität.</p></div>`;
-    return;
-  }
-
-  const listHtml = sorted.map((x, i) => {
-    const cls = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
-    const badge = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
-    const isMe = x.user === STATE.nickname;
-    const lvl = getLevel(x.total);
-    const tier = getLevelTier(lvl);
-    return `<li class="leaderboard-item ${cls} ${isMe ? "current-user" : ""}">
-      <span class="lb-rank">${badge || (i + 1)}</span>
-      <span class="lb-name">${escapeHtml(x.user)} ${isMe ? "(du)" : ""}</span>
-      <span class="lb-score">${tier.emoji} Lv.${lvl}</span>
-    </li>`;
-  }).join("");
-
-  container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Level-Ranking</h3><ul class="leaderboard-list">${listHtml}</ul></div>`;
-}
-
-function renderAchievementsSection() {
-  const container = $("#achievements-section");
-  const allAchievements = [
-    { id: "first-login", name: "Willkommen", emoji: "👋", pts: 10, desc: "Account erstellt" },
-    { id: "first-checkin", name: "Erster Besuch", emoji: "📍", pts: 20, desc: "Erstes Check-in" },
-    { id: "first-corner", name: "Entdecker", emoji: "🗺️", pts: 30, desc: "Ersten Corner hinzugefügt" },
-    { id: "first-photo", name: "Fotograf", emoji: "📸", pts: 15, desc: "Erstes Foto hochgeladen" },
-    { id: "first-comment", name: "Kommentator", emoji: "💬", pts: 10, desc: "Erster Kommentar" },
-    { id: "five-checkins", name: "Stammgast", emoji: "🔥", pts: 50, desc: "5 Check-ins" },
-    { id: "ten-checkins", name: "Local Legend", emoji: "👑", pts: 100, desc: "10 Check-ins" },
-    { id: "three-corners", name: "Kartograph", emoji: "🧭", pts: 50, desc: "3 Corners hinzugefügt" },
-    { id: "friend-referral", name: "Networker", emoji: "🤝", pts: 25, desc: "Freund eingeladen" },
-    { id: "five-ratings", name: "Kritiker", emoji: "⭐", pts: 20, desc: "5 Bewertungen abgegeben" },
-  ];
-
-  const cardsHtml = allAchievements.map((a) => {
-    const unlocked = STATE.achievements.includes(a.id);
-    return `<div class="achievement-card ${unlocked ? "unlocked" : "locked"}">
-      <div class="achievement-emoji">${a.emoji}</div>
-      <div class="achievement-name">${a.name}</div>
-      <div class="achievement-pts">+${a.pts} Pts</div>
-    </div>`;
-  }).join("");
-
-  container.innerHTML = `<div class="leaderboard-section">
-    <h3>🏆 Achievements</h3>
-    <p style="font-size:12px;color:var(--fg-dim);margin:0 0 14px;">Schalte Achievements frei durch Aktivität!</p>
-    <div class="achievements-grid">${cardsHtml}</div>
-  </div>`;
-}
-
 /* ====================== TABS ====================== */
-function bindTabs() {
-  $$(".tab").forEach((t) => {
-    t.addEventListener("click", () => {
-      const v = t.dataset.view;
-      STATE.view = v;
-      $$(".tab").forEach((x) => x.classList.toggle("active", x === t));
-      $$(".view").forEach((x) => x.classList.toggle("active", x.id === "view-" + v));
-      if (v === "map") {
-        if (!STATE.mainMap) initMainMap();
-        setTimeout(() => STATE.mainMap?.invalidateSize(), 50);
-      }
-      if (v === "leaderboard") {
-        renderLeaderboard();
-      }
-      if (v === "profile") {
-        renderProfile();
-      }
-      // Subtle XP for any tab click
-      addPoints(STATE.nickname, 1, "Navigation");
-    });
-  });
-}
-
 /* ====================== CARDS ====================== */
-function renderCards() {
-  const root = $("#cards");
-  root.innerHTML = "";
-  let all = getAllCorners();
-
-  // Sort corners by visit count (most visited first)
-  all = all.map((c) => ({ ...c, _visits: getVisitCount(c.id) }));
-  all.sort((a, b) => b._visits - a._visits);
-
-  all.forEach((c, i) => {
-    const isCustom = !!c.isCustom;
-    const photoSrc = localStorage.getItem("cg.photo." + c.id);
-    const photoEl = photoSrc
-      ? `<img src="${photoSrc}" alt="${c.name}">`
-      : `<div class="card-photo-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg><span>Foto hochladen</span></div>`;
-
-    const effectiveDesc = getDescription(c);
-    const hasDesc = !!effectiveDesc;
-
-    // Short description for list view (max 2 lines)
-    const descBlock = hasDesc
-      ? `<p class="card-desc short-desc">${escapeHtml(effectiveDesc)}</p>`
-      : "";
-
-    // Check-in button state
-    const isCheckedIn = STATE.manualCheckinId === c.id;
-
-    // People here count
-    const peopleHere = getPeopleAtCorner(c.id);
-    const visitCount = c._visits || 0;
-
-    const card = document.createElement("article");
-    card.className = "card" + (isCustom ? " custom" : "") + (isCheckedIn ? " at-here" : "");
-    card.dataset.id = c.id;
-    card.id = "card-" + c.id;
-
-    card.innerHTML = `
-      <div class="card-photo">
-        <div class="card-num">${String(i + 1).padStart(2, "0")}</div>
-        <span class="mine-badge">Mein Spot</span>
-        <span class="at-badge">Du bist hier</span>
-        ${visitCount > 0 ? `<span class="card-visit-rank">🔥 ${visitCount}</span>` : ""}
-        ${photoEl}
-        <input type="file" accept="image/*" class="photo-input" data-id="${c.id}">
-        <button class="photo-btn" data-id="${c.id}">📷 ${photoSrc ? "Ändern" : "Hinzufügen"}</button>
-      </div>
-      <div class="card-body">
-        <p class="card-area">${c.area || "—"} ${isCustom && c.createdBy ? `<span class="creator-label"> · von ${escapeHtml(c.createdBy)}</span>` : ""}</p>
-        <h2 class="card-name">${c.name}</h2>
-        ${peopleHere.length > 0 ? `<div class="detail-people-here">🟢 ${peopleHere.length} hier: ${peopleHere.map(n => escapeHtml(n)).join(", ")}</div>` : ""}
-        ${descBlock}
-        <button class="detail-link" data-id="${c.id}">Mehr Details →</button>
-      </div>
-      <div class="card-actions">
-        <button class="checkin-btn ${isCheckedIn ? "checked-in" : ""}" data-id="${c.id}">${isCheckedIn ? "✅ Ich bin hier!" : "📍 Einchecken"}</button>
-        <button class="action-btn primary" data-action="map" data-id="${c.id}">📍 Karte</button>
-        <button class="action-btn" data-action="route" data-id="${c.id}">🧭 Route</button>
-      </div>
-    `;
-    root.appendChild(card);
-  });
-
-  // Bind photo
-  $$(".photo-btn").forEach((btn) => btn.addEventListener("click", () => $(`.photo-input[data-id="${btn.dataset.id}"]`).click()));
-  $$(".photo-input").forEach((inp) => inp.addEventListener("change", (e) => {
-    const f = e.target.files?.[0];
-    if (f) handlePhotoUpload(f, inp.dataset.id);
-  }));
-
-  // Detail link
-  $$(".detail-link").forEach((btn) => btn.addEventListener("click", () => openDetail(btn.dataset.id)));
-
-  // Action buttons
-  $$('[data-action="map"]').forEach((btn) => btn.addEventListener("click", () => {
-    const c = getAllCorners().find((x) => x.id === btn.dataset.id);
-    $(`.tab[data-view="map"]`).click();
-    setTimeout(() => {
-      if (STATE.mainMap) {
-        STATE.mainMap.flyTo([c.lat, c.lng], 17, { duration: 0.7 });
-        STATE.mainMarkers[c.id]?.openPopup?.();
-      }
-    }, 250);
-  }));
-  $$('[data-action="route"]').forEach((btn) => btn.addEventListener("click", () => {
-    const c = getAllCorners().find((x) => x.id === btn.dataset.id);
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank");
-  }));
-
-  // Bind check-in buttons
-  $$(".checkin-btn").forEach((btn) => btn.addEventListener("click", () => manualCheckin(btn.dataset.id)));
-
-  // Lazy-init minimaps (removed from cards for cleaner view — in detail page now)
-}
-
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
@@ -4863,31 +4099,6 @@ function focusMainMapOnUser(lat, lng, forceAnimate = false) {
   STATE.hasCenteredOnUser = true;
 }
 
-function rebuildMainMarkers() {
-  if (!STATE.mainMap) return;
-  Object.values(STATE.mainMarkers).forEach((m) => STATE.mainMap.removeLayer(m));
-  STATE.mainMarkers = {};
-  getAllCorners().forEach((c, i) => {
-    const isCustom = !!c.isCustom;
-    const icon = L.divIcon({
-      className: "",
-      html: `<div class="corner-marker ${isCustom ? "custom" : ""}" data-id="${c.id}"><span class="num">${i + 1}</span></div>`,
-      iconSize: [30, 30], iconAnchor: [15, 30]
-    });
-    const m = L.marker([c.lat, c.lng], { icon }).addTo(STATE.mainMap);
-    m.bindPopup(`<strong>${escapeHtml(c.name)}</strong><br><small>${escapeHtml(c.area || "")}</small>`);
-    // Click on marker navigates to the corner card in list view
-    m.on("click", () => {
-      $(`.tab[data-view="list"]`).click();
-      setTimeout(() => {
-        const card = document.getElementById("card-" + c.id);
-        if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 150);
-    });
-    STATE.mainMarkers[c.id] = m;
-  });
-}
-
 function refreshMainMarker(cornerId) {
   const m = STATE.mainMarkers[cornerId];
   if (!m) return;
@@ -4905,47 +4116,6 @@ function bindGeo() {
   if ("Notification" in window && Notification.permission === "default") {
     // We'll ask on first geo activation
   }
-}
-
-function startGeo() {
-  if (!navigator.geolocation) { toast("Geolocation wird nicht unterstützt."); return; }
-
-  // Request notification permission
-  if ("Notification" in window && Notification.permission === "default") {
-    Notification.requestPermission();
-  }
-
-  setGeoStatus("Suche…", "");
-  STATE.geoWatch = navigator.geolocation.watchPosition(
-    onGeoUpdate, onGeoError,
-    { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
-  );
-  STATE.geoActive = true;
-  $("#locate-btn").classList.add("active");
-  $("#locate-btn").textContent = "📍 Standort aus";
-  $("#list-locate-btn").classList.add("active");
-  $("#list-locate-btn").textContent = "📍 Standort aus";
-}
-function stopGeo() {
-  if (STATE.geoWatch !== null) navigator.geolocation.clearWatch(STATE.geoWatch);
-  STATE.geoWatch = null;
-  STATE.geoActive = false;
-  $("#locate-btn").classList.remove("active");
-  $("#locate-btn").textContent = "📍 Standort an";
-  $("#list-locate-btn").classList.remove("active");
-  $("#list-locate-btn").textContent = "📍 Standort an";
-  setGeoStatus("Standort aus", "");
-  $("#me-position-meta").textContent = "Standort aus";
-  if (STATE.userMainMarker && STATE.mainMap) { STATE.mainMap.removeLayer(STATE.userMainMarker); STATE.userMainMarker = null; }
-  if (STATE.atCornerId) {
-    const old = STATE.atCornerId; STATE.atCornerId = null;
-    refreshMainMarker(old);
-    document.getElementById("card-" + old)?.classList.remove("at-here");
-  }
-  // Update check-in buttons to disabled state
-  updateCheckinButtons();
-  // Update presence to show no corner
-  broadcastPresence();
 }
 
 // onGeoUpdate defined below in enhanced geo section
@@ -5047,148 +4217,8 @@ function copyExport() {
 }
 
 /* ====================== TEAMS SYSTEM ====================== */
-function selectTeam(teamKey) {
-  if (!TEAMS[teamKey]) return;
-  STATE.team = teamKey;
-  localStorage.setItem("cg.team", teamKey);
-
-  // Track team history
-  if (!STATE.teamHistory[teamKey]) STATE.teamHistory[teamKey] = 0;
-  STATE.teamHistory[teamKey]++;
-  saveTeamHistory(STATE.teamHistory);
-
-  // Sync to Firebase
-  if (window.FB?.firebaseReady) {
-    const { db, ref, set } = window.FB;
-    set(ref(db, "teams/" + STATE.nickname), { team: teamKey, joinedAt: Date.now() });
-  }
-
-  const t = TEAMS[teamKey];
-  toast(`${t.emoji} Du bist jetzt Team <strong>${t.name}</strong>!`);
-  updateNicknameBar();
-  broadcastPresence();
-  addPoints(STATE.nickname, 2, "Team gewählt");
-}
-
-function renderTeamPickerHtml(cornerId) {
-  const buttons = Object.entries(TEAMS).map(([key, t]) => {
-    const active = STATE.team === key ? "active" : "";
-    return `<button class="team-btn ${active}" data-team="${key}" title="${t.name}">
-      <span>${t.emoji}</span>
-      <span class="team-label">${t.name}</span>
-    </button>`;
-  }).join("");
-
-  return `<div class="team-select-section">
-    <h4>Für welches Team checkst du ein?</h4>
-    <div class="team-buttons">${buttons}</div>
-  </div>`;
-}
-
-function listenTeams() {
-  if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "teams"), (snapshot) => {
-    STATE.teams = snapshot.val() || {};
-  });
-}
-
 /* ====================== CORNER STATUS EMOJIS ====================== */
-function renderCornerStatusSection(cornerId, container) {
-  const statuses = STATE.cornerStatuses[cornerId] || {};
-  const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000);
-
-  const buttons = Object.entries(CORNER_STATUSES).map(([key, info]) => {
-    const reports = statuses[key] || {};
-    // Count only reports from last 2 hours
-    const recentReports = Object.entries(reports).filter(([, ts]) => ts > twoHoursAgo);
-    const myReport = STATE.nickname && reports[STATE.nickname] && reports[STATE.nickname] > twoHoursAgo;
-    const count = recentReports.length;
-
-    return `<button class="status-btn ${myReport ? "active" : ""}" data-corner="${cornerId}" data-status="${key}">
-      <span class="status-emoji">${info.emoji}</span>
-      <span class="status-count">${count > 0 ? count : ""}</span>
-    </button>`;
-  }).join("");
-
-  container.innerHTML = `
-    <h4>Status melden</h4>
-    <div class="status-buttons">${buttons}</div>
-  `;
-
-  container.querySelectorAll(".status-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      toggleCornerStatus(btn.dataset.corner, btn.dataset.status);
-      addPoints(STATE.nickname, 2, "Status gemeldet");
-    });
-  });
-}
-
-function toggleCornerStatus(cornerId, statusKey) {
-  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
-
-  if (window.FB?.firebaseReady) {
-    const { db, ref, set, remove: fbRemove } = window.FB;
-    const statusRef = ref(db, "cornerStatuses/" + cornerId + "/" + statusKey + "/" + STATE.nickname);
-    const current = STATE.cornerStatuses?.[cornerId]?.[statusKey]?.[STATE.nickname];
-    const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000);
-    if (current && current > twoHoursAgo) {
-      fbRemove(statusRef);
-      toast(`${CORNER_STATUSES[statusKey].emoji} Status entfernt`);
-    } else {
-      set(statusRef, Date.now());
-      toast(`${CORNER_STATUSES[statusKey].emoji} Status gemeldet!`);
-    }
-  } else {
-    // Local fallback
-    if (!STATE.cornerStatuses[cornerId]) STATE.cornerStatuses[cornerId] = {};
-    if (!STATE.cornerStatuses[cornerId][statusKey]) STATE.cornerStatuses[cornerId][statusKey] = {};
-    const current = STATE.cornerStatuses[cornerId][statusKey][STATE.nickname];
-    const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000);
-    if (current && current > twoHoursAgo) {
-      delete STATE.cornerStatuses[cornerId][statusKey][STATE.nickname];
-    } else {
-      STATE.cornerStatuses[cornerId][statusKey] = { ...STATE.cornerStatuses[cornerId][statusKey], [STATE.nickname]: Date.now() };
-    }
-  }
-}
-
-function listenCornerStatuses() {
-  if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "cornerStatuses"), (snapshot) => {
-    STATE.cornerStatuses = snapshot.val() || {};
-  });
-}
-
 /* ====================== CORNER CAPTURE ====================== */
-function checkCaptureCondition(cornerId) {
-  if (!STATE.team) return;
-
-  // Count how many people from the same team are checked in at this corner
-  const peopleHere = getPeopleAtCorner(cornerId);
-  let sameTeamCount = 0;
-  const sameTeamUsers = [];
-
-  // Check ourselves
-  if (STATE.manualCheckinId === cornerId && STATE.team) {
-    sameTeamCount++;
-    sameTeamUsers.push(STATE.nickname);
-  }
-
-  // Check friends
-  Object.entries(STATE.friends).forEach(([name, info]) => {
-    if (info.atCorner === cornerId && info.team === STATE.team) {
-      sameTeamCount++;
-      sameTeamUsers.push(name);
-    }
-  });
-
-  if (sameTeamCount >= 3) {
-    captureCorner(cornerId, STATE.team, sameTeamUsers);
-  }
-}
-
 function captureCorner(cornerId, team, users) {
   if (STATE.captured[cornerId]?.team === team) return; // Already captured by same team
 
@@ -5208,88 +4238,8 @@ function captureCorner(cornerId, team, users) {
   unlockAchievement("first-capture", "Eroberer", "🏴", 30);
 }
 
-function listenCaptured() {
-  if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "captured"), (snapshot) => {
-    STATE.captured = snapshot.val() || {};
-    renderCards();
-  });
-}
-
 /* ====================== ENCOUNTERS / FRIENDSHIP ====================== */
-function logEncounters(cornerId) {
-  if (!STATE.nickname || !window.FB?.firebaseReady) return;
-  const { db, ref, set } = window.FB;
-
-  // Find other people at the same corner
-  Object.entries(STATE.friends).forEach(([name, info]) => {
-    if (info.atCorner === cornerId) {
-      const pair = [STATE.nickname, name].sort().join("__");
-      const encounterRef = ref(db, "encounters/" + pair);
-      const existing = STATE.encounters[pair] || { count: 0, lastSeen: 0 };
-      set(encounterRef, {
-        count: (existing.count || 0) + 1,
-        lastSeen: Date.now(),
-        users: [STATE.nickname, name].sort()
-      });
-    }
-  });
-}
-
-function listenEncounters() {
-  if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "encounters"), (snapshot) => {
-    STATE.encounters = snapshot.val() || {};
-  });
-}
-
 /* ====================== LIVE LOCATION ====================== */
-function listenLiveLocations() {
-  if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "liveLocations"), (snapshot) => {
-    STATE.liveLocations = snapshot.val() || {};
-    renderLiveLocationMarkers();
-  });
-}
-
-function renderLiveLocationMarkers() {
-  if (!STATE.mainMap) return;
-
-  // Remove old markers
-  Object.values(STATE.liveMarkers).forEach((m) => {
-    try { STATE.mainMap.removeLayer(m); } catch (e) {}
-  });
-  STATE.liveMarkers = {};
-
-  const fiveMinAgo = Date.now() - 5 * 60 * 1000;
-
-  Object.entries(STATE.liveLocations).forEach(([user, loc]) => {
-    if (user === STATE.nickname) return;
-    if (!loc.lat || !loc.lng || loc.timestamp < fiveMinAgo) return;
-
-    const teamInfo = TEAMS[loc.team] || {};
-    const color = teamInfo.color || "#ffffff";
-    const emoji = teamInfo.emoji || "👤";
-
-    const icon = L.divIcon({
-      className: "",
-      html: `<div class="live-user-marker" style="background:${color};">
-        <span class="live-nick">${escapeHtml(loc.nickname || user)}</span>
-        ${emoji}
-      </div>`,
-      iconSize: [28, 28],
-      iconAnchor: [14, 14]
-    });
-
-    const marker = L.marker([loc.lat, loc.lng], { icon, zIndexOffset: 500 }).addTo(STATE.mainMap);
-    marker.bindTooltip(escapeHtml(loc.nickname || user), { direction: "top", offset: [0, -14] });
-    STATE.liveMarkers[user] = marker;
-  });
-}
-
 /* ====================== TEAM BATTLES LEADERBOARD ====================== */
 function renderTeamBattles() {
   const container = document.getElementById("team-battle-section");
@@ -5325,126 +4275,6 @@ function renderTeamBattles() {
 }
 
 /* ====================== PROFILE PAGE ====================== */
-function renderProfile() {
-  const container = document.getElementById("profile-content");
-  if (!container) return;
-
-  const myXp = STATE.points[STATE.nickname]?.total || 0;
-  const { level, progress } = getLevel(myXp);
-  const tier = getLevelTier(level);
-  const teamInfo = STATE.team ? TEAMS[STATE.team] : null;
-
-  // Stats
-  const totalCheckins = Object.values(STATE.visits || {}).reduce((sum, v) => {
-    const entries = Object.values(v || {});
-    return sum + entries.filter(e => e.user === STATE.nickname).length;
-  }, 0);
-  const cornersVisited = STATE.visitedCorners.length;
-  const commentsWritten = Object.values(STATE.comments || {}).reduce((sum, corner) => {
-    return sum + Object.values(corner || {}).filter(c => c.author === STATE.nickname).length;
-  }, 0);
-  const capturesParticipated = Object.values(STATE.captured || {}).filter(cap =>
-    cap.capturedBy && cap.capturedBy.includes(STATE.nickname)
-  ).length;
-
-  // Team history
-  const teamHistHtml = Object.entries(TEAMS).map(([key, t]) => {
-    const count = STATE.teamHistory[key] || 0;
-    return `<div class="team-history-item">
-      <div class="th-emoji">${t.emoji}</div>
-      <div class="th-count">${count}x</div>
-      <div class="th-name">${t.name}</div>
-    </div>`;
-  }).join("");
-
-  // Best friends (encounters)
-  const myEncounters = Object.entries(STATE.encounters || {}).filter(([pair]) =>
-    pair.includes(STATE.nickname)
-  ).map(([pair, data]) => {
-    const other = (data.users || pair.split("__")).find(u => u !== STATE.nickname);
-    return { name: other || "?", count: data.count || 0, lastSeen: data.lastSeen || 0 };
-  }).sort((a, b) => b.count - a.count).slice(0, 5);
-
-  const friendsHtml = myEncounters.length > 0
-    ? myEncounters.map(f => `<div class="friend-encounter">
-        <span class="fe-name">${escapeHtml(f.name)}</span>
-        <span class="fe-count">${f.count}x zusammen</span>
-      </div>`).join("")
-    : '<p style="color:var(--fg-dim);font-size:13px;">Checke gemeinsam mit Freunden ein!</p>';
-
-  // Notification preference
-  const notifPref = STATE.notifPref;
-
-  container.innerHTML = `
-    <div class="profile-header">
-      <div class="profile-avatar">${teamInfo ? teamInfo.emoji : "👤"}</div>
-      <div class="profile-name">${escapeHtml(STATE.nickname || "Anonym")}</div>
-      <div class="profile-level-info">${tier.emoji} ${tier.name} · Level ${level}</div>
-      <div class="profile-progress">
-        <div class="profile-progress-fill" style="width:${Math.round(progress * 100)}%"></div>
-      </div>
-    </div>
-
-    <div class="profile-stats">
-      <div class="profile-stat">
-        <div class="stat-icon">📍</div>
-        <div class="stat-value">${cornersVisited}</div>
-        <div class="stat-label">Corners besucht</div>
-      </div>
-      <div class="profile-stat">
-        <div class="stat-icon">✅</div>
-        <div class="stat-value">${totalCheckins}</div>
-        <div class="stat-label">Check-ins</div>
-      </div>
-      <div class="profile-stat">
-        <div class="stat-icon">🏴</div>
-        <div class="stat-value">${capturesParticipated}</div>
-        <div class="stat-label">Eroberungen</div>
-      </div>
-      <div class="profile-stat">
-        <div class="stat-icon">💬</div>
-        <div class="stat-value">${commentsWritten}</div>
-        <div class="stat-label">Kommentare</div>
-      </div>
-    </div>
-
-    <div class="team-history">
-      <h3>⚔️ Team-Historie</h3>
-      <div class="team-history-grid">${teamHistHtml}</div>
-    </div>
-
-    <div class="best-friends-section">
-      <h3>🤝 Corner-Freunde</h3>
-      ${friendsHtml}
-    </div>
-
-    <div class="notification-toggle">
-      <h3>🔔 Benachrichtigungen</h3>
-      <div class="notif-options">
-        <button class="notif-opt ${notifPref === "all" ? "active" : ""}" data-pref="all">Alle</button>
-        <button class="notif-opt ${notifPref === "team" ? "active" : ""}" data-pref="team">Nur Team</button>
-        <button class="notif-opt ${notifPref === "off" ? "active" : ""}" data-pref="off">Aus</button>
-      </div>
-    </div>
-
-    <div id="profile-achievements"></div>
-  `;
-
-  // Bind notification toggles
-  container.querySelectorAll(".notif-opt").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      STATE.notifPref = btn.dataset.pref;
-      localStorage.setItem("cg.notifPref", STATE.notifPref);
-      container.querySelectorAll(".notif-opt").forEach(b => b.classList.toggle("active", b.dataset.pref === STATE.notifPref));
-      toast(`🔔 Benachrichtigungen: ${STATE.notifPref === "all" ? "Alle" : STATE.notifPref === "team" ? "Nur Team" : "Aus"}`);
-    });
-  });
-
-  // Render achievements in profile too
-  const achContainer = container.querySelector("#profile-achievements");
-  if (achContainer) renderAchievementsInProfile(achContainer);
-}
-
 function renderAchievementsInProfile(container) {
   const allAchievements = [
     { id: "first-login", name: "Willkommen", emoji: "👋", desc: "Account erstellt" },
@@ -5959,8 +4789,8 @@ function bindNicknameBar() {
   updateAvailabilityButton();
   $("#supply-btn")?.addEventListener("click", broadcastSupplyRequest);
   $("#invite-btn").addEventListener("click", inviteFriends);
-  $("#nick-change-btn").addEventListener("click", () => {
-    const newName = prompt("Neuer Nickname:", STATE.nickname);
+  $("#nick-change-btn").addEventListener("click", async () => {
+    const newName = await appPrompt("Neuer Nickname", STATE.nickname, "Dein Name");
     if (!newName || !newName.trim()) return;
     STATE.nickname = newName.trim();
     localStorage.setItem("cg.nickname", STATE.nickname);
@@ -6272,6 +5102,8 @@ function applyProfileSnapshot(p, { silent = false } = {}) {
   if (typeof renderFriendsBar === "function") renderFriendsBar();
   if (STATE.view === "profile") renderProfile();
   syncIdentity();
+  // A restored profile brings its nickname — close the "Wer bist du?" prompt.
+  if (STATE.nickname) { const np = $("#nickname-prompt"); if (np) np.style.display = "none"; }
   if (!silent) toast("✅ Profil übernommen");
   return true;
 }
@@ -6375,12 +5207,59 @@ async function claimRecoveryCode(rawCode) {
   }
 }
 
+/* ====================== APP DIALOG (prompt/confirm replacement) ====================== */
+var _dialogResolve = null;
+function _closeDialog(result) {
+  const ov = $("#app-dialog");
+  if (ov) ov.style.display = "none";
+  document.removeEventListener("keydown", _dialogKeyHandler);
+  if (_dialogResolve) { const r = _dialogResolve; _dialogResolve = null; r(result); }
+}
+function _dialogKeyHandler(e) {
+  if (e.key === "Escape") _closeDialog(null);
+  if (e.key === "Enter" && document.activeElement === $("#app-dialog-input")) $("#app-dialog-ok").click();
+}
+function showDialog({ title, text = "", input = false, value = "", placeholder = "", okLabel = "OK", cancelLabel = "Abbrechen", codeStyle = false, danger = false }) {
+  return new Promise((resolve) => {
+    // If a dialog is already open, cancel it first.
+    if (_dialogResolve) _closeDialog(null);
+    _dialogResolve = resolve;
+    $("#app-dialog-title").textContent = title || "";
+    $("#app-dialog-text").textContent = text || "";
+    $("#app-dialog-text").style.display = text ? "" : "none";
+    const inp = $("#app-dialog-input");
+    inp.style.display = input ? "" : "none";
+    inp.value = value || "";
+    inp.placeholder = placeholder || "";
+    inp.classList.toggle("code-input", !!codeStyle);
+    const ok = $("#app-dialog-ok");
+    ok.textContent = okLabel;
+    ok.style.borderColor = danger ? "var(--pink)" : "";
+    ok.style.color = danger ? "var(--pink)" : "";
+    $("#app-dialog-cancel").textContent = cancelLabel;
+    ok.onclick = () => _closeDialog(input ? inp.value.trim() : true);
+    $("#app-dialog-cancel").onclick = () => _closeDialog(null);
+    const ov = $("#app-dialog");
+    ov.onclick = (e) => { if (e.target === ov) _closeDialog(null); };
+    ov.style.display = "flex";
+    document.addEventListener("keydown", _dialogKeyHandler);
+    if (input) setTimeout(() => inp.focus(), 80);
+  });
+}
+function appPrompt(title, value = "", placeholder = "", opts = {}) {
+  return showDialog({ title, input: true, value, placeholder, ...opts });
+}
+async function appConfirm(title, text = "", okLabel = "Ja") {
+  const r = await showDialog({ title, text, okLabel, danger: true });
+  return r === true;
+}
+
 /* ====================== ADMIN PANEL (host only) ====================== */
 const ADMIN_USER_NODES = ["points", "presence", "teams", "achievements", "pushTokens", "userPrefs", "userProfiles", "liveLocations"];
 
 async function adminDeleteProfile(key, nickname) {
   if (!STATE.isAdmin || !window.FB?.firebaseReady) return;
-  if (!confirm(`Profil „${nickname || key}" ÜBERALL löschen? Das ist endgültig.`)) return;
+  if (!(await appConfirm(`Profil „${nickname || key}" löschen?`, "Wird überall entfernt (Punkte, Presence, Team, Achievements). Das ist endgültig.", "Endgültig löschen"))) return;
   const { db, ref, remove } = window.FB;
   try {
     await Promise.all(ADMIN_USER_NODES.map((node) => remove(ref(db, node + "/" + key)).catch(() => {})));
@@ -6394,7 +5273,7 @@ async function adminDeleteProfile(key, nickname) {
 
 async function adminDeleteCorner(cornerId, name) {
   if (!STATE.isAdmin || !window.FB?.firebaseReady) return;
-  if (!confirm(`Spot „${name || cornerId}" für alle löschen?`)) return;
+  if (!(await appConfirm(`Spot „${name || cornerId}" löschen?`, "Der Spot verschwindet für alle Nutzer.", "Löschen"))) return;
   const { db, ref, remove } = window.FB;
   try {
     await remove(ref(db, "corners/" + cornerId));
@@ -6493,8 +5372,9 @@ async function openClaimOverlay(opts = {}) {
   $("#claim-title").textContent = opts.welcome ? "👋 Warst du schon mal dabei?" : "👥 Altes Profil übernehmen";
   $("#claim-close").textContent = opts.welcome ? "Nein, ich bin neu hier" : "Schließen";
   overlay.style.display = "flex";
-  $("#claim-close").onclick = () => { overlay.style.display = "none"; };
-  overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
+  const closeAndContinue = () => { overlay.style.display = "none"; maybeShowNicknamePrompt(); };
+  $("#claim-close").onclick = closeAndContinue;
+  overlay.onclick = (e) => { if (e.target === overlay) closeAndContinue(); };
   if (!window.FB?.firebaseReady) { list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Nur online verfügbar.</p>`; return; }
   list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Lade Profile…</p>`;
   try {
@@ -6516,9 +5396,9 @@ async function openClaimOverlay(opts = {}) {
       </div>`;
     }).join("");
     list.querySelectorAll("[data-claim-key]").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const row = rows.find((x) => x.key === btn.dataset.claimKey);
-        if (confirm(`Profil „${row ? row.nickname : ""}" übernehmen? Punkte, Level & Achievements werden dir zugeordnet.`)) {
+        if (await appConfirm(`Profil „${row ? row.nickname : ""}" übernehmen?`, "Punkte, Level, Achievements und besuchte Corners werden dir zugeordnet.", "Das war ich")) {
           claimExistingProfile(btn.dataset.claimKey);
         }
       });
@@ -6587,6 +5467,9 @@ async function claimExistingProfile(oldKey) {
     if (STATE.view === "profile") renderProfile();
     const overlay = $("#claim-overlay");
     if (overlay) overlay.style.display = "none";
+    // Claimed profile brings its nickname — skip the "Wer bist du?" step.
+    const nickPrompt = $("#nickname-prompt");
+    if (nickPrompt && STATE.nickname) nickPrompt.style.display = "none";
     toast(`✅ Profil „${escapeHtml(nickname)}" übernommen — willkommen zurück!`);
   } catch (err) {
     console.warn("claimExistingProfile failed:", err);
@@ -8011,7 +6894,7 @@ function renderProfile() {
     }
   });
   $("#acct-email-btn")?.addEventListener("click", async () => {
-    const email = prompt("E-Mail für den Anmelde-Link:");
+    const email = await appPrompt("Mit E-Mail sichern", "", "deine@mail.de", { text: "Wir schicken dir einen Anmelde-Link — kein Passwort nötig.", okLabel: "Link senden" });
     if (!email || !email.trim()) return;
     try {
       await window.FB.sendEmailLink(email.trim());
@@ -8028,8 +6911,8 @@ function renderProfile() {
     unlockAchievement("secured", "Abgesichert", "🔐", 20);
   });
   $("#acct-code-claim-btn")?.addEventListener("click", async () => {
-    const code = prompt("Recovery-Code eingeben, um dein Profil zu übernehmen:");
-    if (code && code.trim()) await claimRecoveryCode(code);
+    const code = await appPrompt("Recovery-Code eingeben", "", "CODE", { codeStyle: true, text: "Stellt dein Profil von einem anderen Gerät wieder her.", okLabel: "Übernehmen" });
+    if (code) await claimRecoveryCode(code);
   });
   $("#acct-claim-btn")?.addEventListener("click", openClaimOverlay);
   $("#admin-open-btn")?.addEventListener("click", renderAdminPanel);
