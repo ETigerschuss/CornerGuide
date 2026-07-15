@@ -7,11 +7,10 @@
   </defs>
   <rect width="512" height="512" rx="112" fill="#0d0d0d"/>
   <circle cx="256" cy="256" r="182" fill="none" stroke="url(#g)" stroke-width="26"/>
-  <!-- street corner (the "Ecke") -->
-  <rect x="148" y="350" width="226" height="48" rx="24" fill="#8f8574"/>
-  <rect x="148" y="150" width="48" height="248" rx="24" fill="#8f8574"/>
-  <!-- location pin nestled in the corner -->
-  <circle cx="262" cy="268" r="66" fill="#f4e9d1"/>
-  <polygon points="209,302 315,302 262,372" fill="#f4e9d1"/>
-  <circle cx="262" cy="268" r="27" fill="#0d0d0d"/>
+  <!-- street corner: angle with its tip at the bottom centre of the ring -->
+  <path d="M150 232 L256 372 L362 232" fill="none" stroke="#8f8574" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- location pin pointing into the corner tip -->
+  <circle cx="256" cy="212" r="62" fill="#f4e9d1"/>
+  <polygon points="206,244 306,244 256,344" fill="#f4e9d1"/>
+  <circle cx="256" cy="212" r="26" fill="#0d0d0d"/>
 </svg>
