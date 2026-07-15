@@ -111,13 +111,16 @@ exports.pushOnDirectMessage = onValueCreated(
 
     const fromName = (msg.fromName || "Ein Corner-Friend").toString().slice(0, 40);
     const body = (msg.text || "Neue Nachricht").toString().slice(0, 140);
+    // Deep link: tapping the notification opens the chat thread with the sender.
+    const chatLink = `${APP_URL}?chat=${encodeURIComponent(msg.fromId || "")}&chatName=${encodeURIComponent(fromName)}`;
 
     try {
       await admin.messaging().send({
         token,
         notification: { title: `💬 ${fromName}`, body },
+        data: { url: chatLink },
         webpush: {
-          fcmOptions: { link: APP_URL },
+          fcmOptions: { link: chatLink },
           notification: { icon: ICON_URL, tag: `dm-${toId}` }
         }
       });

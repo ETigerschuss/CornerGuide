@@ -2446,8 +2446,8 @@ input, textarea { cursor: text; }
 <!-- Claim an existing (old) profile: pick yourself from the list of past users -->
 <div id="claim-overlay" class="access-prompt" style="display:none;">
   <div class="prompt-card" style="max-width:440px;max-height:82vh;overflow-y:auto;text-align:left;">
-    <h2>👥 Altes Profil übernehmen</h2>
-    <p style="font-size:13px;color:var(--fg-dim);">Warst du schon dabei? Wähle dein altes Profil — Punkte, Level und Achievements werden dir zugeordnet.</p>
+    <h2 id="claim-title">👥 Altes Profil übernehmen</h2>
+    <p style="font-size:13px;color:var(--fg-dim);">Warst du schon dabei? Wähle dein altes Profil — Punkte, Level, Achievements und besuchte Corners werden dir zugeordnet.</p>
     <div id="claim-list" style="margin:14px 0;"></div>
     <button id="claim-close" class="action-btn">Schließen</button>
   </div>
@@ -2927,6 +2927,9 @@ async function submitAccessCode() {
     localStorage.setItem("cg.accessGranted", "1");
     $("#access-prompt").style.display = "none";
     toast("✅ Zugang gewährt – willkommen!");
+    // Returning friends: offer to claim their old profile right away instead of
+    // starting fresh and migrating later from the profile tab.
+    setTimeout(() => openClaimOverlay({ welcome: true }), 500);
   } catch (err) {
     console.warn("Access code validation failed:", err);
     errEl.textContent = "Ungültiger Code. Bitte erneut versuchen.";
@@ -6250,10 +6253,14 @@ function buildAccountSectionHtml() {
 }
 
 /* ---- Claim an existing profile: friends who already played pick their old identity ---- */
-async function openClaimOverlay() {
+async function openClaimOverlay(opts = {}) {
   const overlay = $("#claim-overlay");
   const list = $("#claim-list");
   if (!overlay || !list) return;
+  // Welcome mode: shown right after entering the invite code, so returning
+  // friends grab their old profile before anything else.
+  $("#claim-title").textContent = opts.welcome ? "👋 Warst du schon mal dabei?" : "👥 Altes Profil übernehmen";
+  $("#claim-close").textContent = opts.welcome ? "Nein, ich bin neu hier" : "Schließen";
   overlay.style.display = "flex";
   $("#claim-close").onclick = () => { overlay.style.display = "none"; };
   overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
@@ -6633,6 +6640,22 @@ function bindChatUI() {
   $("#chat-send")?.addEventListener("click", sendFromChatInput);
   $("#chat-input")?.addEventListener("keydown", (e) => { if (e.key === "Enter") sendFromChatInput(); });
   updateChatBadge();
+  // Deep link from a DM push notification: ?chat=<peerId>&chatName=<name>
+  const params = new URLSearchParams(window.location.search);
+  const chatPeer = (params.get("chat") || "").trim();
+  if (chatPeer) {
+    const chatName = (params.get("chatName") || "").trim() || chatPeer;
+    clearHandledQueryParam("chat");
+    clearHandledQueryParam("chatName");
+    // Retry briefly: auth/nickname may not be restored yet right after launch.
+    let attempts = 0;
+    const tryOpen = () => {
+      attempts++;
+      if (STATE.nickname) { openChatThread(chatPeer, chatName); return; }
+      if (attempts < 12) setTimeout(tryOpen, 500);
+    };
+    setTimeout(tryOpen, 700);
+  }
 }
 
 function updateChatBadge() {
@@ -7509,6 +7532,45 @@ function buildNotifSettingsHtml() {
     </div>`;
 }
 
+/* ---- Visit-history map: heat-style dots sized by how often you were there ---- */
+function myVisitCount(cornerId) {
+  const entries = STATE.visits?.[cornerId] ? Object.values(STATE.visits[cornerId]) : [];
+  return entries.filter((v) => v && v.user === STATE.nickname).length;
+}
+
+function initProfileMap() {
+  const el = document.getElementById("profile-map");
+  if (!el || typeof L === "undefined") return;
+  if (STATE.profileMap) { try { STATE.profileMap.remove(); } catch (e) {} STATE.profileMap = null; }
+  const map = L.map(el, { zoomControl: false, attributionControl: false, scrollWheelZoom: false });
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, crossOrigin: true }).addTo(map);
+  const visited = new Set(STATE.visitedCorners || []);
+  const pts = [];
+  getAllCorners().forEach((c) => {
+    if (typeof c.lat !== "number" || typeof c.lng !== "number") return;
+    const count = myVisitCount(c.id);
+    const wasThere = visited.has(c.id) || count > 0;
+    if (!wasThere) {
+      // Unvisited corners: faint dots, so the map doubles as a "still to explore" view.
+      L.circleMarker([c.lat, c.lng], { radius: 4, color: "#555", fillColor: "#555", fillOpacity: 0.35, weight: 1 })
+        .bindPopup(`<strong>${escapeHtml(c.name)}</strong><br>Noch nie da — auf geht's! 🍻`)
+        .addTo(map);
+      return;
+    }
+    const n = Math.max(1, count);
+    const radius = Math.min(22, 8 + n * 3);
+    const opacity = Math.min(0.95, 0.45 + n * 0.12);
+    L.circleMarker([c.lat, c.lng], { radius, color: "#ff2e6c", fillColor: "#e8a93e", fillOpacity: opacity, weight: 2 })
+      .bindPopup(`<strong>${escapeHtml(c.name)}</strong><br>${n}x eingecheckt`)
+      .addTo(map);
+    pts.push([c.lat, c.lng]);
+  });
+  if (pts.length) map.fitBounds(pts, { padding: [30, 30], maxZoom: 14 });
+  else map.setView([48.135, 11.555], 12);
+  STATE.profileMap = map;
+  setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 80);
+}
+
 function renderProfile() {
   const xp = getCurrentXp();
   const { level, progress } = getLevel(xp);
@@ -7532,6 +7594,7 @@ function renderProfile() {
       <div class="profile-stat"><div class="stat-icon">⚔️</div><div class="stat-value">${captureCount}</div><div class="stat-label">Captures dabei</div></div>
       <div class="profile-stat"><div class="stat-icon">💬</div><div class="stat-value">${commentCount}</div><div class="stat-label">Kommentare</div></div>
     </div>
+    <div class="team-battle-section"><h3>🗺️ Deine Corner-Map</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">Je größer & heller der Punkt, desto öfter warst du da.</p><div id="profile-map" style="height:260px;border-radius:12px;overflow:hidden;background:var(--bg-3);"></div></div>
     <div class="team-history"><h3>🧬 Team History</h3><div class="team-history-grid">${TEAM_ORDER.map((teamId) => { const count = STATE.teamHistory.filter((entry) => entry.team === teamId).length; return `<div class="team-history-item"><div class="th-emoji">${TEAMS[teamId].emoji}</div><div class="th-count">${count}</div><div class="th-name">${TEAMS[teamId].name}</div></div>`; }).join("")}</div></div>
     <div class="team-battle-section"><h3>🏆 Team Leaderboard</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.max(6, row.total * 16)}px;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
     <div class="best-friends-section"><h3>🤝 Best Friends</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Begegnungen geloggt.</p>`}</div>
@@ -7608,6 +7671,7 @@ function renderProfile() {
     const msg = recentMessages.find((entry) => entry.fromId === btn.dataset.replyId);
     sendDirectMessagePrompt(btn.dataset.replyId, msg?.fromName || btn.dataset.replyId);
   }));
+  initProfileMap();
 }
 
 function bindTabs() {
