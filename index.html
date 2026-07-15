@@ -6588,9 +6588,11 @@ function sendMessage(toId, toName, text, opts = {}) {
   };
   if (window.FB?.firebaseReady) {
     const { db, ref, push, set } = window.FB;
-    set(push(ref(db, "messages/" + toId)), payload);
+    Promise.resolve(set(push(ref(db, "messages/" + toId)), payload))
+      .catch((err) => { console.warn("message write failed:", err); toast("⚠️ Nachricht konnte nicht zugestellt werden."); });
     const pairId = chatPairId(currentUserKey(), toId);
-    set(push(ref(db, "chats/" + pairId)), payload);
+    Promise.resolve(set(push(ref(db, "chats/" + pairId)), payload))
+      .catch((err) => console.warn("chat thread write failed (rules deployed?):", err));
   } else {
     STATE.directMessages.push({ ...payload, local: true, incoming: false });
     saveLocalDirectMessages();
@@ -6737,16 +6739,25 @@ function openChatThread(peerId, peerName) {
   $("#chat-messages").innerHTML = `<div class="chat-empty">Lädt…</div>`;
   markChatsRead();
   if (_chatThreadUnsub) { _chatThreadUnsub(); _chatThreadUnsub = null; }
+  const renderLocalFallback = () => {
+    const msgs = (STATE.directMessages || []).filter((m) => m.fromId === peerId || m.toId === peerId).sort((a, b) => (a.time || 0) - (b.time || 0));
+    renderChatMessages(msgs);
+  };
   if (window.FB?.firebaseReady) {
     const { db, ref, onValue } = window.FB;
     const pairId = chatPairId(currentUserKey(), peerId);
     _chatThreadUnsub = onValue(ref(db, "chats/" + pairId), (snap) => {
       const data = snap.val() || {};
       renderChatMessages(Object.values(data).sort((a, b) => (a.time || 0) - (b.time || 0)));
+    }, (err) => {
+      // Permission denied (e.g. rules not deployed yet) or network error:
+      // never leave the thread stuck on "Lädt…" — show the local inbox copy.
+      console.warn("chat thread listener failed:", err);
+      renderLocalFallback();
+      toast("⚠️ Chat-Verlauf nicht ladbar — zeige lokale Nachrichten.");
     });
   } else {
-    const msgs = (STATE.directMessages || []).filter((m) => m.fromId === peerId || m.toId === peerId).sort((a, b) => (a.time || 0) - (b.time || 0));
-    renderChatMessages(msgs);
+    renderLocalFallback();
   }
   setTimeout(() => $("#chat-input")?.focus(), 120);
 }
