@@ -15,8 +15,8 @@
 
     "accessGranted": {
       "$uid": {
-        ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null && auth.uid == $uid",
+        ".read": "auth != null && (auth.uid == $uid || root.child('config').child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && (auth.uid == $uid || root.child('config').child('admins').child(auth.uid).val() === true)",
         ".validate": "newData.isString() && newData.val().length > 0 && root.child('accessCodes').child(newData.val()).exists()"
       }
     },
@@ -24,42 +24,42 @@
     "pushTokens": {
       ".read": false,
       "$uid": {
-        ".write": "auth != null && auth.uid == $uid && root.child('accessGranted').child(auth.uid).exists()"
+        ".write": "auth != null && ((auth.uid == $uid && root.child('accessGranted').child(auth.uid).exists()) || root.child('config').child('admins').child(auth.uid).val() === true)"
       }
     },
 
     "userPrefs": {
       "$uid": {
-        ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null && auth.uid == $uid && root.child('accessGranted').child(auth.uid).exists()"
+        ".read": "auth != null && (auth.uid == $uid || root.child('config').child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && ((auth.uid == $uid && root.child('accessGranted').child(auth.uid).exists()) || root.child('config').child('admins').child(auth.uid).val() === true)"
       }
     },
 
     "userProfiles": {
       "$uid": {
-        ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null && auth.uid == $uid && root.child('accessGranted').child(auth.uid).exists()"
+        ".read": "auth != null && (auth.uid == $uid || root.child('config').child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && ((auth.uid == $uid && root.child('accessGranted').child(auth.uid).exists()) || root.child('config').child('admins').child(auth.uid).val() === true)"
       }
     },
 
     "recoveryProfiles": {
       "$code": {
         ".read": "auth != null",
-        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()"
+        ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)"
       }
     },
 
     "messages": {
       "$uid": {
-        ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()"
+        ".read": "auth != null && (auth.uid == $uid || root.child('config').child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)"
       }
     },
 
     "notify": {
       ".read": false,
       "$eventId": {
-        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()"
+        ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)"
       }
     },
 
@@ -71,27 +71,27 @@
     },
 
     "liveLocations": {
-      ".read": "auth != null && root.child('accessGranted').child(auth.uid).exists()",
-      ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()"
+      ".read": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)",
+      ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)"
     },
 
-    "comments":        { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "teams":           { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "customTeams":     { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "presence":        { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "points":          { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "encounters":      { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "corners":         { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "captured":        { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "captureHistory":  { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "photos":          { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "emojiVotes":      { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "cornerVotes":     { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "barometer":       { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "visits":          { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "cornerStatus":    { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "cornerStatuses":  { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "achievements":    { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" },
-    "checkinFeedback": { ".read": "auth != null", ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists()" }
+    "comments":        { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "teams":           { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "customTeams":     { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "presence":        { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "points":          { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "encounters":      { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "corners":         { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "captured":        { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "captureHistory":  { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "photos":          { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "emojiVotes":      { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "cornerVotes":     { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "barometer":       { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "visits":          { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "cornerStatus":    { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "cornerStatuses":  { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "achievements":    { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "checkinFeedback": { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" }
   }
 }

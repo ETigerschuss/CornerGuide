@@ -447,7 +447,7 @@ input, textarea { cursor: text; }
   z-index: 2;
   display: none;
 }
-.card.custom .mine-badge { display: inline-block; }
+.card.mine .mine-badge { display: inline-block; }
 .at-badge {
   position: absolute;
   top: 14px; right: 14px;
@@ -2245,6 +2245,7 @@ input, textarea { cursor: text; }
     <span class="nick-label">👤</span>
     <span class="nick-name" id="nick-display"></span>
     <span class="nick-pts" id="nick-pts"></span><span class="level-bar" id="nick-level-bar"><span class="level-badge" id="nick-level-badge"></span><span class="level-progress"><span class="level-progress-fill" id="nick-level-fill"></span></span></span>
+    <button class="nick-change" id="availability-btn" aria-label="Verfügbarkeit ändern"></button>
     <button class="nick-change" id="supply-btn" aria-label="Nachschub-Ruf an alle">🆘 Nachschub</button>
     <button class="nick-change" id="invite-btn" aria-label="Freunde einladen">📨 Einladen</button>
     <button class="nick-change" id="nick-change-btn">✏️ Ändern</button>
@@ -2466,6 +2467,30 @@ input, textarea { cursor: text; }
     <p style="font-size:13px;color:var(--fg-dim);">Warst du schon dabei? Wähle dein altes Profil — Punkte, Level, Achievements und besuchte Corners werden dir zugeordnet.</p>
     <div id="claim-list" style="margin:14px 0;"></div>
     <button id="claim-close" class="action-btn">Schließen</button>
+  </div>
+</div>
+
+<!-- Admin panel (host only) -->
+<div id="admin-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:480px;max-height:85vh;overflow-y:auto;text-align:left;">
+    <h2>🛠 Admin-Panel</h2>
+    <p style="font-size:12px;color:var(--fg-dim);">Host-Werkzeuge. Löschen ist endgültig — Vorsicht.</p>
+    <h3 style="font-size:14px;margin:16px 0 8px;">👥 Profile</h3>
+    <div id="admin-profiles"></div>
+    <h3 style="font-size:14px;margin:16px 0 8px;">📍 Eigene Spots</h3>
+    <div id="admin-corners"></div>
+    <h3 style="font-size:14px;margin:16px 0 8px;">🧹 Aufräumen</h3>
+    <button class="notif-opt" id="admin-clean-presence" style="margin-bottom:8px;">Geister-Presence entfernen (&gt;45 min offline)</button>
+    <button id="admin-close" class="action-btn" style="margin-top:12px;">Schließen</button>
+  </div>
+</div>
+
+<!-- Availability picker -->
+<div id="availability-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:320px;text-align:left;">
+    <h2>Dein Status</h2>
+    <p style="font-size:13px;color:var(--fg-dim);">Deine Freunde sehen diesen Status in der Freunde-Leiste.</p>
+    <div id="availability-options"></div>
   </div>
 </div>
 
@@ -5504,6 +5529,84 @@ function syncNotifSettingsToFirebase() {
 }
 const MAX_DIRECT_MESSAGES = 120;
 const PRESENCE_HEARTBEAT_INTERVAL_MS = 20000;
+// Presence entries older than this are treated as offline and hidden.
+const PRESENCE_FRESH_MS = 45 * 60 * 1000;
+// Stay this long within PROXIMITY_M of a corner -> automatic check-in.
+const AUTO_CHECKIN_DWELL_MS = 5 * 60 * 1000;
+
+// Auto check-in after dwelling >= 5 min near the same corner (geo must be on).
+function checkDwellAutoCheckin() {
+  if (!STATE.geoActive || !STATE.userPos || !STATE.nickname) return;
+  let nearest = null, nDist = Infinity;
+  getAllCorners().forEach((c) => {
+    const d = haversine(STATE.userPos.lat, STATE.userPos.lng, c.lat, c.lng);
+    if (d < nDist) { nDist = d; nearest = c; }
+  });
+  const nearId = nDist <= STATE.PROXIMITY_M ? nearest.id : null;
+  if (!nearId) {
+    STATE._dwellCornerId = null;
+    STATE._dwellSince = 0;
+    STATE._autoCheckedCorner = null;
+    return;
+  }
+  if (STATE._dwellCornerId !== nearId) {
+    STATE._dwellCornerId = nearId;
+    STATE._dwellSince = Date.now();
+    return;
+  }
+  const dwelled = Date.now() - (STATE._dwellSince || Date.now());
+  // _autoCheckedCorner stops a re-check-in loop if the user manually checks out
+  // while still standing at the same corner.
+  if (dwelled >= AUTO_CHECKIN_DWELL_MS && STATE.manualCheckinId !== nearId && STATE._autoCheckedCorner !== nearId) {
+    STATE._autoCheckedCorner = nearId;
+    manualCheckin(nearId);
+    toast(`🤖 5 Minuten am <strong>${escapeHtml(nearest.name)}</strong> — automatisch eingecheckt!`);
+  }
+}
+
+/* ---- Availability: user-picked status everyone can see ---- */
+const AVAILABILITY = {
+  available: { color: "#b8ff3a", emoji: "🟢", label: "Verfügbar" },
+  keen:      { color: "#ff8c42", emoji: "🟠", label: "Bock auf Cornern" },
+  otw:       { color: "#6cb6ff", emoji: "🔵", label: "Unterwegs" },
+  later:     { color: "#f9c74f", emoji: "🟡", label: "Vielleicht später" },
+  busy:      { color: "#ff4d4d", emoji: "🔴", label: "Keine Zeit" }
+};
+STATE.availability = localStorage.getItem("cg.availability") || "available";
+
+function setAvailability(key) {
+  if (!AVAILABILITY[key]) return;
+  STATE.availability = key;
+  localStorage.setItem("cg.availability", key);
+  broadcastPresence();
+  updateAvailabilityButton();
+  toast(`${AVAILABILITY[key].emoji} Status: <strong>${AVAILABILITY[key].label}</strong>`);
+}
+
+function updateAvailabilityButton() {
+  const btn = $("#availability-btn");
+  if (!btn) return;
+  const a = AVAILABILITY[STATE.availability] || AVAILABILITY.available;
+  btn.innerHTML = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${a.color};margin-right:5px;vertical-align:middle;"></span>${a.label}`;
+}
+
+function openAvailabilityPicker() {
+  const overlay = $("#availability-overlay");
+  if (!overlay) return;
+  const wrap = $("#availability-options");
+  wrap.innerHTML = Object.entries(AVAILABILITY).map(([key, a]) => `
+    <button class="notif-opt${STATE.availability === key ? " active" : ""}" data-avail="${key}" style="display:flex;align-items:center;gap:10px;width:100%;margin-bottom:8px;text-align:left;">
+      <span style="width:14px;height:14px;border-radius:50%;background:${a.color};flex:0 0 auto;"></span>
+      <span>${a.emoji} ${a.label}</span>
+    </button>`).join("");
+  wrap.querySelectorAll("[data-avail]").forEach((b) => b.addEventListener("click", () => {
+    setAvailability(b.dataset.avail);
+    overlay.style.display = "none";
+    renderFriendsBar();
+  }));
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
+  overlay.style.display = "flex";
+}
 const MIN_CORNER_DISTANCE_METERS = 50;
 const STATUS_WINDOW_MS = 2 * 60 * 60 * 1000;
 const MAX_INVITE_NAME_LENGTH = 40;
@@ -5572,6 +5675,9 @@ function buildShareUrl(cornerId, inviteName, autoCheckin = false) {
   else url.searchParams.delete(INVITE_PARAM);
   if (autoCheckin) url.searchParams.set(CHECKIN_PARAM, "1");
   else url.searchParams.delete(CHECKIN_PARAM);
+  // Referral: whoever generated this QR/link gets rewarded when it is used.
+  if (autoCheckin && currentUserKey()) url.searchParams.set("ref", currentUserKey());
+  else url.searchParams.delete("ref");
   return url.toString();
 }
 
@@ -5605,6 +5711,9 @@ function applyIncomingLinks() {
   if (inviteName) STATE.pendingInviteName = inviteName.slice(0, MAX_INVITE_NAME_LENGTH);
   // When autoCheckin=true, store the target corner for later (resolved after nickname is confirmed)
   if (autoCheckin && cornerId) STATE.pendingAutoCheckinCornerId = cornerId;
+  // QR referral: remember who generated the scanned code (rewarded on check-in).
+  const refId = (params.get("ref") || "").trim();
+  if (refId && autoCheckin) STATE.pendingReferrerId = refId;
 }
 
 function clearHandledQueryParam(name) {
@@ -5846,6 +5955,8 @@ function saveNickname() {
 
 function bindNicknameBar() {
   updateNicknameBar();
+  $("#availability-btn")?.addEventListener("click", openAvailabilityPicker);
+  updateAvailabilityButton();
   $("#supply-btn")?.addEventListener("click", broadcastSupplyRequest);
   $("#invite-btn").addEventListener("click", inviteFriends);
   $("#nick-change-btn").addEventListener("click", () => {
@@ -6121,6 +6232,13 @@ function _activateAuthDependentFeatures(uid, status) {
   syncIdentity();
   startPresenceHeartbeat();
   loadProfileFromCloud(uid);
+  // Admin flag (config/admins/{uid}) — unlocks the host maintenance panel.
+  try {
+    window.FB.onValue(window.FB.ref(window.FB.db, "config/admins/" + uid), (snap) => {
+      STATE.isAdmin = snap.val() === true;
+      if (STATE.isAdmin && STATE.view === "profile") renderProfile();
+    }, { onlyOnce: true });
+  } catch (err) { console.warn("admin flag check failed:", err); }
 }
 
 /* ====================== PROFILE CLOUD SYNC & ACCOUNT PORTABILITY ====================== */
@@ -6255,6 +6373,92 @@ async function claimRecoveryCode(rawCode) {
     console.warn("claimRecoveryCode failed:", err);
     toast("Übernahme fehlgeschlagen.");
   }
+}
+
+/* ====================== ADMIN PANEL (host only) ====================== */
+const ADMIN_USER_NODES = ["points", "presence", "teams", "achievements", "pushTokens", "userPrefs", "userProfiles", "liveLocations"];
+
+async function adminDeleteProfile(key, nickname) {
+  if (!STATE.isAdmin || !window.FB?.firebaseReady) return;
+  if (!confirm(`Profil „${nickname || key}" ÜBERALL löschen? Das ist endgültig.`)) return;
+  const { db, ref, remove } = window.FB;
+  try {
+    await Promise.all(ADMIN_USER_NODES.map((node) => remove(ref(db, node + "/" + key)).catch(() => {})));
+    toast(`🗑️ Profil „${escapeHtml(nickname || key)}" gelöscht`);
+    renderAdminPanel();
+  } catch (err) {
+    console.warn("adminDeleteProfile failed:", err);
+    toast("Löschen fehlgeschlagen.");
+  }
+}
+
+async function adminDeleteCorner(cornerId, name) {
+  if (!STATE.isAdmin || !window.FB?.firebaseReady) return;
+  if (!confirm(`Spot „${name || cornerId}" für alle löschen?`)) return;
+  const { db, ref, remove } = window.FB;
+  try {
+    await remove(ref(db, "corners/" + cornerId));
+    STATE.customSpots = STATE.customSpots.filter((s) => s.id !== cornerId);
+    renderCards(); rebuildMainMarkers(); updateCounts();
+    toast(`🗑️ Spot „${escapeHtml(name || cornerId)}" gelöscht`);
+    renderAdminPanel();
+  } catch (err) {
+    console.warn("adminDeleteCorner failed:", err);
+    toast("Löschen fehlgeschlagen.");
+  }
+}
+
+async function adminCleanPresence() {
+  if (!STATE.isAdmin || !window.FB?.firebaseReady) return;
+  const { db, ref, get, remove } = window.FB;
+  try {
+    const snap = await get(ref(db, "presence"));
+    const data = snap.val() || {};
+    const stale = Object.entries(data).filter(([, v]) => Date.now() - Number(v?.lastSeen || 0) > PRESENCE_FRESH_MS);
+    if (!stale.length) { toast("Keine Geister gefunden. ✨"); return; }
+    await Promise.all(stale.map(([k]) => remove(ref(db, "presence/" + k)).catch(() => {})));
+    toast(`🧹 ${stale.length} Geister-Presence entfernt`);
+  } catch (err) {
+    console.warn("adminCleanPresence failed:", err);
+    toast("Aufräumen fehlgeschlagen.");
+  }
+}
+
+async function renderAdminPanel() {
+  const overlay = $("#admin-overlay");
+  if (!overlay || !STATE.isAdmin) return;
+  overlay.style.display = "flex";
+  $("#admin-close").onclick = () => { overlay.style.display = "none"; };
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
+  $("#admin-clean-presence").onclick = adminCleanPresence;
+  const profilesEl = $("#admin-profiles");
+  profilesEl.innerHTML = `<p style="color:var(--fg-dim);font-size:12px;">Lade…</p>`;
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, "points"));
+    const data = snap.val() || {};
+    const rows = Object.entries(data)
+      .map(([key, p]) => ({ key, nickname: (p && p.nickname) || key, total: (p && p.total) || 0 }))
+      .sort((a, b) => b.total - a.total);
+    profilesEl.innerHTML = rows.map((r) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:6px;">
+        <span style="flex:1;font-size:13px;">${escapeHtml(r.nickname)}${r.key === currentUserKey() ? " (du)" : ""}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);">${r.total} XP</span>
+        ${r.key !== currentUserKey() ? `<button class="action-btn" style="padding:4px 8px;font-size:10px;border-color:var(--pink);color:var(--pink);" data-admin-del-user="${escapeHtml(r.key)}" data-nick="${escapeHtml(r.nickname)}">Löschen</button>` : ""}
+      </div>`).join("") || `<p style="color:var(--fg-dim);font-size:12px;">Keine Profile.</p>`;
+    profilesEl.querySelectorAll("[data-admin-del-user]").forEach((b) =>
+      b.addEventListener("click", () => adminDeleteProfile(b.dataset.adminDelUser, b.dataset.nick)));
+  } catch (err) {
+    profilesEl.innerHTML = `<p style="color:var(--pink);font-size:12px;">Konnte Profile nicht laden (Regeln deployed?).</p>`;
+  }
+  const cornersEl = $("#admin-corners");
+  const spots = STATE.customSpots || [];
+  cornersEl.innerHTML = spots.map((s) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:6px;">
+      <span style="flex:1;font-size:13px;">${escapeHtml(s.name)} <span style="color:var(--fg-dim);font-size:11px;">von ${escapeHtml(s.createdBy || "?")}</span></span>
+      <button class="action-btn" style="padding:4px 8px;font-size:10px;border-color:var(--pink);color:var(--pink);" data-admin-del-corner="${escapeHtml(s.id)}" data-name="${escapeHtml(s.name)}">Löschen</button>
+    </div>`).join("") || `<p style="color:var(--fg-dim);font-size:12px;">Keine eigenen Spots.</p>`;
+  cornersEl.querySelectorAll("[data-admin-del-corner]").forEach((b) =>
+    b.addEventListener("click", () => adminDeleteCorner(b.dataset.adminDelCorner, b.dataset.name)));
 }
 
 function buildAccountSectionHtml() {
@@ -6492,7 +6696,7 @@ function broadcastPresence() {
   const { db, ref, set, onDisconnect } = window.FB;
   const activeCorner = STATE.atCornerId || STATE.manualCheckinId || null;
   const myRef = ref(db, "presence/" + currentUserKey());
-  set(myRef, { nickname: STATE.nickname, name: STATE.nickname, team: STATE.team || "", atCorner: activeCorner, lastSeen: Date.now() });
+  set(myRef, { nickname: STATE.nickname, name: STATE.nickname, team: STATE.team || "", atCorner: activeCorner, status: STATE.availability || "available", lastSeen: Date.now() });
   onDisconnect(myRef).remove();
 }
 
@@ -6510,6 +6714,7 @@ function startPresenceHeartbeat() {
   STATE.presenceHeartbeat = setInterval(() => {
     broadcastPresence();
     broadcastLiveLocation();
+    checkDwellAutoCheckin();
   }, PRESENCE_HEARTBEAT_INTERVAL_MS);
   if (!STATE.presenceVisibilityHookBound) {
     document.addEventListener("visibilitychange", () => {
@@ -6557,7 +6762,10 @@ function friendAtCornerAlarm(friend, corner) {
 function renderFriendsBar() {
   const bar = $("#friends-bar");
   const list = $("#friends-list");
-  const friends = Object.values(STATE.friends || {});
+  // Hide stale presence entries: closed tabs whose onDisconnect never fired
+  // used to show friends as "unterwegs" forever.
+  const friends = Object.values(STATE.friends || {})
+    .filter((f) => Date.now() - Number(f.lastSeen || 0) < PRESENCE_FRESH_MS);
   if (!friends.length) { bar.classList.remove("has-friends"); list.innerHTML = ""; return; }
   bar.classList.add("has-friends");
   list.innerHTML = friends.map((friend) => {
@@ -6565,10 +6773,12 @@ function renderFriendsBar() {
     const xp = STATE.points[friend.id]?.total || 0;
     const { level } = getLevel(xp);
     const tier = getLevelTier(level);
+    const avail = AVAILABILITY[friend.status] || null;
+    const statusLabel = corner ? "@ " + escapeHtml(corner.name) : escapeHtml(avail?.label || "online");
     return `<li class="friend-chip ${corner ? "" : "away"}" style="border-color:${TEAMS[friend.team]?.color || 'var(--line)'};">
-      <span class="friend-dot" style="background:${TEAMS[friend.team]?.color || 'var(--fg-dim)'};"></span>
+      <span class="friend-dot" title="${escapeHtml(avail?.label || "")}" style="background:${avail?.color || TEAMS[friend.team]?.color || 'var(--fg-dim)'};"></span>
       <span>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</span>
-      <span class="friend-corner">${corner ? "@ " + escapeHtml(corner.name) : "unterwegs"}</span>
+      <span class="friend-corner">${statusLabel}</span>
       <span class="friend-level">${tier.emoji} Lv.${level}</span>
       ${corner ? `<button class="action-btn" style="padding:4px 8px;font-size:10px;" data-supply-user="${friend.id}" title="Frag ob Nachschub gebraucht wird">🛒 Nachschub?</button>` : ""}
       <button class="action-btn" style="padding:4px 8px;font-size:10px;" data-dm-user="${friend.id}">💬</button>
@@ -6616,6 +6826,8 @@ function grantChatXp(toName) {
   if (partners >= 1) unlockAchievement("first-dm", "Erste DM", "✉️", 10);
   if (partners >= 3) unlockAchievement("three-chats", "Quasselstrippe", "🗣️", 30);
   if (partners >= 5) unlockAchievement("five-chats", "Sozialer Schmetterling", "🦋", 60);
+  if (partners >= 10) unlockAchievement("ten-chats", "Netzwerker", "🕸️", 150);
+  if (partners >= 20) unlockAchievement("twenty-chats", "Stimme von Minga", "📣", 400);
 }
 
 // Distinct friends I have checked in together with (from the encounters node).
@@ -6636,6 +6848,8 @@ function checkEncounterAchievements() {
   if (n >= 3) unlockAchievement("three-encounters", "Cliquen-Kern", "👥", 40);
   if (n >= 5) unlockAchievement("five-encounters", "Rudelführer", "🐺", 75);
   if (n >= 10) unlockAchievement("ten-encounters", "Ganz Minga kennt di", "🏙️", 150);
+  if (n >= 20) unlockAchievement("twenty-encounters", "Stadtbekannt", "🌆", 300);
+  if (n >= 50) unlockAchievement("fifty-encounters", "Minga-Legende", "🦁", 750);
 }
 function recordChatActivity(peerId, peerName, text, time) {
   if (!peerId) return;
@@ -7243,6 +7457,11 @@ function manualCheckin(cornerId) {
     toast(`Eingecheckt am <strong>${escapeHtml(corner.name)}</strong> 🍻`, "at-corner");
     recordVisit(cornerId);
     addXp(5, "Check-in");
+    const totalCheckins = parseInt(localStorage.getItem("cg.totalCheckins") || "0") + 1;
+    localStorage.setItem("cg.totalCheckins", String(totalCheckins));
+    if (totalCheckins >= 25) unlockAchievement("checkins-25", "Eckensteher Deluxe", "🍻", 150);
+    if (totalCheckins >= 50) unlockAchievement("checkins-50", "Corner-Institution", "🏛️", 300);
+    if (totalCheckins >= 100) unlockAchievement("checkins-100", "Unsterblich", "⭐", 750);
     const isFirstVisit = !STATE.visitedCorners.includes(cornerId);
     if (isFirstVisit) {
       STATE.visitedCorners.push(cornerId);
@@ -7258,6 +7477,15 @@ function manualCheckin(cornerId) {
     logEncounters(cornerId);
     startCooldownDisplay();
     broadcastCheckinPush(corner);
+    // QR referral: reward the person whose code was scanned + the scanner.
+    if (STATE.pendingReferrerId && STATE.pendingReferrerId !== currentUserKey()) {
+      addPoints(STATE.pendingReferrerId, 15, "Dein QR-Code wurde gescannt");
+      addXp(10, "Per QR-Code eingecheckt");
+      toast("🎉 QR-Bonus: +10 XP für dich, +15 für den Ersteller!");
+      unlockAchievement("qr-scanned", "Code-Knacker", "🧾", 15);
+      STATE.pendingReferrerId = null;
+      clearHandledQueryParam("ref");
+    }
   }
   updateCheckinButtons();
   broadcastPresence();
@@ -7404,7 +7632,8 @@ function renderCards() {
     const peopleHere = getPeopleAtCorner(c.id);
     const capture = STATE.captured[c.id];
     const card = document.createElement("article");
-    card.className = "card" + (c.isCustom ? " custom" : "") + (STATE.manualCheckinId === c.id ? " at-here" : "");
+    const isMySpot = c.isCustom && (c.createdById ? c.createdById === currentUserKey() : c.createdBy === STATE.nickname);
+    card.className = "card" + (c.isCustom ? " custom" : "") + (isMySpot ? " mine" : "") + (STATE.manualCheckinId === c.id ? " at-here" : "");
     card.id = "card-" + c.id;
     card.innerHTML = `
       <div class="card-photo">
@@ -7499,6 +7728,7 @@ function onGeoUpdate(pos) {
   let nearest = null, nDist = Infinity;
   getAllCorners().forEach((c) => { const d = haversine(latitude, longitude, c.lat, c.lng); if (d < nDist) { nDist = d; nearest = c; } });
   const newAt = nDist <= STATE.PROXIMITY_M ? nearest.id : null;
+  checkDwellAutoCheckin();
   if (newAt !== STATE.atCornerId) {
     const prev = STATE.atCornerId;
     STATE.atCornerId = newAt;
@@ -7578,9 +7808,17 @@ function getAchievementCardsHtml() {
     { id: "three-encounters", name: "Cliquen-Kern", emoji: "👥", desc: "Mit 3 Freunden gecornert" },
     { id: "five-encounters", name: "Rudelführer", emoji: "🐺", desc: "Mit 5 Freunden gecornert" },
     { id: "ten-encounters", name: "Ganz Minga kennt di", emoji: "🏙️", desc: "Mit 10 Freunden gecornert" },
+    { id: "twenty-encounters", name: "Stadtbekannt", emoji: "🌆", desc: "Mit 20 Freunden gecornert" },
+    { id: "fifty-encounters", name: "Minga-Legende", emoji: "🦁", desc: "Mit 50 Freunden gecornert" },
     { id: "first-dm", name: "Erste DM", emoji: "✉️", desc: "Erste Nachricht geschrieben" },
     { id: "three-chats", name: "Quasselstrippe", emoji: "🗣️", desc: "Mit 3 Leuten geschrieben" },
     { id: "five-chats", name: "Sozialer Schmetterling", emoji: "🦋", desc: "Mit 5 Leuten geschrieben" },
+    { id: "ten-chats", name: "Netzwerker", emoji: "🕸️", desc: "Mit 10 Leuten geschrieben" },
+    { id: "twenty-chats", name: "Stimme von Minga", emoji: "📣", desc: "Mit 20 Leuten geschrieben" },
+    { id: "checkins-25", name: "Eckensteher Deluxe", emoji: "🍻", desc: "25 Check-ins gesamt" },
+    { id: "checkins-50", name: "Corner-Institution", emoji: "🏛️", desc: "50 Check-ins gesamt" },
+    { id: "checkins-100", name: "Unsterblich", emoji: "⭐", desc: "100 Check-ins gesamt" },
+    { id: "qr-scanned", name: "Code-Knacker", emoji: "🧾", desc: "Per QR-Code eingecheckt" },
     { id: "first-supply", name: "Retter in der Not", emoji: "🆘", desc: "Nachschub-Ruf gesendet" },
     { id: "team-spirit", name: "Teamgeist", emoji: "🧬", desc: "Einem Team beigetreten" },
     { id: "team-founder", name: "Gründer", emoji: "🚩", desc: "Eigenes Team gegründet" },
@@ -7722,6 +7960,7 @@ function renderProfile() {
     <div class="team-history"><h3>🧬 Team History</h3><div class="team-history-grid">${TEAM_ORDER.map((teamId) => { const count = STATE.teamHistory.filter((entry) => entry.team === teamId).length; return `<div class="team-history-item"><div class="th-emoji">${TEAMS[teamId].emoji}</div><div class="th-count">${count}</div><div class="th-name">${TEAMS[teamId].name}</div></div>`; }).join("")}</div></div>
     <div class="team-battle-section"><h3>🏆 Team Leaderboard</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.max(6, row.total * 16)}px;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
     <div class="best-friends-section"><h3>🤝 Best Friends</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Begegnungen geloggt.</p>`}</div>
+    ${STATE.isAdmin ? `<div class="team-battle-section"><h3>🛠 Admin</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">Host-Werkzeuge: Profile & Spots verwalten.</p><button class="notif-opt" id="admin-open-btn">🛠 Admin-Panel öffnen</button></div>` : ""}
     ${buildAccountSectionHtml()}
     <div class="notification-toggle"><h3>🔔 Benachrichtigungen</h3>${buildNotifSettingsHtml()}</div>
     <div class="best-friends-section"><h3>💬 Direktnachrichten</h3>${recentMessages.length ? recentMessages.map((msg) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(msg.fromName || msg.fromId || "Unbekannt")}: ${escapeHtml(msg.text || "")}</span><button class="action-btn" style="padding:4px 8px;font-size:10px;" data-reply-id="${msg.fromId}">Antworten</button></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Direktnachrichten.</p>`}</div>
@@ -7793,6 +8032,7 @@ function renderProfile() {
     if (code && code.trim()) await claimRecoveryCode(code);
   });
   $("#acct-claim-btn")?.addEventListener("click", openClaimOverlay);
+  $("#admin-open-btn")?.addEventListener("click", renderAdminPanel);
   $$("#profile-content [data-reply-id]").forEach((btn) => btn.addEventListener("click", () => {
     const msg = recentMessages.find((entry) => entry.fromId === btn.dataset.replyId);
     sendDirectMessagePrompt(btn.dataset.replyId, msg?.fromName || btn.dataset.replyId);
