@@ -2848,6 +2848,19 @@ function maybeShowNicknamePrompt() {
 }
 
 /* ====================== ACCESS CODE GATE ====================== */
+// Listeners attached before the access grant may have been killed by
+// permission_denied (depending on rules). Re-attach once after a successful
+// grant so a brand-new user sees all shared data without restarting the app.
+var _sharedListenersReattached = false;
+function reattachSharedListenersAfterGrant() {
+  if (_sharedListenersReattached || !window.FB?.firebaseReady) return;
+  _sharedListenersReattached = true;
+  [listenSharedCorners, listenComments, listenBarometer, listenVisits, listenEmojiVotes,
+   listenPhotos, listenPoints, listenTeams, listenCornerStatuses, listenCaptured,
+   listenCornerVotes, listenFriendPresence, listenDirectMessages, listenCustomTeams]
+    .forEach((fn) => { try { if (typeof fn === "function") fn(); } catch (err) { console.warn("reattach failed:", err); } });
+}
+
 function checkAccessGranted() {
   // Fast path: already granted in localStorage
   if (localStorage.getItem("cg.accessGranted") === "1") return;
@@ -2946,6 +2959,7 @@ async function submitAccessCode() {
     localStorage.setItem("cg.accessGranted", "1");
     $("#access-prompt").style.display = "none";
     toast("✅ Zugang gewährt – willkommen!");
+    reattachSharedListenersAfterGrant();
     // Returning friends: offer to claim their old profile right away instead of
     // starting fresh and migrating later from the profile tab.
     setTimeout(() => openClaimOverlay({ welcome: true }), 500);
@@ -5153,6 +5167,7 @@ async function refreshAccessForCurrentUser() {
       localStorage.setItem("cg.accessGranted", "1");
       const prompt = $("#access-prompt");
       if (prompt) prompt.style.display = "none";
+      reattachSharedListenersAfterGrant();
     }
   } catch (err) { console.warn("refreshAccessForCurrentUser failed:", err); }
 }
@@ -5197,6 +5212,7 @@ async function claimRecoveryCode(rawCode) {
         localStorage.setItem("cg.accessGranted", "1");
         const prompt = $("#access-prompt");
         if (prompt) prompt.style.display = "none";
+        reattachSharedListenersAfterGrant();
       } catch (err) { console.warn("recovery access grant failed:", err); }
     }
     applyProfileSnapshot(remote);   // move the profile onto this device's uid
