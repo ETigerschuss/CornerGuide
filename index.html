@@ -847,6 +847,8 @@ input, textarea { cursor: text; }
 }
 
 /* ====================== TOAST ====================== */
+.toast.tappable { cursor: pointer; border-left-color: var(--blue); }
+.toast.tappable:active { transform: translateX(-50%) scale(0.98); }
 .toast {
   position: fixed;
   top: calc(20px + var(--safe-top));
@@ -1441,6 +1443,10 @@ input, textarea { cursor: text; }
 .access-prompt input:focus { outline: none; border-color: var(--amber); }
 #team-create-name, #team-create-emoji, #app-dialog-input { text-transform: none; letter-spacing: 0; text-align: left; font-family: "DM Sans", sans-serif; font-size: 15px; }
 #app-dialog-input.code-input { text-transform: uppercase; letter-spacing: 2px; font-family: "JetBrains Mono", monospace; text-align: center; }
+.ce-label { display: block; font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-dim); margin: 12px 0 5px; }
+.ce-field { width: 100%; box-sizing: border-box; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); padding: 10px 12px; border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 15px; text-transform: none; letter-spacing: 0; text-align: left; margin: 0; }
+.ce-field:focus { outline: none; border-color: var(--amber); }
+textarea.ce-field { resize: vertical; min-height: 80px; }
 .access-prompt .access-error {
   color: var(--pink);
   font-size: 13px;
@@ -2471,6 +2477,26 @@ input, textarea { cursor: text; }
   </div>
 </div>
 
+<!-- Edit a corner you created -->
+<div id="corner-edit-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:400px;max-height:86vh;overflow-y:auto;text-align:left;">
+    <h2>✏️ Spot bearbeiten</h2>
+    <label class="ce-label">Name</label>
+    <input type="text" id="ce-name" class="ce-field" maxlength="80" autocomplete="off" />
+    <label class="ce-label">Stadtteil</label>
+    <input type="text" id="ce-area" class="ce-field" maxlength="60" autocomplete="off" />
+    <label class="ce-label">Beschreibung</label>
+    <textarea id="ce-desc" class="ce-field" maxlength="500" rows="4"></textarea>
+    <label class="ce-label">Tags (Komma-getrennt)</label>
+    <input type="text" id="ce-tags" class="ce-field" maxlength="120" autocomplete="off" placeholder="Kiosk, Sunset, ruhig" />
+    <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;">
+      <button class="action-btn" id="ce-cancel">Abbrechen</button>
+      <button class="action-btn primary" id="ce-save">Speichern</button>
+      <button class="action-btn" id="ce-delete" style="border-color:var(--pink);color:var(--pink);margin-left:auto;">🗑️ Löschen</button>
+    </div>
+  </div>
+</div>
+
 <!-- App dialog: styled replacement for native prompt()/confirm() -->
 <div id="app-dialog" class="access-prompt" style="display:none;">
   <div class="prompt-card" style="max-width:340px;text-align:left;">
@@ -3076,19 +3102,34 @@ function compressImageFile(file, options = {}) {
   });
 }
 
+// Firebase paths reject . # $ [ ] / — an unsanitised nickname made the rating
+// write fail silently, so the star never lit up ("it goes back").
+function photoRatingKey() {
+  return String(STATE.nickname || "").replace(/[.#$\[\]/]/g, "_");
+}
+
 function ratePhoto(cornerId, photoKey, score) {
   if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
 
   if (window.FB?.firebaseReady) {
     const { db, ref, set } = window.FB;
-    set(ref(db, "photos/" + cornerId + "/" + photoKey + "/ratings/" + STATE.nickname), score);
+    // Optimistic local update so the star reacts instantly, even before the
+    // listener round-trip (and it survives a slow connection).
+    if (STATE.photos?.[cornerId]?.[photoKey]) {
+      const p = STATE.photos[cornerId][photoKey];
+      if (!p.ratings) p.ratings = {};
+      p.ratings[photoRatingKey()] = score;
+    }
+    refreshAllPhotoGalleries();
+    Promise.resolve(set(ref(db, "photos/" + cornerId + "/" + photoKey + "/ratings/" + photoRatingKey()), score))
+      .catch((err) => { console.warn("ratePhoto write failed:", err); toast("⚠️ Bewertung konnte nicht gespeichert werden."); });
   } else {
     try {
       const photos = getPhotos(cornerId);
       const photo = photos.find((p) => p.id === photoKey);
       if (photo) {
         if (!photo.ratings) photo.ratings = {};
-        photo.ratings[STATE.nickname] = score;
+        photo.ratings[photoRatingKey()] = score;
         localStorage.setItem("cg.photos." + cornerId, JSON.stringify(photos));
         refreshAllPhotoGalleries();
       }
@@ -3105,6 +3146,9 @@ function refreshAllPhotoGalleries() {
 
 /* ====================== POINTS (Firebase) ====================== */
 function renderPhotoGallery(cornerId, container) {
+  // The grid is a horizontal scroller; replacing innerHTML resets scrollLeft to
+  // 0, which made the gallery jump back to the first photo on every rating.
+  const prevScroll = container.querySelector(".gallery-grid")?.scrollLeft || 0;
   let photos;
   if (window.FB?.firebaseReady) {
     const raw = STATE.photos?.[cornerId] || {};
@@ -3125,7 +3169,8 @@ function renderPhotoGallery(cornerId, container) {
       const ratings = p.ratings || {};
       const ratingValues = Object.values(ratings);
       const avgRating = ratingValues.length > 0 ? (ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length).toFixed(1) : "—";
-      const myRating = STATE.nickname ? (ratings[STATE.nickname] || 0) : 0;
+      // Prefer the sanitised key, fall back to the legacy raw-nickname key.
+      const myRating = STATE.nickname ? (ratings[photoRatingKey()] || ratings[STATE.nickname] || 0) : 0;
       const starsHtml = [1, 2, 3, 4, 5].map((s) =>
         `<button class="photo-rate-btn ${s <= myRating ? "active" : ""}" data-corner="${cornerId}" data-photo="${p.key}" data-score="${s}">⭐</button>`
       ).join("");
@@ -3150,6 +3195,16 @@ function renderPhotoGallery(cornerId, container) {
       <button class="action-btn gallery-upload-btn" data-corner="${cornerId}">📷 Foto hochladen</button>
       <input type="file" accept="image/*" class="gallery-file-input" data-corner="${cornerId}" style="display:none;" multiple>
     `;
+    // Put the horizontal scroller back where the user had it.
+    if (prevScroll) {
+      const grid = container.querySelector(".gallery-grid");
+      if (grid) {
+        const prevSnap = grid.style.scrollSnapType;
+        grid.style.scrollSnapType = "none"; // snapping would fight the restore
+        grid.scrollLeft = prevScroll;
+        requestAnimationFrame(() => { grid.style.scrollSnapType = prevSnap || ""; });
+      }
+    }
   }
 
   // Bind upload button
@@ -5223,6 +5278,87 @@ async function claimRecoveryCode(rawCode) {
   }
 }
 
+/* ====================== EDIT OWN CORNER ====================== */
+// Only the creator (or the host) may edit a user-created spot.
+function canEditCorner(c) {
+  if (!c || !c.isCustom) return false;
+  if (STATE.isAdmin) return true;
+  if (!STATE.nickname) return false;
+  return c.createdById ? c.createdById === currentUserKey() : c.createdBy === STATE.nickname;
+}
+
+function openCornerEditor(cornerId) {
+  const c = getAllCorners().find((x) => x.id === cornerId);
+  if (!c || !canEditCorner(c)) return;
+  const overlay = $("#corner-edit-overlay");
+  if (!overlay) return;
+  $("#ce-name").value = c.name || "";
+  $("#ce-area").value = c.area || "";
+  $("#ce-desc").value = getDescription(c) || "";
+  $("#ce-tags").value = Array.isArray(c.tags) ? c.tags.join(", ") : "";
+  const close = () => { overlay.style.display = "none"; };
+  $("#ce-cancel").onclick = close;
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+  $("#ce-save").onclick = () => saveCornerEdit(cornerId);
+  $("#ce-delete").style.display = "";
+  $("#ce-delete").onclick = async () => {
+    if (!(await appConfirm(`Spot „${c.name}" löschen?`, "Der Spot verschwindet für alle. Das ist endgültig.", "Löschen"))) return;
+    close();
+    await deleteOwnCorner(cornerId);
+  };
+  overlay.style.display = "flex";
+  setTimeout(() => $("#ce-name")?.focus(), 100);
+}
+
+async function saveCornerEdit(cornerId) {
+  const c = getAllCorners().find((x) => x.id === cornerId);
+  if (!c || !canEditCorner(c)) return;
+  const name = $("#ce-name").value.trim();
+  const desc = $("#ce-desc").value.trim();
+  if (!name) { toast("Bitte einen Namen eingeben."); return; }
+  if (!desc) { toast("Bitte eine Beschreibung eingeben."); return; }
+  const updated = {
+    ...c,
+    name: name.slice(0, 80),
+    area: $("#ce-area").value.trim().slice(0, 60) || "Eigener Spot",
+    description: desc.slice(0, 500),
+    tags: $("#ce-tags").value.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 8),
+    editedAt: Date.now()
+  };
+  const idx = STATE.customSpots.findIndex((s) => s.id === cornerId);
+  if (idx >= 0) STATE.customSpots[idx] = updated;
+  saveCustomSpots();
+  // A local per-device description override would mask the new shared text.
+  localStorage.removeItem("cg.desc." + cornerId);
+  if (window.FB?.firebaseReady) {
+    try {
+      await window.FB.set(window.FB.ref(window.FB.db, "corners/" + cornerId), updated);
+    } catch (err) {
+      console.warn("saveCornerEdit failed:", err);
+      toast("⚠️ Änderung konnte nicht gespeichert werden.");
+      return;
+    }
+  }
+  $("#corner-edit-overlay").style.display = "none";
+  renderCards(); updateCounts(); rebuildMainMarkers();
+  openDetail(cornerId);
+  toast(`✅ <strong>${escapeHtml(updated.name)}</strong> aktualisiert`);
+}
+
+async function deleteOwnCorner(cornerId) {
+  const c = getAllCorners().find((x) => x.id === cornerId);
+  if (!c || !canEditCorner(c)) return;
+  if (window.FB?.firebaseReady) {
+    try { await window.FB.remove(window.FB.ref(window.FB.db, "corners/" + cornerId)); }
+    catch (err) { console.warn("deleteOwnCorner failed:", err); toast("⚠️ Löschen fehlgeschlagen."); return; }
+  }
+  STATE.customSpots = STATE.customSpots.filter((s) => s.id !== cornerId);
+  saveCustomSpots();
+  closeDetail();
+  renderCards(); updateCounts(); rebuildMainMarkers();
+  toast(`🗑️ Spot „${escapeHtml(c.name)}" gelöscht`);
+}
+
 /* ====================== APP DIALOG (prompt/confirm replacement) ====================== */
 var _dialogResolve = null;
 function _closeDialog(result) {
@@ -5574,7 +5710,18 @@ async function initFirebase() {
   });
   window.FB.bindForegroundPush?.((payload) => {
     const body = payload?.notification?.body || payload?.data?.body;
-    if (body) toast(`🔔 ${escapeHtml(body)}`);
+    if (!body) return;
+    // The DM push carries ?chat=<peerId>&chatName=<name> — make the toast open it.
+    let openChatFn = null;
+    try {
+      const link = payload?.data?.url || payload?.fcmOptions?.link || "";
+      if (link) {
+        const p = new URL(link).searchParams;
+        const peer = p.get("chat");
+        if (peer) openChatFn = () => openChatThread(peer, p.get("chatName") || peer);
+      }
+    } catch (err) { /* malformed link: fall back to a plain toast */ }
+    toast(`🔔 ${escapeHtml(body)}${openChatFn ? `<br><span style="font-size:11px;opacity:0.7;">Tippen zum Öffnen →</span>` : ""}`, null, openChatFn);
   });
   listenFriendPresence();
   listenSharedCorners();
@@ -5812,7 +5959,12 @@ function listenDirectMessages() {
     saveLocalDirectMessages();
     const newest = messages[messages.length - 1];
     if (newest?.time && newest.time > STATE.lastDirectMessageAt && newest.fromId !== currentUserKey()) {
-      toast(`💬 Nachricht von <strong>${escapeHtml(newest.fromName || newest.fromId || "Unbekannt")}</strong>`);
+      const fromName = newest.fromName || newest.fromId || "Unbekannt";
+      toast(
+        `💬 <strong>${escapeHtml(fromName)}</strong>: ${escapeHtml((newest.text || "").slice(0, 60))}<br><span style="font-size:11px;opacity:0.7;">Tippen zum Antworten →</span>`,
+        null,
+        () => openChatThread(newest.fromId, fromName)
+      );
     }
     STATE.lastDirectMessageAt = Math.max(STATE.lastDirectMessageAt || 0, Number(newest?.time || 0));
     localStorage.setItem("cg.lastDirectMessageAt", String(STATE.lastDirectMessageAt || 0));
@@ -6495,6 +6647,7 @@ function openDetail(cornerId) {
       <button class="action-btn" data-action="route-detail" data-id="${c.id}">🧭 Route</button>
       <button class="action-btn" data-action="share-corner" data-id="${c.id}">🔗 Teilen</button>
       <button class="action-btn" data-action="qr-corner" data-id="${c.id}">🧾 QR</button>
+      ${canEditCorner(c) ? `<button class="action-btn" data-action="edit-corner" data-id="${c.id}">✏️ Bearbeiten</button>` : ""}
     </div>`;
   const detailContent = $("#detail-content");
   detailContent.querySelector(".checkin-btn")?.addEventListener("click", (e) => { manualCheckin(e.target.closest("[data-id]").dataset.id); setTimeout(() => openDetail(cornerId), 100); });
@@ -6505,6 +6658,7 @@ function openDetail(cornerId) {
     const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=" + encodeURIComponent(buildShareUrl(c.id, STATE.nickname || "", true));
     window.open(qrUrl, "_blank");
   });
+  detailContent.querySelector('[data-action="edit-corner"]')?.addEventListener("click", () => openCornerEditor(c.id));
   detailContent.querySelectorAll(".team-btn").forEach((btn) => btn.addEventListener("click", () => { selectTeam(btn.dataset.team); setTimeout(() => openDetail(cornerId), 50); }));
   detailContent.querySelectorAll("[data-dm-user]").forEach((btn) => btn.addEventListener("click", () => {
     const friend = STATE.friends[btn.dataset.dmUser];
@@ -6960,11 +7114,21 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 let toastTimer = null;
-function toast(html, variant) {
+function toast(html, variant, onClick) {
   const el = $("#toast");
   el.innerHTML = html;
-  el.className = "toast" + (variant ? " " + variant : "");
+  el.className = "toast" + (variant ? " " + variant : "") + (onClick ? " tappable" : "");
   el.hidden = false;
+  // Replacing the node drops any handler from a previous toast.
+  el.onclick = null;
+  if (typeof onClick === "function") {
+    el.onclick = () => {
+      el.classList.remove("show");
+      setTimeout(() => (el.hidden = true), 200);
+      clearTimeout(toastTimer);
+      onClick();
+    };
+  }
   requestAnimationFrame(() => el.classList.add("show"));
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
