@@ -2210,6 +2210,23 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .team-battle-item .tb-bar-fill { height: 100%; max-width: 100%; border-radius: 999px; transition: width 0.5s; }
 .team-battle-item .tb-score { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fg-dim); min-width: 20px; text-align: right; }
 
+/* ====================== PROFILE CORNER MAP ====================== */
+.cg-pie-wrap { background: transparent !important; border: none !important; }
+.cg-pie {
+  border-radius: 50%;
+  /* semi-transparent so the map underneath stays readable */
+  opacity: 0.72;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-sizing: border-box;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  transition: width 0.25s, height 0.25s;
+}
+.cg-pie-wrap:hover .cg-pie { opacity: 0.95; }
+.pmap-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.pmap-controls #pmap-play { flex: 0 0 auto; font-size: 11px; padding: 6px 10px; }
+.pmap-controls #pmap-scrub { flex: 1 1 120px; min-width: 0; accent-color: var(--amber); }
+.pmap-controls #pmap-date { flex: 0 0 auto; font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); }
+
 /* ====================== LIVE LOCATION MARKERS ====================== */
 .live-user-marker { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); position: relative; }
 .live-user-marker .live-nick { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; font-family: "JetBrains Mono", monospace; font-size: 9px; padding: 2px 6px; border-radius: 4px; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
@@ -3627,6 +3644,10 @@ function startCooldownDisplay() {
 function recordVisit(cornerId) {
   const visit = {
     user: STATE.nickname || "Anonym",
+    // userId survives nickname changes; team drives the pie slices on the
+    // profile map. Visits recorded before this existed simply have no team.
+    userId: currentUserKey() || "",
+    team: STATE.team || "",
     time: Date.now()
   };
 
@@ -4827,9 +4848,10 @@ function ensurePointIdentity() {
    50 + 15*(level-1) XP, so level 2 costs 65 and level 100 costs 1535.
    Cumulative XP for level L is 7.5*L^2 + 42.5*L, i.e. 400 XP for level 5,
    ~3.9k for level 20, ~21k for level 50 and 79,250 XP for level 100 — the
-   final level and the end of the game. Early levels stay quick so new
-   players feel progress; the endgame is a long-haul goal.                */
-const MAX_LEVEL = 100;
+   big milestone — it should FEEL like the finish line — but the game does not
+   stop there: levels keep going for anyone who passes it.                */
+const MILESTONE_LEVEL = 100;      // the "feels like the end" milestone
+const LEVEL_MILESTONE_STEP = 10;  // every 10th level is celebrated (future partner rewards)
 function xpForLevel(level) {
   // total XP required to REACH `level`
   const L = Math.max(1, level) - 1;
@@ -4838,46 +4860,67 @@ function xpForLevel(level) {
 function getLevel(xp) {
   const total = Math.max(0, Number(xp || 0));
   let level = 1;
-  while (level < MAX_LEVEL && total >= xpForLevel(level + 1)) level++;
+  // No cap: keep climbing. The loop bound is just a runaway guard.
+  while (level < 10000 && total >= xpForLevel(level + 1)) level++;
   const prevThreshold = xpForLevel(level);
-  const nextThreshold = level >= MAX_LEVEL ? prevThreshold : xpForLevel(level + 1);
+  const nextThreshold = xpForLevel(level + 1);
   const span = nextThreshold - prevThreshold;
-  const progress = level >= MAX_LEVEL ? 1 : Math.max(0, Math.min(1, (total - prevThreshold) / (span || 1)));
   return {
     level,
-    progress,
+    progress: Math.max(0, Math.min(1, (total - prevThreshold) / (span || 1))),
     xpIntoLevel: Math.max(0, total - prevThreshold),
-    xpForNext: level >= MAX_LEVEL ? 0 : span,
-    xpToNext: level >= MAX_LEVEL ? 0 : Math.max(0, nextThreshold - total),
-    isMax: level >= MAX_LEVEL
+    xpForNext: span,
+    xpToNext: Math.max(0, nextThreshold - total),
+    reachedMilestone: level >= MILESTONE_LEVEL
   };
 }
 
 const LEVEL_RANKS = [
-  { max: 5,   name: "Corner Newbie",      emoji: "✨" },
-  { max: 12,  name: "Corner Explorer",    emoji: "🗺️" },
-  { max: 22,  name: "Corner Regular",     emoji: "🔥" },
-  { max: 35,  name: "Corner Guide",       emoji: "🧭" },
-  { max: 50,  name: "Corner Veteran",     emoji: "⭐" },
-  { max: 70,  name: "Corner Legend",      emoji: "👑" },
-  { max: 89,  name: "Minga Institution",  emoji: "🏛️" },
-  { max: 99,  name: "Ewige Ecke",         emoji: "🌟" },
-  { max: 100, name: "Vollendet",          emoji: "🏆" }
+  { max: 5,        name: "Corner Newbie",     emoji: "✨" },
+  { max: 12,       name: "Corner Explorer",   emoji: "🗺️" },
+  { max: 22,       name: "Corner Regular",    emoji: "🔥" },
+  { max: 35,       name: "Corner Guide",      emoji: "🧭" },
+  { max: 50,       name: "Corner Veteran",    emoji: "⭐" },
+  { max: 70,       name: "Corner Legend",     emoji: "👑" },
+  { max: 89,       name: "Minga Institution", emoji: "🏛️" },
+  { max: 99,       name: "Ewige Ecke",        emoji: "🌟" },
+  { max: 149,      name: "Vollendet",         emoji: "🏆" },  // milestone reached
+  { max: 249,      name: "Über die Ecke",     emoji: "🚀" },  // and beyond…
+  { max: Infinity, name: "Mythos von Minga",  emoji: "🐉" }
 ];
 function getLevelTier(level) {
   const lvl = Number(level || 1);
   for (const r of LEVEL_RANKS) if (lvl <= r.max) return { name: r.name, emoji: r.emoji };
-  return { name: "Vollendet", emoji: "🏆" };
+  return { name: "Mythos von Minga", emoji: "🐉" };
 }
 
-// Endgame: reaching MAX_LEVEL finishes the game — celebrate it once.
-function checkEndgame() {
-  const info = getLevel(getCurrentXp());
-  if (!info.isMax) return;
-  if (localStorage.getItem("cg.endgame") === "1") return;
-  localStorage.setItem("cg.endgame", "1");
-  unlockAchievement("endgame", "Durchgespielt", "🏆", 1000);
-  toast(`🏆 <strong>LEVEL 100 — DURCHGESPIELT!</strong><br>Du hast den Minga Corner Guide vollendet. Respekt. 🍻`, "at-corner");
+/* Every 10th level is a milestone. Level 100 gets the big "feels like the end"
+   moment, but play continues afterwards. Partner rewards can later hook in
+   here: LEVEL_REWARDS[level] -> what the user unlocked.                     */
+const LEVEL_REWARDS = {}; // e.g. 10: { label: "Freigetränk bei X", code: "…" }
+
+function claimedMilestones() {
+  try { return JSON.parse(localStorage.getItem("cg.milestones") || "[]"); }
+  catch (e) { return []; }
+}
+
+function checkLevelMilestones() {
+  const level = getLevel(getCurrentXp()).level;
+  const done = claimedMilestones();
+  let changed = false;
+  for (let m = LEVEL_MILESTONE_STEP; m <= level; m += LEVEL_MILESTONE_STEP) {
+    if (done.includes(m)) continue;
+    done.push(m);
+    changed = true;
+    const reward = LEVEL_REWARDS[m];
+    if (m === MILESTONE_LEVEL) {
+      unlockAchievement("level-100", "Vollendet", "🏆", 1000);
+      toast(`🏆 <strong>LEVEL 100!</strong><br>Du hast den Minga Corner Guide vollendet — und es geht weiter. 🍻`, "at-corner");
+    } else {
+      toast(`🎖️ <strong>Meilenstein Level ${m}</strong>${reward ? `<br>Belohnung: ${escapeHtml(reward.label)}` : ""}`, "at-corner");
+    }
+  }
+  if (changed) localStorage.setItem("cg.milestones", JSON.stringify(done));
 }
 
 function currentUserKey() { return STATE.userId || STATE.nickname; }
@@ -4890,7 +4933,7 @@ function addXp(amount, reason) {
     const tier = getLevelTier(after.level);
     toast(`${tier.emoji} <strong>Level ${after.level}</strong> erreicht — ${escapeHtml(tier.name)}!`, "at-corner");
   }
-  checkEndgame();
+  checkLevelMilestones();
 }
 function getTeamInfo(teamId) { return TEAMS[teamId] || null; }
 function getDisplayName(name, teamId) { const t = getTeamInfo(teamId); return `${t ? t.emoji + " " : ""}${name || "Anonym"}`; }
@@ -4975,12 +5018,10 @@ function updateNicknameBar() {
   $("#nick-pts").textContent = `${tier.emoji} Lv.${info.level}`;
   const badge = $("#nick-level-badge");
   const fill = $("#nick-level-fill");
-  if (badge) badge.textContent = info.isMax ? `${tier.name} · MAX` : tier.name;
+  if (badge) badge.textContent = tier.name;
   if (fill) fill.style.width = `${Math.round(info.progress * 100)}%`;
   const bar2 = $("#nick-level-bar");
-  if (bar2) bar2.title = info.isMax
-    ? `Level ${MAX_LEVEL} erreicht — durchgespielt!`
-    : `${info.xpIntoLevel}/${info.xpForNext} XP · noch ${info.xpToNext} bis Level ${info.level + 1}`;
+  if (bar2) bar2.title = `${info.xpIntoLevel}/${info.xpForNext} XP · noch ${info.xpToNext} bis Level ${info.level + 1}`;
 }
 
 function renderTeamPickerHtml() {
@@ -7018,7 +7059,7 @@ function getAchievementCardsHtml() {
     { id: "recruiter", name: "Anwerber", emoji: "📨", desc: "Freunde eingeladen" },
     { id: "always-on", name: "Immer erreichbar", emoji: "🔔", desc: "Push aktiviert" },
     { id: "secured", name: "Abgesichert", emoji: "🔐", desc: "Profil gesichert (Google/Code)" },
-    { id: "endgame", name: "Durchgespielt", emoji: "🏆", desc: `Level ${MAX_LEVEL} — das Ende des Spiels` }
+    { id: "level-100", name: "Vollendet", emoji: "🏆", desc: `Level ${MILESTONE_LEVEL} erreicht` }
   ];
   return items.map((a) => `<div class="achievement-card ${STATE.achievements.includes(a.id) ? 'unlocked' : 'locked'}"><div class="achievement-emoji">${a.emoji}</div><div class="achievement-name">${a.name}</div><div class="achievement-pts">${a.desc}</div></div>`).join("");
 }
@@ -7089,42 +7130,186 @@ function buildNotifSettingsHtml() {
 }
 
 /* ---- Visit-history map: heat-style dots sized by how often you were there ---- */
+/* ====================== PROFILE CORNER MAP ======================
+   The map lives in a DOM node kept OUTSIDE the re-rendered profile markup and
+   re-attached after every render. Rebuilding it each time (as before) threw
+   away the Leaflet instance and reset the view, which looked like the map
+   "zooming back out" whenever data arrived.                                */
+const NEUTRAL_TEAM_COLOR = "#c9bfa8";
+var _profileMapWrap = null;   // persistent wrapper (map + controls)
+var _pmapLayers = [];         // markers/lines currently drawn
+var _pmapTimer = null;        // animation interval
+var _pmapIndex = null;        // visits shown (null = all)
+
+// My visits, chronologically, enriched with the corner's coordinates.
+function myVisitLog() {
+  const me = currentUserKey();
+  const byId = {};
+  getAllCorners().forEach((c) => { byId[c.id] = c; });
+  const log = [];
+  Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
+    const corner = byId[cornerId];
+    if (!corner || typeof corner.lat !== "number" || typeof corner.lng !== "number") return;
+    Object.values(entries || {}).forEach((v) => {
+      if (!v) return;
+      const mine = v.userId ? v.userId === me : v.user === STATE.nickname;
+      if (!mine) return;
+      log.push({ cornerId, name: corner.name, lat: corner.lat, lng: corner.lng, team: v.team || "", time: Number(v.time || 0) });
+    });
+  });
+  return log.sort((a, b) => a.time - b.time);
+}
+
 function myVisitCount(cornerId) {
   const entries = STATE.visits?.[cornerId] ? Object.values(STATE.visits[cornerId]) : [];
   return entries.filter((v) => v && v.user === STATE.nickname).length;
 }
 
-function initProfileMap() {
-  const el = document.getElementById("profile-map");
-  if (!el || typeof L === "undefined") return;
-  if (STATE.profileMap) { try { STATE.profileMap.remove(); } catch (e) {} STATE.profileMap = null; }
-  const map = L.map(el, { zoomControl: false, attributionControl: false, scrollWheelZoom: false });
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, crossOrigin: true }).addTo(map);
-  const visited = new Set(STATE.visitedCorners || []);
-  const pts = [];
+function pieIconHtml(slices, size) {
+  // conic-gradient pie; kept semi-transparent so the map stays readable
+  let acc = 0;
+  const stops = slices.map((sl) => {
+    const from = acc * 360, to = (acc + sl.frac) * 360;
+    acc += sl.frac;
+    return `${sl.color} ${from.toFixed(2)}deg ${to.toFixed(2)}deg`;
+  }).join(", ");
+  const bg = slices.length ? `conic-gradient(${stops})` : NEUTRAL_TEAM_COLOR;
+  return `<div class="cg-pie" style="width:${size}px;height:${size}px;background:${bg};"></div>`;
+}
+
+// Aggregate visits into per-corner totals and team slices.
+function aggregateVisits(log) {
+  const byCorner = {};
+  log.forEach((v) => {
+    const e = byCorner[v.cornerId] || (byCorner[v.cornerId] = { cornerId: v.cornerId, name: v.name, lat: v.lat, lng: v.lng, count: 0, teams: {}, last: 0 });
+    e.count++;
+    const key = v.team || "__none";
+    e.teams[key] = (e.teams[key] || 0) + 1;
+    if (v.time > e.last) e.last = v.time;
+  });
+  return byCorner;
+}
+
+function clearProfileMapLayers() {
+  const map = STATE.profileMap;
+  _pmapLayers.forEach((l) => { try { map.removeLayer(l); } catch (e) {} });
+  _pmapLayers = [];
+}
+
+/* Draw the map for the first `upto` visits (undefined = all). */
+function drawProfileMap(upto) {
+  const map = STATE.profileMap;
+  if (!map) return;
+  const full = myVisitLog();
+  const log = typeof upto === "number" ? full.slice(0, upto) : full;
+  clearProfileMapLayers();
+
+  // faint markers for corners never visited — the "still to explore" layer
+  const visitedIds = new Set(log.map((v) => v.cornerId));
   getAllCorners().forEach((c) => {
     if (typeof c.lat !== "number" || typeof c.lng !== "number") return;
-    const count = myVisitCount(c.id);
-    const wasThere = visited.has(c.id) || count > 0;
-    if (!wasThere) {
-      // Unvisited corners: faint dots, so the map doubles as a "still to explore" view.
-      L.circleMarker([c.lat, c.lng], { radius: 4, color: "#555", fillColor: "#555", fillOpacity: 0.35, weight: 1 })
-        .bindPopup(`<strong>${escapeHtml(c.name)}</strong><br>Noch nie da — auf geht's! 🍻`)
-        .addTo(map);
-      return;
-    }
-    const n = Math.max(1, count);
-    const radius = Math.min(22, 8 + n * 3);
-    const opacity = Math.min(0.95, 0.45 + n * 0.12);
-    L.circleMarker([c.lat, c.lng], { radius, color: "#ff2e6c", fillColor: "#e8a93e", fillOpacity: opacity, weight: 2 })
-      .bindPopup(`<strong>${escapeHtml(c.name)}</strong><br>${n}x eingecheckt`)
-      .addTo(map);
-    pts.push([c.lat, c.lng]);
+    if (visitedIds.has(c.id)) return;
+    const m = L.circleMarker([c.lat, c.lng], { radius: 4, color: "#666", fillColor: "#666", fillOpacity: 0.3, weight: 1, interactive: true })
+      .bindPopup(`<strong>${escapeHtml(c.name)}</strong><br>Noch nie da — auf geht's! 🍻`);
+    m.addTo(map); _pmapLayers.push(m);
   });
-  if (pts.length) map.fitBounds(pts, { padding: [30, 30], maxZoom: 14 });
-  else map.setView([48.135, 11.555], 12);
-  STATE.profileMap = map;
-  setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 80);
+
+  // thin trail connecting consecutive visits in chronological order
+  if (log.length > 1) {
+    const line = L.polyline(log.map((v) => [v.lat, v.lng]), { color: "#e8a93e", weight: 1.5, opacity: 0.5, dashArray: "4 4", interactive: false });
+    line.addTo(map); _pmapLayers.push(line);
+  }
+
+  // one pie per visited corner: size = number of visits, slices = teams
+  const agg = aggregateVisits(log);
+  Object.values(agg).forEach((e) => {
+    const size = Math.min(64, 18 + (e.count - 1) * 7);   // grows only
+    const slices = Object.entries(e.teams).map(([teamKey, n]) => ({
+      color: teamKey === "__none" ? NEUTRAL_TEAM_COLOR : (TEAMS[teamKey]?.color || NEUTRAL_TEAM_COLOR),
+      frac: n / e.count,
+      label: teamKey === "__none" ? "ohne Team" : (TEAMS[teamKey]?.name || teamKey),
+      n
+    }));
+    const icon = L.divIcon({ className: "cg-pie-wrap", html: pieIconHtml(slices, size), iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+    const breakdown = slices.sort((a, b) => b.n - a.n)
+      .map((sl) => `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${sl.color};margin-right:4px;"></span>${escapeHtml(sl.label)}: ${sl.n}x`)
+      .join("<br>");
+    const m = L.marker([e.lat, e.lng], { icon, riseOnHover: true, zIndexOffset: 500 })
+      .bindPopup(`<strong>${escapeHtml(e.name)}</strong><br>${e.count}x eingecheckt<br><small>${breakdown}</small><br><small>zuletzt: ${e.last ? new Date(e.last).toLocaleDateString("de-DE") : "—"}</small>`);
+    m.addTo(map); _pmapLayers.push(m);
+  });
+
+  // scrub label
+  const dateEl = document.getElementById("pmap-date");
+  if (dateEl) {
+    const shown = log.length, total = full.length;
+    const last = log[log.length - 1];
+    dateEl.textContent = total === 0 ? "noch keine Check-ins"
+      : `${shown}/${total} Check-ins${last ? " · " + new Date(last.time).toLocaleDateString("de-DE") : ""}`;
+  }
+  const scrub = document.getElementById("pmap-scrub");
+  if (scrub) { scrub.max = String(Math.max(1, full.length)); if (typeof upto !== "number") scrub.value = String(full.length); }
+}
+
+function stopProfileMapAnimation() {
+  if (_pmapTimer) { clearInterval(_pmapTimer); _pmapTimer = null; }
+  const btn = document.getElementById("pmap-play");
+  if (btn) btn.textContent = "▶︎ Historie abspielen";
+}
+
+function playProfileMapHistory() {
+  const total = myVisitLog().length;
+  if (!total) { toast("Noch keine Check-ins zum Abspielen."); return; }
+  if (_pmapTimer) { stopProfileMapAnimation(); return; }
+  let i = 0;
+  _pmapIndex = 0;
+  drawProfileMap(0);
+  const btn = document.getElementById("pmap-play");
+  if (btn) btn.textContent = "⏸ Pause";
+  _pmapTimer = setInterval(() => {
+    i++;
+    _pmapIndex = i;
+    const scrub = document.getElementById("pmap-scrub");
+    if (scrub) scrub.value = String(i);
+    drawProfileMap(i);
+    if (i >= total) { stopProfileMapAnimation(); _pmapIndex = null; }
+  }, 600);
+}
+
+// Build the persistent wrapper once, then re-attach it after each profile render.
+function mountProfileMap() {
+  const slot = document.getElementById("profile-map-slot");
+  if (!slot || typeof L === "undefined") return;
+  if (!_profileMapWrap) {
+    _profileMapWrap = document.createElement("div");
+    _profileMapWrap.innerHTML = `
+      <div id="profile-map" style="height:260px;border-radius:12px;overflow:hidden;background:var(--bg-3);"></div>
+      <div class="pmap-controls">
+        <button class="action-btn" id="pmap-play">▶︎ Historie abspielen</button>
+        <input type="range" id="pmap-scrub" min="0" max="1" value="1" aria-label="Zeitpunkt" />
+        <span id="pmap-date"></span>
+      </div>`;
+  }
+  if (_profileMapWrap.parentElement !== slot) slot.appendChild(_profileMapWrap);
+  if (!STATE.profileMap) {
+    const el = _profileMapWrap.querySelector("#profile-map");
+    const map = L.map(el, { zoomControl: true, attributionControl: false, scrollWheelZoom: false });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, crossOrigin: true }).addTo(map);
+    STATE.profileMap = map;
+    const log = myVisitLog();
+    if (log.length) map.fitBounds(log.map((v) => [v.lat, v.lng]), { padding: [30, 30], maxZoom: 15 });
+    else map.setView([48.135, 11.555], 12);
+    _profileMapWrap.querySelector("#pmap-play").addEventListener("click", playProfileMapHistory);
+    _profileMapWrap.querySelector("#pmap-scrub").addEventListener("input", (e) => {
+      stopProfileMapAnimation();
+      const v = parseInt(e.target.value, 10) || 0;
+      const total = myVisitLog().length;
+      _pmapIndex = v >= total ? null : v;
+      drawProfileMap(_pmapIndex === null ? undefined : v);
+    });
+  }
+  drawProfileMap(_pmapIndex === null ? undefined : _pmapIndex);
+  setTimeout(() => { try { STATE.profileMap.invalidateSize(); } catch (e) {} }, 60);
 }
 
 function renderProfile() {
@@ -7142,12 +7327,11 @@ function renderProfile() {
     <div class="profile-header">
       <div class="profile-avatar">${teamInfo?.emoji || '👤'}</div>
       <h2 class="profile-name">${escapeHtml(STATE.nickname || 'Anonym')}</h2>
-      <div class="profile-level-info">${teamInfo ? teamInfo.emoji + ' ' + teamInfo.name + ' · ' : ''}${tier.emoji} Lv.${level} / ${MAX_LEVEL} · ${tier.name}</div>
+      <div class="profile-level-info">${teamInfo ? teamInfo.emoji + ' ' + teamInfo.name + ' · ' : ''}${tier.emoji} Lv.${level} · ${tier.name}</div>
       <div class="profile-progress"><div class="profile-progress-fill" style="width:${Math.round(progress * 100)}%"></div></div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);margin-top:6px;">
-        ${levelInfo.isMax
-          ? `🏆 ${xp} XP · Level ${MAX_LEVEL} — durchgespielt!`
-          : `${xp} XP · noch <strong style="color:var(--amber);">${levelInfo.xpToNext}</strong> XP bis Level ${level + 1}`}
+        ${xp} XP · noch <strong style="color:var(--amber);">${levelInfo.xpToNext}</strong> XP bis Level ${level + 1}
+        ${levelInfo.reachedMilestone ? ` · 🏆 Lv.${MILESTONE_LEVEL} geschafft` : ` · 🎖️ Lv.${MILESTONE_LEVEL} = Meilenstein`}
       </div>
     </div>
     <div class="profile-stats">
@@ -7156,7 +7340,7 @@ function renderProfile() {
       <div class="profile-stat"><div class="stat-icon">⚔️</div><div class="stat-value">${captureCount}</div><div class="stat-label">Captures dabei</div></div>
       <div class="profile-stat"><div class="stat-icon">💬</div><div class="stat-value">${commentCount}</div><div class="stat-label">Kommentare</div></div>
     </div>
-    <div class="team-battle-section"><h3>🗺️ Deine Corner-Map</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">Je größer & heller der Punkt, desto öfter warst du da.</p><div id="profile-map" style="height:260px;border-radius:12px;overflow:hidden;background:var(--bg-3);"></div></div>
+    <div class="team-battle-section"><h3>🗺️ Deine Corner-Map</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">Kreisgröße = Anzahl Besuche, Tortenstücke = Team, mit dem du eingecheckt hast.</p><div id="profile-map-slot"></div></div>
     <div class="team-history"><h3>🧬 Team History</h3><div class="team-history-grid">${TEAM_ORDER.map((teamId) => { const count = STATE.teamHistory.filter((entry) => entry.team === teamId).length; return `<div class="team-history-item"><div class="th-emoji">${TEAMS[teamId].emoji}</div><div class="th-count">${count}</div><div class="th-name">${TEAMS[teamId].name}</div></div>`; }).join("")}</div></div>
     <div class="team-battle-section"><h3>🏆 Team Leaderboard</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.min(100, Math.max(4, row.total * 8))}%;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
     <div class="best-friends-section"><h3>🤝 Best Friends</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Begegnungen geloggt.</p>`}</div>
@@ -7237,7 +7421,7 @@ function renderProfile() {
     const msg = recentMessages.find((entry) => entry.fromId === btn.dataset.replyId);
     sendDirectMessagePrompt(btn.dataset.replyId, msg?.fromName || btn.dataset.replyId);
   }));
-  initProfileMap();
+  mountProfileMap();
 }
 
 function bindTabs() {
