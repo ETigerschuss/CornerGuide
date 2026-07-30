@@ -2710,15 +2710,9 @@ const TEAMS = {
   octopus: { emoji: "🐙", name: "Oktopus", color: "#00bcd4" }
 };
 
-const LEVEL_TIERS = [
-  { name: "Corner Newbie", emoji: "🌀", maxLvl: 5 },
-  { name: "Corner Explorer", emoji: "🗺️", maxLvl: 10 },
-  { name: "Corner Regular", emoji: "🔥", maxLvl: 15 },
-  { name: "Corner Guide", emoji: "🧭", maxLvl: 20 },
-  { name: "Corner Legend", emoji: "👑", maxLvl: 999 }
-];
-
 const CORNER_STATUSES = {
+  kiosk: { emoji: "🏪", label: "Kiosk offen" },
+  toilet: { emoji: "🚻", label: "Klo in der Nähe" },
   water: { emoji: "🌊", label: "Wasser" },
   smoke: { emoji: "🌿", label: "Kiffen ok" },
   police: { emoji: "🚨", label: "Polizei" }
@@ -4451,6 +4445,29 @@ const PRESENCE_FRESH_MS = 45 * 60 * 1000;
 // Stay this long within PROXIMITY_M of a corner -> automatic check-in.
 const AUTO_CHECKIN_DWELL_MS = 5 * 60 * 1000;
 
+// Nobody stays at a corner overnight: drop a check-in once the calendar day
+// rolls over, or after a hard 10h cap for very late sessions.
+const CHECKIN_MAX_AGE_MS = 10 * 60 * 60 * 1000;
+function autoCheckoutIfStale() {
+  if (!STATE.manualCheckinId) return;
+  const since = parseInt(localStorage.getItem("cg.checkedInAt") || "0") || STATE.lastCheckinTime || 0;
+  if (!since) return;
+  const then = new Date(since), now = new Date();
+  const newDay = then.toDateString() !== now.toDateString();
+  const tooOld = Date.now() - since > CHECKIN_MAX_AGE_MS;
+  if (!newDay && !tooOld) return;
+  const corner = getAllCorners().find((c) => c.id === STATE.manualCheckinId);
+  const prev = STATE.manualCheckinId;
+  STATE.manualCheckinId = null;
+  STATE._autoCheckedCorner = null;
+  localStorage.removeItem("cg.checkedInAt");
+  document.getElementById("card-" + prev)?.classList.remove("at-here");
+  refreshMainMarker(prev);
+  updateCheckinButtons();
+  broadcastPresence();
+  toast(`🌅 Automatisch ausgecheckt${corner ? ` am ${escapeHtml(corner.name)}` : ""}`);
+}
+
 // Auto check-in after dwelling >= 5 min near the same corner (geo must be on).
 function checkDwellAutoCheckin() {
   if (!STATE.geoActive || !STATE.userPos || !STATE.nickname) return;
@@ -4805,26 +4822,76 @@ function ensurePointIdentity() {
   savePoints();
 }
 
+/* ====================== LEVELS ======================
+   Progressive curve instead of a flat 100 XP per level: a level costs
+   50 + 15*(level-1) XP, so level 2 costs 65 and level 100 costs 1535.
+   Cumulative XP for level L is 7.5*L^2 + 42.5*L, i.e. 400 XP for level 5,
+   ~3.9k for level 20, ~21k for level 50 and 79,250 XP for level 100 — the
+   final level and the end of the game. Early levels stay quick so new
+   players feel progress; the endgame is a long-haul goal.                */
+const MAX_LEVEL = 100;
+function xpForLevel(level) {
+  // total XP required to REACH `level`
+  const L = Math.max(1, level) - 1;
+  return Math.round(7.5 * L * L + 42.5 * L);
+}
 function getLevel(xp) {
-  const total = Number(xp || 0);
-  const level = Math.max(1, Math.floor((total + 99) / 100));
-  const prevThreshold = Math.max(0, (level - 1) * 100);
-  const nextThreshold = level * 100;
-  const progress = nextThreshold > prevThreshold ? (total - prevThreshold) / (nextThreshold - prevThreshold) : 1;
-  return { level, progress: Math.max(0, Math.min(1, progress)) };
+  const total = Math.max(0, Number(xp || 0));
+  let level = 1;
+  while (level < MAX_LEVEL && total >= xpForLevel(level + 1)) level++;
+  const prevThreshold = xpForLevel(level);
+  const nextThreshold = level >= MAX_LEVEL ? prevThreshold : xpForLevel(level + 1);
+  const span = nextThreshold - prevThreshold;
+  const progress = level >= MAX_LEVEL ? 1 : Math.max(0, Math.min(1, (total - prevThreshold) / (span || 1)));
+  return {
+    level,
+    progress,
+    xpIntoLevel: Math.max(0, total - prevThreshold),
+    xpForNext: level >= MAX_LEVEL ? 0 : span,
+    xpToNext: level >= MAX_LEVEL ? 0 : Math.max(0, nextThreshold - total),
+    isMax: level >= MAX_LEVEL
+  };
 }
 
+const LEVEL_RANKS = [
+  { max: 5,   name: "Corner Newbie",      emoji: "✨" },
+  { max: 12,  name: "Corner Explorer",    emoji: "🗺️" },
+  { max: 22,  name: "Corner Regular",     emoji: "🔥" },
+  { max: 35,  name: "Corner Guide",       emoji: "🧭" },
+  { max: 50,  name: "Corner Veteran",     emoji: "⭐" },
+  { max: 70,  name: "Corner Legend",      emoji: "👑" },
+  { max: 89,  name: "Minga Institution",  emoji: "🏛️" },
+  { max: 99,  name: "Ewige Ecke",         emoji: "🌟" },
+  { max: 100, name: "Vollendet",          emoji: "🏆" }
+];
 function getLevelTier(level) {
-  if (level <= 5) return { name: "Corner Newbie", emoji: "✨" };
-  if (level <= 10) return { name: "Corner Explorer", emoji: "🗺️" };
-  if (level <= 15) return { name: "Corner Regular", emoji: "🔥" };
-  if (level <= 20) return { name: "Corner Guide", emoji: "🧭" };
-  return { name: "Corner Legend", emoji: "👑" };
+  const lvl = Number(level || 1);
+  for (const r of LEVEL_RANKS) if (lvl <= r.max) return { name: r.name, emoji: r.emoji };
+  return { name: "Vollendet", emoji: "🏆" };
+}
+
+// Endgame: reaching MAX_LEVEL finishes the game — celebrate it once.
+function checkEndgame() {
+  const info = getLevel(getCurrentXp());
+  if (!info.isMax) return;
+  if (localStorage.getItem("cg.endgame") === "1") return;
+  localStorage.setItem("cg.endgame", "1");
+  unlockAchievement("endgame", "Durchgespielt", "🏆", 1000);
+  toast(`🏆 <strong>LEVEL 100 — DURCHGESPIELT!</strong><br>Du hast den Minga Corner Guide vollendet. Respekt. 🍻`, "at-corner");
 }
 
 function currentUserKey() { return STATE.userId || STATE.nickname; }
 function getCurrentXp() { return STATE.points[currentUserKey()]?.total || 0; }
-function addXp(amount, reason) { addPoints(currentUserKey(), amount, reason); }
+function addXp(amount, reason) {
+  const before = getLevel(getCurrentXp()).level;
+  addPoints(currentUserKey(), amount, reason);
+  const after = getLevel(getCurrentXp());
+  if (after.level > before) {
+    const tier = getLevelTier(after.level);
+    toast(`${tier.emoji} <strong>Level ${after.level}</strong> erreicht — ${escapeHtml(tier.name)}!`, "at-corner");
+  }
+  checkEndgame();
+}
 function getTeamInfo(teamId) { return TEAMS[teamId] || null; }
 function getDisplayName(name, teamId) { const t = getTeamInfo(teamId); return `${t ? t.emoji + " " : ""}${name || "Anonym"}`; }
 
@@ -4868,6 +4935,7 @@ function saveNickname() {
   syncIdentity();
   updateNicknameBar();
   unlockAchievement("first-login", "Willkommen", "👋", 10);
+  ensureOwnProfileLock();
 }
 
 function bindNicknameBar() {
@@ -4902,13 +4970,17 @@ function updateNicknameBar() {
   if (!STATE.nickname) { bar.style.display = "none"; return; }
   bar.style.display = "flex";
   $("#nick-display").textContent = getDisplayName(STATE.nickname, STATE.team);
-  const { level, progress } = getLevel(getCurrentXp());
-  const tier = getLevelTier(level);
-  $("#nick-pts").textContent = `${tier.emoji} Lv.${level}`;
+  const info = getLevel(getCurrentXp());
+  const tier = getLevelTier(info.level);
+  $("#nick-pts").textContent = `${tier.emoji} Lv.${info.level}`;
   const badge = $("#nick-level-badge");
   const fill = $("#nick-level-fill");
-  if (badge) badge.textContent = tier.name;
-  if (fill) fill.style.width = `${Math.round(progress * 100)}%`;
+  if (badge) badge.textContent = info.isMax ? `${tier.name} · MAX` : tier.name;
+  if (fill) fill.style.width = `${Math.round(info.progress * 100)}%`;
+  const bar2 = $("#nick-level-bar");
+  if (bar2) bar2.title = info.isMax
+    ? `Level ${MAX_LEVEL} erreicht — durchgespielt!`
+    : `${info.xpIntoLevel}/${info.xpForNext} XP · noch ${info.xpToNext} bis Level ${info.level + 1}`;
 }
 
 function renderTeamPickerHtml() {
@@ -5149,6 +5221,7 @@ function _activateAuthDependentFeatures(uid, status) {
   syncIdentity();
   startPresenceHeartbeat();
   loadProfileFromCloud(uid);
+  ensureOwnProfileLock();
   // Admin flag (config/admins/{uid}) — unlocks the host maintenance panel.
   try {
     window.FB.onValue(window.FB.ref(window.FB.db, "config/admins/" + uid), (snap) => {
@@ -5532,6 +5605,20 @@ function buildAccountSectionHtml() {
   return `<div class="notification-toggle account-section"><h3>🔐 Konto & Profil sichern</h3>${statusLine}${buttons}</div>`;
 }
 
+// Reserve my own profile so it is never offered to anyone else in the claim
+// list. Safe to call repeatedly: the rule allows re-writing your own lock.
+async function ensureOwnProfileLock() {
+  if (!window.FB?.firebaseReady || !STATE.nickname) return;
+  const uid = window.FB.getAuthUid?.() || "";
+  const key = currentUserKey();
+  if (!uid || !key) return;
+  if (localStorage.getItem("cg.profileLocked") === key) return;
+  try {
+    await window.FB.set(window.FB.ref(window.FB.db, "profileLocks/" + key), { by: uid, at: Date.now(), nickname: STATE.nickname });
+    localStorage.setItem("cg.profileLocked", key);
+  } catch (err) { console.warn("ensureOwnProfileLock failed:", err); }
+}
+
 /* ---- Claim an existing profile: friends who already played pick their old identity ---- */
 async function openClaimOverlay(opts = {}) {
   const overlay = $("#claim-overlay");
@@ -5548,14 +5635,24 @@ async function openClaimOverlay(opts = {}) {
   if (!window.FB?.firebaseReady) { list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Nur online verfügbar.</p>`; return; }
   list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Lade Profile…</p>`;
   try {
-    const snap = await window.FB.get(window.FB.ref(window.FB.db, "points"));
+    const [snap, lockSnap] = await Promise.all([
+      window.FB.get(window.FB.ref(window.FB.db, "points")),
+      window.FB.get(window.FB.ref(window.FB.db, "profileLocks")).catch(() => ({ val: () => ({}) }))
+    ]);
     const data = snap.val() || {};
+    const locks = lockSnap.val() || {};
     const mine = currentUserKey();
+    // A profile that somebody already claimed is off the table — it must never
+    // be offered to a second person.
     const rows = Object.entries(data)
       .map(([key, p]) => ({ key, nickname: (p && p.nickname) || key, total: (p && p.total) || 0 }))
-      .filter((r) => r.key !== mine && r.nickname)
+      .filter((r) => r.key !== mine && r.nickname && !locks[r.key])
       .sort((a, b) => b.total - a.total);
-    if (!rows.length) { list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Keine früheren Profile gefunden.</p>`; return; }
+    const lockedCount = Object.keys(locks).filter((k) => data[k]).length;
+    if (!rows.length) {
+      list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Keine übernehmbaren Profile${lockedCount ? ` — alle ${lockedCount} bestehenden Profile sind schon vergeben` : ""}.</p>`;
+      return;
+    }
     list.innerHTML = rows.map((r) => {
       const { level } = getLevel(r.total);
       const tier = getLevelTier(level);
@@ -5597,6 +5694,18 @@ async function claimExistingProfile(oldKey) {
   if (!newKey) { toast("Bitte zuerst Zugang oder Login."); return; }
   const { db, ref, get, set, remove } = window.FB;
   try {
+    // Claim the lock FIRST. The rule only permits a write when the lock is
+    // unset (or already ours), so a second person gets permission_denied here
+    // instead of walking off with the same profile.
+    const uid = window.FB.getAuthUid?.() || "";
+    try {
+      await set(ref(db, "profileLocks/" + oldKey), { by: uid, at: Date.now(), nickname: STATE.nickname || "" });
+    } catch (lockErr) {
+      console.warn("profile lock refused:", lockErr);
+      toast("🔒 Dieses Profil gehört schon jemandem.");
+      openClaimOverlay();
+      return;
+    }
     const [pSnap, aSnap, tSnap] = await Promise.all([
       get(ref(db, "points/" + oldKey)),
       get(ref(db, "achievements/" + oldKey)),
@@ -5633,6 +5742,8 @@ async function claimExistingProfile(oldKey) {
     ensurePointIdentity();
     syncIdentity();
     syncProfileToCloud();
+    localStorage.removeItem("cg.profileLocked"); // the key changed — re-reserve
+    ensureOwnProfileLock();
     updateNicknameBar();
     if (STATE.view === "profile") renderProfile();
     const overlay = $("#claim-overlay");
@@ -5775,7 +5886,9 @@ function broadcastLiveLocation() {
 
 function startPresenceHeartbeat() {
   if (STATE.presenceHeartbeat) clearInterval(STATE.presenceHeartbeat);
+  autoCheckoutIfStale();
   STATE.presenceHeartbeat = setInterval(() => {
+    autoCheckoutIfStale();
     broadcastPresence();
     broadcastLiveLocation();
     checkDwellAutoCheckin();
@@ -5783,6 +5896,7 @@ function startPresenceHeartbeat() {
   if (!STATE.presenceVisibilityHookBound) {
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
+        autoCheckoutIfStale(); // app was backgrounded overnight
         broadcastPresence();
         broadcastLiveLocation();
       }
@@ -6513,6 +6627,8 @@ function manualCheckin(cornerId) {
   }
   if (wasCheckedIn) {
     STATE.manualCheckinId = null;
+    localStorage.removeItem("cg.checkedInAt");
+    STATE._autoCheckedCorner = null; // allow a fresh dwell auto-checkin later
     toast("Ausgecheckt 👋");
   } else {
     STATE.manualCheckinId = cornerId;
@@ -6523,7 +6639,13 @@ function manualCheckin(cornerId) {
     playTeamCheckinSound(STATE.team);
     document.getElementById("card-" + cornerId)?.classList.add("at-here");
     refreshMainMarker(cornerId);
-    toast(`Eingecheckt am <strong>${escapeHtml(corner.name)}</strong> 🍻`, "at-corner");
+    localStorage.setItem("cg.checkedInAt", String(Date.now()));
+    // "Ups falsch eingecheckt" — offer a one-tap undo right in the confirmation.
+    toast(
+      `Eingecheckt am <strong>${escapeHtml(corner.name)}</strong> 🍻<br><span style="font-size:11px;opacity:0.75;">Tippen = rückgängig</span>`,
+      "at-corner",
+      () => { if (STATE.manualCheckinId === cornerId) { manualCheckin(cornerId); toast("↩️ Check-in zurückgenommen"); } }
+    );
     recordVisit(cornerId);
     addXp(5, "Check-in");
     const totalCheckins = parseInt(localStorage.getItem("cg.totalCheckins") || "0") + 1;
@@ -6611,7 +6733,7 @@ function updateCheckinButtons() {
     const blocked = hasCooldown && cId !== STATE.lastCheckinCorner && !isThis;
     btn.classList.toggle("checked-in", isThis);
     btn.classList.toggle("cooldown", blocked);
-    if (isThis) btn.innerHTML = "✅ Ich bin hier!";
+    if (isThis) btn.innerHTML = "✅ Ich bin hier &middot; 🚪 Auschecken";
     else if (blocked) btn.innerHTML = `⏳ ${cooldownStr}`;
     else if (STATE.geoActive && STATE.userPos && corner) {
       const dist = haversine(STATE.userPos.lat, STATE.userPos.lng, corner.lat, corner.lng);
@@ -6660,7 +6782,7 @@ function openDetail(cornerId) {
     <div class="visit-trail" data-corner-id="${c.id}"></div>
     <div class="comments-section" data-corner-id="${c.id}"></div>
     <div class="card-actions" style="padding:18px 0;">
-      <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier!" : "📍 Einchecken"}</button>
+      <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier &middot; 🚪 Auschecken" : "📍 Einchecken"}</button>
       <button class="action-btn primary" data-action="map-detail" data-id="${c.id}">📍 Auf Karte</button>
       <button class="action-btn" data-action="route-detail" data-id="${c.id}">🧭 Route</button>
       <button class="action-btn" data-action="share-corner" data-id="${c.id}">🔗 Teilen</button>
@@ -6725,7 +6847,7 @@ function renderCards() {
         <button class="detail-link" data-id="${c.id}">Mehr Details →</button>
       </div>
       <div class="card-actions">
-        <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier!" : "📍 Einchecken"}</button>
+        <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier &middot; 🚪 Auschecken" : "📍 Einchecken"}</button>
         <button class="action-btn primary" data-action="map" data-id="${c.id}">📍 Karte</button>
         <button class="action-btn" data-action="route" data-id="${c.id}">🧭 Route</button>
       </div>`;
@@ -6895,7 +7017,8 @@ function getAchievementCardsHtml() {
     { id: "team-founder", name: "Gründer", emoji: "🚩", desc: "Eigenes Team gegründet" },
     { id: "recruiter", name: "Anwerber", emoji: "📨", desc: "Freunde eingeladen" },
     { id: "always-on", name: "Immer erreichbar", emoji: "🔔", desc: "Push aktiviert" },
-    { id: "secured", name: "Abgesichert", emoji: "🔐", desc: "Profil gesichert (Google/Code)" }
+    { id: "secured", name: "Abgesichert", emoji: "🔐", desc: "Profil gesichert (Google/Code)" },
+    { id: "endgame", name: "Durchgespielt", emoji: "🏆", desc: `Level ${MAX_LEVEL} — das Ende des Spiels` }
   ];
   return items.map((a) => `<div class="achievement-card ${STATE.achievements.includes(a.id) ? 'unlocked' : 'locked'}"><div class="achievement-emoji">${a.emoji}</div><div class="achievement-name">${a.name}</div><div class="achievement-pts">${a.desc}</div></div>`).join("");
 }
@@ -7006,7 +7129,8 @@ function initProfileMap() {
 
 function renderProfile() {
   const xp = getCurrentXp();
-  const { level, progress } = getLevel(xp);
+  const levelInfo = getLevel(xp);
+  const { level, progress } = levelInfo;
   const tier = getLevelTier(level);
   const teamInfo = getTeamInfo(STATE.team);
   const captureCount = Object.values(STATE.captureHistory).filter((entry) => entry.capturedBy?.includes(currentUserKey())).length;
@@ -7018,8 +7142,13 @@ function renderProfile() {
     <div class="profile-header">
       <div class="profile-avatar">${teamInfo?.emoji || '👤'}</div>
       <h2 class="profile-name">${escapeHtml(STATE.nickname || 'Anonym')}</h2>
-      <div class="profile-level-info">${teamInfo ? teamInfo.emoji + ' ' + teamInfo.name + ' · ' : ''}${tier.emoji} Lv.${level} · ${tier.name}</div>
+      <div class="profile-level-info">${teamInfo ? teamInfo.emoji + ' ' + teamInfo.name + ' · ' : ''}${tier.emoji} Lv.${level} / ${MAX_LEVEL} · ${tier.name}</div>
       <div class="profile-progress"><div class="profile-progress-fill" style="width:${Math.round(progress * 100)}%"></div></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);margin-top:6px;">
+        ${levelInfo.isMax
+          ? `🏆 ${xp} XP · Level ${MAX_LEVEL} — durchgespielt!`
+          : `${xp} XP · noch <strong style="color:var(--amber);">${levelInfo.xpToNext}</strong> XP bis Level ${level + 1}`}
+      </div>
     </div>
     <div class="profile-stats">
       <div class="profile-stat"><div class="stat-icon">📍</div><div class="stat-value">${STATE.visitedCorners.length}</div><div class="stat-label">Corners besucht</div></div>
