@@ -742,7 +742,7 @@ input, textarea { cursor: text; }
 .chat-badge[hidden] { display: none; }
 .chat-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.6); display: none; align-items: flex-end; justify-content: center; }
 .chat-overlay.open { display: flex; }
-.chat-panel { background: var(--bg-2); width: 100%; max-width: 520px; height: 88vh; border-radius: 18px 18px 0 0; display: flex; flex-direction: column; border: 1px solid var(--line); overflow: hidden; }
+.chat-panel { background: var(--bg-2); width: 100%; max-width: min(520px, 100vw); box-sizing: border-box; height: 88vh; border-radius: 18px 18px 0 0; display: flex; flex-direction: column; border: 1px solid var(--line); overflow: hidden; }
 .chat-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .chat-title { flex: 1; font-weight: 700; font-size: 16px; }
 .chat-back, .chat-close { background: transparent; border: none; color: var(--fg); font-size: 20px; cursor: pointer; padding: 4px 8px; }
@@ -1315,6 +1315,14 @@ input, textarea { cursor: text; }
 .friend-chip {
   display: inline-flex;
   align-items: center;
+  /* A chip carries nickname + corner name + level + up to 2 buttons — it has to
+     be allowed to wrap and shrink, or a long corner name widens the page. */
+  flex-wrap: wrap;
+  row-gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
   gap: 6px;
   background: var(--bg-3);
   border: 1px solid var(--line);
@@ -1624,6 +1632,8 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 }
 .lb-name {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-weight: 600;
   font-size: 15px;
 }
@@ -1893,6 +1903,10 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .nickname-bar {
   display: flex;
   align-items: center;
+  /* Must wrap: name + level bar + 4 action buttons exceed a 375px screen and
+     would otherwise widen the whole document (horizontal page scroll). */
+  flex-wrap: wrap;
+  row-gap: 6px;
   gap: 8px;
   padding: 8px 16px;
   background: var(--bg-2);
@@ -1901,7 +1915,9 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   font-size: 11px;
   max-width: 720px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
+.nickname-bar .nick-name { min-width: 0; overflow-wrap: anywhere; }
 .nickname-bar .nick-label { color: var(--fg-dim); letter-spacing: 1px; text-transform: uppercase; }
 .nickname-bar .nick-name { color: var(--amber); font-weight: 700; }
 .nickname-bar .nick-change {
@@ -2164,7 +2180,9 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .best-friends-section { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 18px; }
 .best-friends-section h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 20px; text-transform: uppercase; margin: 0 0 14px; }
 .friend-encounter { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px; }
-.friend-encounter .fe-name { font-weight: 600; flex: 1; }
+/* Flex text items that hold user content need min-width:0 + overflow-wrap,
+   otherwise one long word/URL sets their min-content size and blows the row. */
+.friend-encounter .fe-name { font-weight: 600; flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .friend-encounter .fe-count { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--amber); }
 .notification-toggle { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 18px; }
 .notification-toggle h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 20px; text-transform: uppercase; margin: 0 0 14px; }
@@ -2178,7 +2196,7 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .team-chip:hover { border-color: var(--fg-dim); }
 .team-chip.muted { border-color: #ff4d4d; color: #ff4d4d; background: rgba(255,77,77,0.08); }
 .user-filter-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px; }
-.user-filter-item .ufi-name { flex: 1; font-size: 13px; font-weight: 600; }
+.user-filter-item .ufi-name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 13px; font-weight: 600; }
 .ufi-toggle { background: transparent; border: 1.5px solid var(--line); color: var(--fg-dim); padding: 4px 10px; border-radius: 999px; font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
 .ufi-toggle.muted { border-color: #ff4d4d; color: #ff4d4d; }
 
@@ -2187,9 +2205,9 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .team-battle-section h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 22px; text-transform: uppercase; margin: 0 0 14px; }
 .team-battle-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px; }
 .team-battle-item .tb-emoji { font-size: 24px; }
-.team-battle-item .tb-name { flex: 1; font-weight: 600; font-size: 14px; }
+.team-battle-item .tb-name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 600; font-size: 14px; }
 .team-battle-item .tb-bar { flex: 2; height: 8px; background: var(--bg); border-radius: 999px; overflow: hidden; }
-.team-battle-item .tb-bar-fill { height: 100%; border-radius: 999px; transition: width 0.5s; }
+.team-battle-item .tb-bar-fill { height: 100%; max-width: 100%; border-radius: 999px; transition: width 0.5s; }
 .team-battle-item .tb-score { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fg-dim); min-width: 20px; text-align: right; }
 
 /* ====================== LIVE LOCATION MARKERS ====================== */
@@ -6896,7 +6914,7 @@ function getTeamBattleRows() {
 
 function renderTeamBattleSection() {
   const rows = getTeamBattleRows();
-  $("#team-battle-section").innerHTML = `<div class="team-battle-section"><h3>⚔️ Team Battles</h3>${rows.map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}<br><small>${row.held.length ? row.held.map(([cornerId]) => escapeHtml(getAllCorners().find((c) => c.id === cornerId)?.name || cornerId)).join(', ') : 'Noch keine gehaltenen Corner'}</small></span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.max(6, row.total * 16)}px;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>`;
+  $("#team-battle-section").innerHTML = `<div class="team-battle-section"><h3>⚔️ Team Battles</h3>${rows.map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}<br><small>${row.held.length ? row.held.map(([cornerId]) => escapeHtml(getAllCorners().find((c) => c.id === cornerId)?.name || cornerId)).join(', ') : 'Noch keine gehaltenen Corner'}</small></span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.min(100, Math.max(4, row.total * 8))}%;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>`;
 }
 
 function renderLeaderboard() {
@@ -7011,7 +7029,7 @@ function renderProfile() {
     </div>
     <div class="team-battle-section"><h3>🗺️ Deine Corner-Map</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">Je größer & heller der Punkt, desto öfter warst du da.</p><div id="profile-map" style="height:260px;border-radius:12px;overflow:hidden;background:var(--bg-3);"></div></div>
     <div class="team-history"><h3>🧬 Team History</h3><div class="team-history-grid">${TEAM_ORDER.map((teamId) => { const count = STATE.teamHistory.filter((entry) => entry.team === teamId).length; return `<div class="team-history-item"><div class="th-emoji">${TEAMS[teamId].emoji}</div><div class="th-count">${count}</div><div class="th-name">${TEAMS[teamId].name}</div></div>`; }).join("")}</div></div>
-    <div class="team-battle-section"><h3>🏆 Team Leaderboard</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.max(6, row.total * 16)}px;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
+    <div class="team-battle-section"><h3>🏆 Team Leaderboard</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.min(100, Math.max(4, row.total * 8))}%;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
     <div class="best-friends-section"><h3>🤝 Best Friends</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Begegnungen geloggt.</p>`}</div>
     ${STATE.isAdmin ? `<div class="team-battle-section"><h3>🛠 Admin</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">Host-Werkzeuge: Profile & Spots verwalten.</p><button class="notif-opt" id="admin-open-btn">🛠 Admin-Panel öffnen</button></div>` : ""}
     ${buildAccountSectionHtml()}
