@@ -42,6 +42,14 @@
       }
     },
 
+    "profileLocks": {
+      ".read": "auth != null",
+      "$profileKey": {
+        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists() && (!data.exists() || data.child('by').val() === auth.uid || root.child('config').child('admins').child(auth.uid).val() === true)",
+        ".validate": "newData.hasChildren(['by']) && newData.child('by').val() === auth.uid || root.child('config').child('admins').child(auth.uid).val() === true"
+      }
+    },
+
     "recoveryProfiles": {
       "$code": {
         ".read": "auth != null",

@@ -742,7 +742,7 @@ input, textarea { cursor: text; }
 .chat-badge[hidden] { display: none; }
 .chat-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.6); display: none; align-items: flex-end; justify-content: center; }
 .chat-overlay.open { display: flex; }
-.chat-panel { background: var(--bg-2); width: 100%; max-width: 520px; height: 88vh; border-radius: 18px 18px 0 0; display: flex; flex-direction: column; border: 1px solid var(--line); overflow: hidden; }
+.chat-panel { background: var(--bg-2); width: 100%; max-width: min(520px, 100vw); box-sizing: border-box; height: 88vh; border-radius: 18px 18px 0 0; display: flex; flex-direction: column; border: 1px solid var(--line); overflow: hidden; }
 .chat-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .chat-title { flex: 1; font-weight: 700; font-size: 16px; }
 .chat-back, .chat-close { background: transparent; border: none; color: var(--fg); font-size: 20px; cursor: pointer; padding: 4px 8px; }
@@ -847,6 +847,8 @@ input, textarea { cursor: text; }
 }
 
 /* ====================== TOAST ====================== */
+.toast.tappable { cursor: pointer; border-left-color: var(--blue); }
+.toast.tappable:active { transform: translateX(-50%) scale(0.98); }
 .toast {
   position: fixed;
   top: calc(20px + var(--safe-top));
@@ -1313,6 +1315,14 @@ input, textarea { cursor: text; }
 .friend-chip {
   display: inline-flex;
   align-items: center;
+  /* A chip carries nickname + corner name + level + up to 2 buttons — it has to
+     be allowed to wrap and shrink, or a long corner name widens the page. */
+  flex-wrap: wrap;
+  row-gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
   gap: 6px;
   background: var(--bg-3);
   border: 1px solid var(--line);
@@ -1441,6 +1451,10 @@ input, textarea { cursor: text; }
 .access-prompt input:focus { outline: none; border-color: var(--amber); }
 #team-create-name, #team-create-emoji, #app-dialog-input { text-transform: none; letter-spacing: 0; text-align: left; font-family: "DM Sans", sans-serif; font-size: 15px; }
 #app-dialog-input.code-input { text-transform: uppercase; letter-spacing: 2px; font-family: "JetBrains Mono", monospace; text-align: center; }
+.ce-label { display: block; font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-dim); margin: 12px 0 5px; }
+.ce-field { width: 100%; box-sizing: border-box; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); padding: 10px 12px; border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 15px; text-transform: none; letter-spacing: 0; text-align: left; margin: 0; }
+.ce-field:focus { outline: none; border-color: var(--amber); }
+textarea.ce-field { resize: vertical; min-height: 80px; }
 .access-prompt .access-error {
   color: var(--pink);
   font-size: 13px;
@@ -1618,6 +1632,8 @@ input, textarea { cursor: text; }
 }
 .lb-name {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-weight: 600;
   font-size: 15px;
 }
@@ -1887,6 +1903,10 @@ input, textarea { cursor: text; }
 .nickname-bar {
   display: flex;
   align-items: center;
+  /* Must wrap: name + level bar + 4 action buttons exceed a 375px screen and
+     would otherwise widen the whole document (horizontal page scroll). */
+  flex-wrap: wrap;
+  row-gap: 6px;
   gap: 8px;
   padding: 8px 16px;
   background: var(--bg-2);
@@ -1895,7 +1915,9 @@ input, textarea { cursor: text; }
   font-size: 11px;
   max-width: 720px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
+.nickname-bar .nick-name { min-width: 0; overflow-wrap: anywhere; }
 .nickname-bar .nick-label { color: var(--fg-dim); letter-spacing: 1px; text-transform: uppercase; }
 .nickname-bar .nick-name { color: var(--amber); font-weight: 700; }
 .nickname-bar .nick-change {
@@ -2158,7 +2180,9 @@ input, textarea { cursor: text; }
 .best-friends-section { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 18px; }
 .best-friends-section h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 20px; text-transform: uppercase; margin: 0 0 14px; }
 .friend-encounter { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px; }
-.friend-encounter .fe-name { font-weight: 600; flex: 1; }
+/* Flex text items that hold user content need min-width:0 + overflow-wrap,
+   otherwise one long word/URL sets their min-content size and blows the row. */
+.friend-encounter .fe-name { font-weight: 600; flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .friend-encounter .fe-count { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--amber); }
 .notification-toggle { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 18px; }
 .notification-toggle h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 20px; text-transform: uppercase; margin: 0 0 14px; }
@@ -2172,7 +2196,7 @@ input, textarea { cursor: text; }
 .team-chip:hover { border-color: var(--fg-dim); }
 .team-chip.muted { border-color: #ff4d4d; color: #ff4d4d; background: rgba(255,77,77,0.08); }
 .user-filter-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px; }
-.user-filter-item .ufi-name { flex: 1; font-size: 13px; font-weight: 600; }
+.user-filter-item .ufi-name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 13px; font-weight: 600; }
 .ufi-toggle { background: transparent; border: 1.5px solid var(--line); color: var(--fg-dim); padding: 4px 10px; border-radius: 999px; font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
 .ufi-toggle.muted { border-color: #ff4d4d; color: #ff4d4d; }
 
@@ -2181,10 +2205,27 @@ input, textarea { cursor: text; }
 .team-battle-section h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 22px; text-transform: uppercase; margin: 0 0 14px; }
 .team-battle-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px; }
 .team-battle-item .tb-emoji { font-size: 24px; }
-.team-battle-item .tb-name { flex: 1; font-weight: 600; font-size: 14px; }
+.team-battle-item .tb-name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 600; font-size: 14px; }
 .team-battle-item .tb-bar { flex: 2; height: 8px; background: var(--bg); border-radius: 999px; overflow: hidden; }
-.team-battle-item .tb-bar-fill { height: 100%; border-radius: 999px; transition: width 0.5s; }
+.team-battle-item .tb-bar-fill { height: 100%; max-width: 100%; border-radius: 999px; transition: width 0.5s; }
 .team-battle-item .tb-score { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fg-dim); min-width: 20px; text-align: right; }
+
+/* ====================== PROFILE CORNER MAP ====================== */
+.cg-pie-wrap { background: transparent !important; border: none !important; }
+.cg-pie {
+  border-radius: 50%;
+  /* semi-transparent so the map underneath stays readable */
+  opacity: 0.72;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-sizing: border-box;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  transition: width 0.25s, height 0.25s;
+}
+.cg-pie-wrap:hover .cg-pie { opacity: 0.95; }
+.pmap-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.pmap-controls #pmap-play { flex: 0 0 auto; font-size: 11px; padding: 6px 10px; }
+.pmap-controls #pmap-scrub { flex: 1 1 120px; min-width: 0; accent-color: var(--amber); }
+.pmap-controls #pmap-date { flex: 0 0 auto; font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); }
 
 /* ====================== LIVE LOCATION MARKERS ====================== */
 .live-user-marker { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); position: relative; }
@@ -2471,6 +2512,26 @@ input, textarea { cursor: text; }
   </div>
 </div>
 
+<!-- Edit a corner you created -->
+<div id="corner-edit-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:400px;max-height:86vh;overflow-y:auto;text-align:left;">
+    <h2>✏️ Spot bearbeiten</h2>
+    <label class="ce-label">Name</label>
+    <input type="text" id="ce-name" class="ce-field" maxlength="80" autocomplete="off" />
+    <label class="ce-label">Stadtteil</label>
+    <input type="text" id="ce-area" class="ce-field" maxlength="60" autocomplete="off" />
+    <label class="ce-label">Beschreibung</label>
+    <textarea id="ce-desc" class="ce-field" maxlength="500" rows="4"></textarea>
+    <label class="ce-label">Tags (Komma-getrennt)</label>
+    <input type="text" id="ce-tags" class="ce-field" maxlength="120" autocomplete="off" placeholder="Kiosk, Sunset, ruhig" />
+    <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;">
+      <button class="action-btn" id="ce-cancel">Abbrechen</button>
+      <button class="action-btn primary" id="ce-save">Speichern</button>
+      <button class="action-btn" id="ce-delete" style="border-color:var(--pink);color:var(--pink);margin-left:auto;">🗑️ Löschen</button>
+    </div>
+  </div>
+</div>
+
 <!-- App dialog: styled replacement for native prompt()/confirm() -->
 <div id="app-dialog" class="access-prompt" style="display:none;">
   <div class="prompt-card" style="max-width:340px;text-align:left;">
@@ -2666,15 +2727,9 @@ const TEAMS = {
   octopus: { emoji: "🐙", name: "Oktopus", color: "#00bcd4" }
 };
 
-const LEVEL_TIERS = [
-  { name: "Corner Newbie", emoji: "🌀", maxLvl: 5 },
-  { name: "Corner Explorer", emoji: "🗺️", maxLvl: 10 },
-  { name: "Corner Regular", emoji: "🔥", maxLvl: 15 },
-  { name: "Corner Guide", emoji: "🧭", maxLvl: 20 },
-  { name: "Corner Legend", emoji: "👑", maxLvl: 999 }
-];
-
 const CORNER_STATUSES = {
+  kiosk: { emoji: "🏪", label: "Kiosk offen" },
+  toilet: { emoji: "🚻", label: "Klo in der Nähe" },
   water: { emoji: "🌊", label: "Wasser" },
   smoke: { emoji: "🌿", label: "Kiffen ok" },
   police: { emoji: "🚨", label: "Polizei" }
@@ -3076,19 +3131,34 @@ function compressImageFile(file, options = {}) {
   });
 }
 
+// Firebase paths reject . # $ [ ] / — an unsanitised nickname made the rating
+// write fail silently, so the star never lit up ("it goes back").
+function photoRatingKey() {
+  return String(STATE.nickname || "").replace(/[.#$\[\]/]/g, "_");
+}
+
 function ratePhoto(cornerId, photoKey, score) {
   if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
 
   if (window.FB?.firebaseReady) {
     const { db, ref, set } = window.FB;
-    set(ref(db, "photos/" + cornerId + "/" + photoKey + "/ratings/" + STATE.nickname), score);
+    // Optimistic local update so the star reacts instantly, even before the
+    // listener round-trip (and it survives a slow connection).
+    if (STATE.photos?.[cornerId]?.[photoKey]) {
+      const p = STATE.photos[cornerId][photoKey];
+      if (!p.ratings) p.ratings = {};
+      p.ratings[photoRatingKey()] = score;
+    }
+    refreshAllPhotoGalleries();
+    Promise.resolve(set(ref(db, "photos/" + cornerId + "/" + photoKey + "/ratings/" + photoRatingKey()), score))
+      .catch((err) => { console.warn("ratePhoto write failed:", err); toast("⚠️ Bewertung konnte nicht gespeichert werden."); });
   } else {
     try {
       const photos = getPhotos(cornerId);
       const photo = photos.find((p) => p.id === photoKey);
       if (photo) {
         if (!photo.ratings) photo.ratings = {};
-        photo.ratings[STATE.nickname] = score;
+        photo.ratings[photoRatingKey()] = score;
         localStorage.setItem("cg.photos." + cornerId, JSON.stringify(photos));
         refreshAllPhotoGalleries();
       }
@@ -3105,6 +3175,9 @@ function refreshAllPhotoGalleries() {
 
 /* ====================== POINTS (Firebase) ====================== */
 function renderPhotoGallery(cornerId, container) {
+  // The grid is a horizontal scroller; replacing innerHTML resets scrollLeft to
+  // 0, which made the gallery jump back to the first photo on every rating.
+  const prevScroll = container.querySelector(".gallery-grid")?.scrollLeft || 0;
   let photos;
   if (window.FB?.firebaseReady) {
     const raw = STATE.photos?.[cornerId] || {};
@@ -3125,7 +3198,8 @@ function renderPhotoGallery(cornerId, container) {
       const ratings = p.ratings || {};
       const ratingValues = Object.values(ratings);
       const avgRating = ratingValues.length > 0 ? (ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length).toFixed(1) : "—";
-      const myRating = STATE.nickname ? (ratings[STATE.nickname] || 0) : 0;
+      // Prefer the sanitised key, fall back to the legacy raw-nickname key.
+      const myRating = STATE.nickname ? (ratings[photoRatingKey()] || ratings[STATE.nickname] || 0) : 0;
       const starsHtml = [1, 2, 3, 4, 5].map((s) =>
         `<button class="photo-rate-btn ${s <= myRating ? "active" : ""}" data-corner="${cornerId}" data-photo="${p.key}" data-score="${s}">⭐</button>`
       ).join("");
@@ -3150,6 +3224,16 @@ function renderPhotoGallery(cornerId, container) {
       <button class="action-btn gallery-upload-btn" data-corner="${cornerId}">📷 Foto hochladen</button>
       <input type="file" accept="image/*" class="gallery-file-input" data-corner="${cornerId}" style="display:none;" multiple>
     `;
+    // Put the horizontal scroller back where the user had it.
+    if (prevScroll) {
+      const grid = container.querySelector(".gallery-grid");
+      if (grid) {
+        const prevSnap = grid.style.scrollSnapType;
+        grid.style.scrollSnapType = "none"; // snapping would fight the restore
+        grid.scrollLeft = prevScroll;
+        requestAnimationFrame(() => { grid.style.scrollSnapType = prevSnap || ""; });
+      }
+    }
   }
 
   // Bind upload button
@@ -3560,6 +3644,10 @@ function startCooldownDisplay() {
 function recordVisit(cornerId) {
   const visit = {
     user: STATE.nickname || "Anonym",
+    // userId survives nickname changes; team drives the pie slices on the
+    // profile map. Visits recorded before this existed simply have no team.
+    userId: currentUserKey() || "",
+    team: STATE.team || "",
     time: Date.now()
   };
 
@@ -4378,6 +4466,29 @@ const PRESENCE_FRESH_MS = 45 * 60 * 1000;
 // Stay this long within PROXIMITY_M of a corner -> automatic check-in.
 const AUTO_CHECKIN_DWELL_MS = 5 * 60 * 1000;
 
+// Nobody stays at a corner overnight: drop a check-in once the calendar day
+// rolls over, or after a hard 10h cap for very late sessions.
+const CHECKIN_MAX_AGE_MS = 10 * 60 * 60 * 1000;
+function autoCheckoutIfStale() {
+  if (!STATE.manualCheckinId) return;
+  const since = parseInt(localStorage.getItem("cg.checkedInAt") || "0") || STATE.lastCheckinTime || 0;
+  if (!since) return;
+  const then = new Date(since), now = new Date();
+  const newDay = then.toDateString() !== now.toDateString();
+  const tooOld = Date.now() - since > CHECKIN_MAX_AGE_MS;
+  if (!newDay && !tooOld) return;
+  const corner = getAllCorners().find((c) => c.id === STATE.manualCheckinId);
+  const prev = STATE.manualCheckinId;
+  STATE.manualCheckinId = null;
+  STATE._autoCheckedCorner = null;
+  localStorage.removeItem("cg.checkedInAt");
+  document.getElementById("card-" + prev)?.classList.remove("at-here");
+  refreshMainMarker(prev);
+  updateCheckinButtons();
+  broadcastPresence();
+  toast(`🌅 Automatisch ausgecheckt${corner ? ` am ${escapeHtml(corner.name)}` : ""}`);
+}
+
 // Auto check-in after dwelling >= 5 min near the same corner (geo must be on).
 function checkDwellAutoCheckin() {
   if (!STATE.geoActive || !STATE.userPos || !STATE.nickname) return;
@@ -4732,26 +4843,98 @@ function ensurePointIdentity() {
   savePoints();
 }
 
+/* ====================== LEVELS ======================
+   Progressive curve instead of a flat 100 XP per level: a level costs
+   50 + 15*(level-1) XP, so level 2 costs 65 and level 100 costs 1535.
+   Cumulative XP for level L is 7.5*L^2 + 42.5*L, i.e. 400 XP for level 5,
+   ~3.9k for level 20, ~21k for level 50 and 79,250 XP for level 100 — the
+   big milestone — it should FEEL like the finish line — but the game does not
+   stop there: levels keep going for anyone who passes it.                */
+const MILESTONE_LEVEL = 100;      // the "feels like the end" milestone
+const LEVEL_MILESTONE_STEP = 10;  // every 10th level is celebrated (future partner rewards)
+function xpForLevel(level) {
+  // total XP required to REACH `level`
+  const L = Math.max(1, level) - 1;
+  return Math.round(7.5 * L * L + 42.5 * L);
+}
 function getLevel(xp) {
-  const total = Number(xp || 0);
-  const level = Math.max(1, Math.floor((total + 99) / 100));
-  const prevThreshold = Math.max(0, (level - 1) * 100);
-  const nextThreshold = level * 100;
-  const progress = nextThreshold > prevThreshold ? (total - prevThreshold) / (nextThreshold - prevThreshold) : 1;
-  return { level, progress: Math.max(0, Math.min(1, progress)) };
+  const total = Math.max(0, Number(xp || 0));
+  let level = 1;
+  // No cap: keep climbing. The loop bound is just a runaway guard.
+  while (level < 10000 && total >= xpForLevel(level + 1)) level++;
+  const prevThreshold = xpForLevel(level);
+  const nextThreshold = xpForLevel(level + 1);
+  const span = nextThreshold - prevThreshold;
+  return {
+    level,
+    progress: Math.max(0, Math.min(1, (total - prevThreshold) / (span || 1))),
+    xpIntoLevel: Math.max(0, total - prevThreshold),
+    xpForNext: span,
+    xpToNext: Math.max(0, nextThreshold - total),
+    reachedMilestone: level >= MILESTONE_LEVEL
+  };
 }
 
+const LEVEL_RANKS = [
+  { max: 5,        name: "Corner Newbie",     emoji: "✨" },
+  { max: 12,       name: "Corner Explorer",   emoji: "🗺️" },
+  { max: 22,       name: "Corner Regular",    emoji: "🔥" },
+  { max: 35,       name: "Corner Guide",      emoji: "🧭" },
+  { max: 50,       name: "Corner Veteran",    emoji: "⭐" },
+  { max: 70,       name: "Corner Legend",     emoji: "👑" },
+  { max: 89,       name: "Minga Institution", emoji: "🏛️" },
+  { max: 99,       name: "Ewige Ecke",        emoji: "🌟" },
+  { max: 149,      name: "Vollendet",         emoji: "🏆" },  // milestone reached
+  { max: 249,      name: "Über die Ecke",     emoji: "🚀" },  // and beyond…
+  { max: Infinity, name: "Mythos von Minga",  emoji: "🐉" }
+];
 function getLevelTier(level) {
-  if (level <= 5) return { name: "Corner Newbie", emoji: "✨" };
-  if (level <= 10) return { name: "Corner Explorer", emoji: "🗺️" };
-  if (level <= 15) return { name: "Corner Regular", emoji: "🔥" };
-  if (level <= 20) return { name: "Corner Guide", emoji: "🧭" };
-  return { name: "Corner Legend", emoji: "👑" };
+  const lvl = Number(level || 1);
+  for (const r of LEVEL_RANKS) if (lvl <= r.max) return { name: r.name, emoji: r.emoji };
+  return { name: "Mythos von Minga", emoji: "🐉" };
+}
+
+/* Every 10th level is a milestone. Level 100 gets the big "feels like the end"
+   moment, but play continues afterwards. Partner rewards can later hook in
+   here: LEVEL_REWARDS[level] -> what the user unlocked.                     */
+const LEVEL_REWARDS = {}; // e.g. 10: { label: "Freigetränk bei X", code: "…" }
+
+function claimedMilestones() {
+  try { return JSON.parse(localStorage.getItem("cg.milestones") || "[]"); }
+  catch (e) { return []; }
+}
+
+function checkLevelMilestones() {
+  const level = getLevel(getCurrentXp()).level;
+  const done = claimedMilestones();
+  let changed = false;
+  for (let m = LEVEL_MILESTONE_STEP; m <= level; m += LEVEL_MILESTONE_STEP) {
+    if (done.includes(m)) continue;
+    done.push(m);
+    changed = true;
+    const reward = LEVEL_REWARDS[m];
+    if (m === MILESTONE_LEVEL) {
+      unlockAchievement("level-100", "Vollendet", "🏆", 1000);
+      toast(`🏆 <strong>LEVEL 100!</strong><br>Du hast den Minga Corner Guide vollendet — und es geht weiter. 🍻`, "at-corner");
+    } else {
+      toast(`🎖️ <strong>Meilenstein Level ${m}</strong>${reward ? `<br>Belohnung: ${escapeHtml(reward.label)}` : ""}`, "at-corner");
+    }
+  }
+  if (changed) localStorage.setItem("cg.milestones", JSON.stringify(done));
 }
 
 function currentUserKey() { return STATE.userId || STATE.nickname; }
 function getCurrentXp() { return STATE.points[currentUserKey()]?.total || 0; }
-function addXp(amount, reason) { addPoints(currentUserKey(), amount, reason); }
+function addXp(amount, reason) {
+  const before = getLevel(getCurrentXp()).level;
+  addPoints(currentUserKey(), amount, reason);
+  const after = getLevel(getCurrentXp());
+  if (after.level > before) {
+    const tier = getLevelTier(after.level);
+    toast(`${tier.emoji} <strong>Level ${after.level}</strong> erreicht — ${escapeHtml(tier.name)}!`, "at-corner");
+  }
+  checkLevelMilestones();
+}
 function getTeamInfo(teamId) { return TEAMS[teamId] || null; }
 function getDisplayName(name, teamId) { const t = getTeamInfo(teamId); return `${t ? t.emoji + " " : ""}${name || "Anonym"}`; }
 
@@ -4795,6 +4978,7 @@ function saveNickname() {
   syncIdentity();
   updateNicknameBar();
   unlockAchievement("first-login", "Willkommen", "👋", 10);
+  ensureOwnProfileLock();
 }
 
 function bindNicknameBar() {
@@ -4829,13 +5013,15 @@ function updateNicknameBar() {
   if (!STATE.nickname) { bar.style.display = "none"; return; }
   bar.style.display = "flex";
   $("#nick-display").textContent = getDisplayName(STATE.nickname, STATE.team);
-  const { level, progress } = getLevel(getCurrentXp());
-  const tier = getLevelTier(level);
-  $("#nick-pts").textContent = `${tier.emoji} Lv.${level}`;
+  const info = getLevel(getCurrentXp());
+  const tier = getLevelTier(info.level);
+  $("#nick-pts").textContent = `${tier.emoji} Lv.${info.level}`;
   const badge = $("#nick-level-badge");
   const fill = $("#nick-level-fill");
   if (badge) badge.textContent = tier.name;
-  if (fill) fill.style.width = `${Math.round(progress * 100)}%`;
+  if (fill) fill.style.width = `${Math.round(info.progress * 100)}%`;
+  const bar2 = $("#nick-level-bar");
+  if (bar2) bar2.title = `${info.xpIntoLevel}/${info.xpForNext} XP · noch ${info.xpToNext} bis Level ${info.level + 1}`;
 }
 
 function renderTeamPickerHtml() {
@@ -5076,6 +5262,7 @@ function _activateAuthDependentFeatures(uid, status) {
   syncIdentity();
   startPresenceHeartbeat();
   loadProfileFromCloud(uid);
+  ensureOwnProfileLock();
   // Admin flag (config/admins/{uid}) — unlocks the host maintenance panel.
   try {
     window.FB.onValue(window.FB.ref(window.FB.db, "config/admins/" + uid), (snap) => {
@@ -5221,6 +5408,87 @@ async function claimRecoveryCode(rawCode) {
     console.warn("claimRecoveryCode failed:", err);
     toast("Übernahme fehlgeschlagen.");
   }
+}
+
+/* ====================== EDIT OWN CORNER ====================== */
+// Only the creator (or the host) may edit a user-created spot.
+function canEditCorner(c) {
+  if (!c || !c.isCustom) return false;
+  if (STATE.isAdmin) return true;
+  if (!STATE.nickname) return false;
+  return c.createdById ? c.createdById === currentUserKey() : c.createdBy === STATE.nickname;
+}
+
+function openCornerEditor(cornerId) {
+  const c = getAllCorners().find((x) => x.id === cornerId);
+  if (!c || !canEditCorner(c)) return;
+  const overlay = $("#corner-edit-overlay");
+  if (!overlay) return;
+  $("#ce-name").value = c.name || "";
+  $("#ce-area").value = c.area || "";
+  $("#ce-desc").value = getDescription(c) || "";
+  $("#ce-tags").value = Array.isArray(c.tags) ? c.tags.join(", ") : "";
+  const close = () => { overlay.style.display = "none"; };
+  $("#ce-cancel").onclick = close;
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+  $("#ce-save").onclick = () => saveCornerEdit(cornerId);
+  $("#ce-delete").style.display = "";
+  $("#ce-delete").onclick = async () => {
+    if (!(await appConfirm(`Spot „${c.name}" löschen?`, "Der Spot verschwindet für alle. Das ist endgültig.", "Löschen"))) return;
+    close();
+    await deleteOwnCorner(cornerId);
+  };
+  overlay.style.display = "flex";
+  setTimeout(() => $("#ce-name")?.focus(), 100);
+}
+
+async function saveCornerEdit(cornerId) {
+  const c = getAllCorners().find((x) => x.id === cornerId);
+  if (!c || !canEditCorner(c)) return;
+  const name = $("#ce-name").value.trim();
+  const desc = $("#ce-desc").value.trim();
+  if (!name) { toast("Bitte einen Namen eingeben."); return; }
+  if (!desc) { toast("Bitte eine Beschreibung eingeben."); return; }
+  const updated = {
+    ...c,
+    name: name.slice(0, 80),
+    area: $("#ce-area").value.trim().slice(0, 60) || "Eigener Spot",
+    description: desc.slice(0, 500),
+    tags: $("#ce-tags").value.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 8),
+    editedAt: Date.now()
+  };
+  const idx = STATE.customSpots.findIndex((s) => s.id === cornerId);
+  if (idx >= 0) STATE.customSpots[idx] = updated;
+  saveCustomSpots();
+  // A local per-device description override would mask the new shared text.
+  localStorage.removeItem("cg.desc." + cornerId);
+  if (window.FB?.firebaseReady) {
+    try {
+      await window.FB.set(window.FB.ref(window.FB.db, "corners/" + cornerId), updated);
+    } catch (err) {
+      console.warn("saveCornerEdit failed:", err);
+      toast("⚠️ Änderung konnte nicht gespeichert werden.");
+      return;
+    }
+  }
+  $("#corner-edit-overlay").style.display = "none";
+  renderCards(); updateCounts(); rebuildMainMarkers();
+  openDetail(cornerId);
+  toast(`✅ <strong>${escapeHtml(updated.name)}</strong> aktualisiert`);
+}
+
+async function deleteOwnCorner(cornerId) {
+  const c = getAllCorners().find((x) => x.id === cornerId);
+  if (!c || !canEditCorner(c)) return;
+  if (window.FB?.firebaseReady) {
+    try { await window.FB.remove(window.FB.ref(window.FB.db, "corners/" + cornerId)); }
+    catch (err) { console.warn("deleteOwnCorner failed:", err); toast("⚠️ Löschen fehlgeschlagen."); return; }
+  }
+  STATE.customSpots = STATE.customSpots.filter((s) => s.id !== cornerId);
+  saveCustomSpots();
+  closeDetail();
+  renderCards(); updateCounts(); rebuildMainMarkers();
+  toast(`🗑️ Spot „${escapeHtml(c.name)}" gelöscht`);
 }
 
 /* ====================== APP DIALOG (prompt/confirm replacement) ====================== */
@@ -5378,6 +5646,20 @@ function buildAccountSectionHtml() {
   return `<div class="notification-toggle account-section"><h3>🔐 Konto & Profil sichern</h3>${statusLine}${buttons}</div>`;
 }
 
+// Reserve my own profile so it is never offered to anyone else in the claim
+// list. Safe to call repeatedly: the rule allows re-writing your own lock.
+async function ensureOwnProfileLock() {
+  if (!window.FB?.firebaseReady || !STATE.nickname) return;
+  const uid = window.FB.getAuthUid?.() || "";
+  const key = currentUserKey();
+  if (!uid || !key) return;
+  if (localStorage.getItem("cg.profileLocked") === key) return;
+  try {
+    await window.FB.set(window.FB.ref(window.FB.db, "profileLocks/" + key), { by: uid, at: Date.now(), nickname: STATE.nickname });
+    localStorage.setItem("cg.profileLocked", key);
+  } catch (err) { console.warn("ensureOwnProfileLock failed:", err); }
+}
+
 /* ---- Claim an existing profile: friends who already played pick their old identity ---- */
 async function openClaimOverlay(opts = {}) {
   const overlay = $("#claim-overlay");
@@ -5394,14 +5676,24 @@ async function openClaimOverlay(opts = {}) {
   if (!window.FB?.firebaseReady) { list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Nur online verfügbar.</p>`; return; }
   list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Lade Profile…</p>`;
   try {
-    const snap = await window.FB.get(window.FB.ref(window.FB.db, "points"));
+    const [snap, lockSnap] = await Promise.all([
+      window.FB.get(window.FB.ref(window.FB.db, "points")),
+      window.FB.get(window.FB.ref(window.FB.db, "profileLocks")).catch(() => ({ val: () => ({}) }))
+    ]);
     const data = snap.val() || {};
+    const locks = lockSnap.val() || {};
     const mine = currentUserKey();
+    // A profile that somebody already claimed is off the table — it must never
+    // be offered to a second person.
     const rows = Object.entries(data)
       .map(([key, p]) => ({ key, nickname: (p && p.nickname) || key, total: (p && p.total) || 0 }))
-      .filter((r) => r.key !== mine && r.nickname)
+      .filter((r) => r.key !== mine && r.nickname && !locks[r.key])
       .sort((a, b) => b.total - a.total);
-    if (!rows.length) { list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Keine früheren Profile gefunden.</p>`; return; }
+    const lockedCount = Object.keys(locks).filter((k) => data[k]).length;
+    if (!rows.length) {
+      list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Keine übernehmbaren Profile${lockedCount ? ` — alle ${lockedCount} bestehenden Profile sind schon vergeben` : ""}.</p>`;
+      return;
+    }
     list.innerHTML = rows.map((r) => {
       const { level } = getLevel(r.total);
       const tier = getLevelTier(level);
@@ -5443,6 +5735,18 @@ async function claimExistingProfile(oldKey) {
   if (!newKey) { toast("Bitte zuerst Zugang oder Login."); return; }
   const { db, ref, get, set, remove } = window.FB;
   try {
+    // Claim the lock FIRST. The rule only permits a write when the lock is
+    // unset (or already ours), so a second person gets permission_denied here
+    // instead of walking off with the same profile.
+    const uid = window.FB.getAuthUid?.() || "";
+    try {
+      await set(ref(db, "profileLocks/" + oldKey), { by: uid, at: Date.now(), nickname: STATE.nickname || "" });
+    } catch (lockErr) {
+      console.warn("profile lock refused:", lockErr);
+      toast("🔒 Dieses Profil gehört schon jemandem.");
+      openClaimOverlay();
+      return;
+    }
     const [pSnap, aSnap, tSnap] = await Promise.all([
       get(ref(db, "points/" + oldKey)),
       get(ref(db, "achievements/" + oldKey)),
@@ -5479,6 +5783,8 @@ async function claimExistingProfile(oldKey) {
     ensurePointIdentity();
     syncIdentity();
     syncProfileToCloud();
+    localStorage.removeItem("cg.profileLocked"); // the key changed — re-reserve
+    ensureOwnProfileLock();
     updateNicknameBar();
     if (STATE.view === "profile") renderProfile();
     const overlay = $("#claim-overlay");
@@ -5574,7 +5880,18 @@ async function initFirebase() {
   });
   window.FB.bindForegroundPush?.((payload) => {
     const body = payload?.notification?.body || payload?.data?.body;
-    if (body) toast(`🔔 ${escapeHtml(body)}`);
+    if (!body) return;
+    // The DM push carries ?chat=<peerId>&chatName=<name> — make the toast open it.
+    let openChatFn = null;
+    try {
+      const link = payload?.data?.url || payload?.fcmOptions?.link || "";
+      if (link) {
+        const p = new URL(link).searchParams;
+        const peer = p.get("chat");
+        if (peer) openChatFn = () => openChatThread(peer, p.get("chatName") || peer);
+      }
+    } catch (err) { /* malformed link: fall back to a plain toast */ }
+    toast(`🔔 ${escapeHtml(body)}${openChatFn ? `<br><span style="font-size:11px;opacity:0.7;">Tippen zum Öffnen →</span>` : ""}`, null, openChatFn);
   });
   listenFriendPresence();
   listenSharedCorners();
@@ -5610,7 +5927,9 @@ function broadcastLiveLocation() {
 
 function startPresenceHeartbeat() {
   if (STATE.presenceHeartbeat) clearInterval(STATE.presenceHeartbeat);
+  autoCheckoutIfStale();
   STATE.presenceHeartbeat = setInterval(() => {
+    autoCheckoutIfStale();
     broadcastPresence();
     broadcastLiveLocation();
     checkDwellAutoCheckin();
@@ -5618,6 +5937,7 @@ function startPresenceHeartbeat() {
   if (!STATE.presenceVisibilityHookBound) {
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
+        autoCheckoutIfStale(); // app was backgrounded overnight
         broadcastPresence();
         broadcastLiveLocation();
       }
@@ -5812,7 +6132,12 @@ function listenDirectMessages() {
     saveLocalDirectMessages();
     const newest = messages[messages.length - 1];
     if (newest?.time && newest.time > STATE.lastDirectMessageAt && newest.fromId !== currentUserKey()) {
-      toast(`💬 Nachricht von <strong>${escapeHtml(newest.fromName || newest.fromId || "Unbekannt")}</strong>`);
+      const fromName = newest.fromName || newest.fromId || "Unbekannt";
+      toast(
+        `💬 <strong>${escapeHtml(fromName)}</strong>: ${escapeHtml((newest.text || "").slice(0, 60))}<br><span style="font-size:11px;opacity:0.7;">Tippen zum Antworten →</span>`,
+        null,
+        () => openChatThread(newest.fromId, fromName)
+      );
     }
     STATE.lastDirectMessageAt = Math.max(STATE.lastDirectMessageAt || 0, Number(newest?.time || 0));
     localStorage.setItem("cg.lastDirectMessageAt", String(STATE.lastDirectMessageAt || 0));
@@ -6343,6 +6668,8 @@ function manualCheckin(cornerId) {
   }
   if (wasCheckedIn) {
     STATE.manualCheckinId = null;
+    localStorage.removeItem("cg.checkedInAt");
+    STATE._autoCheckedCorner = null; // allow a fresh dwell auto-checkin later
     toast("Ausgecheckt 👋");
   } else {
     STATE.manualCheckinId = cornerId;
@@ -6353,7 +6680,13 @@ function manualCheckin(cornerId) {
     playTeamCheckinSound(STATE.team);
     document.getElementById("card-" + cornerId)?.classList.add("at-here");
     refreshMainMarker(cornerId);
-    toast(`Eingecheckt am <strong>${escapeHtml(corner.name)}</strong> 🍻`, "at-corner");
+    localStorage.setItem("cg.checkedInAt", String(Date.now()));
+    // "Ups falsch eingecheckt" — offer a one-tap undo right in the confirmation.
+    toast(
+      `Eingecheckt am <strong>${escapeHtml(corner.name)}</strong> 🍻<br><span style="font-size:11px;opacity:0.75;">Tippen = rückgängig</span>`,
+      "at-corner",
+      () => { if (STATE.manualCheckinId === cornerId) { manualCheckin(cornerId); toast("↩️ Check-in zurückgenommen"); } }
+    );
     recordVisit(cornerId);
     addXp(5, "Check-in");
     const totalCheckins = parseInt(localStorage.getItem("cg.totalCheckins") || "0") + 1;
@@ -6441,7 +6774,7 @@ function updateCheckinButtons() {
     const blocked = hasCooldown && cId !== STATE.lastCheckinCorner && !isThis;
     btn.classList.toggle("checked-in", isThis);
     btn.classList.toggle("cooldown", blocked);
-    if (isThis) btn.innerHTML = "✅ Ich bin hier!";
+    if (isThis) btn.innerHTML = "✅ Ich bin hier &middot; 🚪 Auschecken";
     else if (blocked) btn.innerHTML = `⏳ ${cooldownStr}`;
     else if (STATE.geoActive && STATE.userPos && corner) {
       const dist = haversine(STATE.userPos.lat, STATE.userPos.lng, corner.lat, corner.lng);
@@ -6490,11 +6823,12 @@ function openDetail(cornerId) {
     <div class="visit-trail" data-corner-id="${c.id}"></div>
     <div class="comments-section" data-corner-id="${c.id}"></div>
     <div class="card-actions" style="padding:18px 0;">
-      <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier!" : "📍 Einchecken"}</button>
+      <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier &middot; 🚪 Auschecken" : "📍 Einchecken"}</button>
       <button class="action-btn primary" data-action="map-detail" data-id="${c.id}">📍 Auf Karte</button>
       <button class="action-btn" data-action="route-detail" data-id="${c.id}">🧭 Route</button>
       <button class="action-btn" data-action="share-corner" data-id="${c.id}">🔗 Teilen</button>
       <button class="action-btn" data-action="qr-corner" data-id="${c.id}">🧾 QR</button>
+      ${canEditCorner(c) ? `<button class="action-btn" data-action="edit-corner" data-id="${c.id}">✏️ Bearbeiten</button>` : ""}
     </div>`;
   const detailContent = $("#detail-content");
   detailContent.querySelector(".checkin-btn")?.addEventListener("click", (e) => { manualCheckin(e.target.closest("[data-id]").dataset.id); setTimeout(() => openDetail(cornerId), 100); });
@@ -6505,6 +6839,7 @@ function openDetail(cornerId) {
     const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=" + encodeURIComponent(buildShareUrl(c.id, STATE.nickname || "", true));
     window.open(qrUrl, "_blank");
   });
+  detailContent.querySelector('[data-action="edit-corner"]')?.addEventListener("click", () => openCornerEditor(c.id));
   detailContent.querySelectorAll(".team-btn").forEach((btn) => btn.addEventListener("click", () => { selectTeam(btn.dataset.team); setTimeout(() => openDetail(cornerId), 50); }));
   detailContent.querySelectorAll("[data-dm-user]").forEach((btn) => btn.addEventListener("click", () => {
     const friend = STATE.friends[btn.dataset.dmUser];
@@ -6553,7 +6888,7 @@ function renderCards() {
         <button class="detail-link" data-id="${c.id}">Mehr Details →</button>
       </div>
       <div class="card-actions">
-        <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier!" : "📍 Einchecken"}</button>
+        <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier &middot; 🚪 Auschecken" : "📍 Einchecken"}</button>
         <button class="action-btn primary" data-action="map" data-id="${c.id}">📍 Karte</button>
         <button class="action-btn" data-action="route" data-id="${c.id}">🧭 Route</button>
       </div>`;
@@ -6723,7 +7058,8 @@ function getAchievementCardsHtml() {
     { id: "team-founder", name: "Gründer", emoji: "🚩", desc: "Eigenes Team gegründet" },
     { id: "recruiter", name: "Anwerber", emoji: "📨", desc: "Freunde eingeladen" },
     { id: "always-on", name: "Immer erreichbar", emoji: "🔔", desc: "Push aktiviert" },
-    { id: "secured", name: "Abgesichert", emoji: "🔐", desc: "Profil gesichert (Google/Code)" }
+    { id: "secured", name: "Abgesichert", emoji: "🔐", desc: "Profil gesichert (Google/Code)" },
+    { id: "level-100", name: "Vollendet", emoji: "🏆", desc: `Level ${MILESTONE_LEVEL} erreicht` }
   ];
   return items.map((a) => `<div class="achievement-card ${STATE.achievements.includes(a.id) ? 'unlocked' : 'locked'}"><div class="achievement-emoji">${a.emoji}</div><div class="achievement-name">${a.name}</div><div class="achievement-pts">${a.desc}</div></div>`).join("");
 }
@@ -6742,7 +7078,7 @@ function getTeamBattleRows() {
 
 function renderTeamBattleSection() {
   const rows = getTeamBattleRows();
-  $("#team-battle-section").innerHTML = `<div class="team-battle-section"><h3>⚔️ Team Battles</h3>${rows.map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}<br><small>${row.held.length ? row.held.map(([cornerId]) => escapeHtml(getAllCorners().find((c) => c.id === cornerId)?.name || cornerId)).join(', ') : 'Noch keine gehaltenen Corner'}</small></span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.max(6, row.total * 16)}px;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>`;
+  $("#team-battle-section").innerHTML = `<div class="team-battle-section"><h3>⚔️ Team Battles</h3>${rows.map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}<br><small>${row.held.length ? row.held.map(([cornerId]) => escapeHtml(getAllCorners().find((c) => c.id === cornerId)?.name || cornerId)).join(', ') : 'Noch keine gehaltenen Corner'}</small></span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.min(100, Math.max(4, row.total * 8))}%;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>`;
 }
 
 function renderLeaderboard() {
@@ -6794,47 +7130,192 @@ function buildNotifSettingsHtml() {
 }
 
 /* ---- Visit-history map: heat-style dots sized by how often you were there ---- */
+/* ====================== PROFILE CORNER MAP ======================
+   The map lives in a DOM node kept OUTSIDE the re-rendered profile markup and
+   re-attached after every render. Rebuilding it each time (as before) threw
+   away the Leaflet instance and reset the view, which looked like the map
+   "zooming back out" whenever data arrived.                                */
+const NEUTRAL_TEAM_COLOR = "#c9bfa8";
+var _profileMapWrap = null;   // persistent wrapper (map + controls)
+var _pmapLayers = [];         // markers/lines currently drawn
+var _pmapTimer = null;        // animation interval
+var _pmapIndex = null;        // visits shown (null = all)
+
+// My visits, chronologically, enriched with the corner's coordinates.
+function myVisitLog() {
+  const me = currentUserKey();
+  const byId = {};
+  getAllCorners().forEach((c) => { byId[c.id] = c; });
+  const log = [];
+  Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
+    const corner = byId[cornerId];
+    if (!corner || typeof corner.lat !== "number" || typeof corner.lng !== "number") return;
+    Object.values(entries || {}).forEach((v) => {
+      if (!v) return;
+      const mine = v.userId ? v.userId === me : v.user === STATE.nickname;
+      if (!mine) return;
+      log.push({ cornerId, name: corner.name, lat: corner.lat, lng: corner.lng, team: v.team || "", time: Number(v.time || 0) });
+    });
+  });
+  return log.sort((a, b) => a.time - b.time);
+}
+
 function myVisitCount(cornerId) {
   const entries = STATE.visits?.[cornerId] ? Object.values(STATE.visits[cornerId]) : [];
   return entries.filter((v) => v && v.user === STATE.nickname).length;
 }
 
-function initProfileMap() {
-  const el = document.getElementById("profile-map");
-  if (!el || typeof L === "undefined") return;
-  if (STATE.profileMap) { try { STATE.profileMap.remove(); } catch (e) {} STATE.profileMap = null; }
-  const map = L.map(el, { zoomControl: false, attributionControl: false, scrollWheelZoom: false });
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, crossOrigin: true }).addTo(map);
-  const visited = new Set(STATE.visitedCorners || []);
-  const pts = [];
+function pieIconHtml(slices, size) {
+  // conic-gradient pie; kept semi-transparent so the map stays readable
+  let acc = 0;
+  const stops = slices.map((sl) => {
+    const from = acc * 360, to = (acc + sl.frac) * 360;
+    acc += sl.frac;
+    return `${sl.color} ${from.toFixed(2)}deg ${to.toFixed(2)}deg`;
+  }).join(", ");
+  const bg = slices.length ? `conic-gradient(${stops})` : NEUTRAL_TEAM_COLOR;
+  return `<div class="cg-pie" style="width:${size}px;height:${size}px;background:${bg};"></div>`;
+}
+
+// Aggregate visits into per-corner totals and team slices.
+function aggregateVisits(log) {
+  const byCorner = {};
+  log.forEach((v) => {
+    const e = byCorner[v.cornerId] || (byCorner[v.cornerId] = { cornerId: v.cornerId, name: v.name, lat: v.lat, lng: v.lng, count: 0, teams: {}, last: 0 });
+    e.count++;
+    const key = v.team || "__none";
+    e.teams[key] = (e.teams[key] || 0) + 1;
+    if (v.time > e.last) e.last = v.time;
+  });
+  return byCorner;
+}
+
+function clearProfileMapLayers() {
+  const map = STATE.profileMap;
+  _pmapLayers.forEach((l) => { try { map.removeLayer(l); } catch (e) {} });
+  _pmapLayers = [];
+}
+
+/* Draw the map for the first `upto` visits (undefined = all). */
+function drawProfileMap(upto) {
+  const map = STATE.profileMap;
+  if (!map) return;
+  const full = myVisitLog();
+  const log = typeof upto === "number" ? full.slice(0, upto) : full;
+  clearProfileMapLayers();
+
+  // faint markers for corners never visited — the "still to explore" layer
+  const visitedIds = new Set(log.map((v) => v.cornerId));
   getAllCorners().forEach((c) => {
     if (typeof c.lat !== "number" || typeof c.lng !== "number") return;
-    const count = myVisitCount(c.id);
-    const wasThere = visited.has(c.id) || count > 0;
-    if (!wasThere) {
-      // Unvisited corners: faint dots, so the map doubles as a "still to explore" view.
-      L.circleMarker([c.lat, c.lng], { radius: 4, color: "#555", fillColor: "#555", fillOpacity: 0.35, weight: 1 })
-        .bindPopup(`<strong>${escapeHtml(c.name)}</strong><br>Noch nie da — auf geht's! 🍻`)
-        .addTo(map);
-      return;
-    }
-    const n = Math.max(1, count);
-    const radius = Math.min(22, 8 + n * 3);
-    const opacity = Math.min(0.95, 0.45 + n * 0.12);
-    L.circleMarker([c.lat, c.lng], { radius, color: "#ff2e6c", fillColor: "#e8a93e", fillOpacity: opacity, weight: 2 })
-      .bindPopup(`<strong>${escapeHtml(c.name)}</strong><br>${n}x eingecheckt`)
-      .addTo(map);
-    pts.push([c.lat, c.lng]);
+    if (visitedIds.has(c.id)) return;
+    const m = L.circleMarker([c.lat, c.lng], { radius: 4, color: "#666", fillColor: "#666", fillOpacity: 0.3, weight: 1, interactive: true })
+      .bindPopup(`<strong>${escapeHtml(c.name)}</strong><br>Noch nie da — auf geht's! 🍻`);
+    m.addTo(map); _pmapLayers.push(m);
   });
-  if (pts.length) map.fitBounds(pts, { padding: [30, 30], maxZoom: 14 });
-  else map.setView([48.135, 11.555], 12);
-  STATE.profileMap = map;
-  setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 80);
+
+  // thin trail connecting consecutive visits in chronological order
+  if (log.length > 1) {
+    const line = L.polyline(log.map((v) => [v.lat, v.lng]), { color: "#e8a93e", weight: 1.5, opacity: 0.5, dashArray: "4 4", interactive: false });
+    line.addTo(map); _pmapLayers.push(line);
+  }
+
+  // one pie per visited corner: size = number of visits, slices = teams
+  const agg = aggregateVisits(log);
+  Object.values(agg).forEach((e) => {
+    const size = Math.min(64, 18 + (e.count - 1) * 7);   // grows only
+    const slices = Object.entries(e.teams).map(([teamKey, n]) => ({
+      color: teamKey === "__none" ? NEUTRAL_TEAM_COLOR : (TEAMS[teamKey]?.color || NEUTRAL_TEAM_COLOR),
+      frac: n / e.count,
+      label: teamKey === "__none" ? "ohne Team" : (TEAMS[teamKey]?.name || teamKey),
+      n
+    }));
+    const icon = L.divIcon({ className: "cg-pie-wrap", html: pieIconHtml(slices, size), iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+    const breakdown = slices.sort((a, b) => b.n - a.n)
+      .map((sl) => `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${sl.color};margin-right:4px;"></span>${escapeHtml(sl.label)}: ${sl.n}x`)
+      .join("<br>");
+    const m = L.marker([e.lat, e.lng], { icon, riseOnHover: true, zIndexOffset: 500 })
+      .bindPopup(`<strong>${escapeHtml(e.name)}</strong><br>${e.count}x eingecheckt<br><small>${breakdown}</small><br><small>zuletzt: ${e.last ? new Date(e.last).toLocaleDateString("de-DE") : "—"}</small>`);
+    m.addTo(map); _pmapLayers.push(m);
+  });
+
+  // scrub label
+  const dateEl = document.getElementById("pmap-date");
+  if (dateEl) {
+    const shown = log.length, total = full.length;
+    const last = log[log.length - 1];
+    dateEl.textContent = total === 0 ? "noch keine Check-ins"
+      : `${shown}/${total} Check-ins${last ? " · " + new Date(last.time).toLocaleDateString("de-DE") : ""}`;
+  }
+  const scrub = document.getElementById("pmap-scrub");
+  if (scrub) { scrub.max = String(Math.max(1, full.length)); if (typeof upto !== "number") scrub.value = String(full.length); }
+}
+
+function stopProfileMapAnimation() {
+  if (_pmapTimer) { clearInterval(_pmapTimer); _pmapTimer = null; }
+  const btn = document.getElementById("pmap-play");
+  if (btn) btn.textContent = "▶︎ Historie abspielen";
+}
+
+function playProfileMapHistory() {
+  const total = myVisitLog().length;
+  if (!total) { toast("Noch keine Check-ins zum Abspielen."); return; }
+  if (_pmapTimer) { stopProfileMapAnimation(); return; }
+  let i = 0;
+  _pmapIndex = 0;
+  drawProfileMap(0);
+  const btn = document.getElementById("pmap-play");
+  if (btn) btn.textContent = "⏸ Pause";
+  _pmapTimer = setInterval(() => {
+    i++;
+    _pmapIndex = i;
+    const scrub = document.getElementById("pmap-scrub");
+    if (scrub) scrub.value = String(i);
+    drawProfileMap(i);
+    if (i >= total) { stopProfileMapAnimation(); _pmapIndex = null; }
+  }, 600);
+}
+
+// Build the persistent wrapper once, then re-attach it after each profile render.
+function mountProfileMap() {
+  const slot = document.getElementById("profile-map-slot");
+  if (!slot || typeof L === "undefined") return;
+  if (!_profileMapWrap) {
+    _profileMapWrap = document.createElement("div");
+    _profileMapWrap.innerHTML = `
+      <div id="profile-map" style="height:260px;border-radius:12px;overflow:hidden;background:var(--bg-3);"></div>
+      <div class="pmap-controls">
+        <button class="action-btn" id="pmap-play">▶︎ Historie abspielen</button>
+        <input type="range" id="pmap-scrub" min="0" max="1" value="1" aria-label="Zeitpunkt" />
+        <span id="pmap-date"></span>
+      </div>`;
+  }
+  if (_profileMapWrap.parentElement !== slot) slot.appendChild(_profileMapWrap);
+  if (!STATE.profileMap) {
+    const el = _profileMapWrap.querySelector("#profile-map");
+    const map = L.map(el, { zoomControl: true, attributionControl: false, scrollWheelZoom: false });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, crossOrigin: true }).addTo(map);
+    STATE.profileMap = map;
+    const log = myVisitLog();
+    if (log.length) map.fitBounds(log.map((v) => [v.lat, v.lng]), { padding: [30, 30], maxZoom: 15 });
+    else map.setView([48.135, 11.555], 12);
+    _profileMapWrap.querySelector("#pmap-play").addEventListener("click", playProfileMapHistory);
+    _profileMapWrap.querySelector("#pmap-scrub").addEventListener("input", (e) => {
+      stopProfileMapAnimation();
+      const v = parseInt(e.target.value, 10) || 0;
+      const total = myVisitLog().length;
+      _pmapIndex = v >= total ? null : v;
+      drawProfileMap(_pmapIndex === null ? undefined : v);
+    });
+  }
+  drawProfileMap(_pmapIndex === null ? undefined : _pmapIndex);
+  setTimeout(() => { try { STATE.profileMap.invalidateSize(); } catch (e) {} }, 60);
 }
 
 function renderProfile() {
   const xp = getCurrentXp();
-  const { level, progress } = getLevel(xp);
+  const levelInfo = getLevel(xp);
+  const { level, progress } = levelInfo;
   const tier = getLevelTier(level);
   const teamInfo = getTeamInfo(STATE.team);
   const captureCount = Object.values(STATE.captureHistory).filter((entry) => entry.capturedBy?.includes(currentUserKey())).length;
@@ -6848,6 +7329,10 @@ function renderProfile() {
       <h2 class="profile-name">${escapeHtml(STATE.nickname || 'Anonym')}</h2>
       <div class="profile-level-info">${teamInfo ? teamInfo.emoji + ' ' + teamInfo.name + ' · ' : ''}${tier.emoji} Lv.${level} · ${tier.name}</div>
       <div class="profile-progress"><div class="profile-progress-fill" style="width:${Math.round(progress * 100)}%"></div></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);margin-top:6px;">
+        ${xp} XP · noch <strong style="color:var(--amber);">${levelInfo.xpToNext}</strong> XP bis Level ${level + 1}
+        ${levelInfo.reachedMilestone ? ` · 🏆 Lv.${MILESTONE_LEVEL} geschafft` : ` · 🎖️ Lv.${MILESTONE_LEVEL} = Meilenstein`}
+      </div>
     </div>
     <div class="profile-stats">
       <div class="profile-stat"><div class="stat-icon">📍</div><div class="stat-value">${STATE.visitedCorners.length}</div><div class="stat-label">Corners besucht</div></div>
@@ -6855,9 +7340,9 @@ function renderProfile() {
       <div class="profile-stat"><div class="stat-icon">⚔️</div><div class="stat-value">${captureCount}</div><div class="stat-label">Captures dabei</div></div>
       <div class="profile-stat"><div class="stat-icon">💬</div><div class="stat-value">${commentCount}</div><div class="stat-label">Kommentare</div></div>
     </div>
-    <div class="team-battle-section"><h3>🗺️ Deine Corner-Map</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">Je größer & heller der Punkt, desto öfter warst du da.</p><div id="profile-map" style="height:260px;border-radius:12px;overflow:hidden;background:var(--bg-3);"></div></div>
+    <div class="team-battle-section"><h3>🗺️ Deine Corner-Map</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">Kreisgröße = Anzahl Besuche, Tortenstücke = Team, mit dem du eingecheckt hast.</p><div id="profile-map-slot"></div></div>
     <div class="team-history"><h3>🧬 Team History</h3><div class="team-history-grid">${TEAM_ORDER.map((teamId) => { const count = STATE.teamHistory.filter((entry) => entry.team === teamId).length; return `<div class="team-history-item"><div class="th-emoji">${TEAMS[teamId].emoji}</div><div class="th-count">${count}</div><div class="th-name">${TEAMS[teamId].name}</div></div>`; }).join("")}</div></div>
-    <div class="team-battle-section"><h3>🏆 Team Leaderboard</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.max(6, row.total * 16)}px;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
+    <div class="team-battle-section"><h3>🏆 Team Leaderboard</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.min(100, Math.max(4, row.total * 8))}%;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
     <div class="best-friends-section"><h3>🤝 Best Friends</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Begegnungen geloggt.</p>`}</div>
     ${STATE.isAdmin ? `<div class="team-battle-section"><h3>🛠 Admin</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">Host-Werkzeuge: Profile & Spots verwalten.</p><button class="notif-opt" id="admin-open-btn">🛠 Admin-Panel öffnen</button></div>` : ""}
     ${buildAccountSectionHtml()}
@@ -6936,7 +7421,7 @@ function renderProfile() {
     const msg = recentMessages.find((entry) => entry.fromId === btn.dataset.replyId);
     sendDirectMessagePrompt(btn.dataset.replyId, msg?.fromName || btn.dataset.replyId);
   }));
-  initProfileMap();
+  mountProfileMap();
 }
 
 function bindTabs() {
@@ -6960,11 +7445,21 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 let toastTimer = null;
-function toast(html, variant) {
+function toast(html, variant, onClick) {
   const el = $("#toast");
   el.innerHTML = html;
-  el.className = "toast" + (variant ? " " + variant : "");
+  el.className = "toast" + (variant ? " " + variant : "") + (onClick ? " tappable" : "");
   el.hidden = false;
+  // Replacing the node drops any handler from a previous toast.
+  el.onclick = null;
+  if (typeof onClick === "function") {
+    el.onclick = () => {
+      el.classList.remove("show");
+      setTimeout(() => (el.hidden = true), 200);
+      clearTimeout(toastTimer);
+      onClick();
+    };
+  }
   requestAnimationFrame(() => el.classList.add("show"));
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
