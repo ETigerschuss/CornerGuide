@@ -404,10 +404,13 @@ input, textarea { cursor: text; }
 .card-photo {
   position: relative;
   width: 100%;
-  height: 200px;
+  /* Compact cover: more corners fit on screen, empty cards look far less
+     dominant. The photo is still tappable and opens full size. */
+  height: 130px;
   background: linear-gradient(135deg, #1a1a1a, #252525);
   overflow: hidden;
 }
+@media (max-width: 480px) { .card-photo { height: 110px; } }
 .card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .card-photo-empty {
   width: 100%; height: 100%;
@@ -2608,6 +2611,8 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   <div class="prompt-card" style="max-width:480px;max-height:85vh;overflow-y:auto;text-align:left;">
     <h2>🛠 Admin-Panel</h2>
     <p style="font-size:12px;color:var(--fg-dim);">Host-Werkzeuge. Löschen ist endgültig — Vorsicht.</p>
+    <h3 style="font-size:14px;margin:16px 0 8px;">🔗 Doppelte Profile</h3>
+    <div id="admin-dupes"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">👥 Profile</h3>
     <div id="admin-profiles"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">📍 Eigene Spots</h3>
@@ -4710,6 +4715,53 @@ async function migrateInboxFromLegacyKeys() {
   }
 }
 
+/* Merge one identity key into another in the DATABASE (points, achievements,
+   team). Without this the XP of the same person ends up split across the local
+   id and the auth uid — which is exactly what happened to six accounts. */
+async function mergeProfileKeys(oldKey, newKey) {
+  if (!oldKey || !newKey || oldKey === newKey || !window.FB?.firebaseReady) return false;
+  const { db, ref, get, set, remove } = window.FB;
+  try {
+    const [oldP, newP, oldA, oldT] = await Promise.all([
+      get(ref(db, "points/" + oldKey)),
+      get(ref(db, "points/" + newKey)),
+      get(ref(db, "achievements/" + oldKey)),
+      get(ref(db, "teams/" + oldKey))
+    ]);
+    const o = oldP.val();
+    if (!o) return false;
+    const n = newP.val() || { total: 0, history: [] };
+    const merged = {
+      total: Number(o.total || 0) + Number(n.total || 0),
+      history: [...(Array.isArray(n.history) ? n.history : []), ...(Array.isArray(o.history) ? o.history : [])].slice(-200),
+      nickname: n.nickname || o.nickname || ""
+    };
+    await set(ref(db, "points/" + newKey), merged);
+    const ach = oldA.val();
+    if (ach) {
+      const cur = (await get(ref(db, "achievements/" + newKey))).val() || {};
+      await set(ref(db, "achievements/" + newKey), { ...ach, ...cur });
+    }
+    const team = oldT.val();
+    if (team && team.team) {
+      const curTeam = (await get(ref(db, "teams/" + newKey))).val();
+      if (!curTeam) await set(ref(db, "teams/" + newKey), team);
+    }
+    await Promise.all([
+      remove(ref(db, "points/" + oldKey)).catch(() => {}),
+      remove(ref(db, "achievements/" + oldKey)).catch(() => {}),
+      remove(ref(db, "teams/" + oldKey)).catch(() => {})
+    ]);
+    STATE.points[newKey] = merged;
+    delete STATE.points[oldKey];
+    savePoints();
+    return merged;
+  } catch (err) {
+    console.warn("mergeProfileKeys failed:", err);
+    return false;
+  }
+}
+
 function migrateUserIdentity(oldId, newId) {
   if (!oldId || !newId || oldId === newId) return;
   rememberMyKey(oldId);
@@ -4719,6 +4771,8 @@ function migrateUserIdentity(oldId, newId) {
     delete STATE.points[oldId];
     savePoints();
   }
+  // Consolidate in the database too, so XP is never split across both keys.
+  mergeProfileKeys(oldId, newId);
 }
 
 function sanitizeInviteName(value) {
@@ -5849,6 +5903,53 @@ async function adminCleanPresence() {
   }
 }
 
+/* Find people whose XP got split across several identity keys (same nickname,
+   different keys). "Anonym" is excluded on purpose — those are usually
+   different people who never picked a name. */
+function findDuplicateProfiles(pointsData) {
+  const groups = {};
+  Object.entries(pointsData || {}).forEach(([key, p]) => {
+    const nick = ((p && p.nickname) || "").trim();
+    if (!nick || nick.toLowerCase() === "anonym") return;
+    (groups[nick.toLowerCase()] = groups[nick.toLowerCase()] || []).push({ key, nickname: nick, total: (p && p.total) || 0 });
+  });
+  return Object.values(groups)
+    .filter((entries) => entries.length > 1)
+    .map((entries) => entries.sort((a, b) => b.total - a.total));
+}
+
+async function renderAdminDuplicates(pointsData) {
+  const el = $("#admin-dupes");
+  if (!el) return;
+  const groups = findDuplicateProfiles(pointsData);
+  if (!groups.length) { el.innerHTML = `<p style="color:var(--fg-dim);font-size:12px;">Keine doppelten Profile. ✨</p>`; return; }
+  el.innerHTML = groups.map((g, gi) => {
+    const sum = g.reduce((s, e) => s + e.total, 0);
+    return `<div style="padding:10px 12px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${escapeHtml(g[0].nickname)} — ${g.length} Einträge</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);margin-bottom:8px;">
+        ${g.map((e) => `${e.total} XP`).join(" + ")} = <strong style="color:var(--amber);">${sum} XP</strong>
+      </div>
+      <button class="action-btn primary" data-merge-group="${gi}" style="padding:6px 10px;font-size:11px;">Zusammenführen</button>
+    </div>`;
+  }).join("");
+  el.querySelectorAll("[data-merge-group]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const g = groups[parseInt(btn.dataset.mergeGroup, 10)];
+      if (!g) return;
+      const sum = g.reduce((s, e) => s + e.total, 0);
+      if (!(await appConfirm(`„${g[0].nickname}" zusammenführen?`, `${g.length} Einträge werden zu einem Profil mit ${sum} XP verschmolzen. Nur ausführen, wenn das wirklich dieselbe Person ist.`, "Zusammenführen"))) return;
+      const target = g[0].key;               // keep the richest key
+      let ok = 0;
+      for (const e of g.slice(1)) {
+        if (await mergeProfileKeys(e.key, target)) ok++;
+      }
+      toast(ok ? `🔗 „${escapeHtml(g[0].nickname)}" zusammengeführt (${sum} XP)` : "Zusammenführen fehlgeschlagen.");
+      renderAdminPanel();
+    });
+  });
+}
+
 async function renderAdminPanel() {
   const overlay = $("#admin-overlay");
   if (!overlay || !STATE.isAdmin) return;
@@ -5861,6 +5962,7 @@ async function renderAdminPanel() {
   try {
     const snap = await window.FB.get(window.FB.ref(window.FB.db, "points"));
     const data = snap.val() || {};
+    renderAdminDuplicates(data);
     const rows = Object.entries(data)
       .map(([key, p]) => ({ key, nickname: (p && p.nickname) || key, total: (p && p.total) || 0 }))
       .sort((a, b) => b.total - a.total);
@@ -6135,9 +6237,13 @@ async function initFirebase() {
   // (e.g., anonymous session gets upgraded). Not the same scenario as the handler above.
   window.FB.onAuthChange?.((uid) => {
     if (!uid || uid === STATE.userId) return;
+    // Remember + consolidate the previous key, otherwise XP and messages stay
+    // stranded under it (this path was missing the migration entirely).
+    migrateUserIdentity(STATE.userId, uid);
     STATE.userId = uid;
     localStorage.setItem(USER_ID_STORAGE_KEY, uid);
     ensurePointIdentity();
+    migrateInboxFromLegacyKeys();
     syncIdentity();
   });
   window.FB.bindForegroundPush?.((payload) => {
@@ -6632,6 +6738,27 @@ function sendFromChatInput() {
     }
   }
 }
+
+/* Stable corner numbers.
+   The list/map used the index of the CURRENT sort order, so a corner's number
+   changed whenever someone checked in somewhere. Numbers are now fixed:
+   built-in corners keep their catalogue order, custom spots follow by creation
+   time — identical in the list, on the map and over time.                   */
+var _cornerNumberCache = null;
+function cornerNumberMap() {
+  const list = getAllCorners();
+  const signature = list.map((c) => c.id).join("|");
+  if (_cornerNumberCache && _cornerNumberCache.signature === signature) return _cornerNumberCache.map;
+  const ordered = [
+    ...list.filter((c) => !c.isCustom),
+    ...list.filter((c) => c.isCustom).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0) || String(a.id).localeCompare(String(b.id)))
+  ];
+  const map = {};
+  ordered.forEach((c, i) => { map[c.id] = i + 1; });
+  _cornerNumberCache = { signature, map };
+  return map;
+}
+function cornerNumber(id) { return cornerNumberMap()[id] || 0; }
 
 function getSortedCorners() {
   // Where you are checked in always comes first — that is the corner you act on.
@@ -7208,7 +7335,7 @@ function renderCards() {
     card.id = "card-" + c.id;
     card.innerHTML = `
       <div class="card-photo">
-        <div class="card-num">${String(i + 1).padStart(2, "0")}</div>
+        <div class="card-num">${String(cornerNumber(c.id)).padStart(2, "0")}</div>
         <span class="mine-badge">Mein Spot</span>
         <span class="at-badge">Du bist hier</span>
         ${capture ? `<span class="captured-badge"><span class="cap-emoji">${TEAMS[capture.team]?.emoji || "🏳️"}</span><span class="cap-label">Captured</span></span>` : ""}
@@ -7246,7 +7373,7 @@ function rebuildMainMarkers() {
   STATE.mainMarkers = {};
   getSortedCorners().forEach((c, i) => {
     const capture = STATE.captured[c.id];
-    const icon = L.divIcon({ className: "", html: `<div class="corner-marker ${c.isCustom ? "custom" : ""}" data-id="${c.id}"><span class="num">${i + 1}</span>${capture ? `<span class="team-badge">${TEAMS[capture.team]?.emoji || "🏳️"}</span>` : ""}</div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
+    const icon = L.divIcon({ className: "", html: `<div class="corner-marker ${c.isCustom ? "custom" : ""}" data-id="${c.id}"><span class="num">${cornerNumber(c.id)}</span>${capture ? `<span class="team-badge">${TEAMS[capture.team]?.emoji || "🏳️"}</span>` : ""}</div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
     const marker = L.marker([c.lat, c.lng], { icon }).addTo(STATE.mainMap);
     marker.bindPopup(`<strong>${escapeHtml(c.name)}</strong><br><small>${escapeHtml(c.area || "")}</small>${capture ? `<br><small>${TEAMS[capture.team]?.emoji || ''} ${TEAMS[capture.team]?.name || ''}</small>` : ""}`);
     marker.on("click", () => { $(`.tab[data-view="list"]`).click(); setTimeout(() => document.getElementById("card-" + c.id)?.scrollIntoView({ behavior: "smooth", block: "center" }), 150); });
@@ -7359,7 +7486,17 @@ function listenPoints() {
 
 function renderPointsLeaderboard() {
   const container = $("#leaderboard-points");
-  const sorted = Object.entries(STATE.points).map(([user, data]) => ({ user, total: data.total || 0, nickname: data.nickname || user })).filter((x) => x.total > 0).sort((a, b) => b.total - a.total).slice(0, 10);
+  // Fold every key that belongs to ME into one row — otherwise the same person
+  // shows up twice (once per identity key) with different levels.
+  const byPerson = {};
+  Object.entries(STATE.points).forEach(([user, data]) => {
+    const key = isMyKey(user) ? currentUserKey() : user;
+    const total = (data && data.total) || 0;
+    const nickname = (isMyKey(user) ? (STATE.nickname || (data && data.nickname)) : (data && data.nickname)) || key;
+    const prev = byPerson[key];
+    if (!prev || total > prev.total) byPerson[key] = { user: key, total, nickname };
+  });
+  const sorted = Object.values(byPerson).filter((x) => x.total > 0).sort((a, b) => b.total - a.total).slice(0, 10);
   if (!sorted.length) { container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Level-Ranking</h3><p style="color:var(--fg-dim);font-size:13px;">Noch keine XP gesammelt.</p></div>`; return; }
   container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Level-Ranking</h3><ul class="leaderboard-list">${sorted.map((x, i) => { const level = getLevel(x.total).level; const tier = getLevelTier(level); const team = TEAMS[STATE.teams[x.user]?.team] || TEAMS[x.user === currentUserKey() ? STATE.team : ""]; return `<li class="leaderboard-item ${x.user === currentUserKey() ? 'current-user' : ''}"><span class="lb-rank">${i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</span><span class="lb-name">${team?.emoji || '👤'} ${escapeHtml(x.nickname)} ${x.user === currentUserKey() ? '(du)' : ''}</span><span class="lb-score">${tier.emoji} Lv.${level}</span></li>`; }).join("")}</ul></div>`;
 }
