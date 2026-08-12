@@ -7441,6 +7441,7 @@ function onGeoUpdate(pos) {
       logEncounters(newAt);
     }
     broadcastPresence();
+    renderCards();   // the corner you just walked up to moves to the top
   }
   if (STATE.atCornerId) { setGeoStatus(`AM SPOT: ${nearest.name.toUpperCase()}`, "at-corner"); $("#me-position-meta").innerHTML = `<span style="color:var(--green)">📍 ${escapeHtml(nearest.name)}</span>`; } else { const dStr = nDist < 1000 ? `${Math.round(nDist)} m` : `${(nDist / 1000).toFixed(1)} km`; setGeoStatus(`${dStr} bis ${nearest.name}`, "live"); $("#me-position-meta").innerHTML = `<span style="color:var(--blue)">📍 ${dStr} bis ${escapeHtml(nearest.name)}</span>`; }
   updateCheckinButtons();
