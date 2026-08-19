@@ -797,10 +797,14 @@ input, textarea { cursor: text; }
   backdrop-filter: blur(6px);
   display: none;
   align-items: flex-end; justify-content: center;
-  animation: fade 0.2s;
+  /* No entrance animation here on purpose: visibility must never depend on an
+     animation completing. When the fade/slide did not advance (throttled or
+     skipped by the browser), the "+" dialog stayed at opacity 0, translated a
+     full screen down — invisible, yet swallowing every tap. It looked exactly
+     like "the + button does not work". */
 }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-.modal-backdrop.open { display: flex; }
+.modal-backdrop.open { display: flex; opacity: 1; }
 .modal {
   background: var(--bg-2);
   border-top: 2px solid var(--amber);
@@ -810,7 +814,7 @@ input, textarea { cursor: text; }
   max-height: 92vh;
   overflow-y: auto;
   padding: 20px 20px calc(24px + var(--safe-bottom));
-  animation: slide 0.25s;
+  transform: translateY(0);   /* resting state — never rely on the keyframes */
 }
 @keyframes slide { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .modal-handle { width: 40px; height: 4px; background: var(--line); border-radius: 2px; margin: 0 auto 18px; }
@@ -1380,7 +1384,9 @@ input, textarea { cursor: text; }
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center; justify-content: center;
-  animation: fade 0.2s;
+  /* deliberately no entrance animation: an animation that does not
+     advance would leave this overlay at opacity 0 while still
+     capturing taps (see .modal-backdrop). */
 }
 .nickname-prompt .prompt-card {
   background: var(--bg-2);
@@ -1434,7 +1440,9 @@ input, textarea { cursor: text; }
   backdrop-filter: blur(10px);
   display: flex;
   align-items: center; justify-content: center;
-  animation: fade 0.2s;
+  /* deliberately no entrance animation: an animation that does not
+     advance would leave this overlay at opacity 0 while still
+     capturing taps (see .modal-backdrop). */
 }
 .access-prompt .prompt-card {
   background: var(--bg-2);
@@ -1770,7 +1778,9 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   background: var(--bg);
   overflow-y: auto;
   display: none;
-  animation: fade 0.2s;
+  /* deliberately no entrance animation: an animation that does not
+     advance would leave this overlay at opacity 0 while still
+     capturing taps (see .modal-backdrop). */
 }
 .detail-overlay.open { display: block; }
 .detail-header {
@@ -1865,7 +1875,9 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   justify-content: center;
   flex-direction: column;
   gap: 16px;
-  animation: fade 0.2s;
+  /* deliberately no entrance animation: an animation that does not
+     advance would leave this overlay at opacity 0 while still
+     capturing taps (see .modal-backdrop). */
 }
 .lightbox.open { display: flex; }
 .lightbox img {
@@ -1992,7 +2004,9 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   display: none;
   align-items: center;
   justify-content: center;
-  animation: fade 0.2s;
+  /* deliberately no entrance animation: an animation that does not
+     advance would leave this overlay at opacity 0 while still
+     capturing taps (see .modal-backdrop). */
 }
 .checkin-prompt.open { display: flex; }
 .checkin-prompt-card {
