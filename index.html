@@ -321,6 +321,20 @@ input, textarea { cursor: text; }
 .meta-line .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--amber); }
 .meta-line strong { color: var(--amber); font-weight: 700; }
 
+/* Pinned tab bar: stays reachable no matter how far you scroll. */
+.tabs-bar {
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  display: flex;
+  justify-content: center;
+  padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 8px;
+  background: rgba(13, 13, 13, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
 .tabs {
   display: inline-flex;
   background: var(--bg-2);
@@ -330,6 +344,7 @@ input, textarea { cursor: text; }
   gap: 2px;
   position: relative;
   z-index: 1;
+  max-width: 100%;
 }
 .tab {
   background: transparent;
@@ -346,6 +361,7 @@ input, textarea { cursor: text; }
 }
 .tab.active { background: var(--amber); color: #111; }
 @media (max-width: 480px) {
+  .tabs-bar { padding-left: 10px; padding-right: 10px; }
   .tabs { display: flex; width: 100%; max-width: 100%; }
   .tab { flex: 1 1 0; padding: 10px 4px; letter-spacing: 0.5px; font-size: 10px; white-space: nowrap; text-align: center; min-width: 0; }
 }
@@ -388,10 +404,13 @@ input, textarea { cursor: text; }
 .card-photo {
   position: relative;
   width: 100%;
-  height: 200px;
+  /* Compact cover: more corners fit on screen, empty cards look far less
+     dominant. The photo is still tappable and opens full size. */
+  height: 130px;
   background: linear-gradient(135deg, #1a1a1a, #252525);
   overflow: hidden;
 }
+@media (max-width: 480px) { .card-photo { height: 110px; } }
 .card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .card-photo-empty {
   width: 100%; height: 100%;
@@ -752,6 +771,10 @@ input, textarea { cursor: text; }
 .chat-conv.started { background: var(--bg-3); border-left-color: var(--amber); margin-bottom: 4px; }
 .chat-conv.started .cc-preview { color: var(--fg); opacity: 0.8; }
 .chat-conv .cc-time { font-family: "JetBrains Mono", monospace; font-size: 9px; color: var(--fg-dim); white-space: nowrap; flex: 0 0 auto; }
+.chat-conv.unread { border-left-color: var(--pink); background: rgba(255,46,108,0.07); }
+.chat-conv.unread .cc-name { color: var(--fg); font-weight: 700; }
+.chat-conv.unread .cc-preview { color: var(--fg); opacity: 0.95; }
+.cc-unread { display: inline-block; min-width: 18px; padding: 0 5px; background: var(--pink); color: #fff; border-radius: 999px; font-size: 10px; font-weight: 700; text-align: center; vertical-align: middle; }
 .chat-conv .cc-body { flex: 1; min-width: 0; }
 .chat-conv .cc-name { font-weight: 600; }
 .chat-conv .cc-preview { color: var(--fg-dim); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -774,10 +797,14 @@ input, textarea { cursor: text; }
   backdrop-filter: blur(6px);
   display: none;
   align-items: flex-end; justify-content: center;
-  animation: fade 0.2s;
+  /* No entrance animation here on purpose: visibility must never depend on an
+     animation completing. When the fade/slide did not advance (throttled or
+     skipped by the browser), the "+" dialog stayed at opacity 0, translated a
+     full screen down — invisible, yet swallowing every tap. It looked exactly
+     like "the + button does not work". */
 }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-.modal-backdrop.open { display: flex; }
+.modal-backdrop.open { display: flex; opacity: 1; }
 .modal {
   background: var(--bg-2);
   border-top: 2px solid var(--amber);
@@ -787,7 +814,7 @@ input, textarea { cursor: text; }
   max-height: 92vh;
   overflow-y: auto;
   padding: 20px 20px calc(24px + var(--safe-bottom));
-  animation: slide 0.25s;
+  transform: translateY(0);   /* resting state — never rely on the keyframes */
 }
 @keyframes slide { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .modal-handle { width: 40px; height: 4px; background: var(--line); border-radius: 2px; margin: 0 auto 18px; }
@@ -1357,7 +1384,9 @@ input, textarea { cursor: text; }
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center; justify-content: center;
-  animation: fade 0.2s;
+  /* deliberately no entrance animation: an animation that does not
+     advance would leave this overlay at opacity 0 while still
+     capturing taps (see .modal-backdrop). */
 }
 .nickname-prompt .prompt-card {
   background: var(--bg-2);
@@ -1411,7 +1440,9 @@ input, textarea { cursor: text; }
   backdrop-filter: blur(10px);
   display: flex;
   align-items: center; justify-content: center;
-  animation: fade 0.2s;
+  /* deliberately no entrance animation: an animation that does not
+     advance would leave this overlay at opacity 0 while still
+     capturing taps (see .modal-backdrop). */
 }
 .access-prompt .prompt-card {
   background: var(--bg-2);
@@ -1451,6 +1482,10 @@ input, textarea { cursor: text; }
 .access-prompt input:focus { outline: none; border-color: var(--amber); }
 #team-create-name, #team-create-emoji, #app-dialog-input { text-transform: none; letter-spacing: 0; text-align: left; font-family: "DM Sans", sans-serif; font-size: 15px; }
 #app-dialog-input.code-input { text-transform: uppercase; letter-spacing: 2px; font-family: "JetBrains Mono", monospace; text-align: center; }
+.qr-block { background: var(--bg-3); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 12px; text-align: center; }
+.qr-block h3 { font-size: 14px; margin: 0 0 4px; }
+.qr-block p { font-size: 11px; color: var(--fg-dim); margin: 0 0 10px; line-height: 1.4; }
+.qr-block img { width: 100%; max-width: 220px; height: auto; border-radius: 8px; background: #fff; padding: 6px; box-sizing: border-box; margin-bottom: 10px; }
 .ce-label { display: block; font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-dim); margin: 12px 0 5px; }
 .ce-field { width: 100%; box-sizing: border-box; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); padding: 10px 12px; border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 15px; text-transform: none; letter-spacing: 0; text-align: left; margin: 0; }
 .ce-field:focus { outline: none; border-color: var(--amber); }
@@ -1473,6 +1508,22 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 }
 .access-prompt button:hover { background: var(--pink); color: #fff; }
 .access-prompt button:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Team tiles inside an overlay must keep their own tile look — the generic
+   full-width amber pill above would otherwise turn them into orange circles. */
+.access-prompt .team-btn {
+  background: var(--bg);
+  color: var(--fg);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 4px;
+  width: auto;
+  font-size: 22px;
+  font-weight: 400;
+}
+.access-prompt .team-btn:hover { background: var(--bg-3); color: var(--fg); border-color: var(--amber); }
+.access-prompt .team-btn.active { background: rgba(184,255,58,0.10); border-color: var(--green); color: var(--fg); }
+.access-prompt .team-btn .team-label { color: var(--fg-dim); }
+.access-prompt .team-btn.active .team-label { color: var(--fg); }
 
 /* ====================== PHOTO GALLERY ====================== */
 .photo-gallery {
@@ -1727,7 +1778,9 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   background: var(--bg);
   overflow-y: auto;
   display: none;
-  animation: fade 0.2s;
+  /* deliberately no entrance animation: an animation that does not
+     advance would leave this overlay at opacity 0 while still
+     capturing taps (see .modal-backdrop). */
 }
 .detail-overlay.open { display: block; }
 .detail-header {
@@ -1822,7 +1875,9 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   justify-content: center;
   flex-direction: column;
   gap: 16px;
-  animation: fade 0.2s;
+  /* deliberately no entrance animation: an animation that does not
+     advance would leave this overlay at opacity 0 while still
+     capturing taps (see .modal-backdrop). */
 }
 .lightbox.open { display: flex; }
 .lightbox img {
@@ -1949,7 +2004,9 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   display: none;
   align-items: center;
   justify-content: center;
-  animation: fade 0.2s;
+  /* deliberately no entrance animation: an animation that does not
+     advance would leave this overlay at opacity 0 while still
+     capturing taps (see .modal-backdrop). */
 }
 .checkin-prompt.open { display: flex; }
 .checkin-prompt-card {
@@ -2041,9 +2098,9 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 }
 .checkin-prompt-actions button {
   flex: 1;
-  padding: 12px;
+  padding: 16px 12px;
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   border: none;
 }
@@ -2051,11 +2108,13 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   background: var(--green);
   color: #111;
 }
+/* Skipping must be as easy as answering — same size, clearly readable. */
 .checkin-prompt-actions .btn-skip {
   background: var(--bg-3);
-  color: var(--fg-dim);
-  border: 1px solid var(--line);
+  color: var(--fg);
+  border: 1.5px solid var(--line);
 }
+.checkin-prompt-actions .btn-skip:hover { border-color: var(--fg-dim); }
 
 /* ====================== CARD SHORT MODE ====================== */
 .card .card-desc.short-desc {
@@ -2134,11 +2193,40 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 /* ====================== TEAMS SYSTEM ====================== */
 .team-select-section { background: var(--bg-3); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 14px 0; }
 .team-select-section h4 { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--fg-dim); margin: 0 0 10px; }
-.team-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
-.team-btn { background: var(--bg); border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px; font-size: 18px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px; }
+/* Compact tile grid instead of full-width rows: emoji on top, name below,
+   several teams per row regardless of how long the names are. */
+.team-buttons { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+.team-btn {
+  background: var(--bg);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 4px;
+  font-size: 22px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+}
 .team-btn:hover { border-color: var(--amber); transform: scale(1.05); }
 .team-btn.active { border-color: var(--green); background: rgba(184,255,58,0.08); box-shadow: 0 0 8px rgba(184,255,58,0.2); }
-.team-btn .team-label { font-family: "JetBrains Mono", monospace; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-dim); }
+.team-btn .team-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+.team-btn.active .team-label { color: var(--fg); }
 .team-badge { display: inline-flex; align-items: center; font-size: 14px; margin-left: 2px; }
 .captured-badge { position: absolute; bottom: 14px; left: 14px; background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.2); border-radius: 999px; padding: 4px 10px; font-size: 12px; backdrop-filter: blur(6px); z-index: 2; display: flex; align-items: center; gap: 4px; }
 .captured-badge .cap-emoji { font-size: 16px; }
@@ -2232,8 +2320,11 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .live-user-marker .live-nick { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; font-family: "JetBrains Mono", monospace; font-size: 9px; padding: 2px 6px; border-radius: 4px; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
 .live-user-marker:hover .live-nick { opacity: 1; }
 
-.team-btn { padding: 8px 10px; }
-.team-btn .team-label { display: none; }
+/* Mobile: slightly tighter tiles, but keep the names — they matter for
+   self-created teams, which are only distinguishable by their label. */
+.team-buttons { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 6px; }
+.team-btn { padding: 8px 3px; font-size: 20px; }
+.team-btn .team-label { font-size: 7px; letter-spacing: 0.3px; }
 
 </style>
 </head>
@@ -2268,14 +2359,18 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
     <div class="meta-line">
       <span><strong id="header-count">12</strong> Spots</span>
     </div>
-    <nav class="tabs" role="tablist">
-      <button class="tab active" data-view="list">Liste</button>
-      <button class="tab" data-view="map">Karte</button>
-      <button class="tab" data-view="leaderboard">🏆 Ranking</button>
-      <button class="tab" data-view="profile">👤 Profil</button>
-    </nav>
   </div>
 </header>
+
+<!-- Sticky navigation: lives outside the hero so it stays pinned while scrolling -->
+<div class="tabs-bar">
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-view="list">Liste</button>
+    <button class="tab" data-view="map">Karte</button>
+    <button class="tab" data-view="leaderboard">🏆 Ranking</button>
+    <button class="tab" data-view="profile">👤 Profil</button>
+  </nav>
+</div>
 
 <!-- ============ VIEWS ============ -->
 <main>
@@ -2512,6 +2607,34 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   </div>
 </div>
 
+<!-- QR codes: personal + neutral sticker -->
+<div id="qr-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:420px;max-height:88vh;overflow-y:auto;text-align:left;">
+    <h2>🧾 QR-Codes</h2>
+    <p id="qr-title" style="font-size:13px;color:var(--fg-dim);margin:0 0 12px;"></p>
+    <div id="qr-body"></div>
+    <button class="action-btn" id="qr-close" style="margin-top:14px;">Schließen</button>
+  </div>
+</div>
+
+<!-- Team picker shown right after a check-in (skippable) -->
+<div id="checkin-team-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:400px;max-height:86vh;overflow-y:auto;text-align:left;">
+    <h2>🧬 Für welches Team?</h2>
+    <p id="cto-sub" style="font-size:13px;color:var(--fg-dim);margin:0 0 4px;"></p>
+    <p style="font-size:12px;color:var(--fg-dim);margin:0 0 12px;">Dein Team färbt deinen Check-in, die Karte und das Team-Ranking.</p>
+    <div id="cto-teams" class="team-buttons" style="margin-bottom:6px;"></div>
+    <div id="cto-buddy" style="display:none;margin-top:12px;padding:10px 12px;background:var(--bg-3);border:1px solid var(--line);border-radius:10px;">
+      <div style="font-size:12px;color:var(--fg-dim);margin-bottom:8px;">Schon hier — gleiches Team wählen?</div>
+      <div id="cto-buddy-list" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:18px;align-items:center;">
+      <button class="action-btn" id="cto-skip" style="flex:1;padding:14px;font-size:15px;">Überspringen</button>
+      <button class="action-btn primary" id="cto-done" style="flex:1;padding:14px;font-size:15px;">Fertig</button>
+    </div>
+  </div>
+</div>
+
 <!-- Edit a corner you created -->
 <div id="corner-edit-overlay" class="access-prompt" style="display:none;">
   <div class="prompt-card" style="max-width:400px;max-height:86vh;overflow-y:auto;text-align:left;">
@@ -2550,6 +2673,8 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   <div class="prompt-card" style="max-width:480px;max-height:85vh;overflow-y:auto;text-align:left;">
     <h2>🛠 Admin-Panel</h2>
     <p style="font-size:12px;color:var(--fg-dim);">Host-Werkzeuge. Löschen ist endgültig — Vorsicht.</p>
+    <h3 style="font-size:14px;margin:16px 0 8px;">🔗 Doppelte Profile</h3>
+    <div id="admin-dupes"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">👥 Profile</h3>
     <div id="admin-profiles"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">📍 Eigene Spots</h3>
@@ -4606,13 +4731,110 @@ function getOrCreateUserId() {
   return id;
 }
 
+/* Identity history.
+   STATE.userId starts as a local "user-xxxx" id and is later replaced by the
+   Firebase auth uid (and again when an old profile is claimed). Anything other
+   people addressed to an EARLIER key — direct messages above all — became
+   invisible after the flip ("die Nachrichten sind auf einmal weg"). We keep
+   every key this person has used so reads can cover all of them.            */
+function myKeys() {
+  let keys = [];
+  try { keys = JSON.parse(localStorage.getItem("cg.myKeys") || "[]"); } catch (e) { keys = []; }
+  const cur = currentUserKey();
+  if (cur && !keys.includes(cur)) keys.unshift(cur);
+  return keys.filter(Boolean);
+}
+function rememberMyKey(key) {
+  if (!key) return;
+  let keys = [];
+  try { keys = JSON.parse(localStorage.getItem("cg.myKeys") || "[]"); } catch (e) { keys = []; }
+  if (keys.includes(key)) return;
+  keys.push(key);
+  localStorage.setItem("cg.myKeys", JSON.stringify(keys.slice(-6)));
+}
+function isMyKey(key) {
+  return !!key && myKeys().includes(key);
+}
+
+// Move anything still addressed to an old key over to the current one.
+async function migrateInboxFromLegacyKeys() {
+  if (!window.FB?.firebaseReady) return;
+  const cur = currentUserKey();
+  const legacy = myKeys().filter((k) => k !== cur);
+  if (!cur || !legacy.length) return;
+  const { db, ref, get, set, remove } = window.FB;
+  for (const old of legacy) {
+    try {
+      const snap = await get(ref(db, "messages/" + old));
+      const data = snap.val();
+      if (!data) continue;
+      for (const [id, msg] of Object.entries(data)) {
+        await set(ref(db, "messages/" + cur + "/" + id), msg).catch(() => {});
+      }
+      await remove(ref(db, "messages/" + old)).catch(() => {});
+      console.log(`Inbox von ${old} nach ${cur} übernommen (${Object.keys(data).length} Nachrichten).`);
+    } catch (err) { console.warn("inbox migration failed for", old, err); }
+  }
+}
+
+/* Merge one identity key into another in the DATABASE (points, achievements,
+   team). Without this the XP of the same person ends up split across the local
+   id and the auth uid — which is exactly what happened to six accounts. */
+async function mergeProfileKeys(oldKey, newKey) {
+  if (!oldKey || !newKey || oldKey === newKey || !window.FB?.firebaseReady) return false;
+  const { db, ref, get, set, remove } = window.FB;
+  try {
+    const [oldP, newP, oldA, oldT] = await Promise.all([
+      get(ref(db, "points/" + oldKey)),
+      get(ref(db, "points/" + newKey)),
+      get(ref(db, "achievements/" + oldKey)),
+      get(ref(db, "teams/" + oldKey))
+    ]);
+    const o = oldP.val();
+    if (!o) return false;
+    const n = newP.val() || { total: 0, history: [] };
+    const merged = {
+      total: Number(o.total || 0) + Number(n.total || 0),
+      history: [...(Array.isArray(n.history) ? n.history : []), ...(Array.isArray(o.history) ? o.history : [])].slice(-200),
+      nickname: n.nickname || o.nickname || ""
+    };
+    await set(ref(db, "points/" + newKey), merged);
+    const ach = oldA.val();
+    if (ach) {
+      const cur = (await get(ref(db, "achievements/" + newKey))).val() || {};
+      await set(ref(db, "achievements/" + newKey), { ...ach, ...cur });
+    }
+    const team = oldT.val();
+    if (team && team.team) {
+      const curTeam = (await get(ref(db, "teams/" + newKey))).val();
+      if (!curTeam) await set(ref(db, "teams/" + newKey), team);
+    }
+    await Promise.all([
+      remove(ref(db, "points/" + oldKey)).catch(() => {}),
+      remove(ref(db, "achievements/" + oldKey)).catch(() => {}),
+      remove(ref(db, "teams/" + oldKey)).catch(() => {})
+    ]);
+    STATE.points[newKey] = merged;
+    delete STATE.points[oldKey];
+    savePoints();
+    return merged;
+  } catch (err) {
+    console.warn("mergeProfileKeys failed:", err);
+    return false;
+  }
+}
+
 function migrateUserIdentity(oldId, newId) {
   if (!oldId || !newId || oldId === newId) return;
+  rememberMyKey(oldId);
+  rememberMyKey(newId);
   if (STATE.points?.[oldId] && !STATE.points?.[newId]) {
     STATE.points[newId] = { ...STATE.points[oldId] };
     delete STATE.points[oldId];
     savePoints();
   }
+  // Consolidate in the database too, so XP is never split across both keys.
+  mergeProfileKeys(oldId, newId);
 }
 
 function sanitizeInviteName(value) {
@@ -4633,6 +4855,20 @@ function buildShareUrl(cornerId, inviteName, autoCheckin = false) {
   // Referral: whoever generated this QR/link gets rewarded when it is used.
   if (autoCheckin && currentUserKey()) url.searchParams.set("ref", currentUserKey());
   else url.searchParams.delete("ref");
+  // Carry my team so a scanned personal code checks the other person into the
+  // same team (that is the point of sharing a corner with your crew).
+  if (autoCheckin && STATE.team) url.searchParams.set("team", STATE.team);
+  else url.searchParams.delete("team");
+  return url.toString();
+}
+
+// A neutral code for printing/stickers: no person, no team — just the corner.
+function buildStickerUrl(cornerId) {
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set(SHARE_CORNER_PARAM, cornerId);
+  url.searchParams.set(CHECKIN_PARAM, "1");
   return url.toString();
 }
 
@@ -4669,6 +4905,9 @@ function applyIncomingLinks() {
   // QR referral: remember who generated the scanned code (rewarded on check-in).
   const refId = (params.get("ref") || "").trim();
   if (refId && autoCheckin) STATE.pendingReferrerId = refId;
+  // A personal QR carries the sharer's team so the crew ends up together.
+  const sharedTeam = (params.get("team") || "").trim();
+  if (sharedTeam && autoCheckin) STATE.pendingSharedTeam = sharedTeam;
 }
 
 function clearHandledQueryParam(name) {
@@ -5138,7 +5377,14 @@ async function saveTeamCreate() {
     addXp(15, `Team gegründet: ${team.name}`);
     unlockAchievement("team-founder", "Gründer", "🚩", 25);
     toast(`✅ Team „${escapeHtml(team.name)}" erstellt & ausgewählt`);
-    if (_teamCreateReturnCorner) setTimeout(() => openDetail(_teamCreateReturnCorner), 120);
+    // If this came out of a check-in, continue that chain instead of the detail view.
+    const pending = STATE.pendingCheckinQuestions;
+    if (pending) {
+      STATE.pendingCheckinQuestions = null;
+      setTimeout(() => showCheckinPrompt(pending), 250);
+    } else if (_teamCreateReturnCorner) {
+      setTimeout(() => openDetail(_teamCreateReturnCorner), 120);
+    }
   } catch (err) {
     console.warn("saveTeamCreate failed:", err);
     toast("Team konnte nicht erstellt werden.");
@@ -5215,9 +5461,14 @@ function renderLiveLocationMarkers() {
 }
 
 function _activateAuthDependentFeatures(uid, status) {
+  // Remember the key we were using before auth replaced it, so the inbox and
+  // chat threads addressed to it stay reachable.
+  rememberMyKey(STATE.userId);
+  rememberMyKey(uid);
   STATE.userId = uid;
   localStorage.setItem(USER_ID_STORAGE_KEY, uid);
   ensurePointIdentity();
+  migrateInboxFromLegacyKeys();
   if (status) {
     status.className = "firebase-status online";
     status.textContent = "⚡ Live — Firebase aktiv & authentifiziert";
@@ -5410,6 +5661,133 @@ async function claimRecoveryCode(rawCode) {
   }
 }
 
+/* ====================== QR CODES ======================
+   Two flavours: a personal code (carries me as referrer and my team, so the
+   crew lands together) and a neutral sticker code (corner only) that can be
+   printed and glued to the spot.                                          */
+function qrImageUrl(data, size) {
+  return "https://api.qrserver.com/v1/create-qr-code/?size=" + size + "x" + size + "&margin=10&data=" + encodeURIComponent(data);
+}
+
+function openQrDialog(corner) {
+  const overlay = $("#qr-overlay");
+  if (!overlay || !corner) return;
+  const personal = buildShareUrl(corner.id, STATE.nickname || "", true);
+  const sticker = buildStickerUrl(corner.id);
+  const teamNote = STATE.team && TEAMS[STATE.team]
+    ? `inkl. Team ${TEAMS[STATE.team].emoji} ${escapeHtml(TEAMS[STATE.team].name)}`
+    : "ohne Team";
+  $("#qr-title").textContent = corner.name;
+  $("#qr-body").innerHTML = `
+    <div class="qr-block">
+      <h3>👤 Persönlicher Code</h3>
+      <p>Zum Teilen mit Freunden: sie werden eingecheckt, du bekommst Punkte, ${teamNote}.</p>
+      <img src="${qrImageUrl(personal, 320)}" alt="Persönlicher QR-Code" />
+      <button class="action-btn" data-copy="${escapeHtml(personal)}">🔗 Link kopieren</button>
+    </div>
+    <div class="qr-block">
+      <h3>🏷️ Aufkleber-Code (neutral)</h3>
+      <p>Ohne Person und ohne Team — zum Ausdrucken und an den Corner kleben. Wer scannt, wird direkt hier eingecheckt.</p>
+      <img src="${qrImageUrl(sticker, 320)}" alt="Neutraler QR-Code" />
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="action-btn" data-copy="${escapeHtml(sticker)}">🔗 Link kopieren</button>
+        <button class="action-btn primary" id="qr-print">🖨️ Aufkleber drucken</button>
+      </div>
+    </div>`;
+  $("#qr-body").querySelectorAll("[data-copy]").forEach((b) =>
+    b.addEventListener("click", async () => { await copyText(b.dataset.copy); toast("🔗 Link kopiert"); }));
+  $("#qr-print")?.addEventListener("click", () => printCornerSticker(corner, sticker));
+  $("#qr-close").onclick = () => { overlay.style.display = "none"; };
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
+  overlay.style.display = "flex";
+}
+
+// Print-ready sticker sheet for one corner.
+function printCornerSticker(corner, url) {
+  const w = window.open("", "_blank");
+  if (!w) { toast("Bitte Pop-ups erlauben, um zu drucken."); return; }
+  w.document.write(`<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Aufkleber – ${escapeHtml(corner.name)}</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; }
+      .sticker { width: 74mm; border: 2px dashed #999; border-radius: 10mm; padding: 8mm; text-align: center; page-break-inside: avoid; margin: 0 auto 10mm; }
+      .sticker h1 { font-size: 15pt; margin: 0 0 2mm; }
+      .sticker .area { font-size: 9pt; color: #666; margin: 0 0 4mm; text-transform: uppercase; letter-spacing: 1px; }
+      .sticker img { width: 52mm; height: 52mm; }
+      .sticker .cta { font-size: 11pt; font-weight: 700; margin-top: 4mm; }
+      .sticker .sub { font-size: 8pt; color: #666; margin-top: 1mm; }
+      @media print { body { padding: 0; } .sticker { border-color: #ccc; } }
+    </style></head><body>
+    <div class="sticker">
+      <h1>${escapeHtml(corner.name)}</h1>
+      <p class="area">${escapeHtml(corner.area || "Minga Corner Guide")}</p>
+      <img src="${qrImageUrl(url, 512)}" alt="QR" />
+      <p class="cta">📷 Scannen &amp; einchecken</p>
+      <p class="sub">Minga Corner Guide · cornern als Lebensstil 🍻</p>
+    </div>
+    <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 600); };<\/script>
+    </body></html>`);
+  w.document.close();
+}
+
+/* ====================== TEAM PICKER AFTER CHECK-IN ======================
+   Shown on every check-in, skippable. It also offers "same team as the people
+   already here", which is how two friends end up in one team without talking
+   about it, and a shortcut to found your own team.                          */
+function openCheckinTeamPicker(cornerId) {
+  const overlay = $("#checkin-team-overlay");
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  if (!overlay || !corner) return;
+  $("#cto-sub").textContent = `Eingecheckt am ${corner.name}`;
+
+  const wrap = $("#cto-teams");
+  const paint = () => {
+    wrap.innerHTML = allTeamKeys().map((id) => `
+      <button class="team-btn ${STATE.team === id ? "active" : ""}" data-team="${id}" title="${escapeHtml(TEAMS[id]?.name || id)}" style="border-color:${STATE.team === id ? (TEAMS[id]?.color || "var(--amber)") : "var(--line)"};">
+        <span>${TEAMS[id]?.emoji || "🚩"}</span><span class="team-label">${escapeHtml(TEAMS[id]?.name || id)}</span>
+      </button>`).join("") +
+      `<button class="team-btn" data-team-create="1" title="Eigenes Team gründen" style="border-style:dashed;"><span>➕</span><span class="team-label">Eigenes</span></button>`;
+    wrap.querySelectorAll("[data-team]").forEach((b) => b.addEventListener("click", () => { selectTeam(b.dataset.team); paint(); }));
+    wrap.querySelector("[data-team-create]")?.addEventListener("click", () => {
+      overlay.style.display = "none";
+      openTeamCreate(cornerId);
+    });
+  };
+  paint();
+
+  // Buddies already checked in here: one tap to join their team.
+  const here = Object.values(STATE.friends || {})
+    .filter((f) => f.atCorner === cornerId && f.team && TEAMS[f.team])
+    .filter((f, i, arr) => arr.findIndex((x) => x.team === f.team) === i);
+  const buddyBox = $("#cto-buddy");
+  if (here.length) {
+    buddyBox.style.display = "";
+    $("#cto-buddy-list").innerHTML = here.map((f) => `
+      <button class="action-btn" data-buddy-team="${escapeHtml(f.team)}" style="font-size:11px;padding:6px 10px;border-color:${TEAMS[f.team].color};">
+        ${TEAMS[f.team].emoji} wie ${escapeHtml(f.nickname || "Freund")}
+      </button>`).join("");
+    $("#cto-buddy-list").querySelectorAll("[data-buddy-team]").forEach((b) =>
+      b.addEventListener("click", () => {
+        selectTeam(b.dataset.buddyTeam);
+        toast(`${TEAMS[b.dataset.buddyTeam].emoji} Team ${escapeHtml(TEAMS[b.dataset.buddyTeam].name)} übernommen`);
+        overlay.style.display = "none";
+      }));
+  } else {
+    buddyBox.style.display = "none";
+  }
+
+  // Closing continues the chain: on a first visit the questionnaire follows.
+  const close = () => {
+    overlay.style.display = "none";
+    const pending = STATE.pendingCheckinQuestions;
+    STATE.pendingCheckinQuestions = null;
+    if (pending) setTimeout(() => showCheckinPrompt(pending), 250);
+  };
+  $("#cto-skip").onclick = close;
+  $("#cto-done").onclick = close;
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+  overlay.style.display = "flex";
+}
+
 /* ====================== EDIT OWN CORNER ====================== */
 // Only the creator (or the host) may edit a user-created spot.
 function canEditCorner(c) {
@@ -5587,6 +5965,53 @@ async function adminCleanPresence() {
   }
 }
 
+/* Find people whose XP got split across several identity keys (same nickname,
+   different keys). "Anonym" is excluded on purpose — those are usually
+   different people who never picked a name. */
+function findDuplicateProfiles(pointsData) {
+  const groups = {};
+  Object.entries(pointsData || {}).forEach(([key, p]) => {
+    const nick = ((p && p.nickname) || "").trim();
+    if (!nick || nick.toLowerCase() === "anonym") return;
+    (groups[nick.toLowerCase()] = groups[nick.toLowerCase()] || []).push({ key, nickname: nick, total: (p && p.total) || 0 });
+  });
+  return Object.values(groups)
+    .filter((entries) => entries.length > 1)
+    .map((entries) => entries.sort((a, b) => b.total - a.total));
+}
+
+async function renderAdminDuplicates(pointsData) {
+  const el = $("#admin-dupes");
+  if (!el) return;
+  const groups = findDuplicateProfiles(pointsData);
+  if (!groups.length) { el.innerHTML = `<p style="color:var(--fg-dim);font-size:12px;">Keine doppelten Profile. ✨</p>`; return; }
+  el.innerHTML = groups.map((g, gi) => {
+    const sum = g.reduce((s, e) => s + e.total, 0);
+    return `<div style="padding:10px 12px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${escapeHtml(g[0].nickname)} — ${g.length} Einträge</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);margin-bottom:8px;">
+        ${g.map((e) => `${e.total} XP`).join(" + ")} = <strong style="color:var(--amber);">${sum} XP</strong>
+      </div>
+      <button class="action-btn primary" data-merge-group="${gi}" style="padding:6px 10px;font-size:11px;">Zusammenführen</button>
+    </div>`;
+  }).join("");
+  el.querySelectorAll("[data-merge-group]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const g = groups[parseInt(btn.dataset.mergeGroup, 10)];
+      if (!g) return;
+      const sum = g.reduce((s, e) => s + e.total, 0);
+      if (!(await appConfirm(`„${g[0].nickname}" zusammenführen?`, `${g.length} Einträge werden zu einem Profil mit ${sum} XP verschmolzen. Nur ausführen, wenn das wirklich dieselbe Person ist.`, "Zusammenführen"))) return;
+      const target = g[0].key;               // keep the richest key
+      let ok = 0;
+      for (const e of g.slice(1)) {
+        if (await mergeProfileKeys(e.key, target)) ok++;
+      }
+      toast(ok ? `🔗 „${escapeHtml(g[0].nickname)}" zusammengeführt (${sum} XP)` : "Zusammenführen fehlgeschlagen.");
+      renderAdminPanel();
+    });
+  });
+}
+
 async function renderAdminPanel() {
   const overlay = $("#admin-overlay");
   if (!overlay || !STATE.isAdmin) return;
@@ -5599,6 +6024,7 @@ async function renderAdminPanel() {
   try {
     const snap = await window.FB.get(window.FB.ref(window.FB.db, "points"));
     const data = snap.val() || {};
+    renderAdminDuplicates(data);
     const rows = Object.entries(data)
       .map(([key, p]) => ({ key, nickname: (p && p.nickname) || key, total: (p && p.total) || 0 }))
       .sort((a, b) => b.total - a.total);
@@ -5873,9 +6299,13 @@ async function initFirebase() {
   // (e.g., anonymous session gets upgraded). Not the same scenario as the handler above.
   window.FB.onAuthChange?.((uid) => {
     if (!uid || uid === STATE.userId) return;
+    // Remember + consolidate the previous key, otherwise XP and messages stay
+    // stranded under it (this path was missing the migration entirely).
+    migrateUserIdentity(STATE.userId, uid);
     STATE.userId = uid;
     localStorage.setItem(USER_ID_STORAGE_KEY, uid);
     ensurePointIdentity();
+    migrateInboxFromLegacyKeys();
     syncIdentity();
   });
   window.FB.bindForegroundPush?.((payload) => {
@@ -6122,16 +6552,26 @@ function sendDirectMessagePrompt(toId, toName, cornerId) {
   openChatThread(toId, toName);
 }
 
+var _inboxByKey = {};   // messages per identity key, merged for display
 function listenDirectMessages() {
   if (!window.FB?.firebaseReady || !STATE.nickname) return;
   const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "messages/" + currentUserKey()), (snapshot) => {
-    const data = snapshot.val() || {};
-    const messages = Object.entries(data).map(([id, msg]) => ({ id, ...msg })).sort((a, b) => (a.time || 0) - (b.time || 0));
+  // Listen on EVERY key this person has used — a message sent to an older key
+  // would otherwise silently vanish.
+  myKeys().forEach((key) => attachInboxListener(key, ref, onValue, db));
+}
+
+function attachInboxListener(key, ref, onValue, db) {
+  onValue(ref(db, "messages/" + key), (snapshot) => {
+    _inboxByKey[key] = Object.entries(snapshot.val() || {}).map(([id, msg]) => ({ id, ...msg }));
+    const seen = new Set();
+    const messages = Object.values(_inboxByKey).flat()
+      .filter((m) => { const k = m.id + "|" + m.time; if (seen.has(k)) return false; seen.add(k); return true; })
+      .sort((a, b) => (a.time || 0) - (b.time || 0));
     STATE.directMessages = messages.slice(-MAX_DIRECT_MESSAGES);
     saveLocalDirectMessages();
     const newest = messages[messages.length - 1];
-    if (newest?.time && newest.time > STATE.lastDirectMessageAt && newest.fromId !== currentUserKey()) {
+    if (newest?.time && newest.time > STATE.lastDirectMessageAt && !isMyKey(newest.fromId)) {
       const fromName = newest.fromName || newest.fromId || "Unbekannt";
       toast(
         `💬 <strong>${escapeHtml(fromName)}</strong>: ${escapeHtml((newest.text || "").slice(0, 60))}<br><span style="font-size:11px;opacity:0.7;">Tippen zum Antworten →</span>`,
@@ -6177,20 +6617,46 @@ function bindChatUI() {
   }
 }
 
+/* Read state is tracked PER CONVERSATION. Previously one global timestamp was
+   set as soon as the chat list opened, so everything looked read even if you
+   never opened the conversation. */
+function loadChatRead() {
+  try { return JSON.parse(localStorage.getItem("cg.chatRead") || "{}"); }
+  catch (e) { return {}; }
+}
+function saveChatRead(map) {
+  localStorage.setItem("cg.chatRead", JSON.stringify(map || {}));
+}
+function markConversationRead(peerId) {
+  if (!peerId) return;
+  const map = loadChatRead();
+  map[peerId] = Date.now();
+  saveChatRead(map);
+  updateChatBadge();
+}
+// Messages received from this peer that arrived after I last opened the thread.
+function unreadForPeer(peerId) {
+  if (!peerId) return 0;
+  const since = loadChatRead()[peerId] || parseInt(localStorage.getItem("cg.lastChatReadAt") || "0") || 0;
+  return (STATE.directMessages || []).filter((m) => m.fromId === peerId && (m.time || 0) > since).length;
+}
+function totalUnread() {
+  const peers = new Set((STATE.directMessages || []).filter((m) => !isMyKey(m.fromId)).map((m) => m.fromId));
+  let n = 0;
+  peers.forEach((p) => { n += unreadForPeer(p); });
+  return n;
+}
+
 function updateChatBadge() {
   const badge = $("#chat-badge");
   if (!badge) return;
-  const readAt = parseInt(localStorage.getItem("cg.lastChatReadAt") || "0");
-  const me = currentUserKey();
-  const unread = (STATE.directMessages || []).filter((m) => m.fromId !== me && (m.time || 0) > readAt).length;
+  const unread = totalUnread();
   if (unread > 0) { badge.textContent = unread > 9 ? "9+" : String(unread); badge.hidden = false; }
   else { badge.hidden = true; }
 }
 
-function markChatsRead() {
-  localStorage.setItem("cg.lastChatReadAt", String(Date.now()));
-  updateChatBadge();
-}
+// Kept for compatibility; opening the list no longer marks anything read.
+function markChatsRead() { updateChatBadge(); }
 
 function openChat() {
   $("#chat-overlay").classList.add("open");
@@ -6240,11 +6706,12 @@ function renderChatList() {
   list.innerHTML = rows.map((c) => {
     const started = (c.time || 0) > 0;
     const when = started ? new Date(c.time).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+    const unread = unreadForPeer(c.id);
     return `
-    <div class="chat-conv ${started ? "started" : ""}" data-peer-id="${escapeHtml(c.id)}" data-peer-name="${escapeHtml(c.name)}">
-      <span class="friend-dot" style="background:${started ? "var(--amber)" : "var(--line)"};width:10px;height:10px;border-radius:50%;flex:0 0 auto;"></span>
+    <div class="chat-conv ${started ? "started" : ""} ${unread ? "unread" : ""}" data-peer-id="${escapeHtml(c.id)}" data-peer-name="${escapeHtml(c.name)}">
+      <span class="friend-dot" style="background:${unread ? "var(--pink)" : started ? "var(--amber)" : "var(--line)"};width:10px;height:10px;border-radius:50%;flex:0 0 auto;"></span>
       <div class="cc-body">
-        <div class="cc-name">${escapeHtml(c.name)}</div>
+        <div class="cc-name">${escapeHtml(c.name)}${unread ? ` <span class="cc-unread">${unread}</span>` : ""}</div>
         <div class="cc-preview">${c.text ? escapeHtml(c.text) : "Neuen Chat starten…"}</div>
       </div>
       ${when ? `<span class="cc-time">${escapeHtml(when)}</span>` : ""}
@@ -6265,7 +6732,7 @@ function openChatThread(peerId, peerName) {
   $("#chat-back").style.display = "";
   $("#chat-title").textContent = peerName || peerId;
   $("#chat-messages").innerHTML = `<div class="chat-empty">Lädt…</div>`;
-  markChatsRead();
+  markConversationRead(peerId);
   if (_chatThreadUnsub) { _chatThreadUnsub(); _chatThreadUnsub = null; }
   const renderLocalFallback = () => {
     const msgs = (STATE.directMessages || []).filter((m) => m.fromId === peerId || m.toId === peerId).sort((a, b) => (a.time || 0) - (b.time || 0));
@@ -6273,17 +6740,33 @@ function openChatThread(peerId, peerName) {
   };
   if (window.FB?.firebaseReady) {
     const { db, ref, onValue } = window.FB;
-    const pairId = chatPairId(currentUserKey(), peerId);
-    _chatThreadUnsub = onValue(ref(db, "chats/" + pairId), (snap) => {
-      const data = snap.val() || {};
-      renderChatMessages(Object.values(data).sort((a, b) => (a.time || 0) - (b.time || 0)));
-    }, (err) => {
-      // Permission denied (e.g. rules not deployed yet) or network error:
-      // never leave the thread stuck on "Lädt…" — show the local inbox copy.
-      console.warn("chat thread listener failed:", err);
-      renderLocalFallback();
-      toast("⚠️ Chat-Verlauf nicht ladbar — zeige lokale Nachrichten.");
+    // A thread may live under an older key pairing — read them all and merge.
+    const pairIds = Array.from(new Set(myKeys().map((k) => chatPairId(k, peerId))));
+    const byPair = {};
+    const unsubs = [];
+    const renderMerged = () => {
+      const seen = new Set();
+      const msgs = Object.values(byPair).flat()
+        .filter((m) => { const k = (m.time || 0) + "|" + (m.fromId || "") + "|" + (m.text || ""); if (seen.has(k)) return false; seen.add(k); return true; })
+        .sort((a, b) => (a.time || 0) - (b.time || 0));
+      renderChatMessages(msgs);
+    };
+    pairIds.forEach((pid) => {
+      const u = onValue(ref(db, "chats/" + pid), (snap) => {
+        byPair[pid] = Object.values(snap.val() || {});
+        renderMerged();
+      }, (err) => {
+        // Permission denied (e.g. rules not deployed yet) or network error:
+        // never leave the thread stuck on "Lädt…" — show the local inbox copy.
+        console.warn("chat thread listener failed:", err);
+        if (!Object.keys(byPair).length) {
+          renderLocalFallback();
+          toast("⚠️ Chat-Verlauf nicht ladbar — zeige lokale Nachrichten.");
+        }
+      });
+      if (typeof u === "function") unsubs.push(u);
     });
+    _chatThreadUnsub = () => unsubs.forEach((fn) => { try { fn(); } catch (e) {} });
   } else {
     renderLocalFallback();
   }
@@ -6318,12 +6801,36 @@ function sendFromChatInput() {
   }
 }
 
+/* Stable corner numbers.
+   The list/map used the index of the CURRENT sort order, so a corner's number
+   changed whenever someone checked in somewhere. Numbers are now fixed:
+   built-in corners keep their catalogue order, custom spots follow by creation
+   time — identical in the list, on the map and over time.                   */
+var _cornerNumberCache = null;
+function cornerNumberMap() {
+  const list = getAllCorners();
+  const signature = list.map((c) => c.id).join("|");
+  if (_cornerNumberCache && _cornerNumberCache.signature === signature) return _cornerNumberCache.map;
+  const ordered = [
+    ...list.filter((c) => !c.isCustom),
+    ...list.filter((c) => c.isCustom).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0) || String(a.id).localeCompare(String(b.id)))
+  ];
+  const map = {};
+  ordered.forEach((c, i) => { map[c.id] = i + 1; });
+  _cornerNumberCache = { signature, map };
+  return map;
+}
+function cornerNumber(id) { return cornerNumberMap()[id] || 0; }
+
 function getSortedCorners() {
+  // Where you are checked in always comes first — that is the corner you act on.
+  const here = STATE.manualCheckinId || STATE.atCornerId || null;
   return getAllCorners().map((corner) => ({
     ...corner,
     _visits: getVisitCount(corner.id),
-    _active: getPeopleAtCorner(corner.id).length
-  })).sort((a, b) => b._active - a._active || b._visits - a._visits || a.name.localeCompare(b.name));
+    _active: getPeopleAtCorner(corner.id).length,
+    _here: corner.id === here ? 1 : 0
+  })).sort((a, b) => b._here - a._here || b._active - a._active || b._visits - a._visits || a.name.localeCompare(b.name));
 }
 
 function getCornerVoteStats(cornerId) {
@@ -6698,9 +7205,11 @@ function manualCheckin(cornerId) {
     if (isFirstVisit) {
       STATE.visitedCorners.push(cornerId);
       saveVisitedCorners();
-      setTimeout(() => showCheckinPrompt(cornerId), 800);
       addXp(10, `Neuer Corner: ${corner.name}`);
     }
+    // Team first (skippable), questionnaire afterwards on a first visit.
+    STATE.pendingCheckinQuestions = isFirstVisit ? cornerId : null;
+    setTimeout(() => openCheckinTeamPicker(cornerId), 500);
     if (STATE.visitedCorners.length === 1) unlockAchievement("first-checkin", "Erster Besuch", "📍", 20);
     if (STATE.visitedCorners.length >= 5) unlockAchievement("five-checkins", "Stammgast", "🔥", 50);
     if (STATE.visitedCorners.length >= 10) unlockAchievement("ten-checkins", "Local Legend", "👑", 100);
@@ -6709,6 +7218,25 @@ function manualCheckin(cornerId) {
     logEncounters(cornerId);
     startCooldownDisplay();
     broadcastCheckinPush(corner);
+    // Scanned a personal QR: join the sharer's team automatically.
+    if (STATE.pendingSharedTeam) {
+      const wanted = STATE.pendingSharedTeam;
+      const apply = (attempt = 0) => {
+        if (TEAMS[wanted]) {
+          STATE.pendingSharedTeam = null;
+          clearHandledQueryParam("team");
+          if (STATE.team !== wanted) {
+            selectTeam(wanted);
+            toast(`${TEAMS[wanted].emoji} Im Team <strong>${escapeHtml(TEAMS[wanted].name)}</strong> eingecheckt`);
+          }
+        } else if (attempt < 10) {
+          setTimeout(() => apply(attempt + 1), 400); // custom teams may still be loading
+        } else {
+          STATE.pendingSharedTeam = null;
+        }
+      };
+      apply();
+    }
     // QR referral: reward the person whose code was scanned + the scanner.
     if (STATE.pendingReferrerId && STATE.pendingReferrerId !== currentUserKey()) {
       addPoints(STATE.pendingReferrerId, 15, "Dein QR-Code wurde gescannt");
@@ -6721,6 +7249,7 @@ function manualCheckin(cornerId) {
   }
   updateCheckinButtons();
   broadcastPresence();
+  renderCards();   // re-sort: the corner you are at moves to the top
 }
 
 // Fan-out push: writes a lightweight event that the Cloud Function delivers to
@@ -6835,10 +7364,7 @@ function openDetail(cornerId) {
   detailContent.querySelector('[data-action="map-detail"]')?.addEventListener("click", () => { closeDetail(); $(`.tab[data-view="map"]`).click(); setTimeout(() => STATE.mainMap?.flyTo([c.lat, c.lng], 17, { duration: 0.7 }), 250); });
   detailContent.querySelector('[data-action="route-detail"]')?.addEventListener("click", () => { window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank"); });
   detailContent.querySelector('[data-action="share-corner"]')?.addEventListener("click", () => { shareCornerLink(c.id); });
-  detailContent.querySelector('[data-action="qr-corner"]')?.addEventListener("click", () => {
-    const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=" + encodeURIComponent(buildShareUrl(c.id, STATE.nickname || "", true));
-    window.open(qrUrl, "_blank");
-  });
+  detailContent.querySelector('[data-action="qr-corner"]')?.addEventListener("click", () => openQrDialog(c));
   detailContent.querySelector('[data-action="edit-corner"]')?.addEventListener("click", () => openCornerEditor(c.id));
   detailContent.querySelectorAll(".team-btn").forEach((btn) => btn.addEventListener("click", () => { selectTeam(btn.dataset.team); setTimeout(() => openDetail(cornerId), 50); }));
   detailContent.querySelectorAll("[data-dm-user]").forEach((btn) => btn.addEventListener("click", () => {
@@ -6871,7 +7397,7 @@ function renderCards() {
     card.id = "card-" + c.id;
     card.innerHTML = `
       <div class="card-photo">
-        <div class="card-num">${String(i + 1).padStart(2, "0")}</div>
+        <div class="card-num">${String(cornerNumber(c.id)).padStart(2, "0")}</div>
         <span class="mine-badge">Mein Spot</span>
         <span class="at-badge">Du bist hier</span>
         ${capture ? `<span class="captured-badge"><span class="cap-emoji">${TEAMS[capture.team]?.emoji || "🏳️"}</span><span class="cap-label">Captured</span></span>` : ""}
@@ -6909,7 +7435,7 @@ function rebuildMainMarkers() {
   STATE.mainMarkers = {};
   getSortedCorners().forEach((c, i) => {
     const capture = STATE.captured[c.id];
-    const icon = L.divIcon({ className: "", html: `<div class="corner-marker ${c.isCustom ? "custom" : ""}" data-id="${c.id}"><span class="num">${i + 1}</span>${capture ? `<span class="team-badge">${TEAMS[capture.team]?.emoji || "🏳️"}</span>` : ""}</div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
+    const icon = L.divIcon({ className: "", html: `<div class="corner-marker ${c.isCustom ? "custom" : ""}" data-id="${c.id}"><span class="num">${cornerNumber(c.id)}</span>${capture ? `<span class="team-badge">${TEAMS[capture.team]?.emoji || "🏳️"}</span>` : ""}</div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
     const marker = L.marker([c.lat, c.lng], { icon }).addTo(STATE.mainMap);
     marker.bindPopup(`<strong>${escapeHtml(c.name)}</strong><br><small>${escapeHtml(c.area || "")}</small>${capture ? `<br><small>${TEAMS[capture.team]?.emoji || ''} ${TEAMS[capture.team]?.name || ''}</small>` : ""}`);
     marker.on("click", () => { $(`.tab[data-view="list"]`).click(); setTimeout(() => document.getElementById("card-" + c.id)?.scrollIntoView({ behavior: "smooth", block: "center" }), 150); });
@@ -6977,6 +7503,7 @@ function onGeoUpdate(pos) {
       logEncounters(newAt);
     }
     broadcastPresence();
+    renderCards();   // the corner you just walked up to moves to the top
   }
   if (STATE.atCornerId) { setGeoStatus(`AM SPOT: ${nearest.name.toUpperCase()}`, "at-corner"); $("#me-position-meta").innerHTML = `<span style="color:var(--green)">📍 ${escapeHtml(nearest.name)}</span>`; } else { const dStr = nDist < 1000 ? `${Math.round(nDist)} m` : `${(nDist / 1000).toFixed(1)} km`; setGeoStatus(`${dStr} bis ${nearest.name}`, "live"); $("#me-position-meta").innerHTML = `<span style="color:var(--blue)">📍 ${dStr} bis ${escapeHtml(nearest.name)}</span>`; }
   updateCheckinButtons();
@@ -7022,7 +7549,17 @@ function listenPoints() {
 
 function renderPointsLeaderboard() {
   const container = $("#leaderboard-points");
-  const sorted = Object.entries(STATE.points).map(([user, data]) => ({ user, total: data.total || 0, nickname: data.nickname || user })).filter((x) => x.total > 0).sort((a, b) => b.total - a.total).slice(0, 10);
+  // Fold every key that belongs to ME into one row — otherwise the same person
+  // shows up twice (once per identity key) with different levels.
+  const byPerson = {};
+  Object.entries(STATE.points).forEach(([user, data]) => {
+    const key = isMyKey(user) ? currentUserKey() : user;
+    const total = (data && data.total) || 0;
+    const nickname = (isMyKey(user) ? (STATE.nickname || (data && data.nickname)) : (data && data.nickname)) || key;
+    const prev = byPerson[key];
+    if (!prev || total > prev.total) byPerson[key] = { user: key, total, nickname };
+  });
+  const sorted = Object.values(byPerson).filter((x) => x.total > 0).sort((a, b) => b.total - a.total).slice(0, 10);
   if (!sorted.length) { container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Level-Ranking</h3><p style="color:var(--fg-dim);font-size:13px;">Noch keine XP gesammelt.</p></div>`; return; }
   container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Level-Ranking</h3><ul class="leaderboard-list">${sorted.map((x, i) => { const level = getLevel(x.total).level; const tier = getLevelTier(level); const team = TEAMS[STATE.teams[x.user]?.team] || TEAMS[x.user === currentUserKey() ? STATE.team : ""]; return `<li class="leaderboard-item ${x.user === currentUserKey() ? 'current-user' : ''}"><span class="lb-rank">${i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</span><span class="lb-name">${team?.emoji || '👤'} ${escapeHtml(x.nickname)} ${x.user === currentUserKey() ? '(du)' : ''}</span><span class="lb-score">${tier.emoji} Lv.${level}</span></li>`; }).join("")}</ul></div>`;
 }
