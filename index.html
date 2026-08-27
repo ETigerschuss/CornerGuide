@@ -2298,6 +2298,56 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .team-battle-item .tb-bar-fill { height: 100%; max-width: 100%; border-radius: 999px; transition: width 0.5s; }
 .team-battle-item .tb-score { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fg-dim); min-width: 20px; text-align: right; }
 
+/* ====================== NACHSCHUB + FEIER ====================== */
+.detail-where { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fg-dim); margin: 10px 0 4px; }
+.detail-where .dw-coords { opacity: 0.7; }
+.friend-goto { background: transparent; border: none; color: var(--green); font: inherit; cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+.friend-goto:hover { color: var(--amber); }
+.supply-section { background: var(--bg-2); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin: 14px 0; }
+.supply-title { font-family: "Anton", sans-serif; font-weight: 400; font-size: 18px; text-transform: uppercase; margin: 0 0 10px; }
+.sr-hint { font-size: 12px; color: var(--fg-dim); margin: 8px 0 0; }
+.supply-run { background: var(--bg-3); border: 1px solid var(--line); border-left: 3px solid var(--green); border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+.supply-run.mine { border-left-color: var(--amber); }
+.sr-head { font-size: 13px; margin-bottom: 4px; }
+.sr-meta { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); margin-bottom: 8px; }
+.sr-confirm { width: 100%; font-size: 12px; }
+.sr-confirm:disabled { opacity: 0.55; cursor: default; }
+
+.celebration {
+  position: fixed; inset: 0; z-index: 4000;
+  display: none; align-items: center; justify-content: center;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, rgba(232,169,62,0.20), rgba(0,0,0,0.72) 65%);
+}
+.celebration.show { display: flex; }
+.cel-card {
+  text-align: center; padding: 28px 32px;
+  background: var(--bg-2); border: 2px solid var(--amber); border-radius: 22px;
+  box-shadow: 0 12px 60px rgba(232,169,62,0.45);
+  animation: celPop 0.5s cubic-bezier(.2,1.5,.4,1);
+  max-width: 84vw;
+}
+@keyframes celPop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.cel-emoji { font-size: 56px; line-height: 1; animation: celSpin 1.1s ease-out; }
+@keyframes celSpin { from { transform: rotate(-22deg) scale(0.5); } to { transform: rotate(0) scale(1); } }
+.cel-karma { font-family: "Anton", sans-serif; font-size: 42px; color: var(--green); margin: 8px 0 4px; letter-spacing: 1px; }
+.cel-text { font-size: 17px; line-height: 1.35; }
+.cel-sub { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); margin-top: 8px; }
+.cel-confetti { position: absolute; inset: 0; overflow: hidden; }
+.cel-confetti span {
+  position: absolute; top: -12px; left: var(--x);
+  width: 9px; height: 14px; background: var(--c); border-radius: 2px;
+  animation: celFall 2.6s linear var(--d) forwards;
+}
+@keyframes celFall {
+  0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cel-confetti { display: none; }
+  .cel-card, .cel-emoji { animation: none; }
+}
+
 /* ====================== PROFILE CORNER MAP ====================== */
 .cg-pie-wrap { background: transparent !important; border: none !important; }
 .cg-pie {
@@ -2512,6 +2562,9 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 </div>
 
 <div id="toast" class="toast" hidden></div>
+
+<!-- Karma celebration (supply run confirmed / level up) -->
+<div id="celebration" class="celebration" aria-live="polite"></div>
 
 <!-- Corner Detail Overlay -->
 <div id="detail-overlay" class="detail-overlay">
@@ -5164,6 +5217,34 @@ function checkLevelMilestones() {
 
 function currentUserKey() { return STATE.userId || STATE.nickname; }
 function getCurrentXp() { return STATE.points[currentUserKey()]?.total || 0; }
+/* ====================== KARMA FOR CHECK-INS ======================
+   Two rules from the in-app feedback:
+   - "Zähl die check-ins pro Person nur einmal pro Tag" — repeatedly checking in
+     at the same corner must not farm karma.
+   - A well-visited corner is worth more: karma scales with how many people are
+     there right now and how popular the spot is overall.                    */
+function checkedInTodayAt(cornerId) {
+  try {
+    const log = JSON.parse(localStorage.getItem("cg.checkinDays") || "{}");
+    return log[cornerId] === new Date().toDateString();
+  } catch (e) { return false; }
+}
+function markCheckedInToday(cornerId) {
+  let log = {};
+  try { log = JSON.parse(localStorage.getItem("cg.checkinDays") || "{}"); } catch (e) {}
+  log[cornerId] = new Date().toDateString();
+  localStorage.setItem("cg.checkinDays", JSON.stringify(log));
+}
+
+// Karma for a check-in: base + who is here now + how popular the spot is.
+function checkinKarma(cornerId) {
+  const othersHere = Math.max(0, getPeopleAtCorner(cornerId).length - 1);
+  const popularity = getVisitCount(cornerId);
+  const social = Math.min(18, othersHere * 6);            // cornern is social
+  const popular = Math.min(12, Math.floor(popularity / 4)); // busy spot bonus
+  return { total: 5 + social + popular, social, popular };
+}
+
 function addXp(amount, reason) {
   const before = getLevel(getCurrentXp()).level;
   addPoints(currentUserKey(), amount, reason);
@@ -5260,7 +5341,7 @@ function updateNicknameBar() {
   if (badge) badge.textContent = tier.name;
   if (fill) fill.style.width = `${Math.round(info.progress * 100)}%`;
   const bar2 = $("#nick-level-bar");
-  if (bar2) bar2.title = `${info.xpIntoLevel}/${info.xpForNext} XP · noch ${info.xpToNext} bis Level ${info.level + 1}`;
+  if (bar2) bar2.title = `${info.xpIntoLevel}/${info.xpForNext} Karma · noch ${info.xpToNext} bis Level ${info.level + 1}`;
 }
 
 function renderTeamPickerHtml() {
@@ -5990,7 +6071,7 @@ async function renderAdminDuplicates(pointsData) {
     return `<div style="padding:10px 12px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
       <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${escapeHtml(g[0].nickname)} — ${g.length} Einträge</div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);margin-bottom:8px;">
-        ${g.map((e) => `${e.total} XP`).join(" + ")} = <strong style="color:var(--amber);">${sum} XP</strong>
+        ${g.map((e) => `${e.total} Karma`).join(" + ")} = <strong style="color:var(--amber);">${sum} Karma</strong>
       </div>
       <button class="action-btn primary" data-merge-group="${gi}" style="padding:6px 10px;font-size:11px;">Zusammenführen</button>
     </div>`;
@@ -6000,13 +6081,13 @@ async function renderAdminDuplicates(pointsData) {
       const g = groups[parseInt(btn.dataset.mergeGroup, 10)];
       if (!g) return;
       const sum = g.reduce((s, e) => s + e.total, 0);
-      if (!(await appConfirm(`„${g[0].nickname}" zusammenführen?`, `${g.length} Einträge werden zu einem Profil mit ${sum} XP verschmolzen. Nur ausführen, wenn das wirklich dieselbe Person ist.`, "Zusammenführen"))) return;
+      if (!(await appConfirm(`„${g[0].nickname}" zusammenführen?`, `${g.length} Einträge werden zu einem Profil mit ${sum} Karma verschmolzen. Nur ausführen, wenn das wirklich dieselbe Person ist.`, "Zusammenführen"))) return;
       const target = g[0].key;               // keep the richest key
       let ok = 0;
       for (const e of g.slice(1)) {
         if (await mergeProfileKeys(e.key, target)) ok++;
       }
-      toast(ok ? `🔗 „${escapeHtml(g[0].nickname)}" zusammengeführt (${sum} XP)` : "Zusammenführen fehlgeschlagen.");
+      toast(ok ? `🔗 „${escapeHtml(g[0].nickname)}" zusammengeführt (${sum} Karma)` : "Zusammenführen fehlgeschlagen.");
       renderAdminPanel();
     });
   });
@@ -6031,7 +6112,7 @@ async function renderAdminPanel() {
     profilesEl.innerHTML = rows.map((r) => `
       <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:6px;">
         <span style="flex:1;font-size:13px;">${escapeHtml(r.nickname)}${r.key === currentUserKey() ? " (du)" : ""}</span>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);">${r.total} XP</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);">${r.total} Karma</span>
         ${r.key !== currentUserKey() ? `<button class="action-btn" style="padding:4px 8px;font-size:10px;border-color:var(--pink);color:var(--pink);" data-admin-del-user="${escapeHtml(r.key)}" data-nick="${escapeHtml(r.nickname)}">Löschen</button>` : ""}
       </div>`).join("") || `<p style="color:var(--fg-dim);font-size:12px;">Keine Profile.</p>`;
     profilesEl.querySelectorAll("[data-admin-del-user]").forEach((b) =>
@@ -6125,7 +6206,7 @@ async function openClaimOverlay(opts = {}) {
       const tier = getLevelTier(level);
       return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-3);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;">
         <span style="flex:1;font-weight:600;">${escapeHtml(r.nickname)}</span>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--fg-dim);white-space:nowrap;">${tier.emoji} Lv.${level} · ${r.total} XP</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--fg-dim);white-space:nowrap;">${tier.emoji} Lv.${level} · ${r.total} Karma</span>
         <button class="action-btn primary" data-claim-key="${escapeHtml(r.key)}" style="padding:6px 10px;font-size:11px;white-space:nowrap;">Das war ich</button>
       </div>`;
     }).join("");
@@ -6279,6 +6360,7 @@ async function initFirebase() {
     listenCornerStatuses();
     listenCaptured();
     listenCornerVotes();
+    listenSupplyRuns();
     openPendingSharedCorner();
     // This onAuthChange handler covers the case where auth was initially absent.
     // It activates write-gated features once auth eventually succeeds.
@@ -6335,6 +6417,7 @@ async function initFirebase() {
   listenCornerStatuses();
   listenCaptured();
   listenCornerVotes();
+  listenSupplyRuns();
 }
 
 function broadcastPresence() {
@@ -6427,7 +6510,9 @@ function renderFriendsBar() {
     return `<li class="friend-chip ${corner ? "" : "away"}" style="border-color:${TEAMS[friend.team]?.color || 'var(--line)'};">
       <span class="friend-dot" title="${escapeHtml(avail?.label || "")}" style="background:${avail?.color || TEAMS[friend.team]?.color || 'var(--fg-dim)'};"></span>
       <span>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</span>
-      <span class="friend-corner">${statusLabel}</span>
+      ${corner
+        ? `<button class="friend-corner friend-goto" data-goto-corner="${escapeHtml(corner.id)}" title="Zum Corner springen">${statusLabel} →</button>`
+        : `<span class="friend-corner">${statusLabel}</span>`}
       <span class="friend-level">${tier.emoji} Lv.${level}</span>
       ${corner ? `<button class="action-btn" style="padding:4px 8px;font-size:10px;" data-supply-user="${friend.id}" title="Frag ob Nachschub gebraucht wird">🛒 Nachschub?</button>` : ""}
       <button class="action-btn" style="padding:4px 8px;font-size:10px;" data-dm-user="${friend.id}">💬</button>
@@ -6438,6 +6523,11 @@ function renderFriendsBar() {
       const friend = STATE.friends[btn.dataset.dmUser];
       sendDirectMessagePrompt(btn.dataset.dmUser, friend?.nickname || friend?.name || btn.dataset.dmUser);
     });
+  });
+  // "Wenn man sieht dass jemand eingecheckt ist, muss man draufklicken können
+  //  dass man direkt zu diesem Corner kommt" — aus den App-Kommentaren.
+  list.querySelectorAll("[data-goto-corner]").forEach((btn) => {
+    btn.addEventListener("click", (e) => { e.stopPropagation(); openDetail(btn.dataset.gotoCorner); });
   });
   list.querySelectorAll("[data-supply-user]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -7195,7 +7285,18 @@ function manualCheckin(cornerId) {
       () => { if (STATE.manualCheckinId === cornerId) { manualCheckin(cornerId); toast("↩️ Check-in zurückgenommen"); } }
     );
     recordVisit(cornerId);
-    addXp(5, "Check-in");
+    // Karma only once per day per corner, and it scales with the spot.
+    if (checkedInTodayAt(cornerId)) {
+      toast("Schon heute hier gewesen — kein Karma, aber schön dass du da bist 🍻");
+    } else {
+      markCheckedInToday(cornerId);
+      const k = checkinKarma(cornerId);
+      addXp(k.total, `Check-in: ${corner.name}`);
+      const extras = [];
+      if (k.social) extras.push(`+${k.social} weil was los ist`);
+      if (k.popular) extras.push(`+${k.popular} beliebter Spot`);
+      if (extras.length) toast(`✨ <strong>+${k.total} Karma</strong><br><span style="font-size:11px;opacity:0.8;">${extras.join(" · ")}</span>`);
+    }
     const totalCheckins = parseInt(localStorage.getItem("cg.totalCheckins") || "0") + 1;
     localStorage.setItem("cg.totalCheckins", String(totalCheckins));
     if (totalCheckins >= 25) unlockAchievement("checkins-25", "Eckensteher Deluxe", "🍻", 150);
@@ -7207,8 +7308,9 @@ function manualCheckin(cornerId) {
       saveVisitedCorners();
       addXp(10, `Neuer Corner: ${corner.name}`);
     }
-    // Team first (skippable), questionnaire afterwards on a first visit.
-    STATE.pendingCheckinQuestions = isFirstVisit ? cornerId : null;
+    // Only the team picker on check-in. Describing a corner (Kiosk, Klo, Vibe)
+    // is the owner's job via "Spot bearbeiten", not a quiz for every visitor.
+    STATE.pendingCheckinQuestions = null;
     setTimeout(() => openCheckinTeamPicker(cornerId), 500);
     if (STATE.visitedCorners.length === 1) unlockAchievement("first-checkin", "Erster Besuch", "📍", 20);
     if (STATE.visitedCorners.length >= 5) unlockAchievement("five-checkins", "Stammgast", "🔥", 50);
@@ -7241,7 +7343,7 @@ function manualCheckin(cornerId) {
     if (STATE.pendingReferrerId && STATE.pendingReferrerId !== currentUserKey()) {
       addPoints(STATE.pendingReferrerId, 15, "Dein QR-Code wurde gescannt");
       addXp(10, "Per QR-Code eingecheckt");
-      toast("🎉 QR-Bonus: +10 XP für dich, +15 für den Ersteller!");
+      toast("🎉 QR-Bonus: +10 Karma für dich, +15 für den Ersteller!");
       unlockAchievement("qr-scanned", "Code-Knacker", "🧾", 15);
       STATE.pendingReferrerId = null;
       clearHandledQueryParam("ref");
@@ -7267,6 +7369,166 @@ function broadcastCheckinPush(corner) {
       createdAt: Date.now()
     });
   } catch (err) { console.warn("broadcastCheckinPush failed:", err); }
+}
+
+/* Full-screen celebration when a supply run pays out — and an extra beat when
+   it pushes you over a level boundary. */
+function showKarmaCelebration(karma) {
+  const el = $("#celebration");
+  if (!el) return;
+  setTimeout(() => {
+    const info = getLevel(getCurrentXp());
+    // The karma is already credited by the time we get here (the payout comes
+    // in through the points listener), so derive the previous level from the
+    // delta instead of reading it before — otherwise a level-up is never seen.
+    const before = getLevel(Math.max(0, getCurrentXp() - Number(karma || 0))).level;
+    const leveledUp = info.level > before;
+    const tier = getLevelTier(info.level);
+    el.innerHTML = `
+      <div class="cel-card">
+        <div class="cel-emoji">${leveledUp ? "🎊" : "🛒"}</div>
+        <div class="cel-karma">+${karma} Karma</div>
+        <div class="cel-text">${leveledUp
+          ? `<strong>LEVEL ${info.level}!</strong><br>${tier.emoji} ${escapeHtml(tier.name)}`
+          : "Danke für den Nachschub! 🍻"}</div>
+        <div class="cel-sub">${leveledUp ? "" : `noch ${info.xpToNext} Karma bis Level ${info.level + 1}`}</div>
+      </div>
+      <div class="cel-confetti">${Array.from({ length: 28 }, (_, i) =>
+        `<span style="--i:${i};--d:${(i % 7) * 0.13}s;--x:${(i * 37) % 100}%;--c:${["#e8a93e","#ff2e6c","#b8ff3a","#6cb6ff","#c77dff"][i % 5]};"></span>`).join("")}</div>`;
+    el.classList.add("show");
+    try { playTeamCheckinSound(STATE.team); } catch (e) {}
+    setTimeout(() => el.classList.remove("show"), leveledUp ? 5200 : 3800);
+  }, 260);
+}
+
+/* ====================== NACHSCHUB (supply runs) ======================
+   Someone walks to the kiosk and brings drinks back. They announce it, the
+   people at the corner confirm it, and every confirmation pays out a lot of
+   karma — this is the single most valuable thing you can do for your crew. */
+const SUPPLY_KARMA_PER_CONFIRM = 40;
+
+function announceSupplyRun(cornerId) {
+  if (!STATE.nickname) { toast("Bitte zuerst einen Namen wählen."); return; }
+  if (!window.FB?.firebaseReady) { toast("Nachschub braucht eine Verbindung."); return; }
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  if (!corner) return;
+  const { db, ref, push, set } = window.FB;
+  const runRef = push(ref(db, "supplyRuns/" + cornerId));
+  set(runRef, {
+    byId: currentUserKey(),
+    byName: STATE.nickname,
+    byTeam: STATE.team || "",
+    at: Date.now(),
+    confirms: {}
+  }).then(() => {
+    toast("🛒 <strong>Nachschub angekündigt!</strong><br><span style=\"font-size:11px;opacity:0.8;\">Lass es dir von den anderen bestätigen.</span>");
+    // tell everyone at the corner
+    try {
+      set(push(ref(db, "notify")), {
+        type: "supply-run",
+        title: "🛒 Nachschub unterwegs!",
+        body: `${STATE.nickname} bringt Nachschub zum ${corner.name}!`,
+        fromId: currentUserKey(),
+        fromTeam: STATE.team || "",
+        createdAt: Date.now()
+      });
+    } catch (e) {}
+  }).catch((err) => { console.warn("announceSupplyRun failed:", err); toast("Konnte nicht angekündigt werden."); });
+}
+
+function confirmSupplyRun(cornerId, runId, run) {
+  if (!STATE.nickname || !window.FB?.firebaseReady) return;
+  const me = currentUserKey();
+  if (run.byId === me) { toast("Du kannst dich nicht selbst bestätigen 😉"); return; }
+  if (run.confirms && run.confirms[me]) { toast("Schon bestätigt ✓"); return; }
+  const { db, ref, set } = window.FB;
+  set(ref(db, `supplyRuns/${cornerId}/${runId}/confirms/${me}`), { name: STATE.nickname, at: Date.now() })
+    .then(() => {
+      // the bringer gets the karma, not the confirmer
+      addPoints(run.byId, SUPPLY_KARMA_PER_CONFIRM, `Nachschub gebracht (bestätigt von ${STATE.nickname})`);
+      addXp(5, "Nachschub bestätigt");
+      toast(`✅ Bestätigt — <strong>${escapeHtml(run.byName)}</strong> bekommt ${SUPPLY_KARMA_PER_CONFIRM} Karma!`);
+      try {
+        set(window.FB.push(ref(db, "notify")), {
+          type: "supply-confirmed",
+          title: "🎉 Nachschub bestätigt!",
+          body: `${STATE.nickname} hat bestätigt: ${run.byName} hat Nachschub gebracht (+${SUPPLY_KARMA_PER_CONFIRM} Karma)`,
+          fromId: currentUserKey(),
+          fromTeam: STATE.team || "",
+          createdAt: Date.now()
+        });
+      } catch (e) {}
+    })
+    .catch((err) => { console.warn("confirmSupplyRun failed:", err); toast("Bestätigen fehlgeschlagen."); });
+}
+
+function listenSupplyRuns() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "supplyRuns"), (snap) => {
+    STATE.supplyRuns = snap.val() || {};
+    const open = $("#detail-overlay")?.classList.contains("open");
+    if (open && STATE.detailCornerId) refreshSupplySection(STATE.detailCornerId);
+    // My own run got a new confirmation? Celebrate.
+    celebrateOwnSupplyConfirms();
+  });
+}
+
+var _seenSupplyConfirms = null;
+function celebrateOwnSupplyConfirms() {
+  const me = currentUserKey();
+  if (!me) return;
+  let count = 0;
+  Object.values(STATE.supplyRuns || {}).forEach((runs) => {
+    Object.values(runs || {}).forEach((run) => {
+      if (run && run.byId === me) count += Object.keys(run.confirms || {}).length;
+    });
+  });
+  if (_seenSupplyConfirms === null) { _seenSupplyConfirms = count; return; }  // first load: no replay
+  if (count > _seenSupplyConfirms) {
+    const gained = (count - _seenSupplyConfirms) * SUPPLY_KARMA_PER_CONFIRM;
+    _seenSupplyConfirms = count;
+    showKarmaCelebration(gained);
+  } else {
+    _seenSupplyConfirms = count;
+  }
+}
+
+// Recent, still-relevant supply runs at a corner (last 2 hours).
+function activeSupplyRuns(cornerId) {
+  const runs = STATE.supplyRuns?.[cornerId] || {};
+  const cutoff = Date.now() - 2 * 60 * 60 * 1000;
+  return Object.entries(runs)
+    .map(([id, run]) => ({ id, ...run }))
+    .filter((r) => (r.at || 0) > cutoff)
+    .sort((a, b) => (b.at || 0) - (a.at || 0));
+}
+
+function refreshSupplySection(cornerId) {
+  const box = document.querySelector(`.supply-section[data-corner-id="${cornerId}"]`);
+  if (!box) return;
+  const me = currentUserKey();
+  const iAmHere = STATE.manualCheckinId === cornerId || STATE.atCornerId === cornerId;
+  const runs = activeSupplyRuns(cornerId);
+  const runsHtml = runs.map((r) => {
+    const confirms = Object.values(r.confirms || {});
+    const mine = r.byId === me;
+    const alreadyConfirmed = !!(r.confirms || {})[me];
+    return `<div class="supply-run ${mine ? "mine" : ""}">
+      <div class="sr-head">🛒 <strong>${escapeHtml(r.byName || "Jemand")}</strong> hat Nachschub gebracht${mine ? " (du)" : ""}</div>
+      <div class="sr-meta">${confirms.length} Bestätigung${confirms.length === 1 ? "" : "en"}${confirms.length ? " · " + confirms.map((c) => escapeHtml(c.name || "?")).join(", ") : ""} · ${confirms.length * SUPPLY_KARMA_PER_CONFIRM} Karma</div>
+      ${!mine && iAmHere ? `<button class="action-btn primary sr-confirm" data-run="${escapeHtml(r.id)}" ${alreadyConfirmed ? "disabled" : ""}>${alreadyConfirmed ? "✓ Bestätigt" : `👍 Ja, hat mitgebracht! (+${SUPPLY_KARMA_PER_CONFIRM} für ${escapeHtml(r.byName || "")})`}</button>` : ""}
+    </div>`;
+  }).join("");
+  box.innerHTML = `
+    <h3 class="supply-title">🛒 Nachschub</h3>
+    ${iAmHere ? `<button class="action-btn sr-announce">🛒 Ich hab Nachschub mitgebracht!</button>` : `<p class="sr-hint">Check hier ein, um Nachschub anzukündigen oder zu bestätigen.</p>`}
+    ${runsHtml || `<p class="sr-hint">Noch keiner war am Kiosk. Sei der Held. 🦸</p>`}`;
+  box.querySelector(".sr-announce")?.addEventListener("click", () => announceSupplyRun(cornerId));
+  box.querySelectorAll(".sr-confirm").forEach((btn) => btn.addEventListener("click", () => {
+    const run = runs.find((r) => r.id === btn.dataset.run);
+    if (run) confirmSupplyRun(cornerId, run.id, run);
+  }));
 }
 
 // A checked-in user can broadcast a "I need resupply" ping to everyone.
@@ -7312,6 +7574,14 @@ function updateCheckinButtons() {
   });
 }
 
+// "Wär ganz gut wenn man auch immer den Standort sehen würde in der
+//  Detailansicht" — distance to the spot, or its area when GPS is off.
+function distanceLabel(c) {
+  if (!STATE.geoActive || !STATE.userPos || typeof c.lat !== "number") return "—";
+  const d = haversine(STATE.userPos.lat, STATE.userPos.lng, c.lat, c.lng);
+  return d < 1000 ? `${Math.round(d)} m` : `${(d / 1000).toFixed(1)} km`;
+}
+
 function openDetail(cornerId) {
   const c = getAllCorners().find((x) => x.id === cornerId);
   if (!c) return;
@@ -7334,8 +7604,9 @@ function openDetail(cornerId) {
       <div class="detail-stat"><span class="stat-num">${visits}</span><span class="stat-label">Besuche</span></div>
       <div class="detail-stat"><span class="stat-num">${baroCount > 0 ? avg.toFixed(1) : "—"}</span><span class="stat-label">Rating</span></div>
       <div class="detail-stat"><span class="stat-num">${peopleHere.length}</span><span class="stat-label">Hier jetzt</span></div>
-      <div class="detail-stat"><span class="stat-num">${Object.keys(STATE.comments[cornerId] || {}).length}</span><span class="stat-label">Kommentare</span></div>
+      <div class="detail-stat"><span class="stat-num">${distanceLabel(c)}</span><span class="stat-label">Entfernung</span></div>
     </div>
+    <div class="detail-where">📍 ${escapeHtml(c.area || "München")}${typeof c.lat === "number" ? ` · <span class="dw-coords">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span>` : ""}</div>
     ${capturedHtml}
     ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} gerade hier: ${peopleHere.map((p) => escapeHtml(p)).join(", ")}</div>` : ""}
     ${peopleMessageTargets.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">${peopleMessageTargets.map((friend) => `<button class="action-btn" data-dm-user="${friend.id}">💬 ${escapeHtml(friend.nickname || friend.name || friend.id)}</button>`).join("")}</div>` : ""}
@@ -7348,6 +7619,7 @@ function openDetail(cornerId) {
     <div class="corner-status-section" data-corner-id="${c.id}"></div>
     <div class="emoji-votes" data-corner-id="${c.id}"></div>
     <div class="barometer-section" data-corner-id="${c.id}"></div>
+    <div class="supply-section" data-corner-id="${c.id}"></div>
     <div class="photo-gallery" data-corner-id="${c.id}"></div>
     <div class="visit-trail" data-corner-id="${c.id}"></div>
     <div class="comments-section" data-corner-id="${c.id}"></div>
@@ -7375,6 +7647,8 @@ function openDetail(cornerId) {
   renderCornerStatusSection(cornerId, detailContent.querySelector(".corner-status-section"));
   renderEmojiVotes(cornerId, detailContent.querySelector(".emoji-votes"));
   renderBarometer(cornerId, detailContent.querySelector(".barometer-section"));
+  STATE.detailCornerId = cornerId;
+  refreshSupplySection(cornerId);
   renderPhotoGallery(cornerId, detailContent.querySelector(".photo-gallery"));
   renderVisitTrail(cornerId, detailContent.querySelector(".visit-trail"));
   renderCommentSection(cornerId, detailContent.querySelector(".comments-section"));
@@ -7560,8 +7834,8 @@ function renderPointsLeaderboard() {
     if (!prev || total > prev.total) byPerson[key] = { user: key, total, nickname };
   });
   const sorted = Object.values(byPerson).filter((x) => x.total > 0).sort((a, b) => b.total - a.total).slice(0, 10);
-  if (!sorted.length) { container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Level-Ranking</h3><p style="color:var(--fg-dim);font-size:13px;">Noch keine XP gesammelt.</p></div>`; return; }
-  container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Level-Ranking</h3><ul class="leaderboard-list">${sorted.map((x, i) => { const level = getLevel(x.total).level; const tier = getLevelTier(level); const team = TEAMS[STATE.teams[x.user]?.team] || TEAMS[x.user === currentUserKey() ? STATE.team : ""]; return `<li class="leaderboard-item ${x.user === currentUserKey() ? 'current-user' : ''}"><span class="lb-rank">${i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</span><span class="lb-name">${team?.emoji || '👤'} ${escapeHtml(x.nickname)} ${x.user === currentUserKey() ? '(du)' : ''}</span><span class="lb-score">${tier.emoji} Lv.${level}</span></li>`; }).join("")}</ul></div>`;
+  if (!sorted.length) { container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Karma-Ranking</h3><p style="color:var(--fg-dim);font-size:13px;">Noch keine Karma-Punkte gesammelt.</p></div>`; return; }
+  container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Karma-Ranking</h3><ul class="leaderboard-list">${sorted.map((x, i) => { const level = getLevel(x.total).level; const tier = getLevelTier(level); const team = TEAMS[STATE.teams[x.user]?.team] || TEAMS[x.user === currentUserKey() ? STATE.team : ""]; return `<li class="leaderboard-item ${x.user === currentUserKey() ? 'current-user' : ''}"><span class="lb-rank">${i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</span><span class="lb-name">${team?.emoji || '👤'} ${escapeHtml(x.nickname)} ${x.user === currentUserKey() ? '(du)' : ''}</span><span class="lb-score">${tier.emoji} Lv.${level}</span></li>`; }).join("")}</ul></div>`;
 }
 
 function getAchievementCardsHtml() {
@@ -7867,7 +8141,7 @@ function renderProfile() {
       <div class="profile-level-info">${teamInfo ? teamInfo.emoji + ' ' + teamInfo.name + ' · ' : ''}${tier.emoji} Lv.${level} · ${tier.name}</div>
       <div class="profile-progress"><div class="profile-progress-fill" style="width:${Math.round(progress * 100)}%"></div></div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);margin-top:6px;">
-        ${xp} XP · noch <strong style="color:var(--amber);">${levelInfo.xpToNext}</strong> XP bis Level ${level + 1}
+        ${xp} Karma · noch <strong style="color:var(--amber);">${levelInfo.xpToNext}</strong> Karma bis Level ${level + 1}
         ${levelInfo.reachedMilestone ? ` · 🏆 Lv.${MILESTONE_LEVEL} geschafft` : ` · 🎖️ Lv.${MILESTONE_LEVEL} = Meilenstein`}
       </div>
     </div>
