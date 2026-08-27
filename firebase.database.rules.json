@@ -64,6 +64,8 @@
       }
     },
 
+    "supplyRuns": { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+
     "notify": {
       ".read": false,
       "$eventId": {
