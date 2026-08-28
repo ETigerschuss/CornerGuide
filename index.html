@@ -5836,7 +5836,7 @@ function openCheckinTeamPicker(cornerId) {
   paint();
 
   // Buddies already checked in here: one tap to join their team.
-  const here = Object.values(STATE.friends || {})
+  const here = freshFriends()
     .filter((f) => f.atCorner === cornerId && f.team && TEAMS[f.team])
     .filter((f, i, arr) => arr.findIndex((x) => x.team === f.team) === i);
   const buddyBox = $("#cto-buddy");
@@ -6457,6 +6457,13 @@ function startPresenceHeartbeat() {
     });
     STATE.presenceVisibilityHookBound = true;
   }
+}
+
+// Returns only presence entries that are fresh enough to be considered online.
+// Mirrors the filter in renderFriendsBar so all corner-level logic stays consistent.
+function freshFriends() {
+  return Object.values(STATE.friends || {})
+    .filter((f) => Date.now() - Number(f.lastSeen || 0) < PRESENCE_FRESH_MS);
 }
 
 function listenFriendPresence() {
@@ -7193,7 +7200,7 @@ function getPeopleAtCorner(cornerId) {
   const people = [];
   const meAtCorner = STATE.manualCheckinId === cornerId || STATE.atCornerId === cornerId;
   if (meAtCorner) people.push(getDisplayName(STATE.nickname || "Du", STATE.team));
-  Object.values(STATE.friends).forEach((friend) => { if (friend.atCorner === cornerId) people.push(getDisplayName(friend.nickname || friend.name, friend.team)); });
+  freshFriends().forEach((friend) => { if (friend.atCorner === cornerId) people.push(getDisplayName(friend.nickname || friend.name, friend.team)); });
   return people;
 }
 
@@ -7201,7 +7208,7 @@ function checkCaptureCondition(cornerId) {
   if (!STATE.team) return;
   const occupants = [];
   if (STATE.manualCheckinId === cornerId || STATE.atCornerId === cornerId) occupants.push({ id: currentUserKey(), team: STATE.team });
-  Object.entries(STATE.friends).forEach(([id, friend]) => { if (friend.atCorner === cornerId && friend.team) occupants.push({ id, team: friend.team }); });
+  freshFriends().forEach((friend) => { if (friend.atCorner === cornerId && friend.team) occupants.push({ id: friend.id, team: friend.team }); });
   const sameTeam = occupants.filter((person) => person.team === STATE.team);
   if (sameTeam.length < 3) return;
   if (STATE.captured[cornerId]?.team === STATE.team) return;
@@ -7223,7 +7230,7 @@ function checkCaptureCondition(cornerId) {
 function logEncounters(cornerId) {
   const people = [];
   if (STATE.manualCheckinId === cornerId || STATE.atCornerId === cornerId) people.push({ id: currentUserKey(), nickname: STATE.nickname });
-  Object.entries(STATE.friends).forEach(([id, friend]) => { if (friend.atCorner === cornerId) people.push({ id, nickname: friend.nickname || friend.name || id }); });
+  freshFriends().forEach((friend) => { if (friend.atCorner === cornerId) people.push({ id: friend.id, nickname: friend.nickname || friend.name || friend.id }); });
   for (let i = 0; i < people.length; i++) {
     for (let j = i + 1; j < people.length; j++) {
       const ids = [people[i].id, people[j].id].sort();
@@ -7594,7 +7601,7 @@ function openDetail(cornerId) {
   const visits = getVisitCount(cornerId);
   const { avg, count: baroCount } = getBarometerData(cornerId);
   const peopleHere = getPeopleAtCorner(cornerId);
-  const peopleMessageTargets = Object.values(STATE.friends).filter((friend) => friend.atCorner === cornerId);
+  const peopleMessageTargets = freshFriends().filter((friend) => friend.atCorner === cornerId);
   const capturedInfo = STATE.captured[cornerId];
   const capturedHtml = capturedInfo?.team ? `<div class="detail-people-here" style="border-color:${TEAMS[capturedInfo.team]?.color || 'var(--line)'};color:${TEAMS[capturedInfo.team]?.color || 'var(--fg)'};background:rgba(255,255,255,0.05);">${TEAMS[capturedInfo.team]?.emoji || ''} Eingenommen von Team ${TEAMS[capturedInfo.team]?.name || capturedInfo.team}</div>` : "";
   const teamPickerHtml = STATE.manualCheckinId === cornerId ? renderTeamPickerHtml() : "";
