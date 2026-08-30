@@ -6504,7 +6504,8 @@ function renderFriendsBar() {
   // Hide stale presence entries: closed tabs whose onDisconnect never fired
   // used to show friends as "unterwegs" forever.
   const friends = Object.values(STATE.friends || {})
-    .filter((f) => Date.now() - Number(f.lastSeen || 0) < PRESENCE_FRESH_MS);
+    .filter((f) => Date.now() - Number(f.lastSeen || 0) < PRESENCE_FRESH_MS)
+    .sort((a, b) => (b.atCorner ? 1 : 0) - (a.atCorner ? 1 : 0) || Number(b.lastSeen || 0) - Number(a.lastSeen || 0));
   if (!friends.length) { bar.classList.remove("has-friends"); list.innerHTML = ""; return; }
   bar.classList.add("has-friends");
   list.innerHTML = friends.map((friend) => {
