@@ -2985,9 +2985,8 @@ function setLang(lang) {
   localStorage.setItem("cg.lang", lang);
   // Re-render everything that uses T()
   document.querySelectorAll(".tab[data-view]").forEach((t) => {
-    const labels = { list: [T("Liste", "List"), T("Liste", "List")], map: [T("Karte", "Map"), T("Karte", "Map")], leaderboard: ["🏆 " + T("Ranking", "Ranking"), "🏆 " + T("Ranking", "Ranking")], profile: ["👤 " + T("Profil", "Profile"), "👤 " + T("Profil", "Profile")] };
-    const pair = labels[t.dataset.view];
-    if (pair) t.textContent = pair[0];
+    const labels = { list: T("Liste", "List"), map: T("Karte", "Map"), leaderboard: "🏆 " + T("Ranking", "Ranking"), profile: "👤 " + T("Profil", "Profile") };
+    if (labels[t.dataset.view]) t.textContent = labels[t.dataset.view];
   });
   const bar = document.getElementById("friends-bar-title");
   if (bar) bar.textContent = T("🍻 Freunde unterwegs", "🍻 Friends out there");
@@ -2997,6 +2996,7 @@ function setLang(lang) {
 }
 
 
+function getAllCorners() {
   return [...CORNERS_OG, ...STATE.customSpots];
 }
 
