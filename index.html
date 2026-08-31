@@ -2441,7 +2441,7 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   <!-- Friends presence bar -->
   <div id="friends-bar" class="friends-bar">
     <div class="friends-bar-inner">
-      <h3>🍻 Freunde unterwegs</h3>
+      <h3 id="friends-bar-title">🍻 Freunde unterwegs</h3>
       <ul class="friends-list" id="friends-list"></ul>
     </div>
   </div>
@@ -2969,10 +2969,34 @@ const STATE = {
   lastCheckinTime: parseInt(localStorage.getItem("cg.lastCheckinTime") || "0"),
   lastCheckinCorner: localStorage.getItem("cg.lastCheckinCorner") || "",
   notifPref: loadNotifPref(),
-  cooldownInterval: null
+  cooldownInterval: null,
+  lang: localStorage.getItem("cg.lang") || "de"
 };
 
-function getAllCorners() {
+/* ====================== LANGUAGE ====================== */
+/**
+ * T(de, en) — returns the German or English string depending on STATE.lang.
+ * Use for every user-visible string that should be translatable.
+ */
+function T(de, en) { return STATE.lang === "en" ? en : de; }
+
+function setLang(lang) {
+  STATE.lang = lang;
+  localStorage.setItem("cg.lang", lang);
+  // Re-render everything that uses T()
+  document.querySelectorAll(".tab[data-view]").forEach((t) => {
+    const labels = { list: [T("Liste", "List"), T("Liste", "List")], map: [T("Karte", "Map"), T("Karte", "Map")], leaderboard: ["🏆 " + T("Ranking", "Ranking"), "🏆 " + T("Ranking", "Ranking")], profile: ["👤 " + T("Profil", "Profile"), "👤 " + T("Profil", "Profile")] };
+    const pair = labels[t.dataset.view];
+    if (pair) t.textContent = pair[0];
+  });
+  const bar = document.getElementById("friends-bar-title");
+  if (bar) bar.textContent = T("🍻 Freunde unterwegs", "🍻 Friends out there");
+  if (STATE.view === "profile") renderProfile();
+  if (STATE.view === "leaderboard") renderLeaderboard();
+  renderCards();
+}
+
+
   return [...CORNERS_OG, ...STATE.customSpots];
 }
 
@@ -4110,15 +4134,15 @@ function renderPopularCorner() {
   });
 
   if (!popular || maxVisits === 0) {
-    container.innerHTML = `<div class="popular-corner"><h3>👑 Beliebtester Corner</h3><p style="color:var(--fg-dim);">Noch keine Besuche — checke als Erster ein!</p></div>`;
+    container.innerHTML = `<div class="popular-corner"><h3>👑 ${T("Beliebtester Corner", "Most popular corner")}</h3><p style="color:var(--fg-dim);">${T("Noch keine Besuche — checke als Erster ein!", "No visits yet — be the first to check in!")}</p></div>`;
     return;
   }
 
   container.innerHTML = `
     <div class="popular-corner">
-      <h3>👑 Beliebtester Corner</h3>
+      <h3>👑 ${T("Beliebtester Corner", "Most popular corner")}</h3>
       <p class="popular-name">${escapeHtml(popular.name)}</p>
-      <p class="popular-visits">🔥 ${maxVisits}x besucht · ${popular.area || "—"}</p>
+      <p class="popular-visits">🔥 ${maxVisits}x ${T("besucht", "visited")} · ${popular.area || "—"}</p>
     </div>
   `;
 }
@@ -4132,7 +4156,7 @@ function renderVisitLeaderboard() {
   })).filter(x => x.visits > 0).sort((a, b) => b.visits - a.visits).slice(0, 10);
 
   if (cornerVisits.length === 0) {
-    container.innerHTML = `<div class="leaderboard-section"><h3>📊 Meistbesucht</h3><p style="color:var(--fg-dim);font-size:13px;">Noch keine Besuche.</p></div>`;
+    container.innerHTML = `<div class="leaderboard-section"><h3>📊 ${T("Meistbesucht", "Most visited")}</h3><p style="color:var(--fg-dim);font-size:13px;">${T("Noch keine Besuche.", "No visits yet.")}</p></div>`;
     return;
   }
 
@@ -4146,7 +4170,7 @@ function renderVisitLeaderboard() {
     </li>`;
   }).join("");
 
-  container.innerHTML = `<div class="leaderboard-section"><h3>📊 Meistbesucht</h3><ul class="leaderboard-list">${listHtml}</ul></div>`;
+  container.innerHTML = `<div class="leaderboard-section"><h3>📊 ${T("Meistbesucht", "Most visited")}</h3><ul class="leaderboard-list">${listHtml}</ul></div>`;
 }
 
 function renderContributorsLeaderboard() {
@@ -4161,7 +4185,7 @@ function renderContributorsLeaderboard() {
   const sorted = Object.entries(contributors).sort((a, b) => b[1] - a[1]).slice(0, 10);
 
   if (sorted.length === 0) {
-    container.innerHTML = `<div class="leaderboard-section"><h3>🗺️ Top Entdecker</h3><p style="color:var(--fg-dim);font-size:13px;">Noch niemand hat Corners hinzugefügt.</p></div>`;
+    container.innerHTML = `<div class="leaderboard-section"><h3>🗺️ ${T("Top Entdecker", "Top Explorers")}</h3><p style="color:var(--fg-dim);font-size:13px;">${T("Noch niemand hat Corners hinzugefügt.", "Nobody has added corners yet.")}</p></div>`;
     return;
   }
 
@@ -4175,7 +4199,7 @@ function renderContributorsLeaderboard() {
     </li>`;
   }).join("");
 
-  container.innerHTML = `<div class="leaderboard-section"><h3>🗺️ Top Entdecker</h3><ul class="leaderboard-list">${listHtml}</ul></div>`;
+  container.innerHTML = `<div class="leaderboard-section"><h3>🗺️ ${T("Top Entdecker", "Top Explorers")}</h3><ul class="leaderboard-list">${listHtml}</ul></div>`;
 }
 
 /* ====================== TABS ====================== */
@@ -4641,6 +4665,10 @@ const MAX_DIRECT_MESSAGES = 120;
 const PRESENCE_HEARTBEAT_INTERVAL_MS = 20000;
 // Presence entries older than this are treated as offline and hidden.
 const PRESENCE_FRESH_MS = 45 * 60 * 1000;
+// Only fire a "friend arrived at corner" alarm if the check-in happened within
+// this window. Prevents stale DB entries from triggering notifications every
+// time the app loads or reconnects.
+const CHECKIN_ALARM_WINDOW_MS = 2 * 60 * 1000;
 // Stay this long within PROXIMITY_M of a corner -> automatic check-in.
 const AUTO_CHECKIN_DWELL_MS = 5 * 60 * 1000;
 
@@ -4664,7 +4692,7 @@ function autoCheckoutIfStale() {
   refreshMainMarker(prev);
   updateCheckinButtons();
   broadcastPresence();
-  toast(`🌅 Automatisch ausgecheckt${corner ? ` am ${escapeHtml(corner.name)}` : ""}`);
+  toast(`🌅 ${T("Automatisch ausgecheckt", "Auto checked out")}${corner ? ` ${T("am", "at")} ${escapeHtml(corner.name)}` : ""}`);
 }
 
 // Auto check-in after dwelling >= 5 min near the same corner (geo must be on).
@@ -4693,7 +4721,7 @@ function checkDwellAutoCheckin() {
   if (dwelled >= AUTO_CHECKIN_DWELL_MS && STATE.manualCheckinId !== nearId && STATE._autoCheckedCorner !== nearId) {
     STATE._autoCheckedCorner = nearId;
     manualCheckin(nearId);
-    toast(`🤖 5 Minuten am <strong>${escapeHtml(nearest.name)}</strong> — automatisch eingecheckt!`);
+    toast(`🤖 ${T("5 Minuten am", "5 minutes at")} <strong>${escapeHtml(nearest.name)}</strong> — ${T("automatisch eingecheckt!", "auto checked in!")}`);
   }
 }
 
@@ -6478,8 +6506,11 @@ function listenFriendPresence() {
       const friend = { ...info, id, nickname: info.nickname || info.name || id };
       STATE.friends[id] = friend;
       if (friend.atCorner && (!oldFriends[id] || oldFriends[id].atCorner !== friend.atCorner)) {
-        const corner = getAllCorners().find((c) => c.id === friend.atCorner);
-        if (corner) friendAtCornerAlarm(friend, corner);
+        // Only alarm for fresh arrivals — skip stale DB entries on reconnect.
+        if (Date.now() - Number(friend.lastSeen || 0) <= CHECKIN_ALARM_WINDOW_MS) {
+          const corner = getAllCorners().find((c) => c.id === friend.atCorner);
+          if (corner) friendAtCornerAlarm(friend, corner);
+        }
       }
     });
     renderFriendsBar();
@@ -6488,10 +6519,10 @@ function listenFriendPresence() {
 
 function friendAtCornerAlarm(friend, corner) {
   if (!shouldNotify(friend)) return;
-  toast(`🍻 <strong>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</strong> ist am <strong>${escapeHtml(corner.name)}</strong>!`, "friend-alert");
+  toast(`🍻 <strong>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</strong> ${T("ist am", "is at")} <strong>${escapeHtml(corner.name)}</strong>!`, "friend-alert");
   if ("Notification" in window) {
     if (Notification.permission === "granted") {
-      new Notification("Minga Corner Guide", { body: `${friend.nickname} ist gerade am ${corner.name}!` });
+      new Notification("Minga Corner Guide", { body: `${friend.nickname} ${T("ist gerade am", "is now at")} ${corner.name}!` });
     } else if (Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -6514,15 +6545,15 @@ function renderFriendsBar() {
     const { level } = getLevel(xp);
     const tier = getLevelTier(level);
     const avail = AVAILABILITY[friend.status] || null;
-    const statusLabel = corner ? "@ " + escapeHtml(corner.name) : escapeHtml(avail?.label || "online");
+    const statusLabel = corner ? "@ " + escapeHtml(corner.name) : escapeHtml(avail?.label || T("online", "online"));
     return `<li class="friend-chip ${corner ? "" : "away"}" style="border-color:${TEAMS[friend.team]?.color || 'var(--line)'};">
       <span class="friend-dot" title="${escapeHtml(avail?.label || "")}" style="background:${avail?.color || TEAMS[friend.team]?.color || 'var(--fg-dim)'};"></span>
       <span>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</span>
       ${corner
-        ? `<button class="friend-corner friend-goto" data-goto-corner="${escapeHtml(corner.id)}" title="Zum Corner springen">${statusLabel} →</button>`
+        ? `<button class="friend-corner friend-goto" data-goto-corner="${escapeHtml(corner.id)}" title="${T("Zum Corner springen", "Go to corner")}">${statusLabel} →</button>`
         : `<span class="friend-corner">${statusLabel}</span>`}
       <span class="friend-level">${tier.emoji} Lv.${level}</span>
-      ${corner ? `<button class="action-btn" style="padding:4px 8px;font-size:10px;" data-supply-user="${friend.id}" title="Frag ob Nachschub gebraucht wird">🛒 Nachschub?</button>` : ""}
+      ${corner ? `<button class="action-btn" style="padding:4px 8px;font-size:10px;" data-supply-user="${friend.id}" title="${T("Frag ob Nachschub gebraucht wird", "Ask if supplies are needed")}">🛒 ${T("Nachschub?", "Supplies?")}</button>` : ""}
       <button class="action-btn" style="padding:4px 8px;font-size:10px;" data-dm-user="${friend.id}">💬</button>
     </li>`;
   }).join("");
@@ -7275,7 +7306,7 @@ function manualCheckin(cornerId) {
     STATE.manualCheckinId = null;
     localStorage.removeItem("cg.checkedInAt");
     STATE._autoCheckedCorner = null; // allow a fresh dwell auto-checkin later
-    toast("Ausgecheckt 👋");
+    toast(T("Ausgecheckt 👋", "Checked out 👋"));
   } else {
     STATE.manualCheckinId = cornerId;
     STATE.lastCheckinTime = Date.now();
@@ -7288,21 +7319,21 @@ function manualCheckin(cornerId) {
     localStorage.setItem("cg.checkedInAt", String(Date.now()));
     // "Ups falsch eingecheckt" — offer a one-tap undo right in the confirmation.
     toast(
-      `Eingecheckt am <strong>${escapeHtml(corner.name)}</strong> 🍻<br><span style="font-size:11px;opacity:0.75;">Tippen = rückgängig</span>`,
+      `${T("Eingecheckt am", "Checked in at")} <strong>${escapeHtml(corner.name)}</strong> 🍻<br><span style="font-size:11px;opacity:0.75;">${T("Tippen = rückgängig", "Tap to undo")}</span>`,
       "at-corner",
-      () => { if (STATE.manualCheckinId === cornerId) { manualCheckin(cornerId); toast("↩️ Check-in zurückgenommen"); } }
+      () => { if (STATE.manualCheckinId === cornerId) { manualCheckin(cornerId); toast(T("↩️ Check-in zurückgenommen", "↩️ Check-in undone")); } }
     );
     recordVisit(cornerId);
     // Karma only once per day per corner, and it scales with the spot.
     if (checkedInTodayAt(cornerId)) {
-      toast("Schon heute hier gewesen — kein Karma, aber schön dass du da bist 🍻");
+      toast(T("Schon heute hier gewesen — kein Karma, aber schön dass du da bist 🍻", "Already been here today — no karma, but glad you're here 🍻"));
     } else {
       markCheckedInToday(cornerId);
       const k = checkinKarma(cornerId);
       addXp(k.total, `Check-in: ${corner.name}`);
       const extras = [];
-      if (k.social) extras.push(`+${k.social} weil was los ist`);
-      if (k.popular) extras.push(`+${k.popular} beliebter Spot`);
+      if (k.social) extras.push(`+${k.social} ${T("weil was los ist", "social bonus")}`);
+      if (k.popular) extras.push(`+${k.popular} ${T("beliebter Spot", "popular spot")}`);
       if (extras.length) toast(`✨ <strong>+${k.total} Karma</strong><br><span style="font-size:11px;opacity:0.8;">${extras.join(" · ")}</span>`);
     }
     const totalCheckins = parseInt(localStorage.getItem("cg.totalCheckins") || "0") + 1;
@@ -7573,12 +7604,12 @@ function updateCheckinButtons() {
     const blocked = hasCooldown && cId !== STATE.lastCheckinCorner && !isThis;
     btn.classList.toggle("checked-in", isThis);
     btn.classList.toggle("cooldown", blocked);
-    if (isThis) btn.innerHTML = "✅ Ich bin hier &middot; 🚪 Auschecken";
+    if (isThis) btn.innerHTML = "✅ " + T("Ich bin hier", "I'm here") + " &middot; 🚪 " + T("Auschecken", "Check out");
     else if (blocked) btn.innerHTML = `⏳ ${cooldownStr}`;
     else if (STATE.geoActive && STATE.userPos && corner) {
       const dist = haversine(STATE.userPos.lat, STATE.userPos.lng, corner.lat, corner.lng);
-      btn.innerHTML = `📍 Einchecken <span class="checkin-distance">${dist < 1000 ? Math.round(dist) + "m" : (dist/1000).toFixed(1) + "km"}</span>`;
-    } else btn.innerHTML = "📍 Einchecken";
+      btn.innerHTML = `📍 ${T("Einchecken", "Check in")} <span class="checkin-distance">${dist < 1000 ? Math.round(dist) + "m" : (dist/1000).toFixed(1) + "km"}</span>`;
+    } else btn.innerHTML = "📍 " + T("Einchecken", "Check in");
   });
 }
 
@@ -7604,19 +7635,19 @@ function openDetail(cornerId) {
   const peopleHere = getPeopleAtCorner(cornerId);
   const peopleMessageTargets = freshFriends().filter((friend) => friend.atCorner === cornerId);
   const capturedInfo = STATE.captured[cornerId];
-  const capturedHtml = capturedInfo?.team ? `<div class="detail-people-here" style="border-color:${TEAMS[capturedInfo.team]?.color || 'var(--line)'};color:${TEAMS[capturedInfo.team]?.color || 'var(--fg)'};background:rgba(255,255,255,0.05);">${TEAMS[capturedInfo.team]?.emoji || ''} Eingenommen von Team ${TEAMS[capturedInfo.team]?.name || capturedInfo.team}</div>` : "";
+  const capturedHtml = capturedInfo?.team ? `<div class="detail-people-here" style="border-color:${TEAMS[capturedInfo.team]?.color || 'var(--line)'};color:${TEAMS[capturedInfo.team]?.color || 'var(--fg)'};background:rgba(255,255,255,0.05);">${TEAMS[capturedInfo.team]?.emoji || ''} ${T("Eingenommen von Team", "Captured by team")} ${TEAMS[capturedInfo.team]?.name || capturedInfo.team}</div>` : "";
   const teamPickerHtml = STATE.manualCheckinId === cornerId ? renderTeamPickerHtml() : "";
   $("#detail-content").innerHTML = `
     <div class="detail-hero-photo">${photoSrc ? `<img src="${photoSrc}" alt="${escapeHtml(c.name)}" />` : `<div class="card-photo-empty" style="height:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg></div>`}</div>
     <div class="detail-stats">
-      <div class="detail-stat"><span class="stat-num">${visits}</span><span class="stat-label">Besuche</span></div>
-      <div class="detail-stat"><span class="stat-num">${baroCount > 0 ? avg.toFixed(1) : "—"}</span><span class="stat-label">Rating</span></div>
-      <div class="detail-stat"><span class="stat-num">${peopleHere.length}</span><span class="stat-label">Hier jetzt</span></div>
-      <div class="detail-stat"><span class="stat-num">${distanceLabel(c)}</span><span class="stat-label">Entfernung</span></div>
+      <div class="detail-stat"><span class="stat-num">${visits}</span><span class="stat-label">${T("Besuche", "Visits")}</span></div>
+      <div class="detail-stat"><span class="stat-num">${baroCount > 0 ? avg.toFixed(1) : "—"}</span><span class="stat-label">${T("Rating", "Rating")}</span></div>
+      <div class="detail-stat"><span class="stat-num">${peopleHere.length}</span><span class="stat-label">${T("Hier jetzt", "Here now")}</span></div>
+      <div class="detail-stat"><span class="stat-num">${distanceLabel(c)}</span><span class="stat-label">${T("Entfernung", "Distance")}</span></div>
     </div>
     <div class="detail-where">📍 ${escapeHtml(c.area || "München")}${typeof c.lat === "number" ? ` · <span class="dw-coords">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span>` : ""}</div>
     ${capturedHtml}
-    ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} gerade hier: ${peopleHere.map((p) => escapeHtml(p)).join(", ")}</div>` : ""}
+    ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("gerade hier", "here now")}: ${peopleHere.map((p) => escapeHtml(p)).join(", ")}</div>` : ""}
     ${peopleMessageTargets.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">${peopleMessageTargets.map((friend) => `<button class="action-btn" data-dm-user="${friend.id}">💬 ${escapeHtml(friend.nickname || friend.name || friend.id)}</button>`).join("")}</div>` : ""}
     <p class="card-area" style="margin-top:14px;">${c.area || "—"}</p>
     <h2 class="card-name" style="margin-bottom:14px;">${c.name}</h2>
@@ -7632,12 +7663,12 @@ function openDetail(cornerId) {
     <div class="visit-trail" data-corner-id="${c.id}"></div>
     <div class="comments-section" data-corner-id="${c.id}"></div>
     <div class="card-actions" style="padding:18px 0;">
-      <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier &middot; 🚪 Auschecken" : "📍 Einchecken"}</button>
-      <button class="action-btn primary" data-action="map-detail" data-id="${c.id}">📍 Auf Karte</button>
-      <button class="action-btn" data-action="route-detail" data-id="${c.id}">🧭 Route</button>
-      <button class="action-btn" data-action="share-corner" data-id="${c.id}">🔗 Teilen</button>
+      <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ " + T("Ich bin hier", "I'm here") + " &middot; 🚪 " + T("Auschecken", "Check out") : "📍 " + T("Einchecken", "Check in")}</button>
+      <button class="action-btn primary" data-action="map-detail" data-id="${c.id}">📍 ${T("Auf Karte", "On map")}</button>
+      <button class="action-btn" data-action="route-detail" data-id="${c.id}">🧭 ${T("Route", "Route")}</button>
+      <button class="action-btn" data-action="share-corner" data-id="${c.id}">🔗 ${T("Teilen", "Share")}</button>
       <button class="action-btn" data-action="qr-corner" data-id="${c.id}">🧾 QR</button>
-      ${canEditCorner(c) ? `<button class="action-btn" data-action="edit-corner" data-id="${c.id}">✏️ Bearbeiten</button>` : ""}
+      ${canEditCorner(c) ? `<button class="action-btn" data-action="edit-corner" data-id="${c.id}">✏️ ${T("Bearbeiten", "Edit")}</button>` : ""}
     </div>`;
   const detailContent = $("#detail-content");
   detailContent.querySelector(".checkin-btn")?.addEventListener("click", (e) => { manualCheckin(e.target.closest("[data-id]").dataset.id); setTimeout(() => openDetail(cornerId), 100); });
@@ -7680,25 +7711,25 @@ function renderCards() {
     card.innerHTML = `
       <div class="card-photo">
         <div class="card-num">${String(cornerNumber(c.id)).padStart(2, "0")}</div>
-        <span class="mine-badge">Mein Spot</span>
-        <span class="at-badge">Du bist hier</span>
+        <span class="mine-badge">${T("Mein Spot", "My Spot")}</span>
+        <span class="at-badge">${T("Du bist hier", "You are here")}</span>
         ${capture ? `<span class="captured-badge"><span class="cap-emoji">${TEAMS[capture.team]?.emoji || "🏳️"}</span><span class="cap-label">Captured</span></span>` : ""}
         ${c._visits > 0 ? `<span class="card-visit-rank">🔥 ${c._visits}</span>` : ""}
-        ${photoSrc ? `<img src="${photoSrc}" alt="${escapeHtml(c.name)}">` : `<div class="card-photo-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg><span>Foto hochladen</span></div>`}
+        ${photoSrc ? `<img src="${photoSrc}" alt="${escapeHtml(c.name)}">` : `<div class="card-photo-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg><span>${T("Foto hochladen", "Upload photo")}</span></div>`}
         <input type="file" accept="image/*" class="photo-input" data-id="${c.id}">
-        <button class="photo-btn" data-id="${c.id}">📷 ${photoSrc ? "Ändern" : "Hinzufügen"}</button>
+        <button class="photo-btn" data-id="${c.id}">📷 ${photoSrc ? T("Ändern", "Change") : T("Hinzufügen", "Add")}</button>
       </div>
       <div class="card-body">
         <p class="card-area">${c.area || "—"} ${c.isCustom && c.createdBy ? `<span class="creator-label"> · von ${escapeHtml(c.createdBy)}</span>` : ""}</p>
         <h2 class="card-name">${c.name}</h2>
-        ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} hier: ${peopleHere.map((n) => escapeHtml(n)).join(", ")}</div>` : ""}
+        ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("hier", "here")}: ${peopleHere.map((n) => escapeHtml(n)).join(", ")}</div>` : ""}
         ${getDescription(c) ? `<p class="card-desc short-desc">${escapeHtml(getDescription(c))}</p>` : ""}
-        <button class="detail-link" data-id="${c.id}">Mehr Details →</button>
+        <button class="detail-link" data-id="${c.id}">${T("Mehr Details →", "More details →")}</button>
       </div>
       <div class="card-actions">
-        <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ Ich bin hier &middot; 🚪 Auschecken" : "📍 Einchecken"}</button>
-        <button class="action-btn primary" data-action="map" data-id="${c.id}">📍 Karte</button>
-        <button class="action-btn" data-action="route" data-id="${c.id}">🧭 Route</button>
+        <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ " + T("Ich bin hier", "I'm here") + " &middot; 🚪 " + T("Auschecken", "Check out") : "📍 " + T("Einchecken", "Check in")}</button>
+        <button class="action-btn primary" data-action="map" data-id="${c.id}">📍 ${T("Karte", "Map")}</button>
+        <button class="action-btn" data-action="route" data-id="${c.id}">🧭 ${T("Route", "Route")}</button>
       </div>`;
     root.appendChild(card);
   });
@@ -7842,8 +7873,8 @@ function renderPointsLeaderboard() {
     if (!prev || total > prev.total) byPerson[key] = { user: key, total, nickname };
   });
   const sorted = Object.values(byPerson).filter((x) => x.total > 0).sort((a, b) => b.total - a.total).slice(0, 10);
-  if (!sorted.length) { container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Karma-Ranking</h3><p style="color:var(--fg-dim);font-size:13px;">Noch keine Karma-Punkte gesammelt.</p></div>`; return; }
-  container.innerHTML = `<div class="leaderboard-section"><h3>⭐ Karma-Ranking</h3><ul class="leaderboard-list">${sorted.map((x, i) => { const level = getLevel(x.total).level; const tier = getLevelTier(level); const team = TEAMS[STATE.teams[x.user]?.team] || TEAMS[x.user === currentUserKey() ? STATE.team : ""]; return `<li class="leaderboard-item ${x.user === currentUserKey() ? 'current-user' : ''}"><span class="lb-rank">${i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</span><span class="lb-name">${team?.emoji || '👤'} ${escapeHtml(x.nickname)} ${x.user === currentUserKey() ? '(du)' : ''}</span><span class="lb-score">${tier.emoji} Lv.${level}</span></li>`; }).join("")}</ul></div>`;
+  if (!sorted.length) { container.innerHTML = `<div class="leaderboard-section"><h3>⭐ ${T("Karma-Ranking", "Karma Ranking")}</h3><p style="color:var(--fg-dim);font-size:13px;">${T("Noch keine Karma-Punkte gesammelt.", "No karma points collected yet.")}</p></div>`; return; }
+  container.innerHTML = `<div class="leaderboard-section"><h3>⭐ ${T("Karma-Ranking", "Karma Ranking")}</h3><ul class="leaderboard-list">${sorted.map((x, i) => { const level = getLevel(x.total).level; const tier = getLevelTier(level); const team = TEAMS[STATE.teams[x.user]?.team] || TEAMS[x.user === currentUserKey() ? STATE.team : ""]; return `<li class="leaderboard-item ${x.user === currentUserKey() ? 'current-user' : ''}"><span class="lb-rank">${i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</span><span class="lb-name">${team?.emoji || '👤'} ${escapeHtml(x.nickname)} ${x.user === currentUserKey() ? T('(du)', '(you)') : ''}</span><span class="lb-score">${tier.emoji} Lv.${level}</span></li>`; }).join("")}</ul></div>`;
 }
 
 function getAchievementCardsHtml() {
@@ -7884,7 +7915,7 @@ function getAchievementCardsHtml() {
 }
 
 function renderAchievementsSection() {
-  $("#achievements-section").innerHTML = `<div class="leaderboard-section"><h3>🏆 Achievements</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 14px;">Schalte Achievements frei durch Aktivität!</p><div class="achievements-grid">${getAchievementCardsHtml()}</div></div>`;
+  $("#achievements-section").innerHTML = `<div class="leaderboard-section"><h3>🏆 Achievements</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 14px;">${T("Schalte Achievements frei durch Aktivität!", "Unlock achievements through activity!")}</p><div class="achievements-grid">${getAchievementCardsHtml()}</div></div>`;
 }
 
 function getTeamBattleRows() {
@@ -7897,7 +7928,7 @@ function getTeamBattleRows() {
 
 function renderTeamBattleSection() {
   const rows = getTeamBattleRows();
-  $("#team-battle-section").innerHTML = `<div class="team-battle-section"><h3>⚔️ Team Battles</h3>${rows.map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}<br><small>${row.held.length ? row.held.map(([cornerId]) => escapeHtml(getAllCorners().find((c) => c.id === cornerId)?.name || cornerId)).join(', ') : 'Noch keine gehaltenen Corner'}</small></span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.min(100, Math.max(4, row.total * 8))}%;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>`;
+  $("#team-battle-section").innerHTML = `<div class="team-battle-section"><h3>⚔️ ${T("Team Battles", "Team Battles")}</h3>${rows.map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}<br><small>${row.held.length ? row.held.map(([cornerId]) => escapeHtml(getAllCorners().find((c) => c.id === cornerId)?.name || cornerId)).join(', ') : T('Noch keine gehaltenen Corner', 'No corners held yet')}</small></span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.min(100, Math.max(4, row.total * 8))}%;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>`;
 }
 
 function renderLeaderboard() {
@@ -7930,21 +7961,21 @@ function buildNotifSettingsHtml() {
           <button class="ufi-toggle ${isMuted ? "muted" : ""}" data-user="${fid}">${isMuted ? "🔕 Stumm" : "🔔 Aktiv"}</button>
         </div>`;
       }).join("")
-    : `<p style="color:var(--fg-dim);font-size:13px;margin:4px 0 0;">Keine Nutzer derzeit online.</p>`;
+    : `<p style="color:var(--fg-dim);font-size:13px;margin:4px 0 0;">${T("Keine Nutzer derzeit online.", "No users currently online.")}</p>`;
   return `
-    <div class="notif-settings-label">Modus</div>
+    <div class="notif-settings-label">${T("Modus", "Mode")}</div>
     <div class="notif-options">
-      <button class="notif-opt ${pref === "all" ? "active" : ""}" data-pref="all">Alle</button>
-      <button class="notif-opt ${pref === "team" ? "active" : ""}" data-pref="team">Nur mein Team</button>
-      <button class="notif-opt ${pref === "off" ? "active" : ""}" data-pref="off">Aus</button>
+      <button class="notif-opt ${pref === "all" ? "active" : ""}" data-pref="all">${T("Alle", "All")}</button>
+      <button class="notif-opt ${pref === "team" ? "active" : ""}" data-pref="team">${T("Nur mein Team", "My team only")}</button>
+      <button class="notif-opt ${pref === "off" ? "active" : ""}" data-pref="off">${T("Aus", "Off")}</button>
     </div>
     ${pref !== "off" ? `
-    <div class="notif-settings-label">Teams stummschalten</div>
+    <div class="notif-settings-label">${T("Teams stummschalten", "Mute teams")}</div>
     <div class="team-filter-chips">${teamChips}</div>
-    <div class="notif-settings-label">Nutzer stummschalten</div>
+    <div class="notif-settings-label">${T("Nutzer stummschalten", "Mute users")}</div>
     <div class="user-filter-list">${userRows}</div>` : ""}
     <div style="margin-top:14px;">
-      <button class="notif-opt" id="enable-push-btn">🔔 Push verbinden</button>
+      <button class="notif-opt" id="enable-push-btn">🔔 ${T("Push verbinden", "Connect push")}</button>
     </div>`;
 }
 
@@ -8142,6 +8173,39 @@ function renderProfile() {
   const totalCheckins = Object.values(STATE.visits).reduce((sum, entry) => sum + Object.values(entry || {}).filter((visit) => visit.user === STATE.nickname).length, 0);
   const bestFriends = Object.entries(STATE.encounters).filter(([, entry]) => entry.users && Object.keys(entry.users).includes(currentUserKey())).map(([, entry]) => { const other = Object.entries(entry.users).find(([id]) => id !== currentUserKey()); return { id: other?.[0], name: other?.[1] || 'Anonym', count: entry.count || 0 }; }).sort((a, b) => b.count - a.count).slice(0, 8);
   const recentMessages = (STATE.directMessages || []).slice(-8).reverse();
+
+  // Karma rank among all known players
+  const byPerson = {};
+  Object.entries(STATE.points).forEach(([user, data]) => {
+    const key = isMyKey(user) ? currentUserKey() : user;
+    const total = (data && data.total) || 0;
+    const nickname = (isMyKey(user) ? (STATE.nickname || (data && data.nickname)) : (data && data.nickname)) || key;
+    const prev = byPerson[key];
+    if (!prev || total > prev.total) byPerson[key] = { user: key, total, nickname };
+  });
+  const allPlayers = Object.values(byPerson).filter((x) => x.total > 0).sort((a, b) => b.total - a.total);
+  const myRankPos = allPlayers.findIndex((x) => x.user === currentUserKey());
+  const myRank = myRankPos >= 0 ? myRankPos + 1 : null;
+  const rankLabel = myRank ? `#${myRank} ${T("von", "of")} ${allPlayers.length}` : T("Noch kein Ranking", "Not ranked yet");
+  const rankAbove = myRank && myRank > 1 ? allPlayers[myRankPos - 1] : null;
+  const karmaToOvertake = rankAbove ? rankAbove.total - xp + 1 : null;
+
+  // Karma guide rows
+  const karmaRules = [
+    { emoji: "📍", de: "Einchecken (Basis)", en: "Check-in (base)", pts: "5" },
+    { emoji: "👥", de: "+ pro Person dort", en: "+ per person there", pts: "+6" },
+    { emoji: "🔥", de: "+ beliebter Spot", en: "+ popular spot", pts: "+1–12" },
+    { emoji: "📸", de: "Foto hochladen", en: "Upload photo", pts: "10" },
+    { emoji: "💬", de: "Kommentar schreiben", en: "Write comment", pts: "5" },
+    { emoji: "⭐", de: "Spot bewerten", en: "Rate a spot", pts: "2" },
+    { emoji: "🤝", de: "Freund getroffen", en: "Meeting a friend", pts: "8" },
+    { emoji: "🆘", de: "Nachschub bestätigen", en: "Confirm supply run", pts: "40/5" },
+    { emoji: "⚔️", de: "Corner eingenommen", en: "Corner captured", pts: "25" },
+    { emoji: "🎁", de: "Freunde einladen", en: "Invite friends", pts: "5" },
+    { emoji: "🔔", de: "Push aktivieren", en: "Enable push", pts: "10" },
+    { emoji: "👆", de: "Tippen (alle 10 Min)", en: "Tap (every 10 min)", pts: "1" },
+  ];
+
   $("#profile-content").innerHTML = `
     <div class="profile-header">
       <div class="profile-avatar">${teamInfo?.emoji || '👤'}</div>
@@ -8149,24 +8213,45 @@ function renderProfile() {
       <div class="profile-level-info">${teamInfo ? teamInfo.emoji + ' ' + teamInfo.name + ' · ' : ''}${tier.emoji} Lv.${level} · ${tier.name}</div>
       <div class="profile-progress"><div class="profile-progress-fill" style="width:${Math.round(progress * 100)}%"></div></div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);margin-top:6px;">
-        ${xp} Karma · noch <strong style="color:var(--amber);">${levelInfo.xpToNext}</strong> Karma bis Level ${level + 1}
-        ${levelInfo.reachedMilestone ? ` · 🏆 Lv.${MILESTONE_LEVEL} geschafft` : ` · 🎖️ Lv.${MILESTONE_LEVEL} = Meilenstein`}
+        ${xp} Karma · ${T("noch", "only")} <strong style="color:var(--amber);">${levelInfo.xpToNext}</strong> Karma ${T("bis Level", "to Level")} ${level + 1}
+        ${levelInfo.reachedMilestone ? ` · 🏆 Lv.${MILESTONE_LEVEL} ${T("geschafft", "reached")}` : ` · 🎖️ Lv.${MILESTONE_LEVEL} = ${T("Meilenstein", "Milestone")}`}
       </div>
     </div>
     <div class="profile-stats">
-      <div class="profile-stat"><div class="stat-icon">📍</div><div class="stat-value">${STATE.visitedCorners.length}</div><div class="stat-label">Corners besucht</div></div>
-      <div class="profile-stat"><div class="stat-icon">🍻</div><div class="stat-value">${totalCheckins}</div><div class="stat-label">Check-ins total</div></div>
-      <div class="profile-stat"><div class="stat-icon">⚔️</div><div class="stat-value">${captureCount}</div><div class="stat-label">Captures dabei</div></div>
-      <div class="profile-stat"><div class="stat-icon">💬</div><div class="stat-value">${commentCount}</div><div class="stat-label">Kommentare</div></div>
+      <div class="profile-stat"><div class="stat-icon">📍</div><div class="stat-value">${STATE.visitedCorners.length}</div><div class="stat-label">${T("Corners besucht", "Corners visited")}</div></div>
+      <div class="profile-stat"><div class="stat-icon">🍻</div><div class="stat-value">${totalCheckins}</div><div class="stat-label">${T("Check-ins total", "Total check-ins")}</div></div>
+      <div class="profile-stat"><div class="stat-icon">⚔️</div><div class="stat-value">${captureCount}</div><div class="stat-label">${T("Captures dabei", "Captures")}</div></div>
+      <div class="profile-stat"><div class="stat-icon">💬</div><div class="stat-value">${commentCount}</div><div class="stat-label">${T("Kommentare", "Comments")}</div></div>
     </div>
-    <div class="team-battle-section"><h3>🗺️ Deine Corner-Map</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">Kreisgröße = Anzahl Besuche, Tortenstücke = Team, mit dem du eingecheckt hast.</p><div id="profile-map-slot"></div></div>
-    <div class="team-history"><h3>🧬 Team History</h3><div class="team-history-grid">${TEAM_ORDER.map((teamId) => { const count = STATE.teamHistory.filter((entry) => entry.team === teamId).length; return `<div class="team-history-item"><div class="th-emoji">${TEAMS[teamId].emoji}</div><div class="th-count">${count}</div><div class="th-name">${TEAMS[teamId].name}</div></div>`; }).join("")}</div></div>
-    <div class="team-battle-section"><h3>🏆 Team Leaderboard</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.min(100, Math.max(4, row.total * 8))}%;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
-    <div class="best-friends-section"><h3>🤝 Best Friends</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Begegnungen geloggt.</p>`}</div>
-    ${STATE.isAdmin ? `<div class="team-battle-section"><h3>🛠 Admin</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">Host-Werkzeuge: Profile & Spots verwalten.</p><button class="notif-opt" id="admin-open-btn">🛠 Admin-Panel öffnen</button></div>` : ""}
+    <div class="team-battle-section">
+      <h3>⭐ ${T("Karma-Guide: So sammelst du", "Karma Guide: How to earn")}</h3>
+      <p style="font-size:12px;color:var(--fg-dim);margin:0 0 12px;">${T("Dein Ranking unter allen Spielern:", "Your rank among all players:")} <strong style="color:var(--amber);">${rankLabel}</strong>${karmaToOvertake ? ` · <span style="color:var(--fg-dim);">${T("Noch", "Only")} <strong style="color:var(--green);">${karmaToOvertake}</strong> Karma ${T("bis Platz", "more to reach #")}${myRank - 1}</span>` : myRank === 1 ? ` 🥇 ${T("Du führst!", "You're in the lead!")}` : ""}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr style="color:var(--fg-dim);font-size:10px;letter-spacing:1px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;">
+          <td style="padding:4px 6px;">${T("Aktion", "Action")}</td>
+          <td style="padding:4px 6px;text-align:right;">Karma</td>
+        </tr>
+        ${karmaRules.map((r) => `<tr style="border-top:1px solid var(--line);">
+          <td style="padding:6px 6px;">${r.emoji} ${T(r.de, r.en)}</td>
+          <td style="padding:6px 6px;text-align:right;font-family:'Anton',sans-serif;color:var(--amber);">${r.pts}</td>
+        </tr>`).join("")}
+      </table>
+    </div>
+    <div class="team-battle-section"><h3>🗺️ ${T("Deine Corner-Map", "Your Corner Map")}</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">${T("Kreisgröße = Anzahl Besuche, Tortenstücke = Team, mit dem du eingecheckt hast.", "Circle size = visit count, pie slices = team at check-in.")}</p><div id="profile-map-slot"></div></div>
+    <div class="team-history"><h3>🧬 ${T("Team History", "Team History")}</h3><div class="team-history-grid">${TEAM_ORDER.map((teamId) => { const count = STATE.teamHistory.filter((entry) => entry.team === teamId).length; return `<div class="team-history-item"><div class="th-emoji">${TEAMS[teamId].emoji}</div><div class="th-count">${count}</div><div class="th-name">${TEAMS[teamId].name}</div></div>`; }).join("")}</div></div>
+    <div class="team-battle-section"><h3>🏆 ${T("Team Leaderboard", "Team Leaderboard")}</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.min(100, Math.max(4, row.total * 8))}%;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
+    <div class="best-friends-section"><h3>🤝 ${T("Best Friends", "Best Friends")}</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">${T("Noch keine Begegnungen geloggt.", "No encounters logged yet.")}</p>`}</div>
+    ${STATE.isAdmin ? `<div class="team-battle-section"><h3>🛠 Admin</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">${T("Host-Werkzeuge: Profile & Spots verwalten.", "Host tools: manage profiles & spots.")}</p><button class="notif-opt" id="admin-open-btn">🛠 ${T("Admin-Panel öffnen", "Open admin panel")}</button></div>` : ""}
     ${buildAccountSectionHtml()}
-    <div class="notification-toggle"><h3>🔔 Benachrichtigungen</h3>${buildNotifSettingsHtml()}</div>
-    <div class="best-friends-section"><h3>💬 Direktnachrichten</h3>${recentMessages.length ? recentMessages.map((msg) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(msg.fromName || msg.fromId || "Unbekannt")}: ${escapeHtml(msg.text || "")}</span><button class="action-btn" style="padding:4px 8px;font-size:10px;" data-reply-id="${msg.fromId}">Antworten</button></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">Noch keine Direktnachrichten.</p>`}</div>
+    <div class="notification-toggle"><h3>🔔 ${T("Benachrichtigungen", "Notifications")}</h3>${buildNotifSettingsHtml()}</div>
+    <div class="notification-toggle" style="margin-top:12px;">
+      <h3>🌐 ${T("Sprache", "Language")}</h3>
+      <div class="notif-options">
+        <button class="notif-opt ${STATE.lang === "de" ? "active" : ""}" id="lang-de-btn">🇩🇪 Deutsch</button>
+        <button class="notif-opt ${STATE.lang === "en" ? "active" : ""}" id="lang-en-btn">🇬🇧 English</button>
+      </div>
+    </div>
+    <div class="best-friends-section"><h3>💬 ${T("Direktnachrichten", "Direct messages")}</h3>${recentMessages.length ? recentMessages.map((msg) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(msg.fromName || msg.fromId || T("Unbekannt", "Unknown"))}: ${escapeHtml(msg.text || "")}</span><button class="action-btn" style="padding:4px 8px;font-size:10px;" data-reply-id="${msg.fromId}">${T("Antworten", "Reply")}</button></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">${T("Noch keine Direktnachrichten.", "No direct messages yet.")}</p>`}</div>
     <div class="leaderboard-section"><h3>🏆 Achievements</h3><div class="achievements-grid">${getAchievementCardsHtml()}</div></div>`;
   $$('[data-pref]').forEach((btn) => btn.addEventListener("click", () => {
     STATE.notifPref = btn.dataset.pref;
@@ -8175,6 +8260,8 @@ function renderProfile() {
     saveNotifSettings();
     renderProfile();
   }));
+  document.getElementById("lang-de-btn")?.addEventListener("click", () => setLang("de"));
+  document.getElementById("lang-en-btn")?.addEventListener("click", () => setLang("en"));
   $$("#profile-content .team-chip[data-team]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const team = btn.dataset.team;
@@ -8194,7 +8281,7 @@ function renderProfile() {
       saveNotifSettings();
       const isMuted = list.includes(uid);
       btn.classList.toggle("muted", isMuted);
-      btn.textContent = isMuted ? "🔕 Stumm" : "🔔 Aktiv";
+      btn.textContent = isMuted ? T("🔕 Stumm", "🔕 Muted") : T("🔔 Aktiv", "🔔 Active");
     });
   });
   $("#enable-push-btn")?.addEventListener("click", enableFirebasePush);
@@ -8205,33 +8292,33 @@ function renderProfile() {
       const uid = window.FB.getAuthUid?.();
       if (uid) loadProfileFromCloud(uid);
       syncProfileToCloud();
-      toast(`✅ Mit Google gesichert${email ? " (" + escapeHtml(email) + ")" : ""}`);
+      toast(`✅ ${T("Mit Google gesichert", "Secured with Google")}${email ? " (" + escapeHtml(email) + ")" : ""}`);
       unlockAchievement("secured", "Abgesichert", "🔐", 20);
       renderProfile();
     } catch (err) {
       if (err?.code === "auth/popup-closed-by-user") return;
-      toast(`Google-Login fehlgeschlagen (${escapeHtml(err?.code || "?")}): ${escapeHtml(err?.message || "")}`);
+      toast(`${T("Google-Login fehlgeschlagen", "Google login failed")} (${escapeHtml(err?.code || "?")}): ${escapeHtml(err?.message || "")}`);
     }
   });
   $("#acct-email-btn")?.addEventListener("click", async () => {
-    const email = await appPrompt("Mit E-Mail sichern", "", "deine@mail.de", { text: "Wir schicken dir einen Anmelde-Link — kein Passwort nötig.", okLabel: "Link senden" });
+    const email = await appPrompt(T("Mit E-Mail sichern", "Secure with email"), "", "deine@mail.de", { text: T("Wir schicken dir einen Anmelde-Link — kein Passwort nötig.", "We'll send you a sign-in link — no password needed."), okLabel: T("Link senden", "Send link") });
     if (!email || !email.trim()) return;
     try {
       await window.FB.sendEmailLink(email.trim());
-      toast("✉️ Link gesendet — öffne die Mail auf diesem Gerät und tippe den Link an.");
+      toast(T("✉️ Link gesendet — öffne die Mail auf diesem Gerät und tippe den Link an.", "✉️ Link sent — open the email on this device and tap the link."));
     } catch (err) {
-      toast(`Konnte Link nicht senden: ${escapeHtml(err?.message || "")}`);
+      toast(`${T("Konnte Link nicht senden", "Could not send link")}: ${escapeHtml(err?.message || "")}`);
     }
   });
   $("#acct-code-create-btn")?.addEventListener("click", async () => {
     const code = await createRecoveryCode();
     if (!code) return;
     await copyText(code).catch(() => {});
-    toast(`🎟️ Recovery-Code: <strong>${code}</strong><br>Kopiert — sicher aufbewahren!`);
+    toast(`🎟️ ${T("Recovery-Code", "Recovery code")}: <strong>${code}</strong><br>${T("Kopiert — sicher aufbewahren!", "Copied — keep it safe!")}`);
     unlockAchievement("secured", "Abgesichert", "🔐", 20);
   });
   $("#acct-code-claim-btn")?.addEventListener("click", async () => {
-    const code = await appPrompt("Recovery-Code eingeben", "", "CODE", { codeStyle: true, text: "Stellt dein Profil von einem anderen Gerät wieder her.", okLabel: "Übernehmen" });
+    const code = await appPrompt(T("Recovery-Code eingeben", "Enter recovery code"), "", "CODE", { codeStyle: true, text: T("Stellt dein Profil von einem anderen Gerät wieder her.", "Restores your profile from another device."), okLabel: T("Übernehmen", "Apply") });
     if (code) await claimRecoveryCode(code);
   });
   $("#acct-claim-btn")?.addEventListener("click", openClaimOverlay);
@@ -8261,6 +8348,15 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastClickXp = 0;
   document.addEventListener("click", (e) => { if (e.isTrusted && Date.now() - lastClickXp > 10000) { lastClickXp = Date.now(); addXp(1, "Tap"); } }, { passive: true });
   if (STATE.lastCheckinCorner && Date.now() - STATE.lastCheckinTime < COOLDOWN_MS) startCooldownDisplay();
+  // Apply saved language to static elements on startup
+  if (STATE.lang === "en") {
+    document.querySelectorAll(".tab[data-view]").forEach((t) => {
+      const labels = { list: "List", map: "Map", leaderboard: "🏆 Ranking", profile: "👤 Profile" };
+      if (labels[t.dataset.view]) t.textContent = labels[t.dataset.view];
+    });
+    const fbTitle = document.getElementById("friends-bar-title");
+    if (fbTitle) fbTitle.textContent = "🍻 Friends out there";
+  }
 });
 
 let toastTimer = null;
