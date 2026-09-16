@@ -80,6 +80,13 @@
       }
     },
 
+    "messageReadReceipts": {
+      "$pairId": {
+        ".read": "auth != null && $pairId.contains(auth.uid)",
+        ".write": "auth != null && $pairId.contains(auth.uid) && root.child('accessGranted').child(auth.uid).exists()"
+      }
+    },
+
     "liveLocations": {
       ".read": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)",
       ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)"
@@ -90,6 +97,7 @@
     "customTeams":     { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "presence":        { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "points":          { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "karmaPoints":     { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "encounters":      { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "corners":         { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "captured":        { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
