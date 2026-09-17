@@ -7126,11 +7126,9 @@ function formatShortDateTime(ts) {
 }
 
 function recentCornerMessages(cornerId) {
-  const peopleHereIds = new Set(freshFriends().filter((friend) => friend.atCorner === cornerId).map((friend) => friend.id));
-  const me = currentUserKey();
   return (STATE.directMessages || [])
     .filter((msg) => msg && (isMyKey(msg.fromId) || isMyKey(msg.toId)))
-    .filter((msg) => msg && (msg.cornerId === cornerId || (msg.fromId === me && peopleHereIds.has(msg.toId)) || (msg.toId === me && peopleHereIds.has(msg.fromId))))
+    .filter((msg) => msg && msg.cornerId === cornerId)
     .sort((a, b) => (b.time || 0) - (a.time || 0))
     .slice(0, 4);
 }
@@ -7657,25 +7655,26 @@ function broadcastCheckinPush(corner) {
 
 /* Full-screen celebration when a supply run pays out — and an extra beat when
    it pushes you over a level boundary. */
-function showKarmaCelebration(karma) {
+function showRewardCelebration(amount, kind = "karma") {
   const el = $("#celebration");
   if (!el) return;
   setTimeout(() => {
-    const info = getLevel(getCurrentKarma());
-    // The karma is already credited by the time we get here (the payout comes
-    // in through the karma listener), so derive the previous level from the
+    const label = kind === "karma" ? "Karma" : "Aura";
+    const total = getRewardTotal(kind);
+    const info = getLevel(total);
+    // The reward is already credited by the time we get here, so derive the previous level from the
     // delta instead of reading it before — otherwise a level-up is never seen.
-    const before = getLevel(Math.max(0, getCurrentKarma() - Number(karma || 0))).level;
+    const before = getLevel(Math.max(0, total - Number(amount || 0))).level;
     const leveledUp = info.level > before;
     const tier = getLevelTier(info.level);
     el.innerHTML = `
       <div class="cel-card">
         <div class="cel-emoji">${leveledUp ? "🎊" : "🛒"}</div>
-        <div class="cel-karma">+${karma} Karma</div>
+        <div class="cel-karma">+${amount} ${label}</div>
         <div class="cel-text">${leveledUp
           ? `<strong>LEVEL ${info.level}!</strong><br>${tier.emoji} ${escapeHtml(tier.name)}`
           : "Danke für den Nachschub! 🍻"}</div>
-        <div class="cel-sub">${leveledUp ? "" : `noch ${info.xpToNext} Karma bis Level ${info.level + 1}`}</div>
+        <div class="cel-sub">${leveledUp ? "" : `noch ${info.xpToNext} ${label} bis Level ${info.level + 1}`}</div>
       </div>
       <div class="cel-confetti">${Array.from({ length: 28 }, (_, i) =>
         `<span style="--i:${i};--d:${(i % 7) * 0.13}s;--x:${(i * 37) % 100}%;--c:${["#e8a93e","#ff2e6c","#b8ff3a","#6cb6ff","#c77dff"][i % 5]};"></span>`).join("")}</div>`;
@@ -7772,7 +7771,7 @@ function celebrateOwnSupplyConfirms() {
   if (count > _seenSupplyConfirms) {
     const gained = (count - _seenSupplyConfirms) * SUPPLY_KARMA_PER_CONFIRM;
     _seenSupplyConfirms = count;
-    showKarmaCelebration(gained);
+    showRewardCelebration(gained, "karma");
   } else {
     _seenSupplyConfirms = count;
   }
