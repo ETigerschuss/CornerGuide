@@ -4936,6 +4936,16 @@ async function migrateInboxFromLegacyKeys() {
 /* Merge one identity key into another in the DATABASE (aura, karma, achievements,
    team). Without this the XP of the same person ends up split across the local
    id and the auth uid — which is exactly what happened to six accounts. */
+function mergeRewardEntry(currentEntry, incomingEntry, fallbackNickname = "") {
+  const current = currentEntry || {};
+  const incoming = incomingEntry || {};
+  return {
+    total: Number(current.total || 0) + Number(incoming.total || 0),
+    history: [...(Array.isArray(current.history) ? current.history : []), ...(Array.isArray(incoming.history) ? incoming.history : [])].slice(-200),
+    nickname: current.nickname || incoming.nickname || fallbackNickname || ""
+  };
+}
+
 async function mergeProfileKeys(oldKey, newKey) {
   if (!oldKey || !newKey || oldKey === newKey || !window.FB?.firebaseReady) return false;
   const { db, ref, get, set, remove } = window.FB;
@@ -4963,16 +4973,6 @@ async function mergeProfileKeys(oldKey, newKey) {
     if (ach) {
       const cur = (await get(ref(db, "achievements/" + newKey))).val() || {};
       await set(ref(db, "achievements/" + newKey), { ...ach, ...cur });
-    }
-
-    function mergeRewardEntry(currentEntry, incomingEntry, fallbackNickname = "") {
-      const current = currentEntry || {};
-      const incoming = incomingEntry || {};
-      return {
-        total: Number(current.total || 0) + Number(incoming.total || 0),
-        history: [...(Array.isArray(current.history) ? current.history : []), ...(Array.isArray(incoming.history) ? incoming.history : [])].slice(-200),
-        nickname: current.nickname || incoming.nickname || fallbackNickname || ""
-      };
     }
     const team = oldT.val();
     if (team && team.team) {
@@ -6758,13 +6758,16 @@ function receiptTime(value) {
   return typeof value === "object" ? Number(value?.time || 0) : Number(value || 0);
 }
 
-function peerReadAtFromOwners(readByOwner, peerId) {
-  let latest = 0;
-  Object.values(readByOwner || {}).forEach((receipts) => {
-    if (!peerId) return;
-    latest = Math.max(latest, receiptTime(receipts?.[peerId]));
-  });
-  return latest;
+function receiptThreadPath(peerId) {
+  const authUid = window.FB?.getAuthUid?.();
+  if (!authUid || !peerId) return "";
+  const ids = [authUid, peerId].sort();
+  return "messageReadReceipts/" + ids[0] + "/" + ids[1];
+}
+
+function peerReadAt(reads, peerId) {
+  if (!peerId) return 0;
+  return receiptTime(reads?.[peerId]);
 }
 
 function pushChatReadReceipt(peerId) {
@@ -6772,7 +6775,9 @@ function pushChatReadReceipt(peerId) {
   const readerId = window.FB.getAuthUid?.();
   if (!readerId) return;
   const { db, ref, set } = window.FB;
-  Promise.resolve(set(ref(db, "messageReadReceipts/" + peerId + "/" + readerId), Date.now()))
+  const threadPath = receiptThreadPath(peerId);
+  if (!threadPath) return;
+  Promise.resolve(set(ref(db, threadPath + "/" + readerId), Date.now()))
       .catch((err) => console.warn("chat read receipt write failed:", err));
 }
 
@@ -7061,17 +7066,16 @@ function openChatThread(peerId, peerName) {
     const { db, ref, onValue } = window.FB;
     // A thread may live under an older key pairing — read them all and merge.
     const pairIds = Array.from(new Set(myKeys().map((k) => chatPairId(k, peerId))));
-    const receiptOwnerId = window.FB.getAuthUid?.();
     const byPair = {};
-    const readByOwner = {};
+    let readReceipts = {};
     const unsubs = [];
     const renderMerged = () => {
       const seen = new Set();
-      const peerReadAt = peerReadAtFromOwners(readByOwner, peerId);
+      const readAt = peerReadAt(readReceipts, peerId);
       const msgs = Object.values(byPair).flat()
         .filter((m) => { const k = (m.time || 0) + "|" + (m.fromId || "") + "|" + (m.text || ""); if (seen.has(k)) return false; seen.add(k); return true; })
         .sort((a, b) => (a.time || 0) - (b.time || 0));
-      renderChatMessages(msgs, { peerReadAt });
+      renderChatMessages(msgs, { peerReadAt: readAt });
     };
     pairIds.forEach((pid) => {
       const u = onValue(ref(db, "chats/" + pid), (snap) => {
@@ -7088,10 +7092,10 @@ function openChatThread(peerId, peerName) {
       });
       if (typeof u === "function") unsubs.push(u);
     });
-    if (receiptOwnerId) {
-      const ownerId = receiptOwnerId;
-      const ru = onValue(ref(db, "messageReadReceipts/" + ownerId), (snap) => {
-        readByOwner[ownerId] = snap.val() || {};
+    const threadPath = receiptThreadPath(peerId);
+    if (threadPath) {
+      const ru = onValue(ref(db, threadPath), (snap) => {
+        readReceipts = snap.val() || {};
         renderMerged();
       }, (err) => console.warn("chat receipt listener failed:", err));
       if (typeof ru === "function") unsubs.push(ru);
