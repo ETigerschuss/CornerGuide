@@ -6753,13 +6753,11 @@ function receiptTime(value) {
   return typeof value === "object" ? Number(value?.time || 0) : Number(value || 0);
 }
 
-function peerReadAtFromPairs(readByPair) {
+function peerReadAtFromOwners(readByOwner, peerId) {
   let latest = 0;
-  Object.values(readByPair || {}).forEach((receipts) => {
-    Object.entries(receipts || {}).forEach(([readerId, value]) => {
-      if (isMyKey(readerId)) return;
-      latest = Math.max(latest, receiptTime(value));
-    });
+  Object.values(readByOwner || {}).forEach((receipts) => {
+    if (!peerId) return;
+    latest = Math.max(latest, receiptTime(receipts?.[peerId]));
   });
   return latest;
 }
@@ -6768,10 +6766,8 @@ function pushChatReadReceipt(peerId) {
   if (!peerId || !window.FB?.firebaseReady) return;
   const { db, ref, set } = window.FB;
   const stamp = { time: Date.now(), name: STATE.nickname || "Anonym" };
-  Array.from(new Set(myKeys().map((key) => chatPairId(key, peerId)))).forEach((pairId) => {
-    Promise.resolve(set(ref(db, "messageReadReceipts/" + pairId + "/" + currentUserKey()), stamp))
+  Promise.resolve(set(ref(db, "messageReadReceipts/" + peerId + "/" + currentUserKey()), stamp))
       .catch((err) => console.warn("chat read receipt write failed:", err));
-  });
 }
 
 /* ---- Social gamification: XP + achievements for chatting & meeting friends ---- */
@@ -7059,12 +7055,13 @@ function openChatThread(peerId, peerName) {
     const { db, ref, onValue } = window.FB;
     // A thread may live under an older key pairing — read them all and merge.
     const pairIds = Array.from(new Set(myKeys().map((k) => chatPairId(k, peerId))));
+    const myOwnerKeys = Array.from(new Set(myKeys()));
     const byPair = {};
-    const readByPair = {};
+    const readByOwner = {};
     const unsubs = [];
     const renderMerged = () => {
       const seen = new Set();
-      const peerReadAt = peerReadAtFromPairs(readByPair);
+      const peerReadAt = peerReadAtFromOwners(readByOwner, peerId);
       const msgs = Object.values(byPair).flat()
         .filter((m) => { const k = (m.time || 0) + "|" + (m.fromId || "") + "|" + (m.text || ""); if (seen.has(k)) return false; seen.add(k); return true; })
         .sort((a, b) => (a.time || 0) - (b.time || 0));
@@ -7084,8 +7081,9 @@ function openChatThread(peerId, peerName) {
         }
       });
       if (typeof u === "function") unsubs.push(u);
-      const ru = onValue(ref(db, "messageReadReceipts/" + pid), (snap) => {
-        readByPair[pid] = snap.val() || {};
+    myOwnerKeys.forEach((ownerId) => {
+      const ru = onValue(ref(db, "messageReadReceipts/" + ownerId), (snap) => {
+        readByOwner[ownerId] = snap.val() || {};
         renderMerged();
       }, (err) => console.warn("chat receipt listener failed:", err));
       if (typeof ru === "function") unsubs.push(ru);
@@ -7570,7 +7568,7 @@ function manualCheckin(cornerId) {
       const extras = [];
       if (k.social) extras.push(`+${k.social} ${T("weil was los ist", "social bonus")}`);
       if (k.popular) extras.push(`+${k.popular} ${T("beliebter Spot", "popular spot")}`);
-      if (extras.length) toast(`✨ <strong>+${k.total} Aura</strong><br><span style="font-size:11px;opacity:0.8;">${extras.join(" · ")}</span>`);
+      toast(`✨ <strong>+${k.total} Aura</strong>${extras.length ? `<br><span style="font-size:11px;opacity:0.8;">${extras.join(" · ")}</span>` : ""}`);
     }
     const totalCheckins = parseInt(localStorage.getItem("cg.totalCheckins") || "0") + 1;
     localStorage.setItem("cg.totalCheckins", String(totalCheckins));
