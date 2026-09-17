@@ -5250,9 +5250,9 @@ function ensureTeamHistoryEntry(teamId) {
 }
 ensureTeamHistoryEntry(STATE.team);
 
-function ensurePointIdentity() {
-  ensureRewardIdentity("aura");
-  ensureRewardIdentity("karma");
+function ensurePointIdentity(persist = true) {
+  ensureRewardIdentity("aura", persist);
+  ensureRewardIdentity("karma", persist);
 }
 
 function rewardStore(kind) {
@@ -5264,7 +5264,7 @@ function saveRewardStore(kind) {
   else savePoints();
 }
 
-function ensureRewardIdentity(kind) {
+function ensureRewardIdentity(kind, persist = true) {
   const store = rewardStore(kind);
   if (!store || typeof store !== "object") {
     if (kind === "karma") STATE.karmaPoints = {};
@@ -5277,7 +5277,7 @@ function ensureRewardIdentity(kind) {
   }
   if (!nextStore[STATE.userId]) nextStore[STATE.userId] = { total: 0, history: [] };
   nextStore[STATE.userId].nickname = STATE.nickname || nextStore[STATE.userId].nickname || "Anonym";
-  saveRewardStore(kind);
+  if (persist) saveRewardStore(kind);
 }
 
 /* ====================== LEVELS ======================
@@ -6444,8 +6444,9 @@ async function claimExistingProfile(oldKey) {
     if (oldKarma || STATE.karmaPoints[newKey]) STATE.karmaPoints[newKey] = mergeRewardEntry(STATE.karmaPoints[newKey], oldKarma, nickname);
     savePoints();
     saveKarmaPoints();
-    if (STATE.points[newKey]) set(ref(db, "points/" + newKey), STATE.points[newKey]);
-    if (STATE.karmaPoints[newKey]) set(ref(db, "karmaPoints/" + newKey), STATE.karmaPoints[newKey]);
+    const writes = [];
+    if (STATE.points[newKey]) writes.push(set(ref(db, "points/" + newKey), STATE.points[newKey]));
+    if (STATE.karmaPoints[newKey]) writes.push(set(ref(db, "karmaPoints/" + newKey), STATE.karmaPoints[newKey]));
     // Carry over visited corners (reconstructed from the shared visits node by nickname).
     const claimedVisited = visitedCornersForNickname(nickname);
     if (claimedVisited.length) {
@@ -6457,14 +6458,17 @@ async function claimExistingProfile(oldKey) {
     if (achIds.length) {
       STATE.achievements = Array.from(new Set([...(STATE.achievements || []), ...achIds]));
       saveAchievements();
-      Promise.all(achIds.map((id) => set(ref(db, "achievements/" + newKey + "/" + id), oldAch[id])));
+      writes.push(...achIds.map((id) => set(ref(db, "achievements/" + newKey + "/" + id), oldAch[id])));
     }
+    await Promise.all(writes);
     // Remove the old identity so the same person doesn't appear twice.
     if (oldKey !== newKey) {
-      remove(ref(db, "points/" + oldKey));
-      remove(ref(db, "karmaPoints/" + oldKey));
-      remove(ref(db, "achievements/" + oldKey));
-      remove(ref(db, "teams/" + oldKey));
+      await Promise.all([
+        remove(ref(db, "points/" + oldKey)),
+        remove(ref(db, "karmaPoints/" + oldKey)),
+        remove(ref(db, "achievements/" + oldKey)),
+        remove(ref(db, "teams/" + oldKey))
+      ]);
     }
     ensurePointIdentity();
     syncIdentity();
@@ -8109,13 +8113,13 @@ function openLightbox(src, author) { $("#lightbox-img").src = src; $("#lightbox-
 function listenPoints() {
   if (!window.FB?.firebaseReady) return;
   const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "points"), (snapshot) => { STATE.points = snapshot.val() || {}; ensurePointIdentity(); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); });
+  onValue(ref(db, "points"), (snapshot) => { STATE.points = snapshot.val() || {}; ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); });
 }
 
 function listenKarmaPoints() {
   if (!window.FB?.firebaseReady) return;
   const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "karmaPoints"), (snapshot) => { STATE.karmaPoints = snapshot.val() || {}; ensurePointIdentity(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); });
+  onValue(ref(db, "karmaPoints"), (snapshot) => { STATE.karmaPoints = snapshot.val() || {}; ensurePointIdentity(false); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); });
 }
 
 function getRewardLeaders(kind, limit = 10) {
