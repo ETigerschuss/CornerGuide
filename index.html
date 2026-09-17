@@ -4946,6 +4946,22 @@ function mergeRewardEntry(currentEntry, incomingEntry, fallbackNickname = "") {
   };
 }
 
+function pickClaimRewardEntry(currentEntry, incomingEntry, fallbackNickname = "") {
+  const current = currentEntry || null;
+  const incoming = incomingEntry || null;
+  if (!current && !incoming) return null;
+  if (!current) return { ...incoming, nickname: incoming.nickname || fallbackNickname || "" };
+  if (!incoming) return { ...current, nickname: current.nickname || fallbackNickname || "" };
+  const currentTotal = Number(current.total || 0);
+  const incomingTotal = Number(incoming.total || 0);
+  if (incomingTotal > currentTotal) return { ...incoming, nickname: incoming.nickname || current.nickname || fallbackNickname || "" };
+  if (currentTotal > incomingTotal) return { ...current, nickname: current.nickname || incoming.nickname || fallbackNickname || "" };
+  const currentHistory = Array.isArray(current.history) ? current.history.length : 0;
+  const incomingHistory = Array.isArray(incoming.history) ? incoming.history.length : 0;
+  const preferred = incomingHistory > currentHistory ? incoming : current;
+  return { ...preferred, nickname: preferred.nickname || fallbackNickname || "" };
+}
+
 async function mergeProfileKeys(oldKey, newKey) {
   if (!oldKey || !newKey || oldKey === newKey || !window.FB?.firebaseReady) return false;
   const { db, ref, get, set, remove } = window.FB;
@@ -6442,8 +6458,8 @@ async function claimExistingProfile(oldKey) {
     if (nickname) { STATE.nickname = nickname; localStorage.setItem("cg.nickname", nickname); }
     const team = tSnap.val() && tSnap.val().team;
     if (team) { STATE.team = team; localStorage.setItem(TEAM_STORAGE_KEY, team); ensureTeamHistoryEntry(team); }
-    if (oldPoints || STATE.points[newKey]) STATE.points[newKey] = mergeRewardEntry(STATE.points[newKey], oldPoints, nickname);
-    if (oldKarma || STATE.karmaPoints[newKey]) STATE.karmaPoints[newKey] = mergeRewardEntry(STATE.karmaPoints[newKey], oldKarma, nickname);
+    if (oldPoints || STATE.points[newKey]) STATE.points[newKey] = pickClaimRewardEntry(STATE.points[newKey], oldPoints, nickname);
+    if (oldKarma || STATE.karmaPoints[newKey]) STATE.karmaPoints[newKey] = pickClaimRewardEntry(STATE.karmaPoints[newKey], oldKarma, nickname);
     savePoints();
     saveKarmaPoints();
     const writes = [];
@@ -6759,8 +6775,9 @@ function receiptTime(value) {
 
 function receiptThreadPath(peerId) {
   const authUid = window.FB?.getAuthUid?.();
-  if (!authUid || !peerId) return "";
-  const ids = [authUid, peerId].sort();
+  const peer = String(peerId || "");
+  if (!authUid || !peer || peer.startsWith("user-")) return "";
+  const ids = [authUid, peer].sort();
   return "messageReadReceipts/" + ids[0] + "/" + ids[1];
 }
 
