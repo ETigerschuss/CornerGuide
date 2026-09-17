@@ -6413,6 +6413,8 @@ async function claimExistingProfile(oldKey) {
   if (!oldKey || !window.FB?.firebaseReady) return;
   const newKey = currentUserKey();
   if (!newKey) { toast("Bitte zuerst Zugang oder Login."); return; }
+  if (!STATE.points || typeof STATE.points !== "object") STATE.points = {};
+  if (!STATE.karmaPoints || typeof STATE.karmaPoints !== "object") STATE.karmaPoints = {};
   const { db, ref, get, set, remove } = window.FB;
   try {
     // Claim the lock FIRST. The rule only permits a write when the lock is
