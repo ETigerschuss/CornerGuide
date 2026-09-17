@@ -6764,9 +6764,11 @@ function peerReadAtFromOwners(readByOwner, peerId) {
 
 function pushChatReadReceipt(peerId) {
   if (!peerId || !window.FB?.firebaseReady) return;
+  const readerId = window.FB.getAuthUid?.();
+  if (!readerId) return;
   const { db, ref, set } = window.FB;
   const stamp = { time: Date.now(), name: STATE.nickname || "Anonym" };
-  Promise.resolve(set(ref(db, "messageReadReceipts/" + peerId + "/" + currentUserKey()), stamp))
+  Promise.resolve(set(ref(db, "messageReadReceipts/" + peerId + "/" + readerId), stamp))
       .catch((err) => console.warn("chat read receipt write failed:", err));
 }
 
@@ -7055,7 +7057,7 @@ function openChatThread(peerId, peerName) {
     const { db, ref, onValue } = window.FB;
     // A thread may live under an older key pairing — read them all and merge.
     const pairIds = Array.from(new Set(myKeys().map((k) => chatPairId(k, peerId))));
-    const myOwnerKeys = Array.from(new Set(myKeys()));
+    const receiptOwnerId = window.FB.getAuthUid?.();
     const byPair = {};
     const readByOwner = {};
     const unsubs = [];
@@ -7081,13 +7083,14 @@ function openChatThread(peerId, peerName) {
         }
       });
       if (typeof u === "function") unsubs.push(u);
-    myOwnerKeys.forEach((ownerId) => {
+    if (receiptOwnerId) {
+      const ownerId = receiptOwnerId;
       const ru = onValue(ref(db, "messageReadReceipts/" + ownerId), (snap) => {
         readByOwner[ownerId] = snap.val() || {};
         renderMerged();
       }, (err) => console.warn("chat receipt listener failed:", err));
       if (typeof ru === "function") unsubs.push(ru);
-    });
+    }
     _chatThreadUnsub = () => unsubs.forEach((fn) => { try { fn(); } catch (e) {} });
   } else {
     renderLocalFallback();
@@ -7118,8 +7121,10 @@ function formatShortDateTime(ts) {
 
 function recentCornerMessages(cornerId) {
   const peopleHereIds = new Set(freshFriends().filter((friend) => friend.atCorner === cornerId).map((friend) => friend.id));
+  const me = currentUserKey();
   return (STATE.directMessages || [])
-    .filter((msg) => msg && (msg.cornerId === cornerId || peopleHereIds.has(msg.fromId) || peopleHereIds.has(msg.toId)))
+    .filter((msg) => msg && (isMyKey(msg.fromId) || isMyKey(msg.toId)))
+    .filter((msg) => msg && (msg.cornerId === cornerId || (msg.fromId === me && peopleHereIds.has(msg.toId)) || (msg.toId === me && peopleHereIds.has(msg.fromId))))
     .sort((a, b) => (b.time || 0) - (a.time || 0))
     .slice(0, 4);
 }
@@ -7128,7 +7133,7 @@ function renderCornerChatSection(cornerId, container) {
   if (!container) return;
   const rows = recentCornerMessages(cornerId);
   container.innerHTML = `
-    <h4>💬 ${T("Corner Nachrichten", "Corner messages")}</h4>
+    <h4>💬 ${T("Deine Corner Nachrichten", "Your corner messages")}</h4>
     ${rows.length ? rows.map((msg) => {
       const peerId = isMyKey(msg.fromId) ? msg.toId : msg.fromId;
       const peerName = isMyKey(msg.fromId) ? (msg.toName || peerId) : (msg.fromName || peerId);
