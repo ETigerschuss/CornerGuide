@@ -2191,6 +2191,19 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .feedback-highlights { margin-top: 8px; }
 .feedback-highlights-title { font-size: 12px; color: var(--fg-dim); margin: 0 0 4px; }
 .feedback-quote { font-size: 13px; color: var(--fg); margin: 2px 0; font-style: italic; }
+.card-feedback-teaser {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(108,182,255,0.08);
+  border: 1px solid rgba(108,182,255,0.25);
+  color: var(--blue);
+  font-size: 11px;
+  font-family: "JetBrains Mono", monospace;
+}
 
 /* ====================== LEVEL SYSTEM ====================== */
 .level-bar { display: flex; align-items: center; gap: 8px; }
@@ -4069,6 +4082,27 @@ function renderFeedbackSummary(cornerId) {
   return html;
 }
 
+function feedbackCount(cornerId) {
+  return Object.keys(STATE.checkinFeedback?.[cornerId] || {}).length;
+}
+
+function refreshAllFeedbackSections() {
+  $$(".detail-feedback").forEach((section) => {
+    const cornerId = section.dataset.cornerId;
+    section.innerHTML = renderFeedbackSummary(cornerId);
+  });
+  if (STATE.view === "list") renderCards();
+}
+
+function listenCheckinFeedback() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "checkinFeedback"), (snapshot) => {
+    STATE.checkinFeedback = snapshot.val() || {};
+    refreshAllFeedbackSections();
+  });
+}
+
 /* ====================== LIGHTBOX ====================== */
 function bindLightbox() {
   $("#lightbox-close").addEventListener("click", closeLightbox);
@@ -4158,6 +4192,7 @@ function submitCheckinFeedback() {
   $("#checkin-prompt").classList.remove("open");
   toast("Danke für dein Feedback! 🙌 (+5 Punkte)");
   addPoints(STATE.nickname, 5, "Check-in Feedback");
+  refreshAllFeedbackSections();
   pendingCheckinCorner = null;
 }
 
@@ -6497,6 +6532,7 @@ async function initFirebase() {
     // Attach read-only listeners
     listenSharedCorners();
     listenComments();
+    listenCheckinFeedback();
     listenBarometer();
     listenVisits();
     listenEmojiVotes();
@@ -6555,6 +6591,7 @@ async function initFirebase() {
   listenFriendPresence();
   listenSharedCorners();
   listenComments();
+  listenCheckinFeedback();
   listenBarometer();
   listenVisits();
   listenEmojiVotes();
@@ -7857,6 +7894,7 @@ function openDetail(cornerId) {
     <p class="card-area" style="margin-top:14px;">${c.area || "—"}</p>
     <h2 class="card-name" style="margin-bottom:14px;">${c.name}</h2>
     ${effectiveDesc ? `<p class="card-desc">${escapeHtml(effectiveDesc)}</p>` : ""}
+    <div class="detail-feedback" data-corner-id="${c.id}">${renderFeedbackSummary(c.id)}</div>
     <ul class="card-tags" style="margin-bottom:14px;">${(c.tags || []).map((t) => `<li>#${escapeHtml(t)}</li>`).join("")}</ul>
     ${teamPickerHtml}
     <div class="corner-chat-section" data-corner-id="${c.id}"></div>
@@ -7932,6 +7970,7 @@ function renderCards() {
         <h2 class="card-name">${c.name}</h2>
         ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("hier", "here")}: ${peopleHere.map((n) => escapeHtml(n)).join(", ")}</div>` : ""}
         ${getDescription(c) ? `<p class="card-desc short-desc">${escapeHtml(getDescription(c))}</p>` : ""}
+        ${feedbackCount(c.id) ? `<div class="card-feedback-teaser">💬 ${feedbackCount(c.id)} ${T("Community-Notizen", "community notes")}</div>` : ""}
       </div>
       <div class="card-actions">
         <button class="detail-link" data-id="${c.id}">ℹ️ ${T("Corner Info", "Corner info")}</button>
