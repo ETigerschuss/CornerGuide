@@ -4953,16 +4953,8 @@ async function mergeProfileKeys(oldKey, newKey) {
     if (!o && !ok) return false;
     const n = newP.val() || { total: 0, history: [] };
     const nk = newK.val() || { total: 0, history: [] };
-    const mergedAura = {
-      total: Number(o?.total || 0) + Number(n.total || 0),
-      history: [...(Array.isArray(n.history) ? n.history : []), ...(Array.isArray(o?.history) ? o.history : [])].slice(-200),
-      nickname: n.nickname || o?.nickname || ""
-    };
-    const mergedKarma = {
-      total: Number(ok?.total || 0) + Number(nk.total || 0),
-      history: [...(Array.isArray(nk.history) ? nk.history : []), ...(Array.isArray(ok?.history) ? ok.history : [])].slice(-200),
-      nickname: nk.nickname || ok?.nickname || mergedAura.nickname || ""
-    };
+    const mergedAura = mergeRewardEntry(n, o);
+    const mergedKarma = mergeRewardEntry(nk, ok, mergedAura.nickname || "");
     await Promise.all([
       set(ref(db, "points/" + newKey), mergedAura),
       set(ref(db, "karmaPoints/" + newKey), mergedKarma)
@@ -4971,6 +4963,16 @@ async function mergeProfileKeys(oldKey, newKey) {
     if (ach) {
       const cur = (await get(ref(db, "achievements/" + newKey))).val() || {};
       await set(ref(db, "achievements/" + newKey), { ...ach, ...cur });
+    }
+
+    function mergeRewardEntry(currentEntry, incomingEntry, fallbackNickname = "") {
+      const current = currentEntry || {};
+      const incoming = incomingEntry || {};
+      return {
+        total: Number(current.total || 0) + Number(incoming.total || 0),
+        history: [...(Array.isArray(current.history) ? current.history : []), ...(Array.isArray(incoming.history) ? incoming.history : [])].slice(-200),
+        nickname: current.nickname || incoming.nickname || fallbackNickname || ""
+      };
     }
     const team = oldT.val();
     if (team && team.team) {
@@ -6425,29 +6427,30 @@ async function claimExistingProfile(oldKey) {
       openClaimOverlay();
       return;
     }
-    const [pSnap, kSnap, aSnap, tSnap] = await Promise.all([
+    const [pSnap, pNewSnap, kSnap, kNewSnap, aSnap, aNewSnap, tSnap] = await Promise.all([
       get(ref(db, "points/" + oldKey)),
+      get(ref(db, "points/" + newKey)),
       get(ref(db, "karmaPoints/" + oldKey)),
+      get(ref(db, "karmaPoints/" + newKey)),
       get(ref(db, "achievements/" + oldKey)),
+      get(ref(db, "achievements/" + newKey)),
       get(ref(db, "teams/" + oldKey))
     ]);
     const oldPoints = pSnap.val();
+    const newPoints = pNewSnap.val();
     const oldKarma = kSnap.val();
+    const newKarma = kNewSnap.val();
     if (!oldPoints && !oldKarma) { toast("Profil nicht gefunden."); return; }
     const nickname = oldPoints?.nickname || oldKarma?.nickname || STATE.nickname || "";
     if (nickname) { STATE.nickname = nickname; localStorage.setItem("cg.nickname", nickname); }
     const team = tSnap.val() && tSnap.val().team;
     if (team) { STATE.team = team; localStorage.setItem(TEAM_STORAGE_KEY, team); ensureTeamHistoryEntry(team); }
-    if (oldPoints) {
-      STATE.points[newKey] = { ...oldPoints, nickname };
-      savePoints();
-      set(ref(db, "points/" + newKey), STATE.points[newKey]);
-    }
-    if (oldKarma) {
-      STATE.karmaPoints[newKey] = { ...oldKarma, nickname };
-      saveKarmaPoints();
-      set(ref(db, "karmaPoints/" + newKey), STATE.karmaPoints[newKey]);
-    }
+    if (oldPoints || newPoints) STATE.points[newKey] = mergeRewardEntry(newPoints || STATE.points[newKey], oldPoints, nickname);
+    if (oldKarma || newKarma) STATE.karmaPoints[newKey] = mergeRewardEntry(newKarma || STATE.karmaPoints[newKey], oldKarma, nickname);
+    savePoints();
+    saveKarmaPoints();
+    if (STATE.points[newKey]) set(ref(db, "points/" + newKey), STATE.points[newKey]);
+    if (STATE.karmaPoints[newKey]) set(ref(db, "karmaPoints/" + newKey), STATE.karmaPoints[newKey]);
     // Carry over visited corners (reconstructed from the shared visits node by nickname).
     const claimedVisited = visitedCornersForNickname(nickname);
     if (claimedVisited.length) {
@@ -6455,11 +6458,13 @@ async function claimExistingProfile(oldKey) {
       saveVisitedCorners();
     }
     const oldAch = aSnap.val() || {};
-    const achIds = Object.keys(oldAch);
+    const newAch = aNewSnap.val() || {};
+    const mergedAch = { ...oldAch, ...newAch };
+    const achIds = Object.keys(mergedAch);
     if (achIds.length) {
       STATE.achievements = Array.from(new Set([...(STATE.achievements || []), ...achIds]));
       saveAchievements();
-      set(ref(db, "achievements/" + newKey), oldAch);
+      set(ref(db, "achievements/" + newKey), mergedAch);
     }
     // Remove the old identity so the same person doesn't appear twice.
     if (oldKey !== newKey) {
@@ -6767,8 +6772,7 @@ function pushChatReadReceipt(peerId) {
   const readerId = window.FB.getAuthUid?.();
   if (!readerId) return;
   const { db, ref, set } = window.FB;
-  const stamp = { time: Date.now(), name: STATE.nickname || "Anonym" };
-  Promise.resolve(set(ref(db, "messageReadReceipts/" + peerId + "/" + readerId), stamp))
+  Promise.resolve(set(ref(db, "messageReadReceipts/" + peerId + "/" + readerId), Date.now()))
       .catch((err) => console.warn("chat read receipt write failed:", err));
 }
 
@@ -7083,6 +7087,7 @@ function openChatThread(peerId, peerName) {
         }
       });
       if (typeof u === "function") unsubs.push(u);
+    });
     if (receiptOwnerId) {
       const ownerId = receiptOwnerId;
       const ru = onValue(ref(db, "messageReadReceipts/" + ownerId), (snap) => {
