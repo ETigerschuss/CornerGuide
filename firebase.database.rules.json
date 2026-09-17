@@ -83,7 +83,7 @@
     "messageReadReceipts": {
       "$uidA": {
         "$uidB": {
-          ".read": "auth != null && (auth.uid == $uidA || auth.uid == $uidB || root.child('config').child('admins').child(auth.uid).val() === true)",
+          ".read": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true) && (auth.uid == $uidA || auth.uid == $uidB || root.child('config').child('admins').child(auth.uid).val() === true)",
           "$readerId": {
             ".write": "auth != null && auth.uid == $readerId && (auth.uid == $uidA || auth.uid == $uidB || root.child('config').child('admins').child(auth.uid).val() === true) && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)"
           }

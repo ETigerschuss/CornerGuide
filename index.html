@@ -6427,26 +6427,21 @@ async function claimExistingProfile(oldKey) {
       openClaimOverlay();
       return;
     }
-    const [pSnap, pNewSnap, kSnap, kNewSnap, aSnap, aNewSnap, tSnap] = await Promise.all([
+    const [pSnap, kSnap, aSnap, tSnap] = await Promise.all([
       get(ref(db, "points/" + oldKey)),
-      get(ref(db, "points/" + newKey)),
       get(ref(db, "karmaPoints/" + oldKey)),
-      get(ref(db, "karmaPoints/" + newKey)),
       get(ref(db, "achievements/" + oldKey)),
-      get(ref(db, "achievements/" + newKey)),
       get(ref(db, "teams/" + oldKey))
     ]);
     const oldPoints = pSnap.val();
-    const newPoints = pNewSnap.val();
     const oldKarma = kSnap.val();
-    const newKarma = kNewSnap.val();
     if (!oldPoints && !oldKarma) { toast("Profil nicht gefunden."); return; }
     const nickname = oldPoints?.nickname || oldKarma?.nickname || STATE.nickname || "";
     if (nickname) { STATE.nickname = nickname; localStorage.setItem("cg.nickname", nickname); }
     const team = tSnap.val() && tSnap.val().team;
     if (team) { STATE.team = team; localStorage.setItem(TEAM_STORAGE_KEY, team); ensureTeamHistoryEntry(team); }
-    if (oldPoints || newPoints) STATE.points[newKey] = mergeRewardEntry(newPoints || STATE.points[newKey], oldPoints, nickname);
-    if (oldKarma || newKarma) STATE.karmaPoints[newKey] = mergeRewardEntry(newKarma || STATE.karmaPoints[newKey], oldKarma, nickname);
+    if (oldPoints || STATE.points[newKey]) STATE.points[newKey] = mergeRewardEntry(STATE.points[newKey], oldPoints, nickname);
+    if (oldKarma || STATE.karmaPoints[newKey]) STATE.karmaPoints[newKey] = mergeRewardEntry(STATE.karmaPoints[newKey], oldKarma, nickname);
     savePoints();
     saveKarmaPoints();
     if (STATE.points[newKey]) set(ref(db, "points/" + newKey), STATE.points[newKey]);
@@ -6458,13 +6453,11 @@ async function claimExistingProfile(oldKey) {
       saveVisitedCorners();
     }
     const oldAch = aSnap.val() || {};
-    const newAch = aNewSnap.val() || {};
-    const mergedAch = { ...oldAch, ...newAch };
-    const achIds = Object.keys(mergedAch);
+    const achIds = Object.keys(oldAch);
     if (achIds.length) {
       STATE.achievements = Array.from(new Set([...(STATE.achievements || []), ...achIds]));
       saveAchievements();
-      set(ref(db, "achievements/" + newKey), mergedAch);
+      Promise.all(achIds.map((id) => set(ref(db, "achievements/" + newKey + "/" + id), oldAch[id])));
     }
     // Remove the old identity so the same person doesn't appear twice.
     if (oldKey !== newKey) {
