@@ -364,6 +364,9 @@ input, textarea { cursor: text; }
   .tabs-bar { padding-left: 10px; padding-right: 10px; }
   .tabs { display: flex; width: 100%; max-width: 100%; }
   .tab { flex: 1 1 0; padding: 10px 4px; letter-spacing: 0.5px; font-size: 10px; white-space: nowrap; text-align: center; min-width: 0; }
+  .stream-grid { grid-template-columns: 1fr; }
+  .corner-chat-row { align-items: flex-start; flex-direction: column; }
+  .corner-chat-meta { white-space: normal; }
 }
 
 /* ====================== VIEWS ====================== */
@@ -784,6 +787,7 @@ input, textarea { cursor: text; }
 .chat-bubble.me { align-self: flex-end; background: var(--amber); color: #111; border-bottom-right-radius: 4px; }
 .chat-bubble.them { align-self: flex-start; background: var(--bg-3); color: var(--fg); border-bottom-left-radius: 4px; }
 .chat-bubble .cb-time { display: block; font-size: 9px; opacity: 0.6; margin-top: 3px; }
+.chat-bubble .cb-read { display: block; font-size: 9px; opacity: 0.75; margin-top: 2px; text-align: right; }
 .chat-input-row { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--line); }
 .chat-input-row input { flex: 1; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 999px; padding: 10px 14px; font-size: 14px; }
 .chat-input-row input:focus { outline: none; border-color: var(--amber); }
@@ -2124,20 +2128,26 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   overflow: hidden;
 }
 .card .detail-link {
-  background: transparent;
-  border: 1px solid var(--line);
-  color: var(--amber);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 1.5px;
+  background: linear-gradient(135deg, rgba(232,169,62,0.16), rgba(108,182,255,0.12));
+  border: 1px solid rgba(232,169,62,0.55);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
-  padding: 6px 12px;
-  border-radius: 999px;
+  padding: 12px 16px;
+  border-radius: 14px;
   cursor: pointer;
   margin-top: 8px;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  box-shadow: 0 8px 24px rgba(232,169,62,0.12);
 }
-.card .detail-link:hover { border-color: var(--amber); background: rgba(232,169,62,0.08); }
+.card .detail-link:hover { border-color: var(--amber); background: linear-gradient(135deg, rgba(232,169,62,0.26), rgba(108,182,255,0.18)); }
 
 /* ====================== VISIT RANK BADGE ====================== */
 .card-visit-rank {
@@ -2181,6 +2191,19 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .feedback-highlights { margin-top: 8px; }
 .feedback-highlights-title { font-size: 12px; color: var(--fg-dim); margin: 0 0 4px; }
 .feedback-quote { font-size: 13px; color: var(--fg); margin: 2px 0; font-style: italic; }
+.card-feedback-teaser {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(108,182,255,0.08);
+  border: 1px solid rgba(108,182,255,0.25);
+  color: var(--blue);
+  font-size: 11px;
+  font-family: "JetBrains Mono", monospace;
+}
 
 /* ====================== LEVEL SYSTEM ====================== */
 .level-bar { display: flex; align-items: center; gap: 8px; }
@@ -2258,6 +2281,26 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .profile-stat .stat-icon { font-size: 22px; margin-bottom: 4px; }
 .profile-stat .stat-value { font-family: "Anton", sans-serif; font-size: 24px; color: var(--amber); }
 .profile-stat .stat-label { font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--fg-dim); }
+.stream-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+.stream-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 16px; min-width: 0; }
+.stream-kicker { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--fg-dim); margin-bottom: 10px; }
+.stream-value { font-family: "Anton", sans-serif; font-size: 28px; line-height: 1; color: var(--fg); margin-bottom: 6px; }
+.stream-value.aura { color: var(--blue); }
+.stream-value.karma { color: var(--green); }
+.stream-value.matrix { color: var(--amber); font-size: 24px; }
+.stream-desc { font-size: 12px; color: var(--fg-dim); line-height: 1.45; }
+.detail-quick-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0 16px; }
+.detail-quick-btn { background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 999px; padding: 9px 14px; font-size: 12px; font-weight: 600; }
+.detail-quick-btn:hover, .detail-quick-btn:focus { border-color: var(--amber); color: var(--amber); outline: none; }
+.corner-chat-section { margin: 14px 0; background: var(--bg-3); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+.corner-chat-section h4 { margin: 0 0 10px; font-family: "Anton", sans-serif; font-weight: 400; font-size: 20px; text-transform: uppercase; }
+.corner-chat-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+.corner-chat-row:first-of-type { border-top: none; padding-top: 0; }
+.corner-chat-copy { flex: 1; min-width: 0; }
+.corner-chat-name { font-weight: 700; }
+.corner-chat-meta { font-size: 12px; color: var(--fg-dim); white-space: nowrap; }
+.corner-chat-preview { font-size: 12px; color: var(--fg-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.corner-chat-empty { margin: 0; font-size: 13px; color: var(--fg-dim); }
 .team-history { background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 18px; }
 .team-history h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 20px; text-transform: uppercase; margin: 0 0 14px; }
 .team-history-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -2469,6 +2512,7 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
     <div id="leaderboard-visits"></div>
     <div id="leaderboard-contributors"></div>
     <div id="leaderboard-points"></div>
+    <div id="leaderboard-karma"></div>
     <div id="achievements-section"></div>
   </section>
 
@@ -2954,6 +2998,7 @@ const STATE = {
   photos: {},
   achievements: loadAchievements(),
   points: loadPoints(),
+  karmaPoints: loadKarmaPoints(),
   visitedCorners: loadVisitedCorners(),
   checkinFeedback: loadCheckinFeedback(),
   // New feature state
@@ -3031,6 +3076,14 @@ function loadPoints() {
 }
 function savePoints() {
   localStorage.setItem("cg.points", JSON.stringify(STATE.points));
+  if (typeof scheduleProfileSync === "function") scheduleProfileSync();
+}
+function loadKarmaPoints() {
+  try { return JSON.parse(localStorage.getItem("cg.karmaPoints") || "{}"); }
+  catch (e) { return {}; }
+}
+function saveKarmaPoints() {
+  localStorage.setItem("cg.karmaPoints", JSON.stringify(STATE.karmaPoints));
   if (typeof scheduleProfileSync === "function") scheduleProfileSync();
 }
 
@@ -4029,6 +4082,27 @@ function renderFeedbackSummary(cornerId) {
   return html;
 }
 
+function feedbackCount(cornerId) {
+  return Object.keys(STATE.checkinFeedback?.[cornerId] || {}).length;
+}
+
+function refreshAllFeedbackSections() {
+  $$(".detail-feedback").forEach((section) => {
+    const cornerId = section.dataset.cornerId;
+    section.innerHTML = renderFeedbackSummary(cornerId);
+  });
+  if (STATE.view === "list") renderCards();
+}
+
+function listenCheckinFeedback() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "checkinFeedback"), (snapshot) => {
+    STATE.checkinFeedback = snapshot.val() || {};
+    refreshAllFeedbackSections();
+  });
+}
+
 /* ====================== LIGHTBOX ====================== */
 function bindLightbox() {
   $("#lightbox-close").addEventListener("click", closeLightbox);
@@ -4118,6 +4192,7 @@ function submitCheckinFeedback() {
   $("#checkin-prompt").classList.remove("open");
   toast("Danke für dein Feedback! 🙌 (+5 Punkte)");
   addPoints(STATE.nickname, 5, "Check-in Feedback");
+  refreshAllFeedbackSections();
   pendingCheckinCorner = null;
 }
 
@@ -4858,28 +4933,58 @@ async function migrateInboxFromLegacyKeys() {
   }
 }
 
-/* Merge one identity key into another in the DATABASE (points, achievements,
+/* Merge one identity key into another in the DATABASE (aura, karma, achievements,
    team). Without this the XP of the same person ends up split across the local
    id and the auth uid — which is exactly what happened to six accounts. */
+function mergeRewardEntry(currentEntry, incomingEntry, fallbackNickname = "") {
+  const current = currentEntry || {};
+  const incoming = incomingEntry || {};
+  return {
+    total: Number(current.total || 0) + Number(incoming.total || 0),
+    history: [...(Array.isArray(current.history) ? current.history : []), ...(Array.isArray(incoming.history) ? incoming.history : [])].slice(-200),
+    nickname: current.nickname || incoming.nickname || fallbackNickname || ""
+  };
+}
+
+function pickClaimRewardEntry(currentEntry, incomingEntry, fallbackNickname = "") {
+  const current = currentEntry || null;
+  const incoming = incomingEntry || null;
+  if (!current && !incoming) return null;
+  if (!current) return { ...incoming, nickname: incoming.nickname || fallbackNickname || "" };
+  if (!incoming) return { ...current, nickname: current.nickname || fallbackNickname || "" };
+  const currentTotal = Number(current.total || 0);
+  const incomingTotal = Number(incoming.total || 0);
+  if (incomingTotal > currentTotal) return { ...incoming, nickname: incoming.nickname || current.nickname || fallbackNickname || "" };
+  if (currentTotal > incomingTotal) return { ...current, nickname: current.nickname || incoming.nickname || fallbackNickname || "" };
+  const currentHistory = Array.isArray(current.history) ? current.history.length : 0;
+  const incomingHistory = Array.isArray(incoming.history) ? incoming.history.length : 0;
+  const preferred = incomingHistory > currentHistory ? incoming : current;
+  return { ...preferred, nickname: preferred.nickname || fallbackNickname || "" };
+}
+
 async function mergeProfileKeys(oldKey, newKey) {
   if (!oldKey || !newKey || oldKey === newKey || !window.FB?.firebaseReady) return false;
   const { db, ref, get, set, remove } = window.FB;
   try {
-    const [oldP, newP, oldA, oldT] = await Promise.all([
+    const [oldP, newP, oldK, newK, oldA, oldT] = await Promise.all([
       get(ref(db, "points/" + oldKey)),
       get(ref(db, "points/" + newKey)),
+      get(ref(db, "karmaPoints/" + oldKey)),
+      get(ref(db, "karmaPoints/" + newKey)),
       get(ref(db, "achievements/" + oldKey)),
       get(ref(db, "teams/" + oldKey))
     ]);
     const o = oldP.val();
-    if (!o) return false;
+    const ok = oldK.val();
+    if (!o && !ok) return false;
     const n = newP.val() || { total: 0, history: [] };
-    const merged = {
-      total: Number(o.total || 0) + Number(n.total || 0),
-      history: [...(Array.isArray(n.history) ? n.history : []), ...(Array.isArray(o.history) ? o.history : [])].slice(-200),
-      nickname: n.nickname || o.nickname || ""
-    };
-    await set(ref(db, "points/" + newKey), merged);
+    const nk = newK.val() || { total: 0, history: [] };
+    const mergedAura = mergeRewardEntry(n, o);
+    const mergedKarma = mergeRewardEntry(nk, ok, mergedAura.nickname || "");
+    await Promise.all([
+      set(ref(db, "points/" + newKey), mergedAura),
+      set(ref(db, "karmaPoints/" + newKey), mergedKarma)
+    ]);
     const ach = oldA.val();
     if (ach) {
       const cur = (await get(ref(db, "achievements/" + newKey))).val() || {};
@@ -4892,13 +4997,17 @@ async function mergeProfileKeys(oldKey, newKey) {
     }
     await Promise.all([
       remove(ref(db, "points/" + oldKey)).catch(() => {}),
+      remove(ref(db, "karmaPoints/" + oldKey)).catch(() => {}),
       remove(ref(db, "achievements/" + oldKey)).catch(() => {}),
       remove(ref(db, "teams/" + oldKey)).catch(() => {})
     ]);
-    STATE.points[newKey] = merged;
+    STATE.points[newKey] = mergedAura;
+    STATE.karmaPoints[newKey] = mergedKarma;
     delete STATE.points[oldKey];
+    delete STATE.karmaPoints[oldKey];
     savePoints();
-    return merged;
+    saveKarmaPoints();
+    return mergedAura;
   } catch (err) {
     console.warn("mergeProfileKeys failed:", err);
     return false;
@@ -4913,6 +5022,11 @@ function migrateUserIdentity(oldId, newId) {
     STATE.points[newId] = { ...STATE.points[oldId] };
     delete STATE.points[oldId];
     savePoints();
+  }
+  if (STATE.karmaPoints?.[oldId] && !STATE.karmaPoints?.[newId]) {
+    STATE.karmaPoints[newId] = { ...STATE.karmaPoints[oldId] };
+    delete STATE.karmaPoints[oldId];
+    saveKarmaPoints();
   }
   // Consolidate in the database too, so XP is never split across both keys.
   mergeProfileKeys(oldId, newId);
@@ -5152,15 +5266,34 @@ function ensureTeamHistoryEntry(teamId) {
 }
 ensureTeamHistoryEntry(STATE.team);
 
-function ensurePointIdentity() {
-  if (!STATE.points || typeof STATE.points !== "object") STATE.points = {};
-  if (STATE.nickname && STATE.points[STATE.nickname] && !STATE.points[STATE.userId]) {
-    STATE.points[STATE.userId] = { ...STATE.points[STATE.nickname] };
-    delete STATE.points[STATE.nickname];
+function ensurePointIdentity(persist = true) {
+  ensureRewardIdentity("aura", persist);
+  ensureRewardIdentity("karma", persist);
+}
+
+function rewardStore(kind) {
+  return kind === "karma" ? STATE.karmaPoints : STATE.points;
+}
+
+function saveRewardStore(kind) {
+  if (kind === "karma") saveKarmaPoints();
+  else savePoints();
+}
+
+function ensureRewardIdentity(kind, persist = true) {
+  const store = rewardStore(kind);
+  if (!store || typeof store !== "object") {
+    if (kind === "karma") STATE.karmaPoints = {};
+    else STATE.points = {};
   }
-  if (!STATE.points[STATE.userId]) STATE.points[STATE.userId] = { total: 0, history: [] };
-  STATE.points[STATE.userId].nickname = STATE.nickname || STATE.points[STATE.userId].nickname || "Anonym";
-  savePoints();
+  const nextStore = rewardStore(kind);
+  if (STATE.nickname && nextStore[STATE.nickname] && !nextStore[STATE.userId]) {
+    nextStore[STATE.userId] = { ...nextStore[STATE.nickname] };
+    delete nextStore[STATE.nickname];
+  }
+  if (!nextStore[STATE.userId]) nextStore[STATE.userId] = { total: 0, history: [] };
+  nextStore[STATE.userId].nickname = STATE.nickname || nextStore[STATE.userId].nickname || "Anonym";
+  if (persist) saveRewardStore(kind);
 }
 
 /* ====================== LEVELS ======================
@@ -5244,7 +5377,21 @@ function checkLevelMilestones() {
 }
 
 function currentUserKey() { return STATE.userId || STATE.nickname; }
-function getCurrentXp() { return STATE.points[currentUserKey()]?.total || 0; }
+function getRewardTotal(kind, userKey) {
+  const key = userKey || currentUserKey();
+  return rewardStore(kind)?.[key]?.total || 0;
+}
+function getCurrentAura() { return getRewardTotal("aura"); }
+function getCurrentKarma() { return getRewardTotal("karma"); }
+function getCurrentXp() { return getCurrentAura(); }
+function getMatrixIdentity(aura, karma) {
+  const a = Math.max(0, Number(aura || 0));
+  const k = Math.max(0, Number(karma || 0));
+  if (a >= 180 && k >= 80) return { emoji: "🪩", name: "Matrix Legend", desc: T("Präsent, hilfreich, nicht zu stoppen.", "Present, helpful, unstoppable.") };
+  if (k >= Math.max(40, a * 0.8)) return { emoji: "🎁", name: "Karma Carrier", desc: T("Du bringst Leuten, was sie brauchen.", "You bring people what they need.") };
+  if (a >= Math.max(60, k * 1.5)) return { emoji: "✨", name: "Aura Magnet", desc: T("Deine Präsenz macht den Corner lebendig.", "Your presence lights up the corner.") };
+  return { emoji: "⚖️", name: "Balanced Connector", desc: T("Zwischen Präsenz und Hilfe hältst du die Ecke zusammen.", "You balance presence and help for the corner crew.") };
+}
 /* ====================== KARMA FOR CHECK-INS ======================
    Two rules from the in-app feedback:
    - "Zähl die check-ins pro Person nur einmal pro Tag" — repeatedly checking in
@@ -5287,16 +5434,25 @@ function getTeamInfo(teamId) { return TEAMS[teamId] || null; }
 function getDisplayName(name, teamId) { const t = getTeamInfo(teamId); return `${t ? t.emoji + " " : ""}${name || "Anonym"}`; }
 
 function addPoints(user, pts, reason) {
+  return addRewardPoints("aura", user, pts, reason);
+}
+
+function addKarmaPoints(user, pts, reason) {
+  return addRewardPoints("karma", user, pts, reason);
+}
+
+function addRewardPoints(kind, user, pts, reason) {
   if (!user || !pts) return;
   const key = user === STATE.nickname ? currentUserKey() : user;
-  if (!STATE.points[key]) STATE.points[key] = { total: 0, history: [], nickname: key === currentUserKey() ? STATE.nickname : user };
-  STATE.points[key].total += pts;
-  STATE.points[key].history.push({ pts, reason, time: Date.now() });
-  if (key === currentUserKey()) STATE.points[key].nickname = STATE.nickname || STATE.points[key].nickname;
-  savePoints();
+  const store = rewardStore(kind);
+  if (!store[key]) store[key] = { total: 0, history: [], nickname: key === currentUserKey() ? STATE.nickname : user };
+  store[key].total += pts;
+  store[key].history.push({ pts, reason, time: Date.now() });
+  if (key === currentUserKey()) store[key].nickname = STATE.nickname || store[key].nickname;
+  saveRewardStore(kind);
   if (window.FB?.firebaseReady) {
     const { db, ref, set } = window.FB;
-    set(ref(db, "points/" + key), STATE.points[key]);
+    set(ref(db, (kind === "karma" ? "karmaPoints" : "points") + "/" + key), store[key]);
   }
   updateNicknameBar();
   if (STATE.view === "leaderboard") renderLeaderboard();
@@ -5369,7 +5525,7 @@ function updateNicknameBar() {
   if (badge) badge.textContent = tier.name;
   if (fill) fill.style.width = `${Math.round(info.progress * 100)}%`;
   const bar2 = $("#nick-level-bar");
-  if (bar2) bar2.title = `${info.xpIntoLevel}/${info.xpForNext} Karma · noch ${info.xpToNext} bis Level ${info.level + 1}`;
+  if (bar2) bar2.title = `${info.xpIntoLevel}/${info.xpForNext} Aura · noch ${info.xpToNext} bis Level ${info.level + 1}`;
 }
 
 function renderTeamPickerHtml() {
@@ -5639,6 +5795,7 @@ function buildProfileSnapshot() {
     nickname: STATE.nickname || "",
     team: STATE.team || "",
     points: STATE.points[key] || { total: 0, history: [] },
+    karmaPoints: STATE.karmaPoints[key] || { total: 0, history: [] },
     achievements: Array.isArray(STATE.achievements) ? STATE.achievements : [],
     visitedCorners: Array.isArray(STATE.visitedCorners) ? STATE.visitedCorners : [],
     teamHistory: Array.isArray(STATE.teamHistory) ? STATE.teamHistory : [],
@@ -5654,6 +5811,10 @@ function applyProfileSnapshot(p, { silent = false } = {}) {
   if (p.points && typeof p.points === "object") {
     STATE.points[key] = { ...p.points, nickname: STATE.nickname || p.points.nickname };
     savePoints();
+  }
+  if (p.karmaPoints && typeof p.karmaPoints === "object") {
+    STATE.karmaPoints[key] = { ...p.karmaPoints, nickname: STATE.nickname || p.karmaPoints.nickname };
+    saveKarmaPoints();
   }
   if (Array.isArray(p.achievements)) { STATE.achievements = p.achievements; saveAchievements(); }
   if (Array.isArray(p.visitedCorners)) { STATE.visitedCorners = p.visitedCorners; saveVisitedCorners(); }
@@ -5695,8 +5856,8 @@ function loadProfileFromCloud(uid) {
       // Fresh browser but same (linked) account → no local profile yet: restore silently.
       if (!STATE.nickname) { applyProfileSnapshot(remote, { silent: true }); return; }
       // Both exist → keep whichever has more XP, then re-sync so cloud stays current.
-      const localTotal = STATE.points[currentUserKey()]?.total || 0;
-      const remoteTotal = remote.points?.total || 0;
+      const localTotal = (STATE.points[currentUserKey()]?.total || 0) + (STATE.karmaPoints[currentUserKey()]?.total || 0);
+      const remoteTotal = (remote.points?.total || 0) + (remote.karmaPoints?.total || 0);
       if (remoteTotal > localTotal) applyProfileSnapshot(remote, { silent: true });
       else syncProfileToCloud();
     }).catch((err) => console.warn("loadProfileFromCloud failed:", err));
@@ -6026,7 +6187,7 @@ async function appConfirm(title, text = "", okLabel = "Ja") {
 }
 
 /* ====================== ADMIN PANEL (host only) ====================== */
-const ADMIN_USER_NODES = ["points", "presence", "teams", "achievements", "pushTokens", "userPrefs", "userProfiles", "liveLocations"];
+const ADMIN_USER_NODES = ["points", "karmaPoints", "presence", "teams", "achievements", "pushTokens", "userPrefs", "userProfiles", "liveLocations"];
 
 async function adminDeleteProfile(key, nickname) {
   if (!STATE.isAdmin || !window.FB?.firebaseReady) return;
@@ -6099,7 +6260,7 @@ async function renderAdminDuplicates(pointsData) {
     return `<div style="padding:10px 12px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
       <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${escapeHtml(g[0].nickname)} — ${g.length} Einträge</div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);margin-bottom:8px;">
-        ${g.map((e) => `${e.total} Karma`).join(" + ")} = <strong style="color:var(--amber);">${sum} Karma</strong>
+        ${g.map((e) => `${e.total} Aura`).join(" + ")} = <strong style="color:var(--amber);">${sum} Aura</strong>
       </div>
       <button class="action-btn primary" data-merge-group="${gi}" style="padding:6px 10px;font-size:11px;">Zusammenführen</button>
     </div>`;
@@ -6109,13 +6270,13 @@ async function renderAdminDuplicates(pointsData) {
       const g = groups[parseInt(btn.dataset.mergeGroup, 10)];
       if (!g) return;
       const sum = g.reduce((s, e) => s + e.total, 0);
-      if (!(await appConfirm(`„${g[0].nickname}" zusammenführen?`, `${g.length} Einträge werden zu einem Profil mit ${sum} Karma verschmolzen. Nur ausführen, wenn das wirklich dieselbe Person ist.`, "Zusammenführen"))) return;
+      if (!(await appConfirm(`„${g[0].nickname}" zusammenführen?`, `${g.length} Einträge werden zu einem Profil mit ${sum} Aura verschmolzen. Nur ausführen, wenn das wirklich dieselbe Person ist.`, "Zusammenführen"))) return;
       const target = g[0].key;               // keep the richest key
       let ok = 0;
       for (const e of g.slice(1)) {
         if (await mergeProfileKeys(e.key, target)) ok++;
       }
-      toast(ok ? `🔗 „${escapeHtml(g[0].nickname)}" zusammengeführt (${sum} Karma)` : "Zusammenführen fehlgeschlagen.");
+      toast(ok ? `🔗 „${escapeHtml(g[0].nickname)}" zusammengeführt (${sum} Aura)` : "Zusammenführen fehlgeschlagen.");
       renderAdminPanel();
     });
   });
@@ -6140,7 +6301,7 @@ async function renderAdminPanel() {
     profilesEl.innerHTML = rows.map((r) => `
       <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:6px;">
         <span style="flex:1;font-size:13px;">${escapeHtml(r.nickname)}${r.key === currentUserKey() ? " (du)" : ""}</span>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);">${r.total} Karma</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);">${r.total} Aura</span>
         ${r.key !== currentUserKey() ? `<button class="action-btn" style="padding:4px 8px;font-size:10px;border-color:var(--pink);color:var(--pink);" data-admin-del-user="${escapeHtml(r.key)}" data-nick="${escapeHtml(r.nickname)}">Löschen</button>` : ""}
       </div>`).join("") || `<p style="color:var(--fg-dim);font-size:12px;">Keine Profile.</p>`;
     profilesEl.querySelectorAll("[data-admin-del-user]").forEach((b) =>
@@ -6234,7 +6395,7 @@ async function openClaimOverlay(opts = {}) {
       const tier = getLevelTier(level);
       return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-3);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;">
         <span style="flex:1;font-weight:600;">${escapeHtml(r.nickname)}</span>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--fg-dim);white-space:nowrap;">${tier.emoji} Lv.${level} · ${r.total} Karma</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--fg-dim);white-space:nowrap;">${tier.emoji} Lv.${level} · ${r.total} Aura</span>
         <button class="action-btn primary" data-claim-key="${escapeHtml(r.key)}" style="padding:6px 10px;font-size:11px;white-space:nowrap;">Das war ich</button>
       </div>`;
     }).join("");
@@ -6268,6 +6429,8 @@ async function claimExistingProfile(oldKey) {
   if (!oldKey || !window.FB?.firebaseReady) return;
   const newKey = currentUserKey();
   if (!newKey) { toast("Bitte zuerst Zugang oder Login."); return; }
+  if (!STATE.points || typeof STATE.points !== "object") STATE.points = {};
+  if (!STATE.karmaPoints || typeof STATE.karmaPoints !== "object") STATE.karmaPoints = {};
   const { db, ref, get, set, remove } = window.FB;
   try {
     // Claim the lock FIRST. The rule only permits a write when the lock is
@@ -6282,20 +6445,26 @@ async function claimExistingProfile(oldKey) {
       openClaimOverlay();
       return;
     }
-    const [pSnap, aSnap, tSnap] = await Promise.all([
+    const [pSnap, kSnap, aSnap, tSnap] = await Promise.all([
       get(ref(db, "points/" + oldKey)),
+      get(ref(db, "karmaPoints/" + oldKey)),
       get(ref(db, "achievements/" + oldKey)),
       get(ref(db, "teams/" + oldKey))
     ]);
     const oldPoints = pSnap.val();
-    if (!oldPoints) { toast("Profil nicht gefunden."); return; }
-    const nickname = oldPoints.nickname || STATE.nickname || "";
+    const oldKarma = kSnap.val();
+    if (!oldPoints && !oldKarma) { toast("Profil nicht gefunden."); return; }
+    const nickname = oldPoints?.nickname || oldKarma?.nickname || STATE.nickname || "";
     if (nickname) { STATE.nickname = nickname; localStorage.setItem("cg.nickname", nickname); }
     const team = tSnap.val() && tSnap.val().team;
     if (team) { STATE.team = team; localStorage.setItem(TEAM_STORAGE_KEY, team); ensureTeamHistoryEntry(team); }
-    STATE.points[newKey] = { ...oldPoints, nickname };
+    if (oldPoints || STATE.points[newKey]) STATE.points[newKey] = pickClaimRewardEntry(STATE.points[newKey], oldPoints, nickname);
+    if (oldKarma || STATE.karmaPoints[newKey]) STATE.karmaPoints[newKey] = pickClaimRewardEntry(STATE.karmaPoints[newKey], oldKarma, nickname);
     savePoints();
-    set(ref(db, "points/" + newKey), STATE.points[newKey]);
+    saveKarmaPoints();
+    const writes = [];
+    if (STATE.points[newKey]) writes.push(set(ref(db, "points/" + newKey), STATE.points[newKey]));
+    if (STATE.karmaPoints[newKey]) writes.push(set(ref(db, "karmaPoints/" + newKey), STATE.karmaPoints[newKey]));
     // Carry over visited corners (reconstructed from the shared visits node by nickname).
     const claimedVisited = visitedCornersForNickname(nickname);
     if (claimedVisited.length) {
@@ -6307,13 +6476,17 @@ async function claimExistingProfile(oldKey) {
     if (achIds.length) {
       STATE.achievements = Array.from(new Set([...(STATE.achievements || []), ...achIds]));
       saveAchievements();
-      set(ref(db, "achievements/" + newKey), oldAch);
+      writes.push(...achIds.map((id) => set(ref(db, "achievements/" + newKey + "/" + id), oldAch[id])));
     }
+    await Promise.all(writes);
     // Remove the old identity so the same person doesn't appear twice.
     if (oldKey !== newKey) {
-      remove(ref(db, "points/" + oldKey));
-      remove(ref(db, "achievements/" + oldKey));
-      remove(ref(db, "teams/" + oldKey));
+      await Promise.all([
+        remove(ref(db, "points/" + oldKey)),
+        remove(ref(db, "karmaPoints/" + oldKey)),
+        remove(ref(db, "achievements/" + oldKey)),
+        remove(ref(db, "teams/" + oldKey))
+      ]);
     }
     ensurePointIdentity();
     syncIdentity();
@@ -6379,11 +6552,13 @@ async function initFirebase() {
     // Attach read-only listeners
     listenSharedCorners();
     listenComments();
+    listenCheckinFeedback();
     listenBarometer();
     listenVisits();
     listenEmojiVotes();
     listenPhotos();
     listenPoints();
+    listenKarmaPoints();
     listenTeams();
     listenCornerStatuses();
     listenCaptured();
@@ -6436,11 +6611,13 @@ async function initFirebase() {
   listenFriendPresence();
   listenSharedCorners();
   listenComments();
+  listenCheckinFeedback();
   listenBarometer();
   listenVisits();
   listenEmojiVotes();
   listenPhotos();
   listenPoints();
+  listenKarmaPoints();
   listenTeams();
   listenCornerStatuses();
   listenCaptured();
@@ -6592,6 +6769,34 @@ function loadChatActivity() {
   catch (e) { return {}; }
 }
 
+function receiptTime(value) {
+  return typeof value === "object" ? Number(value?.time || 0) : Number(value || 0);
+}
+
+function receiptThreadPath(peerId) {
+  const authUid = window.FB?.getAuthUid?.();
+  const peer = String(peerId || "");
+  if (!authUid || !peer || peer.startsWith("user-")) return "";
+  const ids = [authUid, peer].sort();
+  return "messageReadReceipts/" + ids[0] + "/" + ids[1];
+}
+
+function peerReadAt(reads, peerId) {
+  if (!peerId) return 0;
+  return receiptTime(reads?.[peerId]);
+}
+
+function pushChatReadReceipt(peerId) {
+  if (!peerId || !window.FB?.firebaseReady) return;
+  const readerId = window.FB.getAuthUid?.();
+  if (!readerId) return;
+  const { db, ref, set } = window.FB;
+  const threadPath = receiptThreadPath(peerId);
+  if (!threadPath) return;
+  Promise.resolve(set(ref(db, threadPath + "/" + readerId), Date.now()))
+      .catch((err) => console.warn("chat read receipt write failed:", err));
+}
+
 /* ---- Social gamification: XP + achievements for chatting & meeting friends ---- */
 var _lastChatXpAt = 0;
 function grantChatXp(toName) {
@@ -6711,6 +6916,11 @@ function attachInboxListener(key, ref, onValue, db) {
     STATE.lastDirectMessageAt = Math.max(STATE.lastDirectMessageAt || 0, Number(newest?.time || 0));
     localStorage.setItem("cg.lastDirectMessageAt", String(STATE.lastDirectMessageAt || 0));
     if (STATE.view === "profile") renderProfile();
+    if ($("#detail-overlay")?.classList.contains("open")) {
+      const chatBox = $("#detail-content .corner-chat-section");
+      const activeId = chatBox?.dataset.cornerId || STATE.detailCornerId;
+      if (activeId) renderCornerChatSection(activeId, chatBox);
+    }
     updateChatBadge();
     if ($("#chat-overlay")?.classList.contains("open") && !_chatActivePeer) renderChatList();
   });
@@ -6761,6 +6971,7 @@ function markConversationRead(peerId) {
   const map = loadChatRead();
   map[peerId] = Date.now();
   saveChatRead(map);
+  pushChatReadReceipt(peerId);
   updateChatBadge();
 }
 // Messages received from this peer that arrived after I last opened the thread.
@@ -6872,13 +7083,15 @@ function openChatThread(peerId, peerName) {
     // A thread may live under an older key pairing — read them all and merge.
     const pairIds = Array.from(new Set(myKeys().map((k) => chatPairId(k, peerId))));
     const byPair = {};
+    let readReceipts = {};
     const unsubs = [];
     const renderMerged = () => {
       const seen = new Set();
+      const readAt = peerReadAt(readReceipts, peerId);
       const msgs = Object.values(byPair).flat()
         .filter((m) => { const k = (m.time || 0) + "|" + (m.fromId || "") + "|" + (m.text || ""); if (seen.has(k)) return false; seen.add(k); return true; })
         .sort((a, b) => (a.time || 0) - (b.time || 0));
-      renderChatMessages(msgs);
+      renderChatMessages(msgs, { peerReadAt: readAt });
     };
     pairIds.forEach((pid) => {
       const u = onValue(ref(db, "chats/" + pid), (snap) => {
@@ -6895,6 +7108,14 @@ function openChatThread(peerId, peerName) {
       });
       if (typeof u === "function") unsubs.push(u);
     });
+    const threadPath = receiptThreadPath(peerId);
+    if (threadPath) {
+      const ru = onValue(ref(db, threadPath), (snap) => {
+        readReceipts = snap.val() || {};
+        renderMerged();
+      }, (err) => console.warn("chat receipt listener failed:", err));
+      if (typeof ru === "function") unsubs.push(ru);
+    }
     _chatThreadUnsub = () => unsubs.forEach((fn) => { try { fn(); } catch (e) {} });
   } else {
     renderLocalFallback();
@@ -6902,17 +7123,58 @@ function openChatThread(peerId, peerName) {
   setTimeout(() => $("#chat-input")?.focus(), 120);
 }
 
-function renderChatMessages(msgs) {
+function renderChatMessages(msgs, opts = {}) {
   const box = $("#chat-messages");
   if (!box) return;
   if (!msgs.length) { box.innerHTML = `<div class="chat-empty">Noch keine Nachrichten. Schreib die erste! 👋</div>`; return; }
   const me = currentUserKey();
+  const peerReadAt = Number(opts.peerReadAt || 0);
+  const lastMineTime = [...msgs].reverse().find((m) => m.fromId === me)?.time || 0;
   box.innerHTML = msgs.map((m) => {
     const mine = m.fromId === me;
     const t = m.time ? new Date(m.time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "";
-    return `<div class="chat-bubble ${mine ? "me" : "them"}">${escapeHtml(m.text || "")}<span class="cb-time">${escapeHtml(t)}</span></div>`;
+    const readLine = mine && m.time === lastMineTime ? `<span class="cb-read">${peerReadAt >= (m.time || 0) ? T("✓✓ Gelesen", "✓✓ Read") : T("✓ Gesendet", "✓ Sent")}</span>` : "";
+    return `<div class="chat-bubble ${mine ? "me" : "them"}">${escapeHtml(m.text || "")}<span class="cb-time">${escapeHtml(t)}</span>${readLine}</div>`;
   }).join("");
   box.scrollTop = box.scrollHeight;
+}
+
+function formatShortDateTime(ts) {
+  if (!ts) return "";
+  return new Date(ts).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+function recentCornerMessages(cornerId) {
+  return (STATE.directMessages || [])
+    .filter((msg) => msg && (isMyKey(msg.fromId) || isMyKey(msg.toId)))
+    .filter((msg) => msg && msg.cornerId === cornerId)
+    .sort((a, b) => (b.time || 0) - (a.time || 0))
+    .slice(0, 4);
+}
+
+function renderCornerChatSection(cornerId, container) {
+  if (!container) return;
+  const rows = recentCornerMessages(cornerId);
+  container.innerHTML = `
+    <h4>💬 ${T("Deine Corner Nachrichten", "Your corner messages")}</h4>
+    ${rows.length ? rows.map((msg) => {
+      const peerId = isMyKey(msg.fromId) ? msg.toId : msg.fromId;
+      const peerName = isMyKey(msg.fromId) ? (msg.toName || peerId) : (msg.fromName || peerId);
+      return `<div class="corner-chat-row">
+        <div class="corner-chat-copy">
+          <div class="corner-chat-name">${escapeHtml(peerName || T("Unbekannt", "Unknown"))}</div>
+          <div class="corner-chat-preview">${escapeHtml(msg.text || "")}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="corner-chat-meta">${escapeHtml(formatShortDateTime(msg.time))}</span>
+          ${peerId ? `<button class="action-btn" data-corner-reply="${escapeHtml(peerId)}" data-corner-name="${escapeHtml(peerName || peerId)}">${T("Öffnen", "Open")}</button>` : ""}
+        </div>
+      </div>`;
+    }).join("") : `<p class="corner-chat-empty">${T("Noch keine Nachrichten zu diesem Corner. Starte hier direkt einen Chat.", "No messages for this corner yet. Start one right here.")}</p>`}
+  `;
+  container.querySelectorAll("[data-corner-reply]").forEach((btn) => {
+    btn.addEventListener("click", () => openChatThread(btn.dataset.cornerReply, btn.dataset.cornerName));
+  });
 }
 
 function sendFromChatInput() {
@@ -7324,9 +7586,9 @@ function manualCheckin(cornerId) {
       () => { if (STATE.manualCheckinId === cornerId) { manualCheckin(cornerId); toast(T("↩️ Check-in zurückgenommen", "↩️ Check-in undone")); } }
     );
     recordVisit(cornerId);
-    // Karma only once per day per corner, and it scales with the spot.
+    // Aura only once per day per corner, and it scales with the spot.
     if (checkedInTodayAt(cornerId)) {
-      toast(T("Schon heute hier gewesen — kein Karma, aber schön dass du da bist 🍻", "Already been here today — no karma, but glad you're here 🍻"));
+      toast(T("Schon heute hier gewesen — keine Extra-Aura, aber schön dass du da bist 🍻", "Already been here today — no extra aura, but glad you're here 🍻"));
     } else {
       markCheckedInToday(cornerId);
       const k = checkinKarma(cornerId);
@@ -7334,7 +7596,7 @@ function manualCheckin(cornerId) {
       const extras = [];
       if (k.social) extras.push(`+${k.social} ${T("weil was los ist", "social bonus")}`);
       if (k.popular) extras.push(`+${k.popular} ${T("beliebter Spot", "popular spot")}`);
-      if (extras.length) toast(`✨ <strong>+${k.total} Karma</strong><br><span style="font-size:11px;opacity:0.8;">${extras.join(" · ")}</span>`);
+      toast(`✨ <strong>+${k.total} Aura</strong>${extras.length ? `<br><span style="font-size:11px;opacity:0.8;">${extras.join(" · ")}</span>` : ""}`);
     }
     const totalCheckins = parseInt(localStorage.getItem("cg.totalCheckins") || "0") + 1;
     localStorage.setItem("cg.totalCheckins", String(totalCheckins));
@@ -7382,7 +7644,7 @@ function manualCheckin(cornerId) {
     if (STATE.pendingReferrerId && STATE.pendingReferrerId !== currentUserKey()) {
       addPoints(STATE.pendingReferrerId, 15, "Dein QR-Code wurde gescannt");
       addXp(10, "Per QR-Code eingecheckt");
-      toast("🎉 QR-Bonus: +10 Karma für dich, +15 für den Ersteller!");
+      toast("🎉 QR-Bonus: +10 Aura für dich, +15 Aura für den Ersteller!");
       unlockAchievement("qr-scanned", "Code-Knacker", "🧾", 15);
       STATE.pendingReferrerId = null;
       clearHandledQueryParam("ref");
@@ -7412,25 +7674,26 @@ function broadcastCheckinPush(corner) {
 
 /* Full-screen celebration when a supply run pays out — and an extra beat when
    it pushes you over a level boundary. */
-function showKarmaCelebration(karma) {
+function showRewardCelebration(amount, kind = "karma") {
   const el = $("#celebration");
   if (!el) return;
   setTimeout(() => {
-    const info = getLevel(getCurrentXp());
-    // The karma is already credited by the time we get here (the payout comes
-    // in through the points listener), so derive the previous level from the
+    const label = kind === "karma" ? "Karma" : "Aura";
+    const total = getRewardTotal(kind);
+    const info = getLevel(total);
+    // The reward is already credited by the time we get here, so derive the previous level from the
     // delta instead of reading it before — otherwise a level-up is never seen.
-    const before = getLevel(Math.max(0, getCurrentXp() - Number(karma || 0))).level;
+    const before = getLevel(Math.max(0, total - Number(amount || 0))).level;
     const leveledUp = info.level > before;
     const tier = getLevelTier(info.level);
     el.innerHTML = `
       <div class="cel-card">
         <div class="cel-emoji">${leveledUp ? "🎊" : "🛒"}</div>
-        <div class="cel-karma">+${karma} Karma</div>
+        <div class="cel-karma">+${amount} ${label}</div>
         <div class="cel-text">${leveledUp
           ? `<strong>LEVEL ${info.level}!</strong><br>${tier.emoji} ${escapeHtml(tier.name)}`
           : "Danke für den Nachschub! 🍻"}</div>
-        <div class="cel-sub">${leveledUp ? "" : `noch ${info.xpToNext} Karma bis Level ${info.level + 1}`}</div>
+        <div class="cel-sub">${leveledUp ? "" : `noch ${info.xpToNext} ${label} bis Level ${info.level + 1}`}</div>
       </div>
       <div class="cel-confetti">${Array.from({ length: 28 }, (_, i) =>
         `<span style="--i:${i};--d:${(i % 7) * 0.13}s;--x:${(i * 37) % 100}%;--c:${["#e8a93e","#ff2e6c","#b8ff3a","#6cb6ff","#c77dff"][i % 5]};"></span>`).join("")}</div>`;
@@ -7484,7 +7747,7 @@ function confirmSupplyRun(cornerId, runId, run) {
   set(ref(db, `supplyRuns/${cornerId}/${runId}/confirms/${me}`), { name: STATE.nickname, at: Date.now() })
     .then(() => {
       // the bringer gets the karma, not the confirmer
-      addPoints(run.byId, SUPPLY_KARMA_PER_CONFIRM, `Nachschub gebracht (bestätigt von ${STATE.nickname})`);
+      addKarmaPoints(run.byId, SUPPLY_KARMA_PER_CONFIRM, `Nachschub gebracht (bestätigt von ${STATE.nickname})`);
       addXp(5, "Nachschub bestätigt");
       toast(`✅ Bestätigt — <strong>${escapeHtml(run.byName)}</strong> bekommt ${SUPPLY_KARMA_PER_CONFIRM} Karma!`);
       try {
@@ -7527,7 +7790,7 @@ function celebrateOwnSupplyConfirms() {
   if (count > _seenSupplyConfirms) {
     const gained = (count - _seenSupplyConfirms) * SUPPLY_KARMA_PER_CONFIRM;
     _seenSupplyConfirms = count;
-    showKarmaCelebration(gained);
+    showRewardCelebration(gained, "karma");
   } else {
     _seenSupplyConfirms = count;
   }
@@ -7649,11 +7912,19 @@ function openDetail(cornerId) {
     ${capturedHtml}
     ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("gerade hier", "here now")}: ${peopleHere.map((p) => escapeHtml(p)).join(", ")}</div>` : ""}
     ${peopleMessageTargets.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">${peopleMessageTargets.map((friend) => `<button class="action-btn" data-dm-user="${friend.id}">💬 ${escapeHtml(friend.nickname || friend.name || friend.id)}</button>`).join("")}</div>` : ""}
+    <div class="detail-quick-actions">
+      <button class="detail-quick-btn" data-scroll-target=".corner-chat-section">💬 ${T("Chat", "Chat")}</button>
+      <button class="detail-quick-btn" data-scroll-target=".comments-section">📝 ${T("Kommentare", "Comments")}</button>
+      <button class="detail-quick-btn" data-scroll-target=".photo-gallery">📸 ${T("Fotos", "Photos")}</button>
+      <button class="detail-quick-btn" data-scroll-target=".visit-trail">👣 ${T("Besuche", "Visits")}</button>
+    </div>
     <p class="card-area" style="margin-top:14px;">${c.area || "—"}</p>
     <h2 class="card-name" style="margin-bottom:14px;">${c.name}</h2>
     ${effectiveDesc ? `<p class="card-desc">${escapeHtml(effectiveDesc)}</p>` : ""}
+    <div class="detail-feedback" data-corner-id="${c.id}">${renderFeedbackSummary(c.id)}</div>
     <ul class="card-tags" style="margin-bottom:14px;">${(c.tags || []).map((t) => `<li>#${escapeHtml(t)}</li>`).join("")}</ul>
     ${teamPickerHtml}
+    <div class="corner-chat-section" data-corner-id="${c.id}"></div>
     <div class="corner-voting" data-corner-id="${c.id}"></div>
     <div class="corner-status-section" data-corner-id="${c.id}"></div>
     <div class="emoji-votes" data-corner-id="${c.id}"></div>
@@ -7677,11 +7948,13 @@ function openDetail(cornerId) {
   detailContent.querySelector('[data-action="share-corner"]')?.addEventListener("click", () => { shareCornerLink(c.id); });
   detailContent.querySelector('[data-action="qr-corner"]')?.addEventListener("click", () => openQrDialog(c));
   detailContent.querySelector('[data-action="edit-corner"]')?.addEventListener("click", () => openCornerEditor(c.id));
+  detailContent.querySelectorAll("[data-scroll-target]").forEach((btn) => btn.addEventListener("click", () => detailContent.querySelector(btn.dataset.scrollTarget)?.scrollIntoView({ behavior: "smooth", block: "start" })));
   detailContent.querySelectorAll(".team-btn").forEach((btn) => btn.addEventListener("click", () => { selectTeam(btn.dataset.team); setTimeout(() => openDetail(cornerId), 50); }));
   detailContent.querySelectorAll("[data-dm-user]").forEach((btn) => btn.addEventListener("click", () => {
     const friend = STATE.friends[btn.dataset.dmUser];
     sendDirectMessagePrompt(btn.dataset.dmUser, friend?.nickname || friend?.name || btn.dataset.dmUser, c.id);
   }));
+  renderCornerChatSection(cornerId, detailContent.querySelector(".corner-chat-section"));
   renderCornerVotingSection(cornerId, detailContent.querySelector(".corner-voting"));
   renderCornerStatusSection(cornerId, detailContent.querySelector(".corner-status-section"));
   renderEmojiVotes(cornerId, detailContent.querySelector(".emoji-votes"));
@@ -7724,9 +7997,10 @@ function renderCards() {
         <h2 class="card-name">${c.name}</h2>
         ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("hier", "here")}: ${peopleHere.map((n) => escapeHtml(n)).join(", ")}</div>` : ""}
         ${getDescription(c) ? `<p class="card-desc short-desc">${escapeHtml(getDescription(c))}</p>` : ""}
-        <button class="detail-link" data-id="${c.id}">${T("Mehr Details →", "More details →")}</button>
+        ${feedbackCount(c.id) ? `<div class="card-feedback-teaser">💬 ${feedbackCount(c.id)} ${T("Community-Notizen", "community notes")}</div>` : ""}
       </div>
       <div class="card-actions">
+        <button class="detail-link" data-id="${c.id}">ℹ️ ${T("Corner Info", "Corner info")}</button>
         <button class="checkin-btn ${STATE.manualCheckinId === c.id ? "checked-in" : ""}" data-id="${c.id}">${STATE.manualCheckinId === c.id ? "✅ " + T("Ich bin hier", "I'm here") + " &middot; 🚪 " + T("Auschecken", "Check out") : "📍 " + T("Einchecken", "Check in")}</button>
         <button class="action-btn primary" data-action="map" data-id="${c.id}">📍 ${T("Karte", "Map")}</button>
         <button class="action-btn" data-action="route" data-id="${c.id}">🧭 ${T("Route", "Route")}</button>
@@ -7857,24 +8131,50 @@ function openLightbox(src, author) { $("#lightbox-img").src = src; $("#lightbox-
 function listenPoints() {
   if (!window.FB?.firebaseReady) return;
   const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "points"), (snapshot) => { STATE.points = snapshot.val() || {}; ensurePointIdentity(); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); });
+  onValue(ref(db, "points"), (snapshot) => { STATE.points = snapshot.val() || {}; ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); });
 }
 
-function renderPointsLeaderboard() {
-  const container = $("#leaderboard-points");
-  // Fold every key that belongs to ME into one row — otherwise the same person
-  // shows up twice (once per identity key) with different levels.
+function listenKarmaPoints() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "karmaPoints"), (snapshot) => { STATE.karmaPoints = snapshot.val() || {}; ensurePointIdentity(false); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); });
+}
+
+function getRewardLeaders(kind, limit = 10) {
   const byPerson = {};
-  Object.entries(STATE.points).forEach(([user, data]) => {
+  Object.entries(rewardStore(kind) || {}).forEach(([user, data]) => {
     const key = isMyKey(user) ? currentUserKey() : user;
     const total = (data && data.total) || 0;
     const nickname = (isMyKey(user) ? (STATE.nickname || (data && data.nickname)) : (data && data.nickname)) || key;
     const prev = byPerson[key];
     if (!prev || total > prev.total) byPerson[key] = { user: key, total, nickname };
   });
-  const sorted = Object.values(byPerson).filter((x) => x.total > 0).sort((a, b) => b.total - a.total).slice(0, 10);
-  if (!sorted.length) { container.innerHTML = `<div class="leaderboard-section"><h3>⭐ ${T("Karma-Ranking", "Karma Ranking")}</h3><p style="color:var(--fg-dim);font-size:13px;">${T("Noch keine Karma-Punkte gesammelt.", "No karma points collected yet.")}</p></div>`; return; }
-  container.innerHTML = `<div class="leaderboard-section"><h3>⭐ ${T("Karma-Ranking", "Karma Ranking")}</h3><ul class="leaderboard-list">${sorted.map((x, i) => { const level = getLevel(x.total).level; const tier = getLevelTier(level); const team = TEAMS[STATE.teams[x.user]?.team] || TEAMS[x.user === currentUserKey() ? STATE.team : ""]; return `<li class="leaderboard-item ${x.user === currentUserKey() ? 'current-user' : ''}"><span class="lb-rank">${i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</span><span class="lb-name">${team?.emoji || '👤'} ${escapeHtml(x.nickname)} ${x.user === currentUserKey() ? T('(du)', '(you)') : ''}</span><span class="lb-score">${tier.emoji} Lv.${level}</span></li>`; }).join("")}</ul></div>`;
+  return Object.values(byPerson).filter((x) => x.total > 0).sort((a, b) => b.total - a.total).slice(0, limit);
+}
+
+function renderRewardLeaderboard(container, {
+  kind = "aura",
+  title = kind === "karma" ? T("Karma-Ranking", "Karma Ranking") : T("Aura-Ranking", "Aura Ranking"),
+  emptyText = kind === "karma" ? T("Noch keine Karma-Punkte gesammelt.", "No karma points collected yet.") : T("Noch keine Aura gesammelt.", "No aura collected yet."),
+  accent = kind === "karma" ? "var(--green)" : "var(--blue)"
+} = {}) {
+  if (!container) return;
+  const sorted = getRewardLeaders(kind);
+  if (!sorted.length) {
+    container.innerHTML = `<div class="leaderboard-section"><h3>${kind === "karma" ? "🎁" : "✨"} ${title}</h3><p style="color:var(--fg-dim);font-size:13px;">${emptyText}</p></div>`;
+    return;
+  }
+  container.innerHTML = `<div class="leaderboard-section"><h3>${kind === "karma" ? "🎁" : "✨"} ${title}</h3><ul class="leaderboard-list">${sorted.map((x, i) => { const level = getLevel(x.total).level; const tier = getLevelTier(level); const team = TEAMS[STATE.teams[x.user]?.team] || TEAMS[x.user === currentUserKey() ? STATE.team : ""]; return `<li class="leaderboard-item ${x.user === currentUserKey() ? 'current-user' : ''}"><span class="lb-rank">${i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</span><span class="lb-name">${team?.emoji || '👤'} ${escapeHtml(x.nickname)} ${x.user === currentUserKey() ? T('(du)', '(you)') : ''}</span><span class="lb-score" style="color:${accent};">${tier.emoji} Lv.${level} · ${x.total}</span></li>`; }).join("")}</ul></div>`;
+}
+
+function renderPointsLeaderboard() {
+  const container = $("#leaderboard-points");
+  renderRewardLeaderboard(container, { kind: "aura" });
+}
+
+function renderKarmaLeaderboard() {
+  const container = $("#leaderboard-karma");
+  renderRewardLeaderboard(container, { kind: "karma" });
 }
 
 function getAchievementCardsHtml() {
@@ -7937,6 +8237,7 @@ function renderLeaderboard() {
   renderVisitLeaderboard();
   renderContributorsLeaderboard();
   renderPointsLeaderboard();
+  renderKarmaLeaderboard();
   renderAchievementsSection();
 }
 
@@ -8163,10 +8464,14 @@ function mountProfileMap() {
 }
 
 function renderProfile() {
-  const xp = getCurrentXp();
-  const levelInfo = getLevel(xp);
+  const aura = getCurrentAura();
+  const karma = getCurrentKarma();
+  const levelInfo = getLevel(aura);
+  const karmaLevelInfo = getLevel(karma);
   const { level, progress } = levelInfo;
   const tier = getLevelTier(level);
+  const karmaTier = getLevelTier(karmaLevelInfo.level);
+  const matrixIdentity = getMatrixIdentity(aura, karma);
   const teamInfo = getTeamInfo(STATE.team);
   const captureCount = Object.values(STATE.captureHistory).filter((entry) => entry.capturedBy?.includes(currentUserKey())).length;
   const commentCount = Object.values(STATE.comments).reduce((sum, entry) => sum + Object.values(entry || {}).filter((comment) => comment.author === STATE.nickname).length, 0);
@@ -8174,47 +8479,58 @@ function renderProfile() {
   const bestFriends = Object.entries(STATE.encounters).filter(([, entry]) => entry.users && Object.keys(entry.users).includes(currentUserKey())).map(([, entry]) => { const other = Object.entries(entry.users).find(([id]) => id !== currentUserKey()); return { id: other?.[0], name: other?.[1] || 'Anonym', count: entry.count || 0 }; }).sort((a, b) => b.count - a.count).slice(0, 8);
   const recentMessages = (STATE.directMessages || []).slice(-8).reverse();
 
-  // Karma rank among all known players
-  const byPerson = {};
-  Object.entries(STATE.points).forEach(([user, data]) => {
-    const key = isMyKey(user) ? currentUserKey() : user;
-    const total = (data && data.total) || 0;
-    const nickname = (isMyKey(user) ? (STATE.nickname || (data && data.nickname)) : (data && data.nickname)) || key;
-    const prev = byPerson[key];
-    if (!prev || total > prev.total) byPerson[key] = { user: key, total, nickname };
-  });
-  const allPlayers = Object.values(byPerson).filter((x) => x.total > 0).sort((a, b) => b.total - a.total);
-  const myRankPos = allPlayers.findIndex((x) => x.user === currentUserKey());
-  const myRank = myRankPos >= 0 ? myRankPos + 1 : null;
-  const rankLabel = myRank ? `#${myRank} ${T("von", "of")} ${allPlayers.length}` : T("Noch kein Ranking", "Not ranked yet");
-  const rankAbove = myRank && myRank > 1 ? allPlayers[myRankPos - 1] : null;
-  const karmaToOvertake = rankAbove ? rankAbove.total - xp + 1 : null;
+  const allAuraPlayers = getRewardLeaders("aura", Number.MAX_SAFE_INTEGER);
+  const allKarmaPlayers = getRewardLeaders("karma", Number.MAX_SAFE_INTEGER);
+  const auraRankPos = allAuraPlayers.findIndex((x) => x.user === currentUserKey());
+  const karmaRankPos = allKarmaPlayers.findIndex((x) => x.user === currentUserKey());
+  const auraRank = auraRankPos >= 0 ? auraRankPos + 1 : null;
+  const karmaRank = karmaRankPos >= 0 ? karmaRankPos + 1 : null;
+  const auraRankLabel = auraRank ? `#${auraRank} ${T("von", "of")} ${allAuraPlayers.length}` : T("Noch kein Aura-Ranking", "Not ranked in aura yet");
+  const karmaRankLabel = karmaRank ? `#${karmaRank} ${T("von", "of")} ${allKarmaPlayers.length}` : T("Noch kein Karma-Ranking", "Not ranked in karma yet");
+  const auraAbove = auraRank && auraRank > 1 ? allAuraPlayers[auraRankPos - 1] : null;
+  const auraToOvertake = auraAbove ? auraAbove.total - aura + 1 : null;
 
-  // Karma guide rows
-  const karmaRules = [
-    { emoji: "📍", de: "Einchecken (Basis)", en: "Check-in (base)", pts: "5" },
-    { emoji: "👥", de: "+ pro Person dort", en: "+ per person there", pts: "+6" },
-    { emoji: "🔥", de: "+ beliebter Spot", en: "+ popular spot", pts: "+1–12" },
-    { emoji: "📸", de: "Foto hochladen", en: "Upload photo", pts: "10" },
-    { emoji: "💬", de: "Kommentar schreiben", en: "Write comment", pts: "5" },
-    { emoji: "⭐", de: "Spot bewerten", en: "Rate a spot", pts: "2" },
-    { emoji: "🤝", de: "Freund getroffen", en: "Meeting a friend", pts: "8" },
-    { emoji: "🆘", de: "Nachschub bestätigen", en: "Confirm supply run", pts: "40/5" },
-    { emoji: "⚔️", de: "Corner eingenommen", en: "Corner captured", pts: "25" },
-    { emoji: "🎁", de: "Freunde einladen", en: "Invite friends", pts: "5" },
-    { emoji: "🔔", de: "Push aktivieren", en: "Enable push", pts: "10" },
-    { emoji: "👆", de: "Tippen (alle 10 Min)", en: "Tap (every 10 min)", pts: "1" },
+  const rewardRules = [
+    { emoji: "📍", stream: "Aura", streamClass: "aura", de: "Einchecken (Basis)", en: "Check-in (base)", pts: "5" },
+    { emoji: "👥", stream: "Aura", streamClass: "aura", de: "+ pro Person dort", en: "+ per person there", pts: "+6" },
+    { emoji: "🔥", stream: "Aura", streamClass: "aura", de: "+ beliebter Spot", en: "+ popular spot", pts: "+1–12" },
+    { emoji: "📸", stream: "Aura", streamClass: "aura", de: "Foto hochladen", en: "Upload photo", pts: "10" },
+    { emoji: "💬", stream: "Aura", streamClass: "aura", de: "Kommentar oder DM", en: "Comment or DM", pts: "2–5" },
+    { emoji: "🤝", stream: "Aura", streamClass: "aura", de: "Freund getroffen", en: "Meeting a friend", pts: "8" },
+    { emoji: "⚔️", stream: "Aura", streamClass: "aura", de: "Corner eingenommen", en: "Corner captured", pts: "25" },
+    { emoji: "🆘", stream: "Aura", streamClass: "aura", de: "Nachschub-Ruf senden", en: "Broadcast supply request", pts: "3" },
+    { emoji: "🛒", stream: "Karma", streamClass: "karma", de: "Nachschub gebracht", en: "Bring supplies", pts: "40" },
+    { emoji: "🎁", stream: "Karma", streamClass: "karma", de: "Leuten direkt helfen", en: "Directly help people", pts: "40" },
+    { emoji: "📨", stream: "Aura", streamClass: "aura", de: "Freunde einladen", en: "Invite friends", pts: "5" },
+    { emoji: "🔔", stream: "Aura", streamClass: "aura", de: "Push aktivieren", en: "Enable push", pts: "10" },
   ];
 
   $("#profile-content").innerHTML = `
     <div class="profile-header">
       <div class="profile-avatar">${teamInfo?.emoji || '👤'}</div>
       <h2 class="profile-name">${escapeHtml(STATE.nickname || 'Anonym')}</h2>
-      <div class="profile-level-info">${teamInfo ? teamInfo.emoji + ' ' + teamInfo.name + ' · ' : ''}${tier.emoji} Lv.${level} · ${tier.name}</div>
+      <div class="profile-level-info">${teamInfo ? teamInfo.emoji + ' ' + teamInfo.name + ' · ' : ''}${tier.emoji} ${T("Aura-Level", "Aura Level")} ${level} · ${tier.name}</div>
       <div class="profile-progress"><div class="profile-progress-fill" style="width:${Math.round(progress * 100)}%"></div></div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);margin-top:6px;">
-        ${xp} Karma · ${T("noch", "only")} <strong style="color:var(--amber);">${levelInfo.xpToNext}</strong> Karma ${T("bis Level", "to Level")} ${level + 1}
+        ${aura} Aura · ${T("noch", "only")} <strong style="color:var(--amber);">${levelInfo.xpToNext}</strong> Aura ${T("bis Level", "to Level")} ${level + 1}
         ${levelInfo.reachedMilestone ? ` · 🏆 Lv.${MILESTONE_LEVEL} ${T("geschafft", "reached")}` : ` · 🎖️ Lv.${MILESTONE_LEVEL} = ${T("Meilenstein", "Milestone")}`}
+      </div>
+    </div>
+    <div class="stream-grid">
+      <div class="stream-card">
+        <div class="stream-kicker">✨ ${T("Aura Stream", "Aura stream")}</div>
+        <div class="stream-value aura">${aura}</div>
+        <div class="stream-desc">${tier.emoji} ${T("Level", "Level")} ${level} · ${escapeHtml(auraRankLabel)}${auraToOvertake ? ` · ${T("noch", "only")} ${auraToOvertake}` : ""}</div>
+      </div>
+      <div class="stream-card">
+        <div class="stream-kicker">🎁 ${T("Karma Stream", "Karma stream")}</div>
+        <div class="stream-value karma">${karma}</div>
+        <div class="stream-desc">${karmaTier.emoji} ${T("Level", "Level")} ${karmaLevelInfo.level} · ${escapeHtml(karmaRankLabel)}</div>
+      </div>
+      <div class="stream-card">
+        <div class="stream-kicker">🧬 ${T("Matrix", "Matrix")}</div>
+        <div class="stream-value matrix">${matrixIdentity.emoji} ${matrixIdentity.name}</div>
+        <div class="stream-desc">${matrixIdentity.desc}</div>
       </div>
     </div>
     <div class="profile-stats">
@@ -8224,16 +8540,18 @@ function renderProfile() {
       <div class="profile-stat"><div class="stat-icon">💬</div><div class="stat-value">${commentCount}</div><div class="stat-label">${T("Kommentare", "Comments")}</div></div>
     </div>
     <div class="team-battle-section">
-      <h3>⭐ ${T("Karma-Guide: So sammelst du", "Karma Guide: How to earn")}</h3>
-      <p style="font-size:12px;color:var(--fg-dim);margin:0 0 12px;">${T("Dein Ranking unter allen Spielern:", "Your rank among all players:")} <strong style="color:var(--amber);">${rankLabel}</strong>${karmaToOvertake ? ` · <span style="color:var(--fg-dim);">${T("Noch", "Only")} <strong style="color:var(--green);">${karmaToOvertake}</strong> Karma ${T("bis Platz", "more to reach #")}${myRank - 1}</span>` : myRank === 1 ? ` 🥇 ${T("Du führst!", "You're in the lead!")}` : ""}</p>
+      <h3>🧭 ${T("Reward Matrix", "Reward Matrix")}</h3>
+      <p style="font-size:12px;color:var(--fg-dim);margin:0 0 12px;">${T("Aura belohnt Präsenz, Aktivität und Captures. Karma belohnt Nachschub und direkte Hilfe.", "Aura rewards presence, activity, and captures. Karma rewards bringing supplies and direct help.")}</p>
       <table style="width:100%;border-collapse:collapse;font-size:13px;">
         <tr style="color:var(--fg-dim);font-size:10px;letter-spacing:1px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;">
           <td style="padding:4px 6px;">${T("Aktion", "Action")}</td>
-          <td style="padding:4px 6px;text-align:right;">Karma</td>
+          <td style="padding:4px 6px;text-align:center;">${T("Stream", "Stream")}</td>
+          <td style="padding:4px 6px;text-align:right;">${T("Punkte", "Points")}</td>
         </tr>
-        ${karmaRules.map((r) => `<tr style="border-top:1px solid var(--line);">
+        ${rewardRules.map((r) => `<tr style="border-top:1px solid var(--line);">
           <td style="padding:6px 6px;">${r.emoji} ${T(r.de, r.en)}</td>
-          <td style="padding:6px 6px;text-align:right;font-family:'Anton',sans-serif;color:var(--amber);">${r.pts}</td>
+          <td style="padding:6px 6px;text-align:center;font-family:'JetBrains Mono',monospace;color:${r.streamClass === "karma" ? "var(--green)" : "var(--blue)"};">${r.stream}</td>
+          <td style="padding:6px 6px;text-align:right;font-family:'Anton',sans-serif;color:${r.streamClass === "karma" ? "var(--green)" : "var(--amber)"};">${r.pts}</td>
         </tr>`).join("")}
       </table>
     </div>
