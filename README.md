@@ -84,9 +84,10 @@ Dafür braucht GitHub **einmalig** einen Zugang zu Firebase (ohne ihn übersprin
    Name `FIREBASE_SERVICE_ACCOUNT`, Wert = kompletter Inhalt der JSON-Datei.
 3. Die JSON-Datei danach löschen — sie gibt vollen Admin-Zugriff auf das Projekt.
 
-Für die Cloud Functions braucht dieses Konto meist zusätzliche Rollen (Google Cloud Console → IAM → beim Konto
-`firebase-adminsdk-…@cornerguide.iam.gserviceaccount.com`): **Cloud Functions Admin**, **Dienstkontonutzer** (Service Account User),
-**Eventarc Admin** und **Artifact Registry Administrator**. Fehlen sie, schlägt nur der Functions-Schritt fehl — die Regeln sind trotzdem live.
+Datenbank- und Storage-Regeln gehen mit diesem Schlüssel direkt über das Firebase Admin SDK raus (`.github/scripts/deploy-rules.cjs`).
+Für die **Cloud Functions** braucht das Konto zusätzlich Google-Cloud-Rechte: [Google Cloud Console → IAM](https://console.cloud.google.com/iam-admin/iam?project=cornerguide)
+→ beim Konto `firebase-adminsdk-…@cornerguide.iam.gserviceaccount.com` auf ✏️ → Rollen **Bearbeiter** (Editor) und **Dienstkontonutzer**
+(Service Account User) hinzufügen. Fehlen sie, schlägt nur der Functions-Schritt fehl — die Regeln sind trotzdem live.
 
 **Variante B — mit deinem eigenen Login (alle Rechte, inkl. Functions):** auf deinem Rechner `npx firebase-tools login:ci`
 ausführen und den angezeigten Token als Secret `FIREBASE_TOKEN` speichern.

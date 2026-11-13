@@ -3,7 +3,7 @@ name: Deploy Firebase (Regeln & Functions)
 # Deploys the Realtime Database rules, Storage rules and Cloud Functions to the
 # Firebase project whenever they change on main (or by hand via "Run workflow").
 # Needs ONE repository secret (see README, "Automatisches Firebase-Deployment"):
-#   FIREBASE_SERVICE_ACCOUNT  – JSON key of a service account, or
+#   FIREBASE_SERVICE_ACCOUNT  – JSON key of the Firebase Admin SDK service account, or
 #   FIREBASE_TOKEN            – token from `npx firebase-tools login:ci`
 # Without a secret the job only leaves a notice and succeeds.
 
@@ -15,6 +15,7 @@ on:
       - "storage.rules"
       - "firebase.json"
       - "functions/**"
+      - ".github/scripts/**"
       - ".github/workflows/firebase-deploy.yml"
   workflow_dispatch:
 
@@ -58,25 +59,59 @@ jobs:
           printf '%s' "$SA_KEY" > "$RUNNER_TEMP/firebase-sa.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> "$GITHUB_ENV"
 
-      - name: Datenbank- und Storage-Regeln deployen
+      - name: Abhängigkeiten installieren
         if: steps.creds.outputs.ok == 'true'
+        run: npm ci --prefix functions
+
+      # With the service-account key the rules go out through the Firebase Admin
+      # SDK: `firebase deploy` would first query Google's Service Usage API,
+      # which the Admin SDK account is not allowed to read.
+      - name: Datenbank-Regeln deployen
+        id: db
+        if: steps.creds.outputs.ok == 'true' && env.HAS_SA == 'true'
+        run: NODE_PATH=functions/node_modules node .github/scripts/deploy-rules.cjs database
+
+      - name: Storage-Regeln deployen
+        id: storage
+        if: steps.creds.outputs.ok == 'true' && env.HAS_SA == 'true'
+        continue-on-error: true
+        run: NODE_PATH=functions/node_modules node .github/scripts/deploy-rules.cjs storage
+
+      - name: Regeln deployen (Token)
+        id: rules_token
+        if: steps.creds.outputs.ok == 'true' && env.HAS_SA != 'true'
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: npx --yes firebase-tools@13 deploy --only database,storage --project cornerguide --non-interactive
 
-      - name: Function-Abhängigkeiten installieren
-        if: steps.creds.outputs.ok == 'true'
-        run: npm ci --prefix functions
-
-      # Needs the Blaze plan. Kept non-blocking so the rules above stay deployed
-      # even if this step fails; --force answers the non-interactive prompts
-      # (e.g. the container-image cleanup policy).
+      # Needs the Blaze plan and Cloud Functions rights for the account (see
+      # README). Non-blocking so the rules above stay deployed either way;
+      # --force answers the non-interactive prompts (e.g. image cleanup policy).
       - name: Cloud Functions deployen
+        id: functions
         if: steps.creds.outputs.ok == 'true'
         continue-on-error: true
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: npx --yes firebase-tools@13 deploy --only functions --project cornerguide --non-interactive --force
+
+      - name: Zusammenfassung
+        if: always() && steps.creds.outputs.ok == 'true'
+        env:
+          DB: ${{ env.HAS_SA == 'true' && steps.db.outcome || steps.rules_token.outcome }}
+          STORAGE: ${{ env.HAS_SA == 'true' && steps.storage.outcome || steps.rules_token.outcome }}
+          FUNCTIONS: ${{ steps.functions.outcome }}
+        run: |
+          {
+            echo "### Firebase-Deploy"
+            echo "| Teil | Ergebnis |"
+            echo "|---|---|"
+            echo "| Datenbank-Regeln | $DB |"
+            echo "| Storage-Regeln | $STORAGE |"
+            echo "| Cloud Functions | $FUNCTIONS |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "$STORAGE" = "success" ] || echo "::warning title=Storage-Regeln nicht deployt::Siehe Log des Schritts 'Storage-Regeln deployen'."
+          [ "$FUNCTIONS" = "success" ] || echo "::warning title=Cloud Functions nicht deployt::Meist fehlen dem Dienstkonto IAM-Rollen – siehe README, 'Automatisches Firebase-Deployment'."
 
       - name: Schlüssel entfernen
         if: always()
