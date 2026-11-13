@@ -18,6 +18,12 @@ const REGION = "europe-west1"; // must match the RTDB region
 const APP_URL = "https://etigerschuss.github.io/CornerGuide/";
 const ICON_URL = APP_URL + "icons/icon-192.png";
 
+// Only a plain query string may be appended to APP_URL, so a push can never
+// link anywhere outside the app.
+function safeQuery(q) {
+  return typeof q === "string" && /^\?[A-Za-z0-9_\-=&%.]{0,300}$/.test(q) ? q : "";
+}
+
 /**
  * Fan-out push: a client writes a lightweight event under /notify/{id}
  * (e.g. on check-in) and this function delivers it to every stored push token,
@@ -59,10 +65,13 @@ exports.pushOnNotifyEvent = onValueCreated(
       return;
     }
 
+    // Optional in-app deep link (e.g. "?corner=…&date=1" for a cornerdate).
+    const link = APP_URL + safeQuery(ev.query);
     const message = {
       notification: { title: ev.title || "Minga Corner Guide", body: String(ev.body).slice(0, 140) },
+      data: { url: link, type: String(ev.type || "cornerguide").slice(0, 40) },
       webpush: {
-        fcmOptions: { link: APP_URL },
+        fcmOptions: { link },
         notification: { icon: ICON_URL, tag: ev.type || "cornerguide" }
       }
     };
@@ -115,8 +124,7 @@ exports.pushOnTargetedNotify = onValueCreated(
         .slice(0, 50);
       if (!toIds.length) return;
 
-      const query = typeof ev.query === "string" && /^\?[A-Za-z0-9_\-=&%.]{0,300}$/.test(ev.query) ? ev.query : "";
-      const link = APP_URL + query;
+      const link = APP_URL + safeQuery(ev.query);
       const db = admin.database();
       const entries = await Promise.all(toIds.map(async (uid) => {
         const [tokenSnap, prefSnap] = await Promise.all([

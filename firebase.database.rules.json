@@ -8,6 +8,11 @@
       ".write": false
     },
 
+    "features": {
+      ".read": "auth != null",
+      ".write": false
+    },
+
     "accessCodes": {
       ".read": false,
       ".write": false
@@ -145,6 +150,20 @@
           "$voterId": {
             ".write": "auth != null && auth.uid === $voterId && !data.exists() && newData.exists() && root.child('accessGranted').child(auth.uid).exists() && root.child('gossipRounds').child($cornerId).child($roundId).exists() && root.child('gossipRounds').child($cornerId).child($roundId).child('tellerId').val() !== auth.uid && !root.child('gossipRounds').child($cornerId).child($roundId).child('endedAt').exists() && now <= root.child('gossipRounds').child($cornerId).child($roundId).child('createdAt').val() + root.child('gossipRounds').child($cornerId).child($roundId).child('windowMs').val() && root.child('presence').child(auth.uid).child('atCorner').val() === $cornerId",
             ".validate": "newData.hasChildren(['pts', 'at']) && newData.child('pts').isNumber() && (newData.child('pts').val() === 2 || newData.child('pts').val() === 5 || newData.child('pts').val() === 10 || newData.child('pts').val() === 15 || newData.child('pts').val() === 20) && newData.child('at').isNumber() && (!newData.child('name').exists() || (newData.child('name').isString() && newData.child('name').val().length <= 40))"
+          }
+        }
+      }
+    },
+
+    "cornerDates": {
+      ".read": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)",
+      "$dateId": {
+        ".write": "auth != null && (root.child('config').child('admins').child(auth.uid).val() === true || (root.child('accessGranted').child(auth.uid).exists() && ((!data.exists() && newData.child('byId').val() === auth.uid) || (data.exists() && data.child('byId').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('end').val() < now - 86400000))))",
+        ".validate": "newData.hasChildren(['cornerId', 'start', 'end', 'byId', 'byName']) && newData.child('cornerId').isString() && newData.child('cornerId').val().length <= 120 && newData.child('start').isNumber() && newData.child('end').isNumber() && newData.child('end').val() > newData.child('start').val() && newData.child('end').val() - newData.child('start').val() <= 43200000 && newData.child('byName').isString() && newData.child('byName').val().length <= 40 && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 200))",
+        "going": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && root.child('accessGranted').child(auth.uid).exists() && root.child('cornerDates').child($dateId).exists()",
+            ".validate": "newData.hasChildren(['name', 'at']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('at').isNumber()"
           }
         }
       }

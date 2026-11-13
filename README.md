@@ -26,6 +26,23 @@ https://ETigerschuss.github.io/CornerGuide/
 - 🗣️ **Gossip-Runden** — Ab zwei Leuten am selben Corner erzählt eine Person eine Story (aufschreiben und/oder per Mikro einsprechen), die anderen vergeben Punkte → Karma für die Person, die erzählt
 - 💤 **Bleibt eingecheckt bei gesperrtem Handy** — wer eingecheckt ist, bleibt für die anderen am Corner sichtbar (mit 💤), auch wenn das Display aus ist
 - 📖 **„So sammelst du Punkte"** — vollständige Punkte-Übersicht + 3×3-Reward-Matrix (Level oben antippen oder im Ranking-Tab)
+- 📅 **Cornerdate** — Treffen an einem Corner planen: alle bekommen eine Push, können zusagen und es mit Uhrzeit, Ort und Karten-Pin in den Kalender übernehmen (`.ics` für iPhone/Android/Outlook, Link für Google Kalender) oder per WhatsApp teilen
+- 🌤️ **Corner-Check** — pro Corner: Sonne heute von–bis (Wettervorhersage + Sonnenstand, Sonnenuntergang, Golden Hour), nächster Kiosk/Späti/Tankstelle mit „offen/zu" und Fußweg-Route, Regen-Plan (überdacht? Unterstände in der Nähe, regenfeste Corners zum Ausweichen) — plus Wetter-Zeile oben in der Liste
+- 📲 **WhatsApp** — nach dem Check-in mit einem Tipp die Gruppe informieren (fertige Nachricht), optional automatisch nach jedem Check-in öffnen
+
+## 🌤️ Corner-Check: woher kommen die Daten?
+
+- **Wetter** von [Open-Meteo](https://open-meteo.com) (kostenlos, ohne Schlüssel): Sonnenstunden, Regenwahrscheinlichkeit, Temperatur — 30 Minuten zwischengespeichert.
+- **Sonnenstand** wird lokal berechnet: Sonnenauf-/-untergang, Golden Hour und wann die Sonne hoch genug (über 15°) steht, um zwischen Häusern anzukommen.
+- **Kiosk, Späti, Tankstelle, Unterstände** aus [OpenStreetMap](https://www.openstreetmap.org) über die Overpass-API — 3 Tage pro Corner zwischengespeichert. Fehlt ein Kiosk, kann man ihn direkt in OpenStreetMap eintragen.
+- **Regenfest?** schätzt die Community ein (☂️ überdacht / 💧 wird nass); markierte Corners schlägt die App bei Regen als Ausweichspot vor.
+- Beide Dienste sehen nur die öffentlichen Koordinaten des Corners, keine Nutzerdaten.
+
+## 📲 WhatsApp automatisch?
+
+Ganz automatisch (ohne Tippen) geht es nicht: WhatsApp bietet für private Konten und Gruppen keine Schnittstelle. Die WhatsApp-Business-API erreicht nur
+einzelne Nummern mit Einwilligung, kostet pro Unterhaltung und braucht einen Server — für eine Freundesgruppe unpassend. Die App öffnet deshalb WhatsApp mit fertig
+geschriebener Nachricht; man wählt Chat oder Gruppe und tippt auf Senden. Für Benachrichtigungen ohne Zutun gibt es die Push-Nachrichten der App.
 
 ## 🗣️ Gossip-Runden
 
@@ -45,7 +62,7 @@ automatisch, sobald die Regeln live sind):
 ```bash
 firebase deploy --only database,storage,functions
 ```
-- `database` — Regeln für `gossipRounds`, `gossipContent`, `gossipVotes`, `notifyTargeted`
+- `database` — Regeln für `gossipRounds`, `gossipContent`, `gossipVotes`, `notifyTargeted`, `cornerDates`
 - `storage` — Regel für Sprachaufnahmen unter `gossipAudio/`
 - `functions` — `pushOnTargetedNotify` schickt die Gossip-Pushes nur an die Leute am Corner
 

@@ -2478,6 +2478,75 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .nickname-bar .nick-pts, .nickname-bar .level-bar { cursor: pointer; }
 .points-help-btn { width: 100%; justify-content: center; margin-bottom: 18px; padding: 12px 16px; font-size: 14px; }
 
+/* ====================== WHATSAPP ====================== */
+.whatsapp-btn, .access-prompt .whatsapp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 12px; background: #25d366; color: #052e16; border: none; border-radius: 999px; padding: 11px 16px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; }
+.whatsapp-btn:hover, .access-prompt .whatsapp-btn:hover { background: #1fb457; color: #052e16; }
+.action-btn.wa { border-color: #25d366; color: #25d366; }
+a.action-btn { text-decoration: none; }
+
+/* ====================== CORNERDATE ====================== */
+.cd-card { border-color: var(--blue); }
+.cd-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cd-field { display: block; margin-top: 4px; }
+.cd-field .ce-label { margin-top: 10px; }
+.cd-field input, .cd-field select { color-scheme: dark; min-height: 44px; }
+.cd-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fg-dim); margin-top: 12px; cursor: pointer; }
+.cd-check input { width: 18px; height: 18px; accent-color: var(--blue); }
+.cd-done-title { font-family: "Anton", sans-serif; font-weight: 400; font-size: 20px; text-transform: uppercase; margin: 6px 0 4px; color: var(--green); }
+.cd-actions { display: grid; gap: 8px; margin-top: 12px; }
+.cd-actions .action-btn, .cd-actions .whatsapp-btn { width: 100%; justify-content: center; margin: 0; padding: 12px; font-size: 14px; }
+.cornerdate-section { background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--blue); border-radius: 14px; padding: 14px; margin: 14px 0; }
+.cornerdate-section h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 18px; text-transform: uppercase; margin: 0 0 8px; }
+.cd-item { background: var(--bg-3); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 8px 0; }
+.cd-when { font-weight: 700; font-size: 15px; }
+.cd-meta { font-size: 12px; color: var(--fg-dim); margin-top: 2px; overflow-wrap: anywhere; }
+.cd-note { font-size: 13px; margin-top: 4px; overflow-wrap: anywhere; }
+.cd-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.cd-btns .action-btn { padding: 7px 11px; font-size: 12px; }
+.cd-btns .action-btn.going { border-color: var(--green); color: var(--green); }
+.cd-plan-btn { width: 100%; justify-content: center; margin-top: 4px; }
+#cornerdates-strip:empty, #weather-banner:empty { display: none; }
+#cornerdates-strip, #weather-banner { max-width: 720px; margin: 0 auto 14px; padding: 0 16px; }
+.cd-strip { background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--blue); border-radius: 14px; padding: 12px 14px; }
+.cd-strip-title { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-dim); margin-bottom: 6px; }
+.cd-strip-item { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; color: var(--fg); font: inherit; text-align: left; padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.06); cursor: pointer; }
+.cd-strip-item:first-of-type { border-top: none; }
+.cd-strip-item .cd-s-when { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--blue); white-space: nowrap; }
+.cd-strip-item .cd-s-what { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 13px; }
+
+/* ====================== CORNER-INFO (Sonne · Kiosk · Regen) ====================== */
+.corner-info-section { background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--amber); border-radius: 14px; padding: 14px; margin: 14px 0; }
+.corner-info-section h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 18px; text-transform: uppercase; margin: 0 0 6px; }
+.ci-block { padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+.ci-block:first-of-type { border-top: none; padding-top: 4px; }
+.ci-h { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-dim); margin-bottom: 6px; }
+.ci-line { font-size: 14px; line-height: 1.5; }
+.ci-line strong { color: var(--fg); }
+.ci-small { font-size: 12px; color: var(--fg-dim); line-height: 1.45; margin-top: 3px; }
+.ci-rain { color: var(--blue); font-weight: 700; }
+.ci-hours { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 2px; scrollbar-width: none; }
+.ci-hours::-webkit-scrollbar { display: none; }
+.ci-hour { flex: 0 0 auto; min-width: 46px; text-align: center; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; padding: 5px 4px; font-size: 11px; }
+.ci-hour .ci-hi { font-size: 17px; display: block; line-height: 1.3; }
+.ci-hour .ci-hp { color: var(--blue); font-family: "JetBrains Mono", monospace; font-size: 10px; }
+.ci-hour.now { border-color: var(--amber); }
+.ci-place { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.ci-place .ci-p-main { flex: 1; min-width: 0; }
+.ci-place .ci-p-name { font-size: 14px; overflow-wrap: anywhere; }
+.ci-place .ci-p-meta { font-size: 11px; color: var(--fg-dim); font-family: "JetBrains Mono", monospace; overflow-wrap: anywhere; }
+.ci-place .action-btn { padding: 7px 11px; font-size: 12px; flex: 0 0 auto; }
+.ci-open { color: var(--green); }
+.ci-closed { color: var(--pink); }
+.ci-votes { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.ci-votes .action-btn { padding: 7px 11px; font-size: 12px; }
+.ci-votes .action-btn.voted { border-color: var(--green); color: var(--green); }
+.ci-rainblock.alert { background: rgba(108,182,255,0.07); border: 1px solid rgba(108,182,255,0.45); border-radius: 12px; padding: 10px; margin-top: 4px; }
+.ci-attr { font-size: 10px; color: var(--fg-dim); margin-top: 8px; }
+.ci-attr a { color: inherit; }
+.weather-banner { background: rgba(108,182,255,0.08); border: 1px solid rgba(108,182,255,0.45); border-radius: 14px; padding: 10px 14px; font-size: 13px; line-height: 1.45; }
+.weather-banner strong { color: var(--blue); }
+.weather-banner button { background: none; border: none; color: var(--fg); text-decoration: underline; font: inherit; padding: 0; cursor: pointer; }
+
 .celebration {
   position: fixed; inset: 0; z-index: 4000;
   display: none; align-items: center; justify-content: center;
@@ -2617,6 +2686,8 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
       <button id="list-locate-btn" class="geo-btn" style="padding:6px 12px;font-size:12px;">📍 Standort an</button>
       <span id="me-position-meta">Standort aus</span>
     </div>
+    <div id="weather-banner"></div>
+    <div id="cornerdates-strip"></div>
     <div class="cards" id="cards"></div>
   </section>
 
@@ -2759,6 +2830,37 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   </div>
 </div>
 
+<!-- Cornerdate: plan a meetup at a corner, then add it to your calendar / share it -->
+<div id="cornerdate-overlay" class="guide-overlay" role="dialog" aria-modal="true" aria-labelledby="cd-title">
+  <div class="guide-card cd-card">
+    <h2 id="cd-title">📅 Cornerdate</h2>
+    <p class="gossip-sub" id="cd-sub"></p>
+    <div id="cd-form">
+      <div class="cd-row">
+        <label class="cd-field"><span class="ce-label" id="cd-date-label">Tag</span><input type="date" id="cd-date" class="ce-field" /></label>
+        <label class="cd-field"><span class="ce-label" id="cd-time-label">Uhrzeit</span><input type="time" id="cd-time" class="ce-field" step="900" /></label>
+      </div>
+      <label class="cd-field"><span class="ce-label" id="cd-dur-label">Dauer</span>
+        <select id="cd-duration" class="ce-field">
+          <option value="60">1 h</option>
+          <option value="120" selected>2 h</option>
+          <option value="180">3 h</option>
+          <option value="240">4 h</option>
+          <option value="360">6 h</option>
+        </select>
+      </label>
+      <label class="cd-field"><span class="ce-label" id="cd-note-label">Notiz (optional)</span><input type="text" id="cd-note" class="ce-field" maxlength="140" autocomplete="off" /></label>
+      <label class="cd-check"><input type="checkbox" id="cd-notify" checked /> <span id="cd-notify-label">Alle in der App benachrichtigen</span></label>
+      <p class="gossip-hint" id="cd-hint"></p>
+      <div class="gossip-actions">
+        <button type="button" class="action-btn" id="cd-cancel">Abbrechen</button>
+        <button type="button" class="action-btn primary" id="cd-save">📅 Planen</button>
+      </div>
+    </div>
+    <div id="cd-done" hidden></div>
+  </div>
+</div>
+
 <!-- How to earn points: reward matrix + every source of aura/karma -->
 <div id="reward-guide-overlay" class="guide-overlay" role="dialog" aria-modal="true" aria-labelledby="reward-guide-title">
   <div class="guide-card">
@@ -2883,6 +2985,7 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
       <div style="font-size:12px;color:var(--fg-dim);margin-bottom:8px;">Schon hier — gleiches Team wählen?</div>
       <div id="cto-buddy-list" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
     </div>
+    <button class="whatsapp-btn" id="cto-whatsapp" type="button">📲 WhatsApp-Gruppe Bescheid geben</button>
     <div style="display:flex;gap:8px;margin-top:18px;align-items:center;">
       <button class="action-btn" id="cto-skip" style="flex:1;padding:14px;font-size:15px;">Überspringen</button>
       <button class="action-btn primary" id="cto-done" style="flex:1;padding:14px;font-size:15px;">Fertig</button>
@@ -3199,6 +3302,8 @@ function setLang(lang) {
   if (STATE.view === "profile") renderProfile();
   if (STATE.view === "leaderboard") renderLeaderboard();
   renderCards();
+  if (typeof renderCornerDatesStrip === "function") renderCornerDatesStrip();
+  if (typeof renderWeatherBanner === "function") renderWeatherBanner();
 }
 
 
@@ -3330,9 +3435,14 @@ function reattachSharedListenersAfterGrant() {
   _sharedListenersReattached = true;
   [listenSharedCorners, listenComments, listenBarometer, listenVisits, listenEmojiVotes,
    listenPhotos, listenPoints, listenKarmaPoints, listenTeams, listenCornerStatuses, listenCaptured,
-   listenCornerVotes, listenFriendPresence, listenDirectMessages, listenCustomTeams, listenSupplyRuns, listenGossip]
+   listenCornerVotes, listenFriendPresence, listenDirectMessages, listenCustomTeams, listenSupplyRuns, listenGossip, listenCornerDates]
     .forEach((fn) => { try { if (typeof fn === "function") fn(); } catch (err) { console.warn("reattach failed:", err); } });
+  checkBackendFeatures(true);
 }
+// A failed feature check (e.g. offline at start) is retried when the app comes back.
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && typeof checkBackendFeatures === "function" && !_backendFeatures.ok) checkBackendFeatures(true);
+});
 
 function checkAccessGranted() {
   // Fast path: already granted in localStorage
@@ -4158,6 +4268,7 @@ function refreshAllEmojiVotes() {
     const cornerId = section.dataset.cornerId;
     renderEmojiVotes(cornerId, section);
   });
+  if (typeof refreshRainVotes === "function") refreshRainVotes();   // ☂️/💧 votes live in emojiVotes too
 }
 
 function renderEmojiVotes(cornerId, container) {
@@ -5263,8 +5374,9 @@ function applyIncomingLinks() {
   const inviteName = sanitizeInviteName((params.get(INVITE_PARAM) || "").trim());
   const autoCheckin = params.get(CHECKIN_PARAM) === "1";
   if (cornerId) STATE.pendingShareCornerId = cornerId;
-  // Gossip push deep link (?corner=…&gossip=1): open the corner at its gossip round.
+  // Push deep links: ?corner=…&gossip=1 opens the gossip round, &date=1 the cornerdates.
   if (cornerId && params.get("gossip") === "1") STATE.pendingGossipFocus = cornerId;
+  if (cornerId && params.get("date") === "1") STATE.pendingDateFocus = cornerId;
   if (inviteName) STATE.pendingInviteName = inviteName.slice(0, MAX_INVITE_NAME_LENGTH);
   // When autoCheckin=true, store the target corner for later (resolved after nickname is confirmed)
   if (autoCheckin && cornerId) STATE.pendingAutoCheckinCornerId = cornerId;
@@ -5295,6 +5407,11 @@ function openPendingSharedCorner() {
     STATE.pendingGossipFocus = null;
     clearHandledQueryParam("gossip");
     focusGossip(cornerId);
+  }
+  if (STATE.pendingDateFocus === cornerId) {
+    STATE.pendingDateFocus = null;
+    clearHandledQueryParam("date");
+    focusDetailSection(cornerId, ".cornerdate-section");
   }
   if (STATE.pendingAutoCheckinCornerId === cornerId) {
     clearHandledQueryParam(CHECKIN_PARAM);
@@ -5658,6 +5775,8 @@ function buildRewardGuideHtml() {
       ${row("🤝", "Mit jemandem am Corner getroffen (pro Person)", "Met someone at a corner (per person)", "+8")}
       ${row("⚔️", "Corner eingenommen (3 aus deinem Team vor Ort)", "Corner captured (3 of your team there)", "+25")}
       ${row("🗣️", "Gossip erzählt / bewertet", "Told / rated gossip", "+5 / +2")}
+      ${row("📅", "Cornerdate geplant (bis 3× am Tag) · zugesagt", "Planned a cornerdate (up to 3× a day) · joined one", "+5 · +2")}
+      ${row("☂️", "Corner als überdacht / nass eingeschätzt", "Rated a corner as covered / wet", "+2")}
       ${row("➕", "Neuen Spot eingetragen", "Added a new spot", "+50")}
       ${row("📸", "Foto hochgeladen", "Uploaded a photo", "+10")}
       ${row("💬", "Kommentar / Antwort · Chat-Nachricht", "Comment / reply · chat message", "+5 · +2")}
@@ -6113,6 +6232,8 @@ function _activateAuthDependentFeatures(uid, status) {
   listenDirectMessages();
   listenGossip();      // no-ops if already listening; cover auth arriving late
   listenSupplyRuns();
+  listenCornerDates();
+  checkBackendFeatures();
   syncIdentity();
   startPresenceHeartbeat();
   loadProfileFromCloud(uid);
@@ -6381,6 +6502,12 @@ function openCheckinTeamPicker(cornerId) {
       }));
   } else {
     buddyBox.style.display = "none";
+  }
+
+  const wa = $("#cto-whatsapp");
+  if (wa) {
+    wa.textContent = "📲 " + T("WhatsApp-Gruppe Bescheid geben", "Tell your WhatsApp group");
+    wa.onclick = () => openWhatsApp(cornerWhatsAppText(cornerId));
   }
 
   // Closing continues the chain: on a first visit the questionnaire follows.
@@ -6907,6 +7034,7 @@ async function initFirebase() {
     listenCornerVotes();
     listenSupplyRuns();
     listenGossip();
+    listenCornerDates();
     openPendingSharedCorner();
     // This onAuthChange handler covers the case where auth was initially absent.
     // It activates write-gated features once auth eventually succeeds.
@@ -6969,6 +7097,7 @@ async function initFirebase() {
   listenCornerVotes();
   listenSupplyRuns();
   listenGossip();
+  listenCornerDates();
 }
 
 // The corner I count as being at. An explicit check-in wins over GPS proximity.
@@ -8063,6 +8192,12 @@ function manualCheckin(cornerId) {
     logEncounters(cornerId);
     startCooldownDisplay();
     broadcastCheckinPush(corner);
+    // Opt-in: open WhatsApp with the message ready. Only on a real tap — an
+    // automatic (GPS) check-in must never yank you out of the app.
+    if (autoWhatsAppOnCheckin() && navigator.userActivation && navigator.userActivation.isActive) {
+      const text = cornerWhatsAppText(cornerId);
+      setTimeout(() => openWhatsApp(text), 0);
+    }
     // Scanned a personal QR: join the sharer's team automatically.
     if (STATE.pendingSharedTeam) {
       const wanted = STATE.pendingSharedTeam;
@@ -8623,11 +8758,32 @@ function renderGossipResultCard(cornerId, round) {
   </div>`;
 }
 
+/* Newer features (gossip rounds, cornerdates) need the current database rules.
+   They contain a readable, empty "features" node: if reading it works, the
+   rules are deployed. (A listener alone is no proof — the SDK can report an
+   empty value for a path after earlier permission errors.)                 */
+var _backendFeatures = { ok: false, checked: false, pending: null };
+function checkBackendFeatures(force = false) {
+  if (!window.FB?.firebaseReady || !window.FB.getAuthUid?.()) return Promise.resolve(false);
+  if (_backendFeatures.ok) return Promise.resolve(true);
+  if (_backendFeatures.pending) return _backendFeatures.pending;
+  if (_backendFeatures.checked && !force) return Promise.resolve(false);
+  const { db, ref, get } = window.FB;
+  _backendFeatures.pending = get(ref(db, "features")).then(() => true, () => false).then((ok) => {
+    _backendFeatures.ok = ok;
+    _backendFeatures.checked = true;
+    _backendFeatures.pending = null;
+    if (ok) { refreshGossipViews(); refreshCornerDateSection(); }
+    return ok;
+  });
+  return _backendFeatures.pending;
+}
+
 function renderGossipSection(cornerId, container) {
   if (!container) return;
-  // Hidden until the database actually serves gossip data, i.e. until the
-  // gossip rules are deployed — before that the server refuses every round.
-  container.hidden = !_gossip.roundsLoaded;
+  // Hidden until the gossip rules are deployed and data has arrived — before
+  // that the server would refuse every round.
+  container.hidden = !(_backendFeatures.ok && _gossip.roundsLoaded);
   if (container.hidden) return;
   if (!container._ready) {
     container.innerHTML = `<h3 class="gossip-title"><span class="gossip-live-dot" hidden></span>🗣️ ${T("Gossip-Runde", "Gossip round")}</h3><div class="gs-live"></div><div class="gs-controls"></div><div class="gs-results"></div><div class="gs-start"></div><div class="gs-history"></div>`;
@@ -9143,6 +9299,790 @@ function bindGossipComposer() {
 }
 document.addEventListener("DOMContentLoaded", bindGossipComposer);
 
+/* ====================== WHATSAPP ======================
+   A web app cannot post into a WhatsApp chat by itself: WhatsApp has no API
+   for personal accounts or groups (the Business API only reaches single
+   opted-in numbers, costs per conversation and needs a server). What works
+   with zero setup: open WhatsApp with the message already written — pick the
+   chat or group and tap send.                                              */
+function whatsappUrl(text) { return "https://wa.me/?text=" + encodeURIComponent(text); }
+function openWhatsApp(text) {
+  if (!text) return;
+  const url = whatsappUrl(text);
+  const win = window.open(url, "_blank");
+  if (win) { try { win.opener = null; } catch (e) { /* cross-origin */ } }
+  else window.location.href = url;   // popup blocked (e.g. iOS home-screen app)
+}
+function autoWhatsAppOnCheckin() { return localStorage.getItem("cg.autoWhatsApp") === "1"; }
+function cornerWhatsAppText(cornerId) {
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  if (!corner) return "";
+  const link = buildShareUrl(cornerId, STATE.nickname || "");
+  const where = `${corner.name}${corner.area ? ` (${corner.area})` : ""}`;
+  if (myPresenceCorner() !== cornerId) return `🍻 Lust auf ${where}? 👉 ${link}`;
+  const others = freshFriends().filter((f) => f.atCorner === cornerId && !isMyKey(f.id)).map((f) => f.nickname || f.name).filter(Boolean);
+  return `🍻 Bin gerade am ${where}!${others.length ? ` Schon da: ${others.join(", ")}.` : ""} Kommt vorbei 👉 ${link}`;
+}
+
+/* ====================== CORNERDATE ======================
+   Plan a meetup at a corner: date + time → everyone in the app gets a push
+   and can say "bin dabei"; anyone can put it in their calendar (.ics for
+   iPhone/Outlook/Android, link for Google Calendar) or share it on WhatsApp. */
+const CORNERDATE_KEEP_MS = 24 * 60 * 60 * 1000;   // ended dates are deleted after this
+const CORNERDATE_PLAN_AURA = 5;
+const CORNERDATE_JOIN_AURA = 2;
+STATE.cornerDates = {};
+var _cornerDates = { listening: false, primed: false, lastCleanup: 0 };
+var CD_DRAFT = { cornerId: null, saving: false, saved: null };
+
+function listenCornerDates(attempt = 0) {
+  if (!window.FB?.firebaseReady || _cornerDates.listening) return;
+  _cornerDates.listening = true;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "cornerDates"), (snap) => {
+    const before = STATE.cornerDates || {};
+    STATE.cornerDates = snap.val() || {};
+    if (_cornerDates.primed) announceNewCornerDates(before);
+    _cornerDates.primed = true;
+    renderCornerDatesStrip();
+    refreshCornerDateSection();
+    cleanupOldCornerDates();
+  }, () => { _cornerDates.listening = false; retryListenerAfterAuth(listenCornerDates, attempt); });
+}
+
+function upcomingCornerDates(cornerId) {
+  const now = Date.now();
+  return Object.entries(STATE.cornerDates || {})
+    .map(([id, d]) => ({ ...d, id }))
+    .filter((d) => d && d.cornerId && Number(d.end) > now && (!cornerId || d.cornerId === cornerId))
+    .sort((a, b) => Number(a.start) - Number(b.start));
+}
+function cornerDateGoing(d) { return Object.entries(d.going || {}).map(([id, g]) => ({ id, name: (g && g.name) || "?" })); }
+
+function formatDateRange(start, end) {
+  const s = new Date(Number(start));
+  const e = new Date(Number(end));
+  const locale = STATE.lang === "en" ? "en-GB" : "de-DE";
+  const same = (a, b) => a.toDateString() === b.toDateString();
+  const day = same(s, new Date()) ? T("Heute", "Today")
+    : same(s, new Date(Date.now() + 86400000)) ? T("Morgen", "Tomorrow")
+    : s.toLocaleDateString(locale, { weekday: "short", day: "2-digit", month: "2-digit" });
+  const time = (d) => d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  return `${day}, ${time(s)}–${time(e)}`;
+}
+
+function cornerDateParts(d) {
+  const corner = getAllCorners().find((c) => c.id === d.cornerId);
+  const name = (corner && corner.name) || d.cornerName || "Corner";
+  const where = [name, corner && corner.area, "München"].filter(Boolean).join(", ");
+  const link = buildShareUrl(d.cornerId, "");
+  const route = corner ? walkingRouteUrl(corner.lat, corner.lng) : "";
+  const details = [d.note || "", `Geplant von ${d.byName || "?"}`, route ? `Route: ${route}` : "", `Im Corner Guide: ${link}`].filter(Boolean).join("\n");
+  return { corner, name, where, link, details };
+}
+
+// RFC 5545 helpers
+function icsEscape(s) { return String(s || "").replace(/\\/g, "\\\\").replace(/\r?\n/g, "\\n").replace(/([,;])/g, "\\$1"); }
+function icsParam(s) { return String(s || "").replace(/["\r\n]/g, ""); }
+function icsDate(ms) { return new Date(Number(ms)).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); }
+function icsFold(line) {
+  const enc = new TextEncoder();
+  const out = [];
+  let cur = "";
+  let bytes = 0;
+  for (const ch of line) {
+    const b = enc.encode(ch).length;
+    if (bytes + b > 74) { out.push(cur); cur = " " + ch; bytes = 1 + b; }
+    else { cur += ch; bytes += b; }
+  }
+  out.push(cur);
+  return out.join("\r\n");
+}
+function cornerDateIcs(d) {
+  const { corner, name, where, link, details } = cornerDateParts(d);
+  const lines = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Minga Corner Guide//Cornerdate//DE", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${d.id}@cornerguide`,
+    `DTSTAMP:${icsDate(Date.now())}`,
+    `DTSTART:${icsDate(d.start)}`,
+    `DTEND:${icsDate(d.end)}`,
+    `SUMMARY:${icsEscape(`🍻 Cornerdate: ${name}`)}`,
+    `LOCATION:${icsEscape(where)}`,
+    ...(corner ? [
+      `GEO:${corner.lat};${corner.lng}`,
+      `X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS="${icsParam(where)}";X-APPLE-RADIUS=70;X-TITLE="${icsParam(name)}":geo:${corner.lat},${corner.lng}`
+    ] : []),
+    `DESCRIPTION:${icsEscape(details)}`,
+    `URL:${link}`,
+    "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-PT30M", `DESCRIPTION:${icsEscape(`Cornerdate am ${name} in 30 Minuten`)}`, "END:VALARM",
+    "END:VEVENT", "END:VCALENDAR"
+  ];
+  return lines.map(icsFold).join("\r\n") + "\r\n";
+}
+function downloadCornerDateIcs(d) {
+  const blob = new Blob([cornerDateIcs(d)], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `cornerdate-${String(d.cornerName || d.cornerId || "corner").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "corner"}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 15000);
+}
+function googleCalendarUrl(d) {
+  const { name, where, details } = cornerDateParts(d);
+  const p = new URLSearchParams({ action: "TEMPLATE", text: `🍻 Cornerdate: ${name}`, dates: `${icsDate(d.start)}/${icsDate(d.end)}`, details, location: where });
+  return "https://calendar.google.com/calendar/render?" + p.toString();
+}
+function cornerDateWhatsAppText(d) {
+  const { name, link } = cornerDateParts(d);
+  return `📅 Cornerdate: ${formatDateRange(d.start, d.end)} am ${name}!${d.note ? ` ${d.note}` : ""} Bist du dabei? 👉 ${link}`;
+}
+
+function cornerDateItemHtml(d) {
+  const me = currentUserKey();
+  const going = cornerDateGoing(d);
+  const iGo = !!(d.going && d.going[me]);
+  const mine = isMyKey(d.byId);
+  return `<div class="cd-item" data-cd-id="${escapeHtml(d.id)}">
+    <div class="cd-when">📅 ${escapeHtml(formatDateRange(d.start, d.end))}</div>
+    <div class="cd-meta">${T("von", "by")} ${escapeHtml(mine ? T("dir", "you") : (d.byName || "?"))} · ${going.length} ${T("dabei", "going")}${going.length ? ": " + going.map((g) => escapeHtml(g.name)).join(", ") : ""}</div>
+    ${d.note ? `<div class="cd-note">„${escapeHtml(d.note)}“</div>` : ""}
+    <div class="cd-btns">
+      ${mine ? "" : `<button class="action-btn ${iGo ? "going" : ""}" data-cd-going>${iGo ? "✓ " + T("Bin dabei", "I'm in") : "✋ " + T("Bin dabei", "I'm in")}</button>`}
+      <button class="action-btn" data-cd-ics>📅 ${T("Kalender", "Calendar")}</button>
+      <a class="action-btn" href="${escapeHtml(googleCalendarUrl(d))}" target="_blank" rel="noopener">Google</a>
+      <button class="action-btn wa" data-cd-wa>📲 WhatsApp</button>
+      ${mine ? `<button class="action-btn danger" data-cd-cancel>✕ ${T("Absagen", "Cancel")}</button>` : ""}
+    </div>
+  </div>`;
+}
+function bindCornerDateItems(root) {
+  root.querySelectorAll(".cd-item").forEach((item) => {
+    const id = item.dataset.cdId;
+    const d = () => { const raw = STATE.cornerDates?.[id]; return raw ? { ...raw, id } : null; };
+    item.querySelector("[data-cd-going]")?.addEventListener("click", () => toggleCornerDateGoing(id));
+    item.querySelector("[data-cd-ics]")?.addEventListener("click", () => { const x = d(); if (x) downloadCornerDateIcs(x); });
+    item.querySelector("[data-cd-wa]")?.addEventListener("click", () => { const x = d(); if (x) openWhatsApp(cornerDateWhatsAppText(x)); });
+    item.querySelector("[data-cd-cancel]")?.addEventListener("click", () => cancelCornerDate(id));
+  });
+}
+
+function renderCornerDateSection(cornerId, container) {
+  if (!container) return;
+  // Like gossip: hidden until the cornerDates rules are deployed and data is in.
+  container.hidden = !(_backendFeatures.ok && _cornerDates.primed);
+  if (container.hidden) return;
+  const dates = upcomingCornerDates(cornerId);
+  container.innerHTML = `<h3>📅 Cornerdates</h3>
+    ${dates.length ? dates.map(cornerDateItemHtml).join("") : `<p class="gs-hint">${T("Noch nichts geplant. Plan ein Treffen: alle bekommen Bescheid, und es landet mit Uhrzeit und Ort in eurem Kalender.", "Nothing planned yet. Plan a meetup: everyone gets notified and it lands in your calendars with time and place.")}</p>`}
+    <button class="action-btn primary cd-plan-btn" data-cd-plan>📅 ${T("Cornerdate planen", "Plan a cornerdate")}</button>`;
+  bindCornerDateItems(container);
+  container.querySelector("[data-cd-plan]")?.addEventListener("click", () => openCornerDatePlanner(cornerId));
+}
+function refreshCornerDateSection() {
+  if (!$("#detail-overlay")?.classList.contains("open") || !STATE.detailCornerId) return;
+  renderCornerDateSection(STATE.detailCornerId, document.querySelector(`.cornerdate-section[data-corner-id="${CSS.escape(STATE.detailCornerId)}"]`));
+}
+
+function renderCornerDatesStrip() {
+  const box = $("#cornerdates-strip");
+  if (!box) return;
+  const me = currentUserKey();
+  const dates = upcomingCornerDates().filter((d) => Number(d.start) < Date.now() + 7 * 86400000).slice(0, 4);
+  if (!dates.length) { box.innerHTML = ""; return; }
+  box.innerHTML = `<div class="cd-strip"><div class="cd-strip-title">📅 ${T("Geplante Cornerdates", "Planned cornerdates")}</div>${dates.map((d) => {
+    const corner = getAllCorners().find((c) => c.id === d.cornerId);
+    const going = cornerDateGoing(d).length;
+    return `<button class="cd-strip-item" data-cd-open="${escapeHtml(d.cornerId)}"><span class="cd-s-when">${escapeHtml(formatDateRange(d.start, d.end))}</span><span class="cd-s-what">${escapeHtml((corner && corner.name) || d.cornerName || "?")} · ${going} ${T("dabei", "going")}${d.going && d.going[me] ? " · ✓ " + T("du", "you") : ""}</span><span>→</span></button>`;
+  }).join("")}</div>`;
+  box.querySelectorAll("[data-cd-open]").forEach((b) => b.addEventListener("click", () => focusDetailSection(b.dataset.cdOpen, ".cornerdate-section")));
+}
+
+function focusDetailSection(cornerId, selector) {
+  const alreadyOpen = $("#detail-overlay")?.classList.contains("open") && STATE.detailCornerId === cornerId;
+  if (!alreadyOpen) openDetail(cornerId);
+  setTimeout(() => document.querySelector(`${selector}[data-corner-id="${CSS.escape(cornerId)}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }), alreadyOpen ? 0 : 250);
+}
+
+function announceNewCornerDates(before) {
+  Object.entries(STATE.cornerDates || {}).forEach(([id, d]) => {
+    if (before[id] || !d || isMyKey(d.byId) || Number(d.end) < Date.now()) return;
+    const corner = getAllCorners().find((c) => c.id === d.cornerId);
+    toast(`📅 <strong>${escapeHtml(d.byName || "?")}</strong> ${T("plant ein Cornerdate", "plans a cornerdate")}: ${escapeHtml(formatDateRange(d.start, d.end))}${corner ? ` ${T("am", "at")} ${escapeHtml(corner.name)}` : ""}<br><span style="font-size:11px;opacity:0.8;">${T("Tippen zum Ansehen →", "Tap to see →")}</span>`, null, () => focusDetailSection(d.cornerId, ".cornerdate-section"));
+  });
+}
+
+function toDateInputValue(dt) { return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`; }
+function toTimeInputValue(dt) { return `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`; }
+
+function openCornerDatePlanner(cornerId) {
+  if (!STATE.nickname) { toast(T("Bitte zuerst einen Namen wählen.", "Please pick a name first.")); return; }
+  if (!window.FB?.firebaseReady) { toast(T("Cornerdates brauchen eine Verbindung.", "Cornerdates need a connection.")); return; }
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  if (!corner) return;
+  CD_DRAFT.cornerId = cornerId;
+  CD_DRAFT.saving = false;
+  CD_DRAFT.saved = null;
+  const start = new Date();
+  start.setMinutes(0, 0, 0);
+  start.setHours(start.getHours() + 1);
+  $("#cd-title").textContent = "📅 Cornerdate";
+  $("#cd-sub").innerHTML = `${T("am", "at")} <strong>${escapeHtml(corner.name)}</strong>${corner.area ? ` · ${escapeHtml(corner.area)}` : ""}`;
+  $("#cd-date").value = toDateInputValue(start);
+  $("#cd-date").min = toDateInputValue(new Date());
+  $("#cd-time").value = toTimeInputValue(start);
+  $("#cd-duration").value = "120";
+  $("#cd-note").value = "";
+  $("#cd-note").placeholder = T("z. B. Bring 'ne Decke mit", "e.g. bring a blanket");
+  $("#cd-date-label").textContent = T("Tag", "Day");
+  $("#cd-time-label").textContent = T("Uhrzeit", "Time");
+  $("#cd-dur-label").textContent = T("Dauer", "Duration");
+  $("#cd-note-label").textContent = T("Notiz (optional)", "Note (optional)");
+  $("#cd-notify-label").textContent = T("Alle in der App benachrichtigen", "Notify everyone in the app");
+  $("#cd-cancel").textContent = T("Abbrechen", "Cancel");
+  $("#cd-save").textContent = "📅 " + T("Planen", "Plan it");
+  $("#cd-hint").textContent = "";
+  $("#cd-form").hidden = false;
+  $("#cd-done").hidden = true;
+  $("#cornerdate-overlay").classList.add("open");
+}
+function closeCornerDatePlanner() { $("#cornerdate-overlay")?.classList.remove("open"); }
+
+async function saveCornerDate() {
+  const cornerId = CD_DRAFT.cornerId;
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  if (!corner || CD_DRAFT.saving) return;
+  const [Y, M, D] = String($("#cd-date").value || "").split("-").map(Number);
+  const [h, m] = String($("#cd-time").value || "").split(":").map(Number);
+  if (!Y || !M || !D || !Number.isFinite(h) || !Number.isFinite(m)) { $("#cd-hint").textContent = T("Bitte Tag und Uhrzeit wählen.", "Please pick a day and time."); return; }
+  const start = new Date(Y, M - 1, D, h, m).getTime();
+  const end = start + (parseInt($("#cd-duration").value, 10) || 120) * 60000;
+  if (start < Date.now() - 15 * 60000) { $("#cd-hint").textContent = T("Das liegt in der Vergangenheit 😉", "That's in the past 😉"); return; }
+  if (start > Date.now() + 60 * 86400000) { $("#cd-hint").textContent = T("Bitte höchstens 60 Tage im Voraus.", "At most 60 days ahead, please."); return; }
+  CD_DRAFT.saving = true;
+  $("#cd-save").disabled = true;
+  const me = currentUserKey();
+  const note = String($("#cd-note").value || "").trim().slice(0, 140);
+  const { db, ref, push, set } = window.FB;
+  const dateRef = push(ref(db, "cornerDates"));
+  const d = {
+    cornerId, cornerName: corner.name, start, end,
+    byId: me, byName: String(STATE.nickname).slice(0, 40), byTeam: STATE.team || "",
+    createdAt: Date.now(),
+    going: { [me]: { name: String(STATE.nickname).slice(0, 40), at: Date.now() } }
+  };
+  if (note) d.note = note;
+  try {
+    await set(dateRef, d);
+  } catch (err) {
+    console.warn("saveCornerDate failed:", err);
+    CD_DRAFT.saving = false;
+    $("#cd-save").disabled = false;
+    $("#cd-hint").textContent = /permission/i.test(String(err?.code || "") + String(err?.message || ""))
+      ? T("Der Server lässt das noch nicht zu (Datenbank-Regeln deployen).", "The server doesn't allow this yet (deploy the database rules).")
+      : T("Konnte nicht gespeichert werden — Verbindung prüfen.", "Couldn't save — check your connection.");
+    return;
+  }
+  const saved = { ...d, id: dateRef.key };
+  CD_DRAFT.saved = saved;
+  CD_DRAFT.saving = false;
+  $("#cd-save").disabled = false;
+  const notifyAll = $("#cd-notify").checked;
+  if (notifyAll) {
+    try {
+      set(push(ref(db, "notify")), {
+        type: "cornerdate",
+        title: "📅 Cornerdate!",
+        body: `${STATE.nickname} plant ein Cornerdate: ${formatDateRange(start, end)} am ${corner.name} — bist du dabei?`,
+        fromId: me, fromTeam: STATE.team || "",
+        query: `?corner=${encodeURIComponent(cornerId)}&date=1`,
+        createdAt: Date.now()
+      }).catch(() => {});
+    } catch (e) { /* push is a bonus */ }
+  }
+  if (bumpDailyCount("cg.cdPlanned") <= 3) addXp(CORNERDATE_PLAN_AURA, "Cornerdate geplant");   // max 3 per day
+  unlockAchievement("first-cornerdate", "Date-Planer", "📅", 15);
+  $("#cd-form").hidden = true;
+  const done = $("#cd-done");
+  done.innerHTML = `<div class="cd-done-title">✅ ${T("Geplant!", "Planned!")}</div>
+    <p class="gossip-sub">${escapeHtml(formatDateRange(start, end))} ${T("am", "at")} <strong>${escapeHtml(corner.name)}</strong>${notifyAll ? ` · ${T("alle wurden benachrichtigt", "everyone was notified")}` : ""}</p>
+    <div class="cd-actions">
+      <button class="action-btn primary" data-cd-ics>📅 ${T("In meinen Kalender (iPhone, Android, Outlook)", "Add to my calendar (iPhone, Android, Outlook)")}</button>
+      <a class="action-btn" href="${escapeHtml(googleCalendarUrl(saved))}" target="_blank" rel="noopener">🗓️ Google ${T("Kalender", "Calendar")}</a>
+      <button class="whatsapp-btn" data-cd-wa>📲 ${T("In WhatsApp teilen", "Share on WhatsApp")}</button>
+      <button class="action-btn" data-cd-close>${T("Fertig", "Done")}</button>
+    </div>`;
+  done.hidden = false;
+  done.querySelector("[data-cd-ics]").addEventListener("click", () => downloadCornerDateIcs(saved));
+  done.querySelector("[data-cd-wa]").addEventListener("click", () => openWhatsApp(cornerDateWhatsAppText(saved)));
+  done.querySelector("[data-cd-close]").addEventListener("click", closeCornerDatePlanner);
+}
+
+function bumpDailyCount(key) {
+  const today = getTodayKey();
+  let log = {};
+  try { log = JSON.parse(localStorage.getItem(key) || "{}"); } catch (e) { log = {}; }
+  const n = Number(log[today] || 0) + 1;
+  localStorage.setItem(key, JSON.stringify({ [today]: n }));
+  return n;
+}
+
+async function toggleCornerDateGoing(dateId) {
+  const d = STATE.cornerDates?.[dateId];
+  if (!d || !window.FB?.firebaseReady || !STATE.nickname) return;
+  const me = currentUserKey();
+  const going = !!(d.going && d.going[me]);
+  const { db, ref, set, remove } = window.FB;
+  try {
+    if (going) {
+      await remove(ref(db, `cornerDates/${dateId}/going/${me}`));
+      toast(T("Abgesagt 👋", "You're out 👋"));
+    } else {
+      await set(ref(db, `cornerDates/${dateId}/going/${me}`), { name: String(STATE.nickname).slice(0, 40), at: Date.now() });
+      const joined = gossipLocalLog("cg.cdJoined");
+      if (!joined[dateId]) { gossipLocalMark("cg.cdJoined", dateId); addXp(CORNERDATE_JOIN_AURA, "Cornerdate zugesagt"); }
+      toast(`✋ ${T("Du bist dabei!", "You're in!")} <span style="font-size:11px;opacity:0.8;">${T("Tipp: „📅 Kalender“ trägt's dir ein.", "Tip: “📅 Calendar” adds it for you.")}</span>`);
+    }
+  } catch (err) {
+    console.warn("toggleCornerDateGoing failed:", err);
+    toast(T("Ging nicht — Verbindung prüfen.", "Didn't work — check your connection."));
+  }
+}
+
+async function cancelCornerDate(dateId) {
+  const d = STATE.cornerDates?.[dateId];
+  if (!d || !isMyKey(d.byId)) return;
+  if (!(await appConfirm(T("Cornerdate absagen?", "Cancel this cornerdate?"), T("Es verschwindet für alle.", "It disappears for everyone."), T("Absagen", "Cancel it")))) return;
+  try {
+    await window.FB.remove(window.FB.ref(window.FB.db, "cornerDates/" + dateId));
+    toast(T("Cornerdate abgesagt.", "Cornerdate cancelled."));
+  } catch (err) { toast(T("Absagen hat nicht geklappt.", "Couldn't cancel.")); }
+}
+
+function cleanupOldCornerDates() {
+  if (!window.FB?.firebaseReady || Date.now() - _cornerDates.lastCleanup < 30 * 60 * 1000) return;
+  _cornerDates.lastCleanup = Date.now();
+  const { db, ref, remove } = window.FB;
+  Object.entries(STATE.cornerDates || {}).forEach(([id, d]) => {
+    if (d && Number(d.end) < Date.now() - CORNERDATE_KEEP_MS) remove(ref(db, "cornerDates/" + id)).catch(() => {});
+  });
+}
+
+function bindCornerDatePlanner() {
+  const overlay = $("#cornerdate-overlay");
+  if (!overlay || overlay._bound) return;
+  overlay._bound = true;
+  $("#cd-cancel").addEventListener("click", closeCornerDatePlanner);
+  $("#cd-save").addEventListener("click", saveCornerDate);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay && !CD_DRAFT.saving) closeCornerDatePlanner(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && overlay.classList.contains("open")) closeCornerDatePlanner(); });
+}
+document.addEventListener("DOMContentLoaded", bindCornerDatePlanner);
+
+/* ====================== CORNER-INFO ======================
+   ☀️ when the sun is out (forecast + sun position), 🏪 nearest kiosk / Späti /
+   petrol station with a walking route, ☔ what to do when it rains.
+   Data: Open-Meteo (weather, no key) and OpenStreetMap via Overpass (shops,
+   shelters). Both are free, allow browser requests and only ever see the
+   corner's public coordinates. Results are cached to keep requests rare.   */
+const WEATHER_TTL_MS = 30 * 60 * 1000;
+const PLACES_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+const OVERPASS_URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+const PLACE_KINDS = {
+  kiosk:   { emoji: "🏪", de: "Kiosk", en: "Kiosk", supply: true },
+  spaeti:  { emoji: "🏪", de: "Späti / Laden", en: "Corner shop", supply: true },
+  drinks:  { emoji: "🍺", de: "Getränkemarkt", en: "Drinks shop", supply: true },
+  super:   { emoji: "🛒", de: "Supermarkt", en: "Supermarket", supply: true },
+  fuel:    { emoji: "⛽", de: "Tankstelle", en: "Petrol station", supply: true },
+  shelter: { emoji: "🛖", de: "Unterstand", en: "Shelter", rain: true },
+  stop:    { emoji: "🚏", de: "Haltestelle mit Dach", en: "Covered stop", rain: true },
+  arcade:  { emoji: "🏛️", de: "Arkade / Durchgang", en: "Arcade / passage", rain: true },
+  roof:    { emoji: "⛱️", de: "Überdachung", en: "Canopy", rain: true }
+};
+const RAINY_CODES = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99];
+var _infoInflight = {};
+
+function infoCacheGet(key, ttl) {
+  try { const v = JSON.parse(localStorage.getItem(key) || "null"); if (v && Date.now() - v.at < ttl) return v.data; }
+  catch (e) { /* ignore */ }
+  return null;
+}
+function infoCacheSet(key, data) {
+  try { localStorage.setItem(key, JSON.stringify({ at: Date.now(), data })); }
+  catch (e) { /* storage full: just don't cache */ }
+}
+async function fetchJson(url, timeoutMs = 15000) {
+  const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+  try {
+    const res = await fetch(url, ctrl ? { signal: ctrl.signal } : undefined);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  } finally { if (timer) clearTimeout(timer); }
+}
+function cachedFetch(key, ttl, load) {
+  const hit = infoCacheGet(key, ttl);
+  if (hit) return Promise.resolve(hit);
+  if (!_infoInflight[key]) {
+    _infoInflight[key] = load()
+      .then((data) => { infoCacheSet(key, data); return data; })
+      .finally(() => { delete _infoInflight[key]; });
+  }
+  return _infoInflight[key];
+}
+
+function walkingRouteUrl(lat, lng) {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent)
+    ? `https://maps.apple.com/?daddr=${lat},${lng}&dirflg=w`
+    : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=walking`;
+}
+function formatDistance(m) { return m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`; }
+function clockOf(ms) { return new Date(ms).toLocaleTimeString(STATE.lang === "en" ? "en-GB" : "de-DE", { hour: "2-digit", minute: "2-digit" }); }
+
+// Solar elevation in degrees (compact NOAA-style approximation, ±0.5°).
+function sunElevationDeg(ms, lat, lng) {
+  const rad = Math.PI / 180;
+  const d = ms / 86400000 - 10957.5;                         // days since J2000.0
+  const g = rad * ((357.529 + 0.98560028 * d) % 360);
+  const q = (280.459 + 0.98564736 * d) % 360;
+  const L = rad * (q + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g));
+  const e = rad * (23.439 - 0.00000036 * d);
+  const ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L));
+  const dec = Math.asin(Math.sin(e) * Math.sin(L));
+  const gmst = (18.697374558 + 24.06570982441908 * d) % 24;
+  const ha = rad * (gmst * 15 + lng) - ra;
+  const phi = rad * lat;
+  return Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(ha)) / rad;
+}
+// Sunrise/sunset, golden hour and when the sun is high enough (>15°) to reach
+// streets between houses — scanned in 2-minute steps over the local day.
+function sunDay(ms, lat, lng) {
+  const start = new Date(ms);
+  start.setHours(0, 0, 0, 0);
+  const out = { rise: null, set: null, highFrom: null, highTo: null, golden: null, maxEl: -90 };
+  let prev = sunElevationDeg(start.getTime(), lat, lng);
+  for (let min = 2; min <= 1440; min += 2) {
+    const t = start.getTime() + min * 60000;
+    const el = sunElevationDeg(t, lat, lng);
+    if (prev < -0.833 && el >= -0.833) out.rise = t;
+    if (prev >= -0.833 && el < -0.833) out.set = t;
+    if (prev < 15 && el >= 15) out.highFrom = t;
+    if (prev >= 15 && el < 15) out.highTo = t;
+    if (prev >= 6 && el < 6) out.golden = t;
+    out.maxEl = Math.max(out.maxEl, el);
+    prev = el;
+  }
+  return out;
+}
+
+function getWeather(lat, lng) {
+  const key = `cg.wx.${lat.toFixed(2)}_${lng.toFixed(2)}`;
+  return cachedFetch(key, WEATHER_TTL_MS, () => fetchJson(
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(3)}&longitude=${lng.toFixed(3)}` +
+    "&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,sunshine_duration,is_day" +
+    "&timezone=Europe%2FBerlin&forecast_days=2"));
+}
+
+function analyzeWeather(wx, now = Date.now()) {
+  const h = wx && wx.hourly;
+  if (!h || !Array.isArray(h.time)) return null;
+  const off = Number(wx.utc_offset_seconds || 0) * 1000;
+  const toMs = (s) => {
+    const [date, time] = String(s).split("T");
+    const [Y, M, D] = date.split("-").map(Number);
+    const [hh, mm] = (time || "00:00").split(":").map(Number);
+    return Date.UTC(Y, M - 1, D, hh, mm || 0) - off;
+  };
+  const hours = h.time.map((s, i) => ({
+    t: toMs(s), temp: h.temperature_2m?.[i], pop: h.precipitation_probability?.[i], mm: h.precipitation?.[i],
+    code: h.weather_code?.[i], sun: h.sunshine_duration?.[i], day: h.is_day?.[i]
+  }));
+  const localDay = (ms) => new Date(ms + off).toISOString().slice(0, 10);
+  const today = localDay(now);
+  const cur = hours.find((x) => x.t <= now && now < x.t + 3600000) || null;
+  const next = hours.filter((x) => x.t + 3600000 > now).slice(0, 10);
+  const sunny = hours.filter((x) => localDay(x.t) === today && Number(x.sun) >= 1800).map((x) => x.t);
+  const ranges = [];
+  sunny.forEach((t) => {
+    const last = ranges[ranges.length - 1];
+    if (last && last[1] === t) last[1] = t + 3600000; else ranges.push([t, t + 3600000]);
+  });
+  const isRain = (x) => Number(x.pop) >= 50 || Number(x.mm) >= 0.3;
+  const rainingNow = !!cur && (Number(cur.mm) >= 0.2 || RAINY_CODES.includes(Number(cur.code)));
+  const rainSoon = next.slice(0, 12).find(isRain) || null;
+  const dryAgain = rainingNow || rainSoon ? next.slice(next.indexOf(rainSoon || cur) + 1, 12).find((x) => !isRain(x)) || null : null;
+  return { cur, next, ranges, rainingNow, rainSoon, dryAgain };
+}
+
+function weatherEmoji(code, isDay = 1) {
+  const c = Number(code);
+  if (c === 0) return isDay ? "☀️" : "🌙";
+  if (c === 1) return isDay ? "🌤️" : "🌙";
+  if (c === 2) return "⛅";
+  if (c === 3) return "☁️";
+  if (c === 45 || c === 48) return "🌫️";
+  if ([51, 53, 55, 80, 81, 82].includes(c)) return "🌦️";
+  if ([56, 57, 61, 63, 65, 66, 67].includes(c)) return "🌧️";
+  if ([71, 73, 75, 77, 85, 86].includes(c)) return "🌨️";
+  if ([95, 96, 99].includes(c)) return "⛈️";
+  return "🌡️";
+}
+function hourLabel(ms) { return `${new Date(ms).getHours()}`; }
+function sunRangesText(ranges) {
+  return ranges.map(([a, b]) => `${hourLabel(a)}–${hourLabel(b)}`).join(" & ") + " " + T("Uhr", "h");
+}
+
+// One-line verdict on the sun for today ("von wann bis wann ist Sonne").
+function sunVerdictHtml(an, now = Date.now()) {
+  if (!an) return "";
+  const { ranges } = an;
+  if (!ranges.length) return `☁️ ${T("Heute kaum Sonne laut Vorhersage.", "Hardly any sun today according to the forecast.")}`;
+  const nowRange = ranges.find(([a, b]) => a <= now && now < b);
+  if (nowRange) return `☀️ <strong>${T("Gerade Sonne", "Sunny now")}</strong> — ${T("noch bis ca.", "until about")} ${hourLabel(nowRange[1])} ${T("Uhr", "h")}${ranges.length > 1 ? ` · ${T("heute", "today")}: ${sunRangesText(ranges)}` : ""}`;
+  if (ranges.some(([a]) => a > now)) return `☀️ <strong>${T("Sonne heute", "Sun today")}: ${sunRangesText(ranges.filter(([, b]) => b > now))}</strong>`;
+  return `🌥️ ${T("Die Sonne ist für heute durch", "The sun is done for today")} (${T("war", "was")} ${sunRangesText(ranges)})`;
+}
+
+function rainVerdictHtml(an) {
+  if (!an) return "";
+  if (an.rainingNow) return `<span class="ci-rain">☔ ${T("Gerade Regen", "Raining now")}</span>${an.dryAgain ? ` — ${T("trocken ab ca.", "dry from about")} ${hourLabel(an.dryAgain.t)} ${T("Uhr", "h")}` : ""}`;
+  if (an.rainSoon) return `<span class="ci-rain">☔ ${T("Regen ab ca.", "Rain from about")} ${hourLabel(an.rainSoon.t)} ${T("Uhr", "h")} (${Math.round(Number(an.rainSoon.pop) || 0)} %)</span>`;
+  return `🌂 ${T("Die nächsten Stunden trocken.", "Dry for the next hours.")}`;
+}
+
+function weatherBlockHtml(an) {
+  if (!an || !an.next.length) return `<div class="ci-small">${T("Wetter gerade nicht verfügbar.", "Weather unavailable right now.")}</div>`;
+  const now = an.cur || an.next[0];
+  const strip = an.next.slice(0, 9).map((x, i) => `<div class="ci-hour ${i === 0 ? "now" : ""}"><div>${i === 0 ? T("jetzt", "now") : hourLabel(x.t) + "h"}</div><span class="ci-hi">${weatherEmoji(x.code, x.day)}</span><div>${Math.round(Number(x.temp))}°</div>${Number(x.pop) >= 20 ? `<div class="ci-hp">${Math.round(Number(x.pop))}%</div>` : ""}</div>`).join("");
+  return `<div class="ci-line">${sunVerdictHtml(an)}</div>
+    <div class="ci-line">${weatherEmoji(now.code, now.day)} ${Math.round(Number(now.temp))}° · ${rainVerdictHtml(an)}</div>
+    <div class="ci-hours">${strip}</div>`;
+}
+
+function sunBlockHtml(corner) {
+  const s = sunDay(Date.now(), corner.lat, corner.lng);
+  const parts = [];
+  if (s.set) parts.push(`🌇 ${T("Sonnenuntergang", "Sunset")} <strong>${clockOf(s.set)}</strong>`);
+  if (s.golden) parts.push(`${T("Golden Hour ab", "golden hour from")} ${clockOf(s.golden)}`);
+  const high = s.highFrom && s.highTo
+    ? `${T("Zwischen Häusern kommt die Sonne nur hoch genug (über 15°) von ca.", "Between buildings the sun is only high enough (above 15°) from about")} ${clockOf(s.highFrom)} ${T("bis", "to")} ${clockOf(s.highTo)}.`
+    : T("Die Sonne steht heute zu tief für Straßen zwischen Häusern — offene Spots (Isar, Parks) bevorzugen.", "The sun stays too low today for streets between buildings — prefer open spots (Isar, parks).");
+  return `<div class="ci-line">${parts.join(" · ")}</div><div class="ci-small">${high}</div>`;
+}
+
+// Opening hours in the common OSM syntax ("Mo-Sa 07:00-22:00; Su off", "24/7",
+// ranges past midnight). Anything fancier returns null = unknown.
+function osmOpenNow(spec, now = new Date()) {
+  const s = String(spec || "").trim();
+  if (!s) return null;
+  if (s === "24/7") return true;
+  const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  const order = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+  const rules = [];
+  for (const raw of s.split(";").map((r) => r.trim()).filter(Boolean)) {
+    const m = raw.match(/^((?:[A-Z][a-z](?:-[A-Z][a-z])?|PH|SH)(?:,(?:[A-Z][a-z](?:-[A-Z][a-z])?|PH|SH))*)?\s*(off|closed|\d{1,2}:\d{2}-\d{1,2}:\d{2}(?:,\s*\d{1,2}:\d{2}-\d{1,2}:\d{2})*)$/);
+    if (!m) return null;
+    const days = new Set();
+    let onlyHoliday = !!m[1];
+    if (m[1]) {
+      for (const part of m[1].split(",")) {
+        if (part === "PH" || part === "SH") continue;
+        onlyHoliday = false;
+        const [a, b] = part.split("-");
+        const ia = order.indexOf(a);
+        const ib = b ? order.indexOf(b) : ia;
+        if (ia < 0 || ib < 0) return null;
+        for (let i = ia; ; i = (i + 1) % 7) { days.add(DAYS.indexOf(order[i])); if (i === ib) break; }
+      }
+    } else {
+      for (let i = 0; i < 7; i++) days.add(i);
+    }
+    if (onlyHoliday) continue;   // "PH off" etc.: holidays are unknown here
+    const toMin = (x) => { const [hh, mm] = x.split(":").map(Number); return hh * 60 + mm; };
+    const ranges = /^(off|closed)$/.test(m[2]) ? [] : m[2].split(",").map((r) => r.trim().split("-").map(toMin));
+    rules.push({ days, ranges });
+  }
+  const rangesFor = (day) => { let r = null; rules.forEach((rule) => { if (rule.days.has(day)) r = rule.ranges; }); return r; };
+  const today = now.getDay();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  for (const [a, b] of rangesFor(today) || []) {
+    if (b > a ? (mins >= a && mins < b) : mins >= a) return true;
+  }
+  for (const [a, b] of rangesFor((today + 6) % 7) || []) {
+    if (b <= a && mins < b) return true;   // yesterday's range past midnight
+  }
+  return false;
+}
+
+function getNearbyPlaces(corner) {
+  const { lat, lng } = corner;
+  const q = `[out:json][timeout:25];(` +
+    `nwr["shop"~"^(kiosk|convenience|beverages|alcohol|supermarket)$"](around:800,${lat},${lng});` +
+    `nwr["amenity"="fuel"](around:800,${lat},${lng});` +
+    `nwr["amenity"="shelter"](around:600,${lat},${lng});` +
+    `nwr["covered"~"^(yes|arcade)$"]["highway"](around:400,${lat},${lng});` +
+    `nwr["building"="roof"](around:400,${lat},${lng});` +
+    `);out center tags 150;`;
+  const tryMirror = (i) => fetchJson(`${OVERPASS_URLS[i]}?data=${encodeURIComponent(q)}`, 25000)
+    .catch((err) => { if (i + 1 < OVERPASS_URLS.length) return tryMirror(i + 1); throw err; });
+  return cachedFetch(`cg.osm.${corner.id}`, PLACES_TTL_MS, () => tryMirror(0).then((json) => condensePlaces(json, corner)));
+}
+function condensePlaces(json, corner) {
+  const out = [];
+  ((json && json.elements) || []).forEach((el) => {
+    const lat = typeof el.lat === "number" ? el.lat : el.center && el.center.lat;
+    const lng = typeof el.lon === "number" ? el.lon : el.center && el.center.lon;
+    if (typeof lat !== "number" || typeof lng !== "number") return;
+    const t = el.tags || {};
+    let kind = null;
+    if (t.shop === "kiosk") kind = "kiosk";
+    else if (t.shop === "convenience") kind = "spaeti";
+    else if (t.shop === "beverages" || t.shop === "alcohol") kind = "drinks";
+    else if (t.shop === "supermarket") kind = "super";
+    else if (t.amenity === "fuel") kind = "fuel";
+    else if (t.amenity === "shelter") kind = t.shelter_type === "public_transport" ? "stop" : "shelter";
+    else if (t.covered && t.highway) kind = "arcade";
+    else if (t.building === "roof") kind = "roof";
+    if (!kind) return;
+    out.push({ kind, name: String(t.name || t.brand || t.operator || "").slice(0, 60), hours: String(t.opening_hours || "").slice(0, 120), lat, lng, d: Math.round(haversine(corner.lat, corner.lng, lat, lng)) });
+  });
+  return out.sort((a, b) => a.d - b.d).slice(0, 60);
+}
+
+function placeRowHtml(p) {
+  const k = PLACE_KINDS[p.kind];
+  const open = PLACE_KINDS[p.kind].supply ? osmOpenNow(p.hours) : null;
+  const status = open === true ? `<span class="ci-open">● ${T("offen", "open")}</span> · ` : open === false ? `<span class="ci-closed">● ${T("zu", "closed")}</span> · ` : "";
+  return `<div class="ci-place">
+    <div class="ci-p-main">
+      <div class="ci-p-name">${k.emoji} ${escapeHtml(p.name || T(k.de, k.en))}</div>
+      <div class="ci-p-meta">${status}${formatDistance(p.d)}${p.name ? ` · ${escapeHtml(T(k.de, k.en))}` : ""}${p.hours && open === null ? ` · ${escapeHtml(p.hours)}` : ""}</div>
+    </div>
+    <a class="action-btn" href="${escapeHtml(walkingRouteUrl(p.lat, p.lng))}" target="_blank" rel="noopener">🧭 Route</a>
+  </div>`;
+}
+
+function supplyBlockHtml(places, corner) {
+  const supply = places.filter((p) => PLACE_KINDS[p.kind].supply && p.d <= 800)
+    .map((p) => ({ ...p, open: osmOpenNow(p.hours) }))
+    .sort((a, b) => (a.open === false) - (b.open === false) || a.d - b.d)
+    .slice(0, 4);
+  if (!supply.length) {
+    return `<div class="ci-small">${T("Laut OpenStreetMap kein Kiosk/Späti im Umkreis von 800 m.", "No kiosk/corner shop within 800 m according to OpenStreetMap.")} <a href="https://www.google.com/maps/search/kiosk/@${corner.lat},${corner.lng},16z" target="_blank" rel="noopener">${T("In Google Maps suchen", "Search Google Maps")}</a></div>`;
+  }
+  return supply.map(placeRowHtml).join("");
+}
+
+function rainProofScore(cornerId) {
+  return getEmojiVoteData(cornerId, "ueberdacht").count - getEmojiVoteData(cornerId, "nass").count;
+}
+function rainVoteHtml(cornerId) {
+  const yes = getEmojiVoteData(cornerId, "ueberdacht");
+  const no = getEmojiVoteData(cornerId, "nass");
+  const verdict = yes.count > no.count
+    ? `☂️ <strong>${T("Regenfest", "Rain-proof")}</strong> — ${T("laut Community überdacht", "covered according to the crew")}`
+    : no.count > yes.count
+      ? `💧 <strong>${T("Wird nass", "Gets wet")}</strong> — ${T("bei Regen besser ausweichen", "better go elsewhere when it rains")}`
+      : T("Kann man hier bei Regen cornern? Noch keine Einschätzung — sag's den anderen:", "Can you corner here when it rains? No verdict yet — tell the others:");
+  return `<div class="ci-line">${verdict}</div>
+    <div class="ci-votes">
+      <button class="action-btn ${yes.myVote ? "voted" : ""}" data-rain-vote="ueberdacht">☂️ ${T("Überdacht", "Covered")} ${yes.count || ""}</button>
+      <button class="action-btn ${no.myVote ? "voted" : ""}" data-rain-vote="nass">💧 ${T("Wird nass", "Gets wet")} ${no.count || ""}</button>
+    </div>`;
+}
+function bindRainVotes(box, cornerId) {
+  box.querySelectorAll("[data-rain-vote]").forEach((btn) => btn.addEventListener("click", () => {
+    const key = btn.dataset.rainVote;
+    const other = key === "ueberdacht" ? "nass" : "ueberdacht";
+    if (getEmojiVoteData(cornerId, other).myVote) voteEmoji(cornerId, other);   // one opinion per person
+    voteEmoji(cornerId, key);
+    setTimeout(refreshRainVotes, 120);
+  }));
+}
+function refreshRainVotes() {
+  $$(".ci-rain-vote").forEach((box) => { box.innerHTML = rainVoteHtml(box.dataset.cornerId); bindRainVotes(box, box.dataset.cornerId); });
+}
+function rainAlternativesHtml(corner) {
+  const alts = getAllCorners()
+    .filter((c) => c.id !== corner.id && typeof c.lat === "number" && rainProofScore(c.id) > 0)
+    .map((c) => ({ c, d: haversine(corner.lat, corner.lng, c.lat, c.lng) }))
+    .sort((a, b) => a.d - b.d)
+    .slice(0, 3);
+  if (!alts.length) return `<div class="ci-small">${T("Noch keine Corners als ☂️ überdacht markiert — sobald ihr welche markiert, schlägt die App sie hier bei Regen vor.", "No corners marked ☂️ covered yet — once you mark some, the app suggests them here when it rains.")}</div>`;
+  return `<div class="ci-small" style="margin-top:6px;">${T("Regenfeste Corners zum Ausweichen", "Rain-proof corners nearby")}:</div>` + alts.map(({ c, d }) => `<div class="ci-place">
+      <div class="ci-p-main"><div class="ci-p-name">☂️ ${escapeHtml(c.name)}</div><div class="ci-p-meta">${formatDistance(d)}</div></div>
+      <button class="action-btn" data-open-corner="${escapeHtml(c.id)}">${T("Ansehen", "Open")}</button>
+      <a class="action-btn" href="${escapeHtml(walkingRouteUrl(c.lat, c.lng))}" target="_blank" rel="noopener">🧭</a>
+    </div>`).join("");
+}
+
+function renderCornerInfoSection(cornerId, container) {
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  if (!container || !corner || typeof corner.lat !== "number") return;
+  container.innerHTML = `<h3>🌤️ ${T("Corner-Check", "Corner check")}</h3>
+    <div class="ci-block"><div class="ci-h">☀️ ${T("Sonne & Wetter heute", "Sun & weather today")}</div>
+      <div class="ci-wx"><div class="ci-small">${T("Wetter wird geladen …", "Loading weather …")}</div></div>
+      ${sunBlockHtml(corner)}
+    </div>
+    <div class="ci-block"><div class="ci-h">🏪 ${T("Nachschub in der Nähe", "Supplies nearby")}</div>
+      <div class="ci-supply"><div class="ci-small">${T("Suche Kiosk, Späti & Tankstelle …", "Looking for kiosks, shops & petrol stations …")}</div></div>
+    </div>
+    <div class="ci-block ci-rainblock"><div class="ci-h">☔ ${T("Bei Regen", "When it rains")}</div>
+      <div class="ci-rain-vote" data-corner-id="${escapeHtml(corner.id)}">${rainVoteHtml(corner.id)}</div>
+      <div class="ci-shelter"></div>
+      <div class="ci-alt">${rainAlternativesHtml(corner)}</div>
+    </div>
+    <div class="ci-attr">${T("Wetter", "Weather")}: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> · ${T("Orte", "Places")}: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>`;
+  bindRainVotes(container.querySelector(".ci-rain-vote"), corner.id);
+  container.querySelectorAll("[data-open-corner]").forEach((b) => b.addEventListener("click", () => focusDetailSection(b.dataset.openCorner, ".corner-info-section")));
+  const stillHere = () => container.isConnected && STATE.detailCornerId === cornerId;
+  getWeather(corner.lat, corner.lng).then((wx) => {
+    if (!stillHere()) return;
+    const an = analyzeWeather(wx);
+    container.querySelector(".ci-wx").innerHTML = weatherBlockHtml(an);
+    container.querySelector(".ci-rainblock").classList.toggle("alert", !!(an && (an.rainingNow || an.rainSoon)));
+  }).catch(() => {
+    if (stillHere()) container.querySelector(".ci-wx").innerHTML = `<div class="ci-small">${T("Wetter gerade nicht erreichbar.", "Weather unreachable right now.")}</div>`;
+  });
+  getNearbyPlaces(corner).then((places) => {
+    if (!stillHere()) return;
+    container.querySelector(".ci-supply").innerHTML = supplyBlockHtml(places, corner);
+    const shelters = places.filter((p) => PLACE_KINDS[p.kind].rain && p.d <= 600).slice(0, 3);
+    container.querySelector(".ci-shelter").innerHTML = shelters.length
+      ? `<div class="ci-small" style="margin-top:6px;">${T("Überdacht in der Nähe", "Covered spots nearby")}:</div>${shelters.map(placeRowHtml).join("")}`
+      : "";
+  }).catch(() => {
+    if (!stillHere()) return;
+    container.querySelector(".ci-supply").innerHTML = `<div class="ci-small">${T("Karte gerade nicht erreichbar.", "Map data unreachable right now.")} <a href="https://www.google.com/maps/search/kiosk/@${corner.lat},${corner.lng},16z" target="_blank" rel="noopener">${T("Kiosk in Google Maps suchen", "Search kiosks on Google Maps")}</a></div>`;
+  });
+}
+
+// Compact weather line on the list: sun window today, sunset, rain warning.
+function renderWeatherBanner() {
+  const box = $("#weather-banner");
+  if (!box) return;
+  getWeather(MUNICH_CENTER[0], MUNICH_CENTER[1]).then((wx) => {
+    const an = analyzeWeather(wx);
+    if (!an) { box.innerHTML = ""; return; }
+    const sun = sunDay(Date.now(), MUNICH_CENTER[0], MUNICH_CENTER[1]);
+    const rainy = an.rainingNow || an.rainSoon;
+    const proof = rainy ? getAllCorners().filter((c) => rainProofScore(c.id) > 0).slice(0, 3) : [];
+    box.innerHTML = `<div class="weather-banner">${sunVerdictHtml(an)}${sun.set && sun.set > Date.now() ? ` · 🌇 ${clockOf(sun.set)}` : ""}<br>${rainVerdictHtml(an)}${rainy
+      ? (proof.length
+        ? ` · ${T("Regenfest", "Rain-proof")}: ${proof.map((c) => `<button data-open-corner="${escapeHtml(c.id)}">☂️ ${escapeHtml(c.name)}</button>`).join(", ")}`
+        : ` · ${T("Markiert überdachte Corners mit ☂️ (Corner-Info), dann stehen sie hier.", "Mark covered corners with ☂️ (corner info) and they show up here.")}`)
+      : ""}</div>`;
+    box.querySelectorAll("[data-open-corner]").forEach((b) => b.addEventListener("click", () => focusDetailSection(b.dataset.openCorner, ".corner-info-section")));
+  }).catch(() => { box.innerHTML = ""; });
+}
+document.addEventListener("DOMContentLoaded", () => {
+  renderWeatherBanner();
+  setInterval(renderWeatherBanner, WEATHER_TTL_MS);
+});
+
 function updateCheckinButtons() {
   const hasCooldown = STATE.lastCheckinCorner && (Date.now() - STATE.lastCheckinTime) < COOLDOWN_MS;
   const remaining = hasCooldown ? COOLDOWN_MS - (Date.now() - STATE.lastCheckinTime) : 0;
@@ -9201,6 +10141,8 @@ function openDetail(cornerId) {
     ${peopleMessageTargets.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">${peopleMessageTargets.map((friend) => `<button class="action-btn" data-dm-user="${friend.id}">💬 ${escapeHtml(friend.nickname || friend.name || friend.id)}</button>`).join("")}</div>` : ""}
     <div class="gossip-section" data-corner-id="${c.id}"></div>
     <div class="detail-quick-actions">
+      <button class="detail-quick-btn" data-scroll-target=".corner-info-section">🌤️ ${T("Sonne · Kiosk · Regen", "Sun · Kiosk · Rain")}</button>
+      ${_backendFeatures.ok && _cornerDates.primed ? `<button class="detail-quick-btn" data-scroll-target=".cornerdate-section">📅 Cornerdate</button>` : ""}
       <button class="detail-quick-btn" data-scroll-target=".corner-chat-section">💬 ${T("Chat", "Chat")}</button>
       <button class="detail-quick-btn" data-scroll-target=".comments-section">📝 ${T("Kommentare", "Comments")}</button>
       <button class="detail-quick-btn" data-scroll-target=".photo-gallery">📸 ${T("Fotos", "Photos")}</button>
@@ -9211,6 +10153,8 @@ function openDetail(cornerId) {
     ${effectiveDesc ? `<p class="card-desc">${escapeHtml(effectiveDesc)}</p>` : ""}
     <div class="detail-feedback" data-corner-id="${c.id}">${renderFeedbackSummary(c.id)}</div>
     <ul class="card-tags" style="margin-bottom:14px;">${(c.tags || []).map((t) => `<li>#${escapeHtml(t)}</li>`).join("")}</ul>
+    <div class="corner-info-section" data-corner-id="${c.id}"></div>
+    <div class="cornerdate-section" data-corner-id="${c.id}"></div>
     ${teamPickerHtml}
     <div class="corner-chat-section" data-corner-id="${c.id}"></div>
     <div class="corner-voting" data-corner-id="${c.id}"></div>
@@ -9226,6 +10170,7 @@ function openDetail(cornerId) {
       <button class="action-btn primary" data-action="map-detail" data-id="${c.id}">📍 ${T("Auf Karte", "On map")}</button>
       <button class="action-btn" data-action="route-detail" data-id="${c.id}">🧭 ${T("Route", "Route")}</button>
       <button class="action-btn" data-action="share-corner" data-id="${c.id}">🔗 ${T("Teilen", "Share")}</button>
+      <button class="action-btn wa" data-action="whatsapp-corner" data-id="${c.id}">📲 WhatsApp</button>
       <button class="action-btn" data-action="qr-corner" data-id="${c.id}">🧾 QR</button>
       ${canEditCorner(c) ? `<button class="action-btn" data-action="edit-corner" data-id="${c.id}">✏️ ${T("Bearbeiten", "Edit")}</button>` : ""}
     </div>`;
@@ -9234,6 +10179,7 @@ function openDetail(cornerId) {
   detailContent.querySelector('[data-action="map-detail"]')?.addEventListener("click", () => { closeDetail(); $(`.tab[data-view="map"]`).click(); setTimeout(() => STATE.mainMap?.flyTo([c.lat, c.lng], 17, { duration: 0.7 }), 250); });
   detailContent.querySelector('[data-action="route-detail"]')?.addEventListener("click", () => { window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank"); });
   detailContent.querySelector('[data-action="share-corner"]')?.addEventListener("click", () => { shareCornerLink(c.id); });
+  detailContent.querySelector('[data-action="whatsapp-corner"]')?.addEventListener("click", () => openWhatsApp(cornerWhatsAppText(c.id)));
   detailContent.querySelector('[data-action="qr-corner"]')?.addEventListener("click", () => openQrDialog(c));
   detailContent.querySelector('[data-action="edit-corner"]')?.addEventListener("click", () => openCornerEditor(c.id));
   detailContent.querySelectorAll("[data-scroll-target]").forEach((btn) => btn.addEventListener("click", () => detailContent.querySelector(btn.dataset.scrollTarget)?.scrollIntoView({ behavior: "smooth", block: "start" })));
@@ -9249,6 +10195,8 @@ function openDetail(cornerId) {
   renderBarometer(cornerId, detailContent.querySelector(".barometer-section"));
   STATE.detailCornerId = cornerId;
   renderGossipSection(cornerId, detailContent.querySelector(".gossip-section"));
+  renderCornerInfoSection(cornerId, detailContent.querySelector(".corner-info-section"));
+  renderCornerDateSection(cornerId, detailContent.querySelector(".cornerdate-section"));
   refreshSupplySection(cornerId);
   renderPhotoGallery(cornerId, detailContent.querySelector(".photo-gallery"));
   renderVisitTrail(cornerId, detailContent.querySelector(".visit-trail"));
@@ -9504,6 +10452,7 @@ function getAchievementCardsHtml() {
     { id: "gossip-bomb", name: "Bombe geplatzt", emoji: "💣", desc: "Gossip mit Ø „Bombe!“ (ab 2 Bewertungen)" },
     { id: "gossip-jury", name: "Gossip-Jury", emoji: "⚖️", desc: "10 Gossip-Storys bewertet" },
     { id: "gossip-legend", name: "Stammtisch-Legende", emoji: "👑", desc: "10 Gossip-Storys erzählt" },
+    { id: "first-cornerdate", name: "Date-Planer", emoji: "📅", desc: "Erstes Cornerdate geplant" },
     { id: "level-100", name: "Vollendet", emoji: "🏆", desc: `Level ${MILESTONE_LEVEL} erreicht` }
   ];
   return items.map((a) => `<div class="achievement-card ${STATE.achievements.includes(a.id) ? 'unlocked' : 'locked'}"><div class="achievement-emoji">${a.emoji}</div><div class="achievement-name">${a.name}</div><div class="achievement-pts">${a.desc}</div></div>`).join("");
@@ -9582,7 +10531,12 @@ function buildNotifSettingsHtml() {
     ${wakeLockSupported() ? `<button class="notif-opt ${keepAwakeWhileCheckedIn() ? "active" : ""}" id="keep-awake-btn">📱 ${keepAwakeWhileCheckedIn()
       ? T("Display bleibt an, solange ich eingecheckt bin", "Screen stays on while I'm checked in")
       : T("Display wach halten, solange ich eingecheckt bin", "Keep screen on while checked in")}</button>
-    <p class="notif-hint">${T("Kostet Akku — praktisch, wenn das Handy beim Cornern auf dem Tisch liegt. Während Gossip-Runden bleibt das Display automatisch an.", "Costs battery — handy when your phone lies on the table. During gossip rounds the screen stays on automatically.")}</p>` : ""}`;
+    <p class="notif-hint">${T("Kostet Akku — praktisch, wenn das Handy beim Cornern auf dem Tisch liegt. Während Gossip-Runden bleibt das Display automatisch an.", "Costs battery — handy when your phone lies on the table. During gossip rounds the screen stays on automatically.")}</p>` : ""}
+    <div class="notif-settings-label">WhatsApp</div>
+    <button class="notif-opt ${autoWhatsAppOnCheckin() ? "active" : ""}" id="auto-wa-btn">📲 ${autoWhatsAppOnCheckin()
+      ? T("WhatsApp öffnet nach jedem Check-in", "WhatsApp opens after every check-in")
+      : T("Nach jedem Check-in WhatsApp öffnen", "Open WhatsApp after every check-in")}</button>
+    <p class="notif-hint">${T("Die Nachricht ist fertig geschrieben (wo du bist, wer schon da ist, Link) — du wählst nur noch Chat oder Gruppe und tippst auf Senden. Ganz ohne Tippen geht's nicht: WhatsApp lässt Apps nicht von selbst in Chats posten.", "The message is ready (where you are, who's there, link) — you just pick the chat or group and tap send. Fully automatic isn't possible: WhatsApp doesn't let apps post into chats on their own.")}</p>`;
 }
 
 /* ---- Visit-history map: heat-style dots sized by how often you were there ---- */
@@ -9884,6 +10838,12 @@ function renderProfile() {
   });
   $("#enable-push-btn")?.addEventListener("click", enableFirebasePush);
   $("#profile-points-help")?.addEventListener("click", openRewardGuide);
+  $("#auto-wa-btn")?.addEventListener("click", () => {
+    const on = !autoWhatsAppOnCheckin();
+    localStorage.setItem("cg.autoWhatsApp", on ? "1" : "0");
+    toast(on ? T("📲 Ab jetzt öffnet WhatsApp nach dem Check-in", "📲 WhatsApp now opens after you check in") : T("📲 WhatsApp bleibt nach dem Check-in zu", "📲 WhatsApp stays closed after check-in"));
+    renderProfile();
+  });
   $("#matrix-stream-card")?.addEventListener("click", () => $("#reward-matrix-section")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   $("#keep-awake-btn")?.addEventListener("click", () => {
     const on = !keepAwakeWhileCheckedIn();
