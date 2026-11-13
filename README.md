@@ -71,6 +71,26 @@ Ohne Kommandozeile geht der wichtigste Teil auch in der [Firebase Console](https
 **Storage → Rules** → Inhalt von `storage.rules` einfügen → *Publish*. Ohne die Function läuft alles, nur die
 Gossip-Pushes an gesperrte Handys fehlen.
 
+## 🤖 Automatisches Firebase-Deployment
+
+Der Workflow `.github/workflows/firebase-deploy.yml` deployt Datenbank-Regeln, Storage-Regeln und Cloud Functions,
+sobald sie sich auf `main` ändern — oder per Hand unter **Actions → „Deploy Firebase (Regeln & Functions)" → Run workflow**.
+Dafür braucht GitHub **einmalig** einen Zugang zu Firebase (ohne ihn überspringt sich der Workflow nur mit einem Hinweis):
+
+**Variante A — nur im Browser (Service-Account-Schlüssel):**
+1. [Firebase Console](https://console.firebase.google.com) → Projekt `cornerguide` → ⚙️ **Projekteinstellungen** → **Dienstkonten** →
+   **„Neuen privaten Schlüssel generieren"** → eine JSON-Datei wird heruntergeladen.
+2. GitHub → dieses Repository → **Settings → Secrets and variables → Actions → New repository secret**:
+   Name `FIREBASE_SERVICE_ACCOUNT`, Wert = kompletter Inhalt der JSON-Datei.
+3. Die JSON-Datei danach löschen — sie gibt vollen Admin-Zugriff auf das Projekt.
+
+Für die Cloud Functions braucht dieses Konto meist zusätzliche Rollen (Google Cloud Console → IAM → beim Konto
+`firebase-adminsdk-…@cornerguide.iam.gserviceaccount.com`): **Cloud Functions Admin**, **Dienstkontonutzer** (Service Account User),
+**Eventarc Admin** und **Artifact Registry Administrator**. Fehlen sie, schlägt nur der Functions-Schritt fehl — die Regeln sind trotzdem live.
+
+**Variante B — mit deinem eigenen Login (alle Rechte, inkl. Functions):** auf deinem Rechner `npx firebase-tools login:ci`
+ausführen und den angezeigten Token als Secret `FIREBASE_TOKEN` speichern.
+
 ## 💤 Handy gesperrt — bin ich noch online?
 
 Eine Web-App kann bei gesperrtem Display nicht weiterlaufen (iOS friert sie komplett ein). Deshalb:
