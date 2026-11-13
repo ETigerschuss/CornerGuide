@@ -1,0 +1,83 @@
+name: Deploy Firebase (Regeln & Functions)
+
+# Deploys the Realtime Database rules, Storage rules and Cloud Functions to the
+# Firebase project whenever they change on main (or by hand via "Run workflow").
+# Needs ONE repository secret (see README, "Automatisches Firebase-Deployment"):
+#   FIREBASE_SERVICE_ACCOUNT  – JSON key of a service account, or
+#   FIREBASE_TOKEN            – token from `npx firebase-tools login:ci`
+# Without a secret the job only leaves a notice and succeeds.
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "firebase.database.rules.json"
+      - "storage.rules"
+      - "firebase.json"
+      - "functions/**"
+      - ".github/workflows/firebase-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firebase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+      HAS_TOKEN: ${{ secrets.FIREBASE_TOKEN != '' }}
+    steps:
+      - name: Zugangsdaten vorhanden?
+        id: creds
+        run: |
+          if [ "$HAS_SA" = "true" ] || [ "$HAS_TOKEN" = "true" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Firebase-Deploy übersprungen::Kein Secret FIREBASE_SERVICE_ACCOUNT oder FIREBASE_TOKEN hinterlegt – siehe README, Abschnitt 'Automatisches Firebase-Deployment'."
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.creds.outputs.ok == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.creds.outputs.ok == 'true'
+        with:
+          node-version: 20
+
+      - name: Service-Account-Schlüssel bereitstellen
+        if: steps.creds.outputs.ok == 'true' && env.HAS_SA == 'true'
+        env:
+          SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$SA_KEY" > "$RUNNER_TEMP/firebase-sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> "$GITHUB_ENV"
+
+      - name: Datenbank- und Storage-Regeln deployen
+        if: steps.creds.outputs.ok == 'true'
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: npx --yes firebase-tools@13 deploy --only database,storage --project cornerguide --non-interactive
+
+      - name: Function-Abhängigkeiten installieren
+        if: steps.creds.outputs.ok == 'true'
+        run: npm ci --prefix functions
+
+      # Needs the Blaze plan. Kept non-blocking so the rules above stay deployed
+      # even if this step fails; --force answers the non-interactive prompts
+      # (e.g. the container-image cleanup policy).
+      - name: Cloud Functions deployen
+        if: steps.creds.outputs.ok == 'true'
+        continue-on-error: true
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: npx --yes firebase-tools@13 deploy --only functions --project cornerguide --non-interactive --force
+
+      - name: Schlüssel entfernen
+        if: always()
+        run: rm -f "$RUNNER_TEMP/firebase-sa.json"
