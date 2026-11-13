@@ -8625,6 +8625,10 @@ function renderGossipResultCard(cornerId, round) {
 
 function renderGossipSection(cornerId, container) {
   if (!container) return;
+  // Hidden until the database actually serves gossip data, i.e. until the
+  // gossip rules are deployed — before that the server refuses every round.
+  container.hidden = !_gossip.roundsLoaded;
+  if (container.hidden) return;
   if (!container._ready) {
     container.innerHTML = `<h3 class="gossip-title"><span class="gossip-live-dot" hidden></span>🗣️ ${T("Gossip-Runde", "Gossip round")}</h3><div class="gs-live"></div><div class="gs-controls"></div><div class="gs-results"></div><div class="gs-start"></div><div class="gs-history"></div>`;
     container._ready = true;

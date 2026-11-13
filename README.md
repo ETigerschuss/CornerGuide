@@ -40,13 +40,19 @@ https://ETigerschuss.github.io/CornerGuide/
 erzählende Person und Leute lesbar, die **an diesem Corner eingecheckt** sind. Bewerten geht nur von dort, nicht für die
 eigene Story und nur, solange die Runde läuft. Runden, Storys, Bewertungen und Aufnahmen werden nach **24 Stunden** gelöscht.
 
-**Deployen** (einmalig, sonst lehnt der Server Gossip-Runden ab):
+**Deployen** (einmalig — bis dahin blendet die App den Gossip-Bereich einfach aus; er erscheint
+automatisch, sobald die Regeln live sind):
 ```bash
 firebase deploy --only database,storage,functions
 ```
 - `database` — Regeln für `gossipRounds`, `gossipContent`, `gossipVotes`, `notifyTargeted`
 - `storage` — Regel für Sprachaufnahmen unter `gossipAudio/`
 - `functions` — `pushOnTargetedNotify` schickt die Gossip-Pushes nur an die Leute am Corner
+
+Ohne Kommandozeile geht der wichtigste Teil auch in der [Firebase Console](https://console.firebase.google.com):
+**Realtime Database → Regeln** → Inhalt von `firebase.database.rules.json` einfügen → *Veröffentlichen*, und
+**Storage → Rules** → Inhalt von `storage.rules` einfügen → *Publish*. Ohne die Function läuft alles, nur die
+Gossip-Pushes an gesperrte Handys fehlen.
 
 ## 💤 Handy gesperrt — bin ich noch online?
 
