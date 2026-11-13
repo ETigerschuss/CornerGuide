@@ -95,6 +95,70 @@ exports.pushOnNotifyEvent = onValueCreated(
   }
 );
 
+/**
+ * Targeted push: like /notify, but only to the uids listed in `toIds` (e.g. the
+ * people checked in at a corner when a gossip round starts, or the storyteller
+ * when the result is in). An optional `query` ("?corner=…&gossip=1") deep-links
+ * into the app; anything else is ignored so the link can never leave the app.
+ * A separate node keeps old deployments from fanning these out to everyone.
+ */
+exports.pushOnTargetedNotify = onValueCreated(
+  { ref: "/notifyTargeted/{eventId}", region: REGION },
+  async (event) => {
+    const ev = event.data.val();
+    try {
+      if (!ev || !ev.body || !ev.toIds || typeof ev.toIds !== "object") return;
+      const fromId = String(ev.fromId || "");
+      const fromTeam = String(ev.fromTeam || "");
+      const toIds = (Array.isArray(ev.toIds) ? ev.toIds : Object.keys(ev.toIds))
+        .filter((id) => typeof id === "string" && id && id !== fromId && !/[.#$[\]/]/.test(id))
+        .slice(0, 50);
+      if (!toIds.length) return;
+
+      const query = typeof ev.query === "string" && /^\?[A-Za-z0-9_\-=&%.]{0,300}$/.test(ev.query) ? ev.query : "";
+      const link = APP_URL + query;
+      const db = admin.database();
+      const entries = await Promise.all(toIds.map(async (uid) => {
+        const [tokenSnap, prefSnap] = await Promise.all([
+          db.ref(`pushTokens/${uid}/token`).get(),
+          db.ref(`userPrefs/${uid}/notifSettings`).get()
+        ]);
+        return { uid, token: tokenSnap.val(), ns: prefSnap.val() || {} };
+      }));
+      const targets = entries.filter(({ token, ns }) => {
+        if (!token || ns.mode === "off") return false;
+        if (Array.isArray(ns.blockedUsers) && ns.blockedUsers.includes(fromId)) return false;
+        if (fromTeam && Array.isArray(ns.blockedTeams) && ns.blockedTeams.includes(fromTeam)) return false;
+        return true;
+      });
+      if (!targets.length) return;
+
+      const type = String(ev.type || "cornerguide").slice(0, 40);
+      const res = await admin.messaging().sendEachForMulticast({
+        tokens: targets.map((t) => t.token),
+        notification: { title: String(ev.title || "Minga Corner Guide").slice(0, 80), body: String(ev.body).slice(0, 160) },
+        data: { url: link, type },
+        webpush: {
+          fcmOptions: { link },
+          notification: { icon: ICON_URL, tag: type }
+        }
+      });
+      logger.info(`Targeted '${type}': ${res.successCount}/${targets.length} delivered.`);
+      await Promise.all(res.responses.map((r, i) => {
+        const code = !r.success && r.error && r.error.code;
+        if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
+          return db.ref(`pushTokens/${targets[i].uid}`).remove();
+        }
+        return null;
+      }));
+    } catch (err) {
+      logger.error("Targeted push failed:", err);
+    } finally {
+      await event.data.ref.remove();
+    }
+  }
+);
+
 exports.pushOnDirectMessage = onValueCreated(
   { ref: "/messages/{toId}/{msgId}", region: REGION },
   async (event) => {

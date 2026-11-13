@@ -23,6 +23,54 @@ https://ETigerschuss.github.io/CornerGuide/
 - 🔗 **Share Links** — Teile direkte Corner-Links (`?corner=...`) und Einladungen (`?invite=...`)
 - 🧾 **QR-Links** — Erzeuge QR-Codes für Corner-Spots
   - Hinweis: QR-Bilder werden aktuell über `api.qrserver.com` generiert (externer Dienst)
+- 🗣️ **Gossip-Runden** — Ab zwei Leuten am selben Corner erzählt eine Person eine Story (aufschreiben und/oder per Mikro einsprechen), die anderen vergeben Punkte → Karma für die Person, die erzählt
+- 💤 **Bleibt eingecheckt bei gesperrtem Handy** — wer eingecheckt ist, bleibt für die anderen am Corner sichtbar (mit 💤), auch wenn das Display aus ist
+- 📖 **„So sammelst du Punkte"** — vollständige Punkte-Übersicht + 3×3-Reward-Matrix (Level oben antippen oder im Ranking-Tab)
+
+## 🗣️ Gossip-Runden
+
+1. Mindestens **zwei Personen** sind am selben Corner eingecheckt (Corner-Detail → Abschnitt „Gossip-Runde").
+2. Eine Person tippt **„Gossip-Runde starten"**, schreibt die Story auf und/oder spricht sie ein (max. 90 Sek.) und haut sie raus.
+   Alle anderen am Corner bekommen einen Hinweis bzw. eine Push-Nachricht.
+3. Jede andere Person am Corner vergibt Punkte: 🥱 +2 · 🙂 +5 · 😮 +10 · 🤯 +15 · 💣 +20.
+   Die Punkte bleiben geheim, bis **alle bewertet haben** oder die **10 Minuten** um sind (oder die erzählende Person auflöst) — dann wird auf allen Handys gleichzeitig aufgelöst.
+4. Die vergebenen Punkte landen als **Karma** bei der Person, die erzählt hat (bis zu 5 Storys pro Tag zählen); wer bewertet, bekommt +2 Aura.
+
+**Privatsphäre:** Story-Text und Aufnahme liegen unter `gossipContent/` und sind laut Datenbank-Regeln nur für die
+erzählende Person und Leute lesbar, die **an diesem Corner eingecheckt** sind. Bewerten geht nur von dort, nicht für die
+eigene Story und nur, solange die Runde läuft. Runden, Storys, Bewertungen und Aufnahmen werden nach **24 Stunden** gelöscht.
+
+**Deployen** (einmalig — bis dahin blendet die App den Gossip-Bereich einfach aus; er erscheint
+automatisch, sobald die Regeln live sind):
+```bash
+firebase deploy --only database,storage,functions
+```
+- `database` — Regeln für `gossipRounds`, `gossipContent`, `gossipVotes`, `notifyTargeted`
+- `storage` — Regel für Sprachaufnahmen unter `gossipAudio/`
+- `functions` — `pushOnTargetedNotify` schickt die Gossip-Pushes nur an die Leute am Corner
+
+Ohne Kommandozeile geht der wichtigste Teil auch in der [Firebase Console](https://console.firebase.google.com):
+**Realtime Database → Regeln** → Inhalt von `firebase.database.rules.json` einfügen → *Veröffentlichen*, und
+**Storage → Rules** → Inhalt von `storage.rules` einfügen → *Publish*. Ohne die Function läuft alles, nur die
+Gossip-Pushes an gesperrte Handys fehlen.
+
+## 💤 Handy gesperrt — bin ich noch online?
+
+Eine Web-App kann bei gesperrtem Display nicht weiterlaufen (iOS friert sie komplett ein). Deshalb:
+- Wer **eingecheckt** ist, bleibt bis zu **3 Stunden** nach dem letzten Lebenszeichen am Corner sichtbar — mit 💤, solange das Display aus ist.
+  (Vorher wurde der Eintrag beim Verbindungsabbruch gelöscht, man verschwand also sofort.)
+- Der Check-in übersteht auch einen App-Neustart (iOS beendet gesperrte PWAs oft); ab dem nächsten Tag bzw. nach 10 h wird automatisch ausgecheckt.
+- **Push-Nachrichten** (Nachschub, Gossip-Runden) kommen trotzdem an — Push im Profil verbinden, auf dem iPhone als App zum Home-Bildschirm hinzufügen.
+- Optional im Profil: **„Display wach halten, solange ich eingecheckt bin"**. Während Gossip-Runden bleibt das Display automatisch an.
+- Live-GPS (Auto-Check-in) pausiert bei gesperrtem Handy — dafür bräuchte es eine native App (z. B. Capacitor + Background-Geolocation).
+
+## 🏆 Punkte: Aura, Karma & Reward-Matrix
+
+- ✨ **Aura** = was du tust (einchecken, Leute treffen, Fotos, Kommentare, Gossip erzählen …) — bestimmt dein Level.
+- 🎁 **Karma** = was andere dir geben (bestätigter Nachschub: +40 pro Bestätigung, Gossip-Punkte: +2 … +20 pro Bewertung).
+- Die **Reward-Matrix** ist ein 3×3-Raster aus Aura-Stufe (Lv. <5 · 5–14 · 15+) und Karma-Stufe (Lv. <2 · 2–5 · 6+),
+  von 🌱 Rookie bis 🪩 Matrix Legend. Die App zeigt, wo du stehst und wie viel Aura/Karma bis zum nächsten Feld fehlt.
+- Die komplette Liste aller Punkte-Quellen steht in der App unter **„📖 So sammelst du Punkte"**.
 
 ## 🔧 Firebase Setup (für Echtzeit-Features)
 
