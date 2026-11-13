@@ -21,13 +21,13 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, set, get, push, onValue, onChildAdded, onDisconnect, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getDatabase, ref, set, get, push, update, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import { getAuth, signInAnonymously, onAuthStateChanged,
            GoogleAuthProvider, linkWithPopup, signInWithPopup,
            EmailAuthProvider, linkWithCredential,
            sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getMessaging, getToken, onMessage, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
-  import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+  import { getStorage, ref as storageRef, uploadString, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCIHeM2laZTAUF9BIJRjCAUb2ZGqlKjto8",
@@ -93,7 +93,7 @@
 
   // Expose Firebase functions globally for use in the main script
   window.FB = {
-    db, auth, ref, set, get, push, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, firebaseReady, authReady,
+    db, auth, ref, set, get, push, update, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, runTransaction, firebaseReady, authReady,
     getAuthUid: () => authUid,
     onAuthChange: (listener) => {
       if (typeof listener !== "function") return () => {};
@@ -125,6 +125,17 @@
       const r = storageRef(storage, path);
       await uploadString(r, dataUrl, "data_url");
       return await getDownloadURL(r);
+    },
+    // Upload a Blob (e.g. a voice recording) and return its download URL.
+    uploadBlob: async (path, blob, contentType) => {
+      if (!storage) throw new Error("Storage nicht verfügbar.");
+      const r = storageRef(storage, path);
+      await uploadBytes(r, blob, { contentType: contentType || blob.type || "application/octet-stream" });
+      return await getDownloadURL(r);
+    },
+    deleteFile: async (path) => {
+      if (!storage) return;
+      await deleteObject(storageRef(storage, path));
     },
     // ---- Account portability (link the anonymous account to a permanent one) ----
     getAccountInfo: () => {
@@ -1376,6 +1387,10 @@ input, textarea { cursor: text; }
 }
 .friend-chip.away .friend-dot { background: var(--fg-dim); animation: none; }
 .friend-chip.away .friend-corner { color: var(--fg-dim); }
+/* Screen off / app in the background: still there, just not watching live. */
+.friend-chip.asleep { border-style: dashed; }
+.friend-chip.asleep .friend-dot { animation: none; opacity: 0.55; }
+.friend-asleep { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); white-space: nowrap; }
 
 /* ====================== ALARM TOAST ====================== */
 .toast.friend-alert { border-color: var(--bayern); border-left-color: var(--bayern); }
@@ -2322,6 +2337,7 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .notif-opt:hover { border-color: var(--fg-dim); }
 .notif-opt.active { border-color: var(--green); color: var(--green); background: rgba(184,255,58,0.08); }
 .notif-settings-label { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-dim); margin: 14px 0 7px; }
+.notif-hint { font-size: 12px; color: var(--fg-dim); line-height: 1.45; margin: 6px 0 8px; }
 .team-filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .team-chip { background: var(--bg-3); border: 1.5px solid var(--line); color: var(--fg-dim); padding: 6px 10px; border-radius: 999px; font-size: 12px; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px; }
 .team-chip:hover { border-color: var(--fg-dim); }
@@ -2355,6 +2371,112 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .sr-meta { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); margin-bottom: 8px; }
 .sr-confirm { width: 100%; font-size: 12px; }
 .sr-confirm:disabled { opacity: 0.55; cursor: default; }
+
+/* ====================== GOSSIP-RUNDEN ====================== */
+.gossip-section { background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--pink); border-radius: 14px; padding: 14px; margin: 14px 0; }
+.gossip-section.live { border-color: var(--pink); box-shadow: 0 0 0 1px rgba(255,46,108,0.25), 0 8px 30px rgba(255,46,108,0.12); }
+.gossip-title { font-family: "Anton", sans-serif; font-weight: 400; font-size: 18px; text-transform: uppercase; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+.gossip-live-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--pink); animation: pulse-badge 1.4s infinite; flex: 0 0 auto; }
+.gossip-live-dot[hidden] { display: none; }
+.gs-hint { font-size: 12px; color: var(--fg-dim); margin: 6px 0 0; line-height: 1.45; }
+.gs-hint strong { color: var(--fg); }
+.gs-start-btn { width: 100%; justify-content: center; font-size: 15px; font-weight: 700; padding: 12px 16px; background: var(--pink); border-color: var(--pink); color: #fff; }
+.gs-start-btn:hover, .gs-start-btn:focus { background: var(--amber); border-color: var(--amber); color: #111; }
+.gs-story { background: var(--bg-3); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin: 8px 0; }
+.gs-story-head { font-size: 13px; color: var(--fg-dim); }
+.gs-story-head strong { color: var(--fg); }
+.gs-story-text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; line-height: 1.5; margin: 8px 0 4px; }
+.gs-story audio { width: 100%; margin-top: 8px; }
+.gs-rate-q { font-size: 13px; margin: 10px 0 0; }
+.gs-rate { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 8px 0 4px; }
+.gs-rate-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; background: var(--bg-3); border: 1.5px solid var(--line); border-radius: 12px; padding: 9px 2px 8px; color: var(--fg); min-width: 0; font: inherit; transition: transform 0.12s, border-color 0.12s; }
+.gs-rate-btn .gs-e { font-size: 26px; line-height: 1; }
+.gs-rate-btn .gs-l { font-size: 9.5px; color: var(--fg-dim); text-align: center; line-height: 1.15; overflow-wrap: anywhere; }
+.gs-rate-btn .gs-p { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--green); font-weight: 700; }
+.gs-rate-btn:hover, .gs-rate-btn:focus-visible { border-color: var(--pink); outline: none; transform: translateY(-2px); }
+.gs-rate-btn:disabled { opacity: 0.5; transform: none; }
+.gs-meta { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fg-dim); margin: 6px 0; }
+.gs-meta strong { color: var(--fg); }
+.gs-countdown { color: var(--amber); font-weight: 700; }
+.gs-who { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.gs-who span { font-size: 11px; padding: 3px 8px; border-radius: 999px; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg-dim); }
+.gs-who span.done { border-color: var(--green); color: var(--green); }
+.gs-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.gs-result { text-align: center; background: var(--bg-3); border: 1px solid var(--pink); border-radius: 14px; padding: 14px 12px; margin: 10px 0 4px; }
+.gs-result .gs-big { font-size: 46px; line-height: 1; }
+.gs-result .gs-score { font-family: "Anton", sans-serif; font-size: 30px; color: var(--pink); margin: 6px 0 2px; letter-spacing: 0.5px; }
+.gs-result .gs-sub { font-size: 13px; }
+.gs-votes { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 10px; }
+.gs-votes span { font-size: 12px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; }
+.gs-history-title { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-dim); margin: 12px 0 2px; }
+.gs-history-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.06); font-size: 13px; }
+.gs-history-row .gs-h-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.gs-history-row .gs-h-pts { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--green); white-space: nowrap; }
+.gs-history-row .gs-h-time { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); }
+.card-gossip-live { display: inline-flex; align-items: center; gap: 6px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--pink); border: 1px solid rgba(255,46,108,0.5); background: rgba(255,46,108,0.08); border-radius: 999px; padding: 3px 10px; margin: 0 0 8px; }
+.toast.gossip { border-color: var(--pink); border-left-color: var(--pink); }
+.toast.gossip strong { color: var(--pink); }
+.gossip-overlay, .guide-overlay { position: fixed; inset: 0; z-index: 4000; background: rgba(0,0,0,0.92); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; padding: 16px; }
+.gossip-overlay.open, .guide-overlay.open { display: flex; }
+.gossip-card { background: var(--bg-2); border: 2px solid var(--pink); border-radius: 16px; padding: 22px 18px; width: min(440px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.gossip-card h2 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 26px; text-transform: uppercase; margin: 0 0 4px; }
+.gossip-sub { font-size: 13px; color: var(--fg-dim); margin: 0 0 4px; overflow-wrap: anywhere; }
+.gossip-sub strong { color: var(--fg); }
+.gossip-count { text-align: right; font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); margin-top: 4px; }
+.gossip-rec { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.gossip-rec .action-btn.recording { border-color: var(--pink); color: var(--pink); }
+.gossip-rec-time { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--pink); }
+.gossip-meter { flex: 1 1 80px; height: 6px; background: var(--bg-3); border-radius: 999px; overflow: hidden; visibility: hidden; }
+.gossip-meter.on { visibility: visible; }
+.gossip-meter span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--green), var(--pink)); transition: width 0.08s linear; }
+.gossip-rec-preview { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.gossip-rec-preview[hidden] { display: none; }
+.gossip-rec-preview audio { flex: 1; min-width: 0; height: 40px; }
+.gossip-hint { font-size: 12px; color: var(--amber); margin: 10px 0 0; }
+.gossip-hint:empty { display: none; }
+.gossip-privacy { font-size: 11.5px; color: var(--fg-dim); margin: 10px 0 0; line-height: 1.45; }
+.gossip-actions { display: flex; gap: 8px; margin-top: 16px; }
+.gossip-actions .action-btn { flex: 1; justify-content: center; padding: 12px; font-size: 14px; }
+.gossip-actions #gossip-publish { background: var(--pink); border-color: var(--pink); color: #fff; font-weight: 700; }
+.gossip-actions .action-btn:disabled { opacity: 0.45; cursor: default; }
+@media (prefers-reduced-motion: reduce) {
+  .gossip-live-dot { animation: none; }
+  .gs-rate-btn { transition: none; }
+}
+
+/* ====================== REWARD GUIDE + MATRIX ====================== */
+.guide-card { background: var(--bg-2); border: 2px solid var(--amber); border-radius: 16px; padding: 20px 16px; width: min(520px, 100%); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.guide-card h2 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 24px; text-transform: uppercase; margin: 0 0 10px; }
+.guide-card > .action-btn { width: 100%; justify-content: center; padding: 12px; margin-top: 14px; font-size: 14px; }
+.rg-h { font-family: "Anton", sans-serif; font-weight: 400; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px; }
+.rg-h.aura { color: var(--blue); }
+.rg-h.karma { color: var(--green); }
+.rg-streams { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0 4px; }
+.rg-stream { background: var(--bg-3); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.rg-stream.aura { border-top: 3px solid var(--blue); }
+.rg-stream.karma { border-top: 3px solid var(--green); }
+.rg-k { font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.rg-d { font-size: 12px; color: var(--fg-dim); line-height: 1.4; }
+.rg-d strong { color: var(--fg); }
+.rg-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rg-table td { padding: 6px 4px; border-top: 1px solid var(--line); vertical-align: top; }
+.rg-table td.rg-pts { text-align: right; white-space: nowrap; font-family: "JetBrains Mono", monospace; font-weight: 700; color: var(--amber); padding-left: 10px; }
+.rg-note { font-size: 11.5px; color: var(--fg-dim); line-height: 1.45; margin: 12px 0 0; }
+.mx { display: grid; grid-template-columns: auto 1fr; grid-template-rows: 1fr auto; gap: 6px; align-items: center; }
+.mx-y { grid-row: 1; grid-column: 1; writing-mode: vertical-rl; transform: rotate(180deg); font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; color: var(--green); text-align: center; }
+.mx-x { grid-row: 2; grid-column: 2; font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; color: var(--blue); text-align: right; }
+.mx-grid { grid-row: 1; grid-column: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.mx-cell { position: relative; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; padding: 8px 4px; text-align: center; min-width: 0; opacity: 0.6; }
+.mx-cell.me { opacity: 1; border: 2px solid var(--amber); background: rgba(232,169,62,0.10); box-shadow: 0 0 18px rgba(232,169,62,0.25); }
+.mx-e { display: block; font-size: 22px; line-height: 1.1; }
+.mx-n { display: block; font-size: 10px; line-height: 1.2; margin-top: 3px; overflow-wrap: anywhere; }
+.mx-you { position: absolute; top: -8px; right: -4px; background: var(--amber); color: #111; font-family: "JetBrains Mono", monospace; font-size: 9px; font-weight: 700; border-radius: 999px; padding: 1px 6px; text-transform: uppercase; }
+.mx-legend { font-family: "JetBrains Mono", monospace; font-size: 9.5px; color: var(--fg-dim); margin: 8px 0 0; line-height: 1.5; }
+.mx-now { font-size: 13px; margin: 8px 0 0; line-height: 1.45; }
+.mx-next { font-size: 13px; margin-top: 6px; display: grid; gap: 4px; }
+.mx-next .mx-how { color: var(--fg-dim); font-size: 12px; }
+.nickname-bar .nick-pts, .nickname-bar .level-bar { cursor: pointer; }
+.points-help-btn { width: 100%; justify-content: center; margin-bottom: 18px; padding: 12px 16px; font-size: 14px; }
 
 .celebration {
   position: fixed; inset: 0; z-index: 4000;
@@ -2507,6 +2629,7 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
   </section>
 
   <section id="view-leaderboard" class="view">
+    <button class="action-btn primary points-help-btn" id="points-help-btn">📖 So sammelst du Punkte</button>
     <div id="popular-corner-section"></div>
     <div id="team-battle-section"></div>
     <div id="leaderboard-visits"></div>
@@ -2609,6 +2732,41 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 
 <!-- Karma celebration (supply run confirmed / level up) -->
 <div id="celebration" class="celebration" aria-live="polite"></div>
+
+<!-- Gossip round composer: write the story down and/or record it with the mic -->
+<div id="gossip-overlay" class="gossip-overlay" role="dialog" aria-modal="true" aria-labelledby="gossip-title">
+  <div class="gossip-card">
+    <h2 id="gossip-title">🗣️ Gossip-Runde</h2>
+    <p class="gossip-sub" id="gossip-sub"></p>
+    <label class="ce-label" for="gossip-text" id="gossip-text-label">Deine Story</label>
+    <textarea id="gossip-text" class="ce-field" maxlength="1000" rows="5" placeholder="Was ist passiert? Wer, wo, wann … 👀"></textarea>
+    <div class="gossip-count"><span id="gossip-text-count">0</span>/1000</div>
+    <div class="gossip-rec">
+      <button type="button" class="action-btn" id="gossip-rec-btn">🎙️ Einsprechen</button>
+      <span class="gossip-rec-time" id="gossip-rec-time"></span>
+      <span class="gossip-meter" aria-hidden="true"><span id="gossip-meter-fill"></span></span>
+    </div>
+    <div class="gossip-rec-preview" id="gossip-rec-preview" hidden>
+      <audio id="gossip-rec-audio" controls preload="metadata"></audio>
+      <button type="button" class="action-btn" id="gossip-rec-discard" aria-label="Aufnahme löschen">🗑️</button>
+    </div>
+    <p class="gossip-hint" id="gossip-hint"></p>
+    <p class="gossip-privacy" id="gossip-privacy"></p>
+    <div class="gossip-actions">
+      <button type="button" class="action-btn" id="gossip-cancel">Abbrechen</button>
+      <button type="button" class="action-btn primary" id="gossip-publish">🚀 Raushauen</button>
+    </div>
+  </div>
+</div>
+
+<!-- How to earn points: reward matrix + every source of aura/karma -->
+<div id="reward-guide-overlay" class="guide-overlay" role="dialog" aria-modal="true" aria-labelledby="reward-guide-title">
+  <div class="guide-card">
+    <h2 id="reward-guide-title">📖 So sammelst du Punkte</h2>
+    <div id="reward-guide-body"></div>
+    <button type="button" class="action-btn primary" id="reward-guide-close">Alles klar</button>
+  </div>
+</div>
 
 <!-- Corner Detail Overlay -->
 <div id="detail-overlay" class="detail-overlay">
@@ -2777,7 +2935,7 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
     <h3 style="font-size:14px;margin:16px 0 8px;">📍 Eigene Spots</h3>
     <div id="admin-corners"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">🧹 Aufräumen</h3>
-    <button class="notif-opt" id="admin-clean-presence" style="margin-bottom:8px;">Geister-Presence entfernen (&gt;45 min offline)</button>
+    <button class="notif-opt" id="admin-clean-presence" style="margin-bottom:8px;">Geister-Presence entfernen (&gt;45 min weg bzw. &gt;3 h ohne Lebenszeichen am Corner)</button>
     <button id="admin-close" class="action-btn" style="margin-top:12px;">Schließen</button>
   </div>
 </div>
@@ -2987,7 +3145,10 @@ const STATE = {
   hasCenteredOnUser: false,
   userPos: null,
   atCornerId: null,
-  manualCheckinId: null,
+  // Restored after a restart: iOS often kills a PWA while the screen is locked,
+  // which used to silently check people out. autoCheckoutIfStale() still drops
+  // it once the day rolls over or it is older than CHECKIN_MAX_AGE_MS.
+  manualCheckinId: localStorage.getItem("cg.checkedInAt") ? (localStorage.getItem("cg.manualCheckinId") || null) : null,
   PROXIMITY_M: 75,
   nickname: localStorage.getItem("cg.nickname") || "",
   friends: {},
@@ -3133,6 +3294,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (STATE.lastCheckinTime && (Date.now() - STATE.lastCheckinTime) < COOLDOWN_MS) {
     startCooldownDisplay();
   }
+  // A check-in restored from the last session may be from yesterday.
+  autoCheckoutIfStale();
 });
 
 function checkNickname() {
@@ -3166,8 +3329,8 @@ function reattachSharedListenersAfterGrant() {
   if (_sharedListenersReattached || !window.FB?.firebaseReady) return;
   _sharedListenersReattached = true;
   [listenSharedCorners, listenComments, listenBarometer, listenVisits, listenEmojiVotes,
-   listenPhotos, listenPoints, listenTeams, listenCornerStatuses, listenCaptured,
-   listenCornerVotes, listenFriendPresence, listenDirectMessages, listenCustomTeams]
+   listenPhotos, listenPoints, listenKarmaPoints, listenTeams, listenCornerStatuses, listenCaptured,
+   listenCornerVotes, listenFriendPresence, listenDirectMessages, listenCustomTeams, listenSupplyRuns, listenGossip]
     .forEach((fn) => { try { if (typeof fn === "function") fn(); } catch (err) { console.warn("reattach failed:", err); } });
 }
 
@@ -4740,6 +4903,11 @@ const MAX_DIRECT_MESSAGES = 120;
 const PRESENCE_HEARTBEAT_INTERVAL_MS = 20000;
 // Presence entries older than this are treated as offline and hidden.
 const PRESENCE_FRESH_MS = 45 * 60 * 1000;
+// A checked-in person whose phone is locked (no heartbeat, connection gone)
+// stays at their corner this long after their last sign of life — shown as 💤.
+const CHECKIN_STICKY_MS = 3 * 60 * 60 * 1000;
+// No heartbeat for this long = app in the background / screen off.
+const PRESENCE_ASLEEP_MS = 90 * 1000;
 // Only fire a "friend arrived at corner" alarm if the check-in happened within
 // this window. Prevents stale DB entries from triggering notifications every
 // time the app loads or reconnects.
@@ -4763,6 +4931,7 @@ function autoCheckoutIfStale() {
   STATE.manualCheckinId = null;
   STATE._autoCheckedCorner = null;
   localStorage.removeItem("cg.checkedInAt");
+  localStorage.removeItem("cg.manualCheckinId");
   document.getElementById("card-" + prev)?.classList.remove("at-here");
   refreshMainMarker(prev);
   updateCheckinButtons();
@@ -5094,6 +5263,8 @@ function applyIncomingLinks() {
   const inviteName = sanitizeInviteName((params.get(INVITE_PARAM) || "").trim());
   const autoCheckin = params.get(CHECKIN_PARAM) === "1";
   if (cornerId) STATE.pendingShareCornerId = cornerId;
+  // Gossip push deep link (?corner=…&gossip=1): open the corner at its gossip round.
+  if (cornerId && params.get("gossip") === "1") STATE.pendingGossipFocus = cornerId;
   if (inviteName) STATE.pendingInviteName = inviteName.slice(0, MAX_INVITE_NAME_LENGTH);
   // When autoCheckin=true, store the target corner for later (resolved after nickname is confirmed)
   if (autoCheckin && cornerId) STATE.pendingAutoCheckinCornerId = cornerId;
@@ -5120,6 +5291,11 @@ function openPendingSharedCorner() {
   const cornerId = STATE.pendingShareCornerId;
   STATE.pendingShareCornerId = null;
   clearHandledQueryParam(SHARE_CORNER_PARAM);
+  if (STATE.pendingGossipFocus === cornerId) {
+    STATE.pendingGossipFocus = null;
+    clearHandledQueryParam("gossip");
+    focusGossip(cornerId);
+  }
   if (STATE.pendingAutoCheckinCornerId === cornerId) {
     clearHandledQueryParam(CHECKIN_PARAM);
     if (STATE.nickname) {
@@ -5384,14 +5560,142 @@ function getRewardTotal(kind, userKey) {
 function getCurrentAura() { return getRewardTotal("aura"); }
 function getCurrentKarma() { return getRewardTotal("karma"); }
 function getCurrentXp() { return getCurrentAura(); }
-function getMatrixIdentity(aura, karma) {
-  const a = Math.max(0, Number(aura || 0));
-  const k = Math.max(0, Number(karma || 0));
-  if (a >= 180 && k >= 80) return { emoji: "🪩", name: "Matrix Legend", desc: T("Präsent, hilfreich, nicht zu stoppen.", "Present, helpful, unstoppable.") };
-  if (k >= Math.max(40, a * 0.8)) return { emoji: "🎁", name: "Karma Carrier", desc: T("Du bringst Leuten, was sie brauchen.", "You bring people what they need.") };
-  if (a >= Math.max(60, k * 1.5)) return { emoji: "✨", name: "Aura Magnet", desc: T("Deine Präsenz macht den Corner lebendig.", "Your presence lights up the corner.") };
-  return { emoji: "⚖️", name: "Balanced Connector", desc: T("Zwischen Präsenz und Hilfe hältst du die Ecke zusammen.", "You balance presence and help for the corner crew.") };
+/* ====================== REWARD MATRIX ======================
+   Two streams, one rule that is easy to explain:
+     ✨ Aura  = what YOU do (being there, joining in) — drives your level.
+     🎁 Karma = what OTHERS give you (confirmed supplies, gossip points).
+   Your identity is a cell in a 3×3 grid: Aura tier × Karma tier, both
+   measured in levels of the same curve. The old ratio formula collapsed to
+   "Aura Magnet" for nearly everyone (karma had one source and aura many),
+   while "Matrix Legend" only needed 180 aura + 80 karma.                  */
+const MATRIX_AURA_LEVELS = [5, 15];   // aura level where the middle / right column starts
+const MATRIX_KARMA_LEVELS = [2, 6];   // karma level where the middle / top row starts
+const MATRIX_CELLS = [                // [karmaTier][auraTier]
+  [
+    { emoji: "🌱", name: "Rookie", de: "Gerade angekommen — check ein, bring Nachschub, erzähl Gossip.", en: "Just arrived — check in, bring supplies, tell some gossip." },
+    { emoji: "🔥", name: "Regular", de: "Du bist oft da. Jetzt mal was für die Crew tun: Nachschub holen oder Gossip erzählen!", en: "You're around a lot. Now do something for the crew: fetch supplies or tell gossip!" },
+    { emoji: "✨", name: "Aura Magnet", de: "Deine Präsenz macht den Corner lebendig — die Crew wartet auf deinen Nachschub.", en: "Your presence lights up the corner — the crew is waiting for your supplies." }
+  ],
+  [
+    { emoji: "🤲", name: "Good Soul", de: "Selten da, aber wenn, dann hilfst du.", en: "Not around often, but when you are, you help." },
+    { emoji: "⚖️", name: "Balanced Connector", de: "Zwischen Präsenz und Hilfe hältst du die Ecke zusammen.", en: "You balance presence and help for the corner crew." },
+    { emoji: "🌟", name: "Corner Star", de: "Viel Präsenz, gute Vibes — die Crew mag dich.", en: "Lots of presence, good vibes — the crew likes you." }
+  ],
+  [
+    { emoji: "🎁", name: "Karma Carrier", de: "Du bringst Leuten, was sie brauchen — mehr, als du dich zeigst.", en: "You bring people what they need — more than you show up." },
+    { emoji: "🦸", name: "Corner Hero", de: "Die Crew liebt dich.", en: "The crew loves you." },
+    { emoji: "🪩", name: "Matrix Legend", de: "Präsent, hilfreich, nicht zu stoppen.", en: "Present, helpful, unstoppable." }
+  ]
+];
+function matrixTier(level, bounds) { return level >= bounds[1] ? 2 : level >= bounds[0] ? 1 : 0; }
+function getMatrixPosition(aura, karma) {
+  const auraLevel = getLevel(aura).level;
+  const karmaLevel = getLevel(karma).level;
+  const col = matrixTier(auraLevel, MATRIX_AURA_LEVELS);
+  const row = matrixTier(karmaLevel, MATRIX_KARMA_LEVELS);
+  return { col, row, cell: MATRIX_CELLS[row][col], auraLevel, karmaLevel };
 }
+function getMatrixIdentity(aura, karma) {
+  const { cell } = getMatrixPosition(aura, karma);
+  return { emoji: cell.emoji, name: cell.name, desc: T(cell.de, cell.en) };
+}
+
+// The concrete next steps out of your current cell (right = more aura, up = more karma).
+function matrixNextSteps(aura, karma) {
+  const { col, row } = getMatrixPosition(aura, karma);
+  const steps = [];
+  if (row < 2) {
+    const need = Math.max(1, xpForLevel(MATRIX_KARMA_LEVELS[row]) - Number(karma || 0));
+    const cell = MATRIX_CELLS[row + 1][col];
+    const runs = Math.ceil(need / SUPPLY_KARMA_PER_CONFIRM);
+    steps.push(`↑ ${cell.emoji} <strong>${cell.name}</strong>: ${T("noch", "another")} <strong>${need} Karma</strong> <span class="mx-how">(${T(`z. B. ${runs}× bestätigter Nachschub oder ein paar gut bewertete Gossip-Storys`, `e.g. ${runs}× confirmed supplies or a few well-rated gossip stories`)})</span>`);
+  }
+  if (col < 2) {
+    const need = Math.max(1, xpForLevel(MATRIX_AURA_LEVELS[col]) - Number(aura || 0));
+    const cell = MATRIX_CELLS[row][col + 1];
+    steps.push(`→ ${cell.emoji} <strong>${cell.name}</strong>: ${T("noch", "another")} <strong>${need} Aura</strong> <span class="mx-how">(${T("einchecken, Leute treffen, neue Corners entdecken", "check in, meet people, discover new corners")})</span>`);
+  }
+  return steps;
+}
+
+function buildMatrixGridHtml(aura, karma) {
+  const pos = getMatrixPosition(aura, karma);
+  const cells = [2, 1, 0].map((row) => [0, 1, 2].map((col) => {
+    const c = MATRIX_CELLS[row][col];
+    const me = row === pos.row && col === pos.col;
+    return `<div class="mx-cell${me ? " me" : ""}" title="${escapeHtml(T(c.de, c.en))}"><span class="mx-e">${c.emoji}</span><span class="mx-n">${escapeHtml(c.name)}</span>${me ? `<span class="mx-you">${T("du", "you")}</span>` : ""}</div>`;
+  }).join("")).join("");
+  const steps = matrixNextSteps(aura, karma);
+  return `<div class="mx">
+      <div class="mx-y">🎁 Karma ↑</div>
+      <div class="mx-grid">${cells}</div>
+      <div class="mx-x">✨ Aura →</div>
+    </div>
+    <p class="mx-legend">${T("Spalten", "Columns")}: Aura-Lv. &lt;${MATRIX_AURA_LEVELS[0]} · ${MATRIX_AURA_LEVELS[0]}–${MATRIX_AURA_LEVELS[1] - 1} · ${MATRIX_AURA_LEVELS[1]}+ &nbsp;|&nbsp; ${T("Zeilen", "Rows")}: Karma-Lv. &lt;${MATRIX_KARMA_LEVELS[0]} · ${MATRIX_KARMA_LEVELS[0]}–${MATRIX_KARMA_LEVELS[1] - 1} · ${MATRIX_KARMA_LEVELS[1]}+</p>
+    <p class="mx-now">${pos.cell.emoji} <strong>${escapeHtml(pos.cell.name)}</strong> (Aura Lv. ${pos.auraLevel} · Karma Lv. ${pos.karmaLevel}) — ${escapeHtml(T(pos.cell.de, pos.cell.en))}</p>
+    ${steps.length ? `<div class="mx-next">${steps.map((s) => `<div>${s}</div>`).join("")}</div>` : `<p class="mx-now">🏁 ${T("Oberstes Feld erreicht — Respekt!", "Top cell reached — respect!")}</p>`}`;
+}
+
+// The complete, truthful list of ways to earn points (mirrors the code).
+function buildRewardGuideHtml() {
+  const row = (emoji, de, en, pts) => `<tr><td>${emoji} ${T(de, en)}</td><td class="rg-pts">${pts}</td></tr>`;
+  return `<div class="rg">
+    <div class="rg-streams">
+      <div class="rg-stream aura"><div class="rg-k">✨ Aura</div><div class="rg-d">${T("= was <strong>du</strong> tust: da sein, mitmachen. Bestimmt dein Level.", "= what <strong>you</strong> do: show up, join in. Drives your level.")}</div></div>
+      <div class="rg-stream karma"><div class="rg-k">🎁 Karma</div><div class="rg-d">${T("= was <strong>andere</strong> dir geben: bestätigter Nachschub &amp; Gossip-Punkte.", "= what <strong>others</strong> give you: confirmed supplies &amp; gossip points.")}</div></div>
+    </div>
+    <h4 class="rg-h karma">🎁 ${T("Karma bekommen", "Earning karma")}</h4>
+    <table class="rg-table">
+      ${row("🛒", "Nachschub mitgebracht — pro Person, die es bestätigt", "Brought supplies — per person who confirms", `+${SUPPLY_KARMA_PER_CONFIRM}`)}
+      ${row("🗣️", "Gossip-Story erzählt — pro Person am Corner, die bewertet", "Told a gossip story — per person at the corner who rates it", "+2…+20")}
+    </table>
+    <h4 class="rg-h aura">✨ ${T("Aura sammeln", "Collecting aura")}</h4>
+    <table class="rg-table">
+      ${row("📍", "Check-in (pro Corner 1× am Tag): Basis", "Check-in (once per corner per day): base", "+5")}
+      ${row("👥", "… pro Person, die schon dort ist (max. +18)", "… per person already there (max +18)", "+6")}
+      ${row("🔥", "… beliebter Spot", "… popular spot", T("bis +12", "up to +12"))}
+      ${row("🆕", "Corner zum ersten Mal besucht", "First visit to a corner", "+10")}
+      ${row("🤝", "Mit jemandem am Corner getroffen (pro Person)", "Met someone at a corner (per person)", "+8")}
+      ${row("⚔️", "Corner eingenommen (3 aus deinem Team vor Ort)", "Corner captured (3 of your team there)", "+25")}
+      ${row("🗣️", "Gossip erzählt / bewertet", "Told / rated gossip", "+5 / +2")}
+      ${row("➕", "Neuen Spot eingetragen", "Added a new spot", "+50")}
+      ${row("📸", "Foto hochgeladen", "Uploaded a photo", "+10")}
+      ${row("💬", "Kommentar / Antwort · Chat-Nachricht", "Comment / reply · chat message", "+5 · +2")}
+      ${row("📊", "Barometer, Emojis, Status, Corner-Bewertung", "Barometer, emojis, status, corner vote", "+2…+4")}
+      ${row("🆘", "Nachschub-Ruf · Nachschub bestätigen", "Supply call · confirm supplies", "+3 · +5")}
+      ${row("📨", "Freunde einladen · per QR eingecheckt", "Invite friends · checked in via QR", "+5 · +10")}
+      ${row("🔔", "Push aktivieren", "Enable push", "+10")}
+      ${row("🏆", "Achievements", "Achievements", "+10…+1000")}
+      ${row("👆", "Aktiv in der App (höchstens alle 10 Sek.)", "Active in the app (at most every 10 s)", "+1")}
+    </table>
+    <p class="rg-note">${T(`Fair Play: Check-in-Aura gibt es pro Corner nur einmal am Tag, zwischen zwei Corners liegen 15 Min. Gossip bringt Karma für ${GOSSIP_KARMA_ROUNDS_PER_DAY} Storys pro Tag, eigene Storys kann man nicht bewerten. Level: Aura bestimmt dein Level (Lv. 100 ist der große Meilenstein).`, `Fair play: check-in aura counts once per corner per day, and there are 15 min between two corners. Gossip earns karma for ${GOSSIP_KARMA_ROUNDS_PER_DAY} stories a day, and you can't rate your own. Aura drives your level (Lv. 100 is the big milestone).`)}</p>
+  </div>`;
+}
+
+function openRewardGuide() {
+  const overlay = $("#reward-guide-overlay");
+  if (!overlay) return;
+  $("#reward-guide-title").textContent = "📖 " + T("So sammelst du Punkte", "How to earn points");
+  $("#reward-guide-close").textContent = T("Alles klar", "Got it");
+  $("#reward-guide-body").innerHTML = `
+    <h4 class="rg-h">🧬 ${T("Deine Matrix", "Your matrix")}</h4>
+    ${buildMatrixGridHtml(getCurrentAura(), getCurrentKarma())}
+    ${buildRewardGuideHtml()}`;
+  overlay.classList.add("open");
+  localStorage.setItem("cg.rewardGuideSeen", "1");
+}
+function closeRewardGuide() { $("#reward-guide-overlay")?.classList.remove("open"); }
+
+// One-time nudge (new and existing users) so people find out how points work.
+function maybeShowRewardTip(delayMs = 9000) {
+  if (!STATE.nickname || localStorage.getItem("cg.rewardGuideSeen") === "1" || localStorage.getItem("cg.rewardTipShown") === "1") return;
+  setTimeout(() => {
+    if ($("#access-prompt")?.style.display === "flex" || localStorage.getItem("cg.rewardTipShown") === "1") return;
+    localStorage.setItem("cg.rewardTipShown", "1");
+    toast(`📖 <strong>${T("So sammelst du Punkte", "How to earn points")}</strong><br><span style="font-size:11px;opacity:0.8;">${T("Aura, Karma, Gossip-Runden & deine Matrix — tippen zum Ansehen (oder später oben aufs Level tippen)", "Aura, karma, gossip rounds & your matrix — tap to see (or tap your level later)")}</span>`, null, openRewardGuide);
+  }, delayMs);
+}
+document.addEventListener("DOMContentLoaded", () => maybeShowRewardTip());
 /* ====================== KARMA FOR CHECK-INS ======================
    Two rules from the in-app feedback:
    - "Zähl die check-ins pro Person nur einmal pro Tag" — repeatedly checking in
@@ -5433,26 +5737,51 @@ function addXp(amount, reason) {
 function getTeamInfo(teamId) { return TEAMS[teamId] || null; }
 function getDisplayName(name, teamId) { const t = getTeamInfo(teamId); return `${t ? t.emoji + " " : ""}${name || "Anonym"}`; }
 
-function addPoints(user, pts, reason) {
-  return addRewardPoints("aura", user, pts, reason);
+function addPoints(user, pts, reason, nameHint) {
+  return addRewardPoints("aura", user, pts, reason, nameHint);
 }
 
-function addKarmaPoints(user, pts, reason) {
-  return addRewardPoints("karma", user, pts, reason);
+function addKarmaPoints(user, pts, reason, nameHint) {
+  return addRewardPoints("karma", user, pts, reason, nameHint);
 }
 
-function addRewardPoints(kind, user, pts, reason) {
+const REWARD_HISTORY_MAX = 200;
+function rewardHistoryList(entry) {
+  const h = entry && entry.history;
+  return Array.isArray(h) ? h : (h && typeof h === "object" ? Object.values(h) : []);
+}
+
+function addRewardPoints(kind, user, pts, reason, nameHint) {
   if (!user || !pts) return;
   const key = user === STATE.nickname ? currentUserKey() : user;
+  const mine = key === currentUserKey();
   const store = rewardStore(kind);
-  if (!store[key]) store[key] = { total: 0, history: [], nickname: key === currentUserKey() ? STATE.nickname : user };
-  store[key].total += pts;
-  store[key].history.push({ pts, reason, time: Date.now() });
-  if (key === currentUserKey()) store[key].nickname = STATE.nickname || store[key].nickname;
+  const item = { pts, reason, time: Date.now() };
+  const fallbackName = mine ? STATE.nickname : (nameHint || user);
+  if (!store[key]) store[key] = { total: 0, history: [], nickname: fallbackName };
+  store[key].total = Number(store[key].total || 0) + pts;
+  store[key].history = [...rewardHistoryList(store[key]), item].slice(-REWARD_HISTORY_MAX);
+  if (mine) store[key].nickname = STATE.nickname || store[key].nickname;
   saveRewardStore(kind);
   if (window.FB?.firebaseReady) {
-    const { db, ref, set } = window.FB;
-    set(ref(db, (kind === "karma" ? "karmaPoints" : "points") + "/" + key), store[key]);
+    const { db, ref, set, runTransaction } = window.FB;
+    const path = (kind === "karma" ? "karmaPoints" : "points") + "/" + key;
+    if (typeof runTransaction === "function") {
+      // Atomic add on the server copy: when several people reward the same
+      // person at once (gossip ratings, supply confirmations) a plain set()
+      // of each client's local copy made the last writer win and lost points.
+      runTransaction(ref(db, path), (cur) => {
+        const base = cur && typeof cur === "object" ? cur : { total: 0, history: [] };
+        return {
+          ...base,
+          total: Number(base.total || 0) + pts,
+          history: [...rewardHistoryList(base), item].slice(-REWARD_HISTORY_MAX),
+          nickname: mine ? (STATE.nickname || base.nickname || "") : (base.nickname || fallbackName || "")
+        };
+      }).catch((err) => console.warn("reward transaction failed:", err));
+    } else {
+      set(ref(db, path), store[key]);
+    }
   }
   updateNicknameBar();
   if (STATE.view === "leaderboard") renderLeaderboard();
@@ -5483,10 +5812,17 @@ function saveNickname() {
   updateNicknameBar();
   unlockAchievement("first-login", "Willkommen", "👋", 10);
   ensureOwnProfileLock();
+  maybeShowRewardTip(6500);
 }
 
 function bindNicknameBar() {
   updateNicknameBar();
+  // Tapping your level explains how points work.
+  ["#nick-pts", "#nick-level-bar"].forEach((sel) => $(sel)?.addEventListener("click", openRewardGuide));
+  $("#reward-guide-close")?.addEventListener("click", closeRewardGuide);
+  $("#reward-guide-overlay")?.addEventListener("click", (e) => { if (e.target.id === "reward-guide-overlay") closeRewardGuide(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeRewardGuide(); });
+  $("#points-help-btn")?.addEventListener("click", openRewardGuide);
   $("#availability-btn")?.addEventListener("click", openAvailabilityPicker);
   updateAvailabilityButton();
   $("#supply-btn")?.addEventListener("click", broadcastSupplyRequest);
@@ -5525,7 +5861,7 @@ function updateNicknameBar() {
   if (badge) badge.textContent = tier.name;
   if (fill) fill.style.width = `${Math.round(info.progress * 100)}%`;
   const bar2 = $("#nick-level-bar");
-  if (bar2) bar2.title = `${info.xpIntoLevel}/${info.xpForNext} Aura · noch ${info.xpToNext} bis Level ${info.level + 1}`;
+  if (bar2) bar2.title = `${info.xpIntoLevel}/${info.xpForNext} Aura · noch ${info.xpToNext} bis Level ${info.level + 1} — ${T("tippen: so sammelst du Punkte", "tap: how to earn points")}`;
 }
 
 function renderTeamPickerHtml() {
@@ -5775,6 +6111,8 @@ function _activateAuthDependentFeatures(uid, status) {
   listenEncounters();
   listenLiveLocations();
   listenDirectMessages();
+  listenGossip();      // no-ops if already listening; cover auth arriving late
+  listenSupplyRuns();
   syncIdentity();
   startPresenceHeartbeat();
   loadProfileFromCloud(uid);
@@ -6225,7 +6563,7 @@ async function adminCleanPresence() {
   try {
     const snap = await get(ref(db, "presence"));
     const data = snap.val() || {};
-    const stale = Object.entries(data).filter(([, v]) => Date.now() - Number(v?.lastSeen || 0) > PRESENCE_FRESH_MS);
+    const stale = Object.entries(data).filter(([, v]) => !presenceIsVisible(v));
     if (!stale.length) { toast("Keine Geister gefunden. ✨"); return; }
     await Promise.all(stale.map(([k]) => remove(ref(db, "presence/" + k)).catch(() => {})));
     toast(`🧹 ${stale.length} Geister-Presence entfernt`);
@@ -6508,6 +6846,10 @@ async function claimExistingProfile(oldKey) {
 }
 
 async function initFirebase() {
+  // Parse ?corner= / ?checkin= / ?invite= / ?ref= / ?gossip= links. This call
+  // got lost in an earlier refactor, which silently broke shared corner links
+  // and QR-sticker check-ins. Must run before openPendingSharedCorner().
+  applyIncomingLinks();
   if (!window.FB || !window.FB.firebaseReady) {
     const status = $("#fb-status");
     status.style.display = "block";
@@ -6564,6 +6906,7 @@ async function initFirebase() {
     listenCaptured();
     listenCornerVotes();
     listenSupplyRuns();
+    listenGossip();
     openPendingSharedCorner();
     // This onAuthChange handler covers the case where auth was initially absent.
     // It activates write-gated features once auth eventually succeeds.
@@ -6596,6 +6939,8 @@ async function initFirebase() {
   window.FB.bindForegroundPush?.((payload) => {
     const body = payload?.notification?.body || payload?.data?.body;
     if (!body) return;
+    // With the app open, gossip rounds already show their own toast / celebration.
+    if (/^gossip/.test(String(payload?.data?.type || ""))) return;
     // The DM push carries ?chat=<peerId>&chatName=<name> — make the toast open it.
     let openChatFn = null;
     try {
@@ -6623,15 +6968,79 @@ async function initFirebase() {
   listenCaptured();
   listenCornerVotes();
   listenSupplyRuns();
+  listenGossip();
+}
+
+// The corner I count as being at. An explicit check-in wins over GPS proximity.
+function myPresenceCorner() {
+  return STATE.manualCheckinId || STATE.atCornerId || null;
 }
 
 function broadcastPresence() {
-  if (!window.FB?.firebaseReady || !STATE.nickname) return;
-  const { db, ref, set, onDisconnect } = window.FB;
-  const activeCorner = STATE.atCornerId || STATE.manualCheckinId || null;
+  applyKeepAwakePref();
+  if (!window.FB?.firebaseReady || !STATE.nickname) return Promise.resolve();
+  const { db, ref, set, onDisconnect, serverTimestamp } = window.FB;
+  const activeCorner = myPresenceCorner();
   const myRef = ref(db, "presence/" + currentUserKey());
-  set(myRef, { nickname: STATE.nickname, name: STATE.nickname, team: STATE.team || "", atCorner: activeCorner, status: STATE.availability || "available", lastSeen: Date.now() });
-  onDisconnect(myRef).remove();
+  const since = activeCorner ? (parseInt(localStorage.getItem("cg.checkedInAt") || "0", 10) || null) : null;
+  const write = set(myRef, {
+    nickname: STATE.nickname, name: STATE.nickname, team: STATE.team || "",
+    atCorner: activeCorner, checkedInAt: since,
+    status: STATE.availability || "available",
+    lastSeen: Date.now(),
+    online: !document.hidden
+  });
+  // Screen locked, app killed or tab closed: keep the entry (deleting it made
+  // people vanish from their corner the moment their phone locked) and only
+  // mark it offline. presenceIsVisible() decides how long it still counts.
+  try { onDisconnect(myRef).update({ online: false, offlineAt: serverTimestamp() }).catch(() => {}); }
+  catch (err) { console.warn("presence onDisconnect failed:", err); }
+  return Promise.resolve(write).catch((err) => console.warn("broadcastPresence failed:", err));
+}
+
+/* ---- Screen wake lock ----
+   A web app cannot keep running once the screen is locked (iOS freezes it
+   completely), but it can stop the screen from locking: automatically during
+   gossip rounds, and while checked in if the user enables it in the profile.
+   Browsers drop the lock whenever the app is hidden, so it is re-requested
+   when the app becomes visible again.                                       */
+const WAKE = { sentinel: null, reasons: new Set(), pending: false };
+function wakeLockSupported() { return typeof navigator !== "undefined" && "wakeLock" in navigator; }
+async function syncWakeLock() {
+  if (!wakeLockSupported() || WAKE.pending) return;
+  const want = WAKE.reasons.size > 0 && !document.hidden;
+  if (want && !WAKE.sentinel) {
+    WAKE.pending = true;
+    try {
+      const sentinel = await navigator.wakeLock.request("screen");
+      sentinel.addEventListener("release", () => { if (WAKE.sentinel === sentinel) WAKE.sentinel = null; });
+      WAKE.sentinel = sentinel;
+    } catch (err) { /* refused (battery saver / not focused) — not fatal */ }
+    finally { WAKE.pending = false; }
+    if (!WAKE.reasons.size && WAKE.sentinel) syncWakeLock(); // dropped meanwhile
+  } else if (!want && WAKE.sentinel) {
+    const sentinel = WAKE.sentinel;
+    WAKE.sentinel = null;
+    try { await sentinel.release(); } catch (err) { /* already released */ }
+  }
+}
+function holdWakeLock(reason) { if (!WAKE.reasons.has(reason)) { WAKE.reasons.add(reason); } syncWakeLock(); }
+function dropWakeLock(reason) { if (WAKE.reasons.delete(reason)) syncWakeLock(); }
+function keepAwakeWhileCheckedIn() { return localStorage.getItem("cg.keepAwake") === "1"; }
+function applyKeepAwakePref() {
+  if (keepAwakeWhileCheckedIn() && myPresenceCorner()) holdWakeLock("checkin");
+  else dropWakeLock("checkin");
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) syncWakeLock(); });
+
+// Called when the app goes to the background (screen lock, app switch): others
+// see 💤 right away instead of only after the connection times out.
+function markPresenceAsleep() {
+  if (!window.FB?.firebaseReady || !STATE.nickname || typeof window.FB.update !== "function") return;
+  try {
+    const { db, ref, update } = window.FB;
+    update(ref(db, "presence/" + currentUserKey()), { online: false, lastSeen: Date.now() }).catch(() => {});
+  } catch (err) { /* best effort */ }
 }
 
 function broadcastLiveLocation() {
@@ -6658,17 +7067,42 @@ function startPresenceHeartbeat() {
         autoCheckoutIfStale(); // app was backgrounded overnight
         broadcastPresence();
         broadcastLiveLocation();
+      } else {
+        markPresenceAsleep();
       }
     });
+    window.addEventListener("pagehide", markPresenceAsleep);
     STATE.presenceVisibilityHookBound = true;
   }
 }
 
-// Returns only presence entries that are fresh enough to be considered online.
+/* Who still counts as "around"?
+   - Checked in at a corner: stays there while the phone sleeps (screen locked,
+     app in the background) for up to CHECKIN_STICKY_MS after the last sign of
+     life — cornering takes hours and nobody stares at their phone the whole time.
+   - Not checked in: visible for PRESENCE_FRESH_MS after the last sign of life.
+   Old clients (no `online` flag) still delete their entry on disconnect.     */
+function presenceIsVisible(f, now = Date.now()) {
+  if (!f) return false;
+  const age = now - Number(f.lastSeen || 0);
+  return age < (f.atCorner ? CHECKIN_STICKY_MS : PRESENCE_FRESH_MS);
+}
+
+// App closed / screen off right now (push still reaches them, in-app toasts don't).
+function presenceIsAsleep(f, now = Date.now()) {
+  if (!f) return false;
+  return f.online === false || now - Number(f.lastSeen || 0) > PRESENCE_ASLEEP_MS;
+}
+
+function asleepSinceLabel(f) {
+  const mins = Math.max(1, Math.round((Date.now() - Number(f.lastSeen || 0)) / 60000));
+  return mins < 60 ? T(`vor ${mins} min`, `${mins} min ago`) : T(`vor ${Math.floor(mins / 60)} h`, `${Math.floor(mins / 60)} h ago`);
+}
+
+// Returns only presence entries that still count as online / at their corner.
 // Mirrors the filter in renderFriendsBar so all corner-level logic stays consistent.
 function freshFriends() {
-  return Object.values(STATE.friends || {})
-    .filter((f) => Date.now() - Number(f.lastSeen || 0) < PRESENCE_FRESH_MS);
+  return Object.values(STATE.friends || {}).filter((f) => presenceIsVisible(f));
 }
 
 function listenFriendPresence() {
@@ -6691,6 +7125,7 @@ function listenFriendPresence() {
       }
     });
     renderFriendsBar();
+    refreshGossipViews();   // who can listen / start a round depends on who is here
   });
 }
 
@@ -6709,11 +7144,12 @@ function friendAtCornerAlarm(friend, corner) {
 function renderFriendsBar() {
   const bar = $("#friends-bar");
   const list = $("#friends-list");
-  // Hide stale presence entries: closed tabs whose onDisconnect never fired
-  // used to show friends as "unterwegs" forever.
-  const friends = Object.values(STATE.friends || {})
-    .filter((f) => Date.now() - Number(f.lastSeen || 0) < PRESENCE_FRESH_MS)
-    .sort((a, b) => (b.atCorner ? 1 : 0) - (a.atCorner ? 1 : 0) || Number(b.lastSeen || 0) - Number(a.lastSeen || 0));
+  // Hide stale presence entries (see presenceIsVisible); people whose screen is
+  // off stay listed with 💤 instead of vanishing.
+  const friends = freshFriends()
+    .sort((a, b) => (b.atCorner ? 1 : 0) - (a.atCorner ? 1 : 0)
+      || (presenceIsAsleep(a) ? 1 : 0) - (presenceIsAsleep(b) ? 1 : 0)
+      || Number(b.lastSeen || 0) - Number(a.lastSeen || 0));
   if (!friends.length) { bar.classList.remove("has-friends"); list.innerHTML = ""; return; }
   bar.classList.add("has-friends");
   list.innerHTML = friends.map((friend) => {
@@ -6723,9 +7159,11 @@ function renderFriendsBar() {
     const tier = getLevelTier(level);
     const avail = AVAILABILITY[friend.status] || null;
     const statusLabel = corner ? "@ " + escapeHtml(corner.name) : escapeHtml(avail?.label || T("online", "online"));
-    return `<li class="friend-chip ${corner ? "" : "away"}" style="border-color:${TEAMS[friend.team]?.color || 'var(--line)'};">
+    const asleep = presenceIsAsleep(friend);
+    return `<li class="friend-chip ${corner ? "" : "away"} ${asleep ? "asleep" : ""}" style="border-color:${TEAMS[friend.team]?.color || 'var(--line)'};">
       <span class="friend-dot" title="${escapeHtml(avail?.label || "")}" style="background:${avail?.color || TEAMS[friend.team]?.color || 'var(--fg-dim)'};"></span>
       <span>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</span>
+      ${asleep ? `<span class="friend-asleep" title="${T("Display aus — bekommt Push, sieht aber gerade nichts live", "Screen off — gets push, not watching live")}">💤 ${asleepSinceLabel(friend)}</span>` : ""}
       ${corner
         ? `<button class="friend-corner friend-goto" data-goto-corner="${escapeHtml(corner.id)}" title="${T("Zum Corner springen", "Go to corner")}">${statusLabel} →</button>`
         : `<span class="friend-corner">${statusLabel}</span>`}
@@ -7494,7 +7932,9 @@ function getPeopleAtCorner(cornerId) {
   const people = [];
   const meAtCorner = STATE.manualCheckinId === cornerId || STATE.atCornerId === cornerId;
   if (meAtCorner) people.push(getDisplayName(STATE.nickname || "Du", STATE.team));
-  freshFriends().forEach((friend) => { if (friend.atCorner === cornerId) people.push(getDisplayName(friend.nickname || friend.name, friend.team)); });
+  freshFriends().forEach((friend) => {
+    if (friend.atCorner === cornerId) people.push(getDisplayName(friend.nickname || friend.name, friend.team) + (presenceIsAsleep(friend) ? " 💤" : ""));
+  });
   return people;
 }
 
@@ -7567,6 +8007,7 @@ function manualCheckin(cornerId) {
   if (wasCheckedIn) {
     STATE.manualCheckinId = null;
     localStorage.removeItem("cg.checkedInAt");
+    localStorage.removeItem("cg.manualCheckinId");
     STATE._autoCheckedCorner = null; // allow a fresh dwell auto-checkin later
     toast(T("Ausgecheckt 👋", "Checked out 👋"));
   } else {
@@ -7579,6 +8020,7 @@ function manualCheckin(cornerId) {
     document.getElementById("card-" + cornerId)?.classList.add("at-here");
     refreshMainMarker(cornerId);
     localStorage.setItem("cg.checkedInAt", String(Date.now()));
+    localStorage.setItem("cg.manualCheckinId", cornerId);
     // "Ups falsch eingecheckt" — offer a one-tap undo right in the confirmation.
     toast(
       `${T("Eingecheckt am", "Checked in at")} <strong>${escapeHtml(corner.name)}</strong> 🍻<br><span style="font-size:11px;opacity:0.75;">${T("Tippen = rückgängig", "Tap to undo")}</span>`,
@@ -7653,6 +8095,7 @@ function manualCheckin(cornerId) {
   updateCheckinButtons();
   broadcastPresence();
   renderCards();   // re-sort: the corner you are at moves to the top
+  onGossipData();  // a round may be running where you just checked in
 }
 
 // Fan-out push: writes a lightweight event that the Cloud Function delivers to
@@ -7674,7 +8117,7 @@ function broadcastCheckinPush(corner) {
 
 /* Full-screen celebration when a supply run pays out — and an extra beat when
    it pushes you over a level boundary. */
-function showRewardCelebration(amount, kind = "karma") {
+function showRewardCelebration(amount, kind = "karma", opts = {}) {
   const el = $("#celebration");
   if (!el) return;
   setTimeout(() => {
@@ -7688,11 +8131,11 @@ function showRewardCelebration(amount, kind = "karma") {
     const tier = getLevelTier(info.level);
     el.innerHTML = `
       <div class="cel-card">
-        <div class="cel-emoji">${leveledUp ? "🎊" : "🛒"}</div>
+        <div class="cel-emoji">${leveledUp ? "🎊" : (opts.emoji || "🛒")}</div>
         <div class="cel-karma">+${amount} ${label}</div>
         <div class="cel-text">${leveledUp
-          ? `<strong>LEVEL ${info.level}!</strong><br>${tier.emoji} ${escapeHtml(tier.name)}`
-          : "Danke für den Nachschub! 🍻"}</div>
+          ? `<strong>LEVEL ${info.level}!</strong><br>${tier.emoji} ${escapeHtml(tier.name)}${opts.text ? `<br><span style="font-size:14px;">${opts.text}</span>` : ""}`
+          : (opts.text || "Danke für den Nachschub! 🍻")}</div>
         <div class="cel-sub">${leveledUp ? "" : `noch ${info.xpToNext} ${label} bis Level ${info.level + 1}`}</div>
       </div>
       <div class="cel-confetti">${Array.from({ length: 28 }, (_, i) =>
@@ -7747,7 +8190,7 @@ function confirmSupplyRun(cornerId, runId, run) {
   set(ref(db, `supplyRuns/${cornerId}/${runId}/confirms/${me}`), { name: STATE.nickname, at: Date.now() })
     .then(() => {
       // the bringer gets the karma, not the confirmer
-      addKarmaPoints(run.byId, SUPPLY_KARMA_PER_CONFIRM, `Nachschub gebracht (bestätigt von ${STATE.nickname})`);
+      addKarmaPoints(run.byId, SUPPLY_KARMA_PER_CONFIRM, `Nachschub gebracht (bestätigt von ${STATE.nickname})`, run.byName);
       addXp(5, "Nachschub bestätigt");
       toast(`✅ Bestätigt — <strong>${escapeHtml(run.byName)}</strong> bekommt ${SUPPLY_KARMA_PER_CONFIRM} Karma!`);
       try {
@@ -7764,8 +8207,17 @@ function confirmSupplyRun(cornerId, runId, run) {
     .catch((err) => { console.warn("confirmSupplyRun failed:", err); toast("Bestätigen fehlgeschlagen."); });
 }
 
-function listenSupplyRuns() {
-  if (!window.FB?.firebaseReady) return;
+// A listener attached before sign-in finished gets cancelled by the rules and
+// used to stay dead until the next app start. Re-attach once auth is there.
+function retryListenerAfterAuth(fn, attempt) {
+  if (attempt >= 3) return;
+  setTimeout(() => { if (window.FB?.getAuthUid?.()) fn(attempt + 1); }, 1500 * (attempt + 1));
+}
+
+var _supplyListening = false;
+function listenSupplyRuns(attempt = 0) {
+  if (!window.FB?.firebaseReady || _supplyListening) return;
+  _supplyListening = true;
   const { db, ref, onValue } = window.FB;
   onValue(ref(db, "supplyRuns"), (snap) => {
     STATE.supplyRuns = snap.val() || {};
@@ -7773,7 +8225,7 @@ function listenSupplyRuns() {
     if (open && STATE.detailCornerId) refreshSupplySection(STATE.detailCornerId);
     // My own run got a new confirmation? Celebrate.
     celebrateOwnSupplyConfirms();
-  });
+  }, () => { _supplyListening = false; retryListenerAfterAuth(listenSupplyRuns, attempt); });
 }
 
 var _seenSupplyConfirms = null;
@@ -7856,6 +8308,837 @@ function broadcastSupplyRequest() {
   } catch (err) { console.warn("broadcastSupplyRequest failed:", err); toast("Konnte nicht senden."); }
 }
 
+/* ====================== GOSSIP-RUNDEN ======================
+   Two or more people checked in at the same corner can play a gossip round:
+   one person writes the story down and/or records it with the mic, everyone
+   else checked in there rates it (+2 … +20). Those points land as KARMA with
+   the storyteller — karma is what other people give you. The score stays
+   hidden until everybody rated or the timer ran out, then it is revealed on
+   all phones at once.
+   Privacy: story text and audio live in gossipContent/, which the database
+   rules only let the teller and people checked in at that corner read.
+   Rounds, content, votes and recordings are deleted after 24 hours.       */
+const GOSSIP_SCALE = [
+  { pts: 2,  emoji: "🥱", de: "Kalter Kaffee", en: "Old news" },
+  { pts: 5,  emoji: "🙂", de: "Ganz nett",     en: "Kinda nice" },
+  { pts: 10, emoji: "😮", de: "Uiii!",         en: "Oooh!" },
+  { pts: 15, emoji: "🤯", de: "Krass!",        en: "Wild!" },
+  { pts: 20, emoji: "💣", de: "Bombe!",        en: "Bombshell!" }
+];
+const GOSSIP_WINDOW_MS = 10 * 60 * 1000;      // rating window after a story goes out
+const GOSSIP_TTL_MS = 24 * 60 * 60 * 1000;    // everything is deleted after this
+const GOSSIP_TEXT_MAX = 1000;
+const GOSSIP_MAX_RECORDING_S = 90;
+const GOSSIP_KARMA_ROUNDS_PER_DAY = 5;        // stories per day that earn karma
+const GOSSIP_TELL_AURA = 5;
+const GOSSIP_RATE_AURA = 2;
+const GOSSIP_INLINE_AUDIO_MAX = 1500000;      // data-URL fallback when Storage fails
+
+STATE.gossipRounds = {};   // cornerId -> roundId -> round (public metadata)
+STATE.gossipVotes = {};    // cornerId -> roundId -> voterId -> { pts, name, at }
+STATE.serverTimeOffset = 0;
+var GOSSIP_CONTENT = {};   // "corner/round" -> { status: loading|ok|missing|denied, data, at }
+var _gossip = { roundsLoaded: false, votesLoaded: false, listening: false, primed: false, ticker: null, openSig: "", cardSig: "", lastCleanup: 0, voting: false };
+
+function serverNow() { return Date.now() + (Number(STATE.serverTimeOffset) || 0); }
+function gossipKey(cornerId, roundId) { return cornerId + "/" + roundId; }
+function gossipScaleFor(pts) { return GOSSIP_SCALE.find((s) => s.pts === Number(pts)) || null; }
+function gossipVerdict(avg) {
+  if (avg >= 17.5) return GOSSIP_SCALE[4];
+  if (avg >= 12.5) return GOSSIP_SCALE[3];
+  if (avg >= 7.5) return GOSSIP_SCALE[2];
+  if (avg >= 3.5) return GOSSIP_SCALE[1];
+  return GOSSIP_SCALE[0];
+}
+function gossipVotesFor(cornerId, roundId) {
+  return (STATE.gossipVotes && STATE.gossipVotes[cornerId] && STATE.gossipVotes[cornerId][roundId]) || {};
+}
+function gossipClosesAt(round) {
+  const end = Number(round.createdAt || 0) + Number(round.windowMs || GOSSIP_WINDOW_MS);
+  return round.endedAt ? Math.min(end, Number(round.endedAt)) : end;
+}
+function gossipAllVoted(cornerId, round) {
+  const audience = Object.keys(round.audience || {});
+  if (!audience.length) return false;
+  const votes = gossipVotesFor(cornerId, round.id);
+  return audience.every((id) => votes[id]);
+}
+// Open = still collecting ratings. Revealed = everyone rated or time is up.
+function gossipIsOpen(cornerId, round, now = serverNow()) {
+  return !!round && now < gossipClosesAt(round) && !gossipAllVoted(cornerId, round);
+}
+function gossipRoundsAt(cornerId) {
+  const now = serverNow();
+  return Object.entries((STATE.gossipRounds || {})[cornerId] || {})
+    .filter(([, r]) => r && r.tellerId && now - Number(r.createdAt || 0) < GOSSIP_TTL_MS)
+    .map(([id, r]) => ({ ...r, id, cornerId }))
+    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+}
+function gossipOpenRoundAt(cornerId) {
+  return gossipRoundsAt(cornerId).find((r) => gossipIsOpen(cornerId, r)) || null;
+}
+function gossipResult(cornerId, round) {
+  const votes = Object.entries(gossipVotesFor(cornerId, round.id))
+    .map(([id, v]) => ({ id, name: (v && v.name) || "?", pts: Number(v && v.pts) || 0 }))
+    .filter((v) => gossipScaleFor(v.pts))
+    .sort((a, b) => b.pts - a.pts);
+  const total = votes.reduce((sum, v) => sum + v.pts, 0);
+  const avg = votes.length ? total / votes.length : 0;
+  return { votes, total, avg, verdict: votes.length ? gossipVerdict(avg) : null };
+}
+// Everyone else who counts as checked in at this corner (screen-off people included).
+function gossipCrowdAt(cornerId) {
+  return freshFriends()
+    .filter((f) => f.atCorner === cornerId && !isMyKey(f.id))
+    .map((f) => ({ id: f.id, name: f.nickname || f.name || f.id, team: f.team || "", asleep: presenceIsAsleep(f) }));
+}
+function iAmAtCorner(cornerId) { return !!cornerId && myPresenceCorner() === cornerId; }
+function gossipLocalLog(key) {
+  try { const v = JSON.parse(localStorage.getItem(key) || "{}"); return v && typeof v === "object" ? v : {}; }
+  catch (e) { return {}; }
+}
+function gossipLocalMark(key, id) {
+  const log = gossipLocalLog(key);
+  log[id] = Date.now();
+  const cutoff = Date.now() - 3 * 24 * 60 * 60 * 1000;
+  Object.keys(log).forEach((k) => { if (Number(log[k]) < cutoff) delete log[k]; });
+  localStorage.setItem(key, JSON.stringify(log));
+}
+function gossipKarmaRoundsToday() { return Number(gossipLocalLog("cg.gossipDays")[getTodayKey()] || 0); }
+function countGossipKarmaRound() {
+  const today = getTodayKey();
+  localStorage.setItem("cg.gossipDays", JSON.stringify({ [today]: gossipKarmaRoundsToday() + 1 }));
+}
+function bumpLocalCounter(key) {
+  const n = (parseInt(localStorage.getItem(key) || "0", 10) || 0) + 1;
+  localStorage.setItem(key, String(n));
+  return n;
+}
+function formatDuration(seconds) {
+  const s = Math.max(0, Math.round(Number(seconds) || 0));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+function clockTime(ts) {
+  return new Date(Number(ts) || 0).toLocaleTimeString(STATE.lang === "en" ? "en-GB" : "de-DE", { hour: "2-digit", minute: "2-digit" });
+}
+// Only replace markup that actually changed: re-rendering rating buttons in
+// the middle of a tap would swallow the tap.
+function setHtmlIfChanged(el, html) {
+  if (!el || el._html === html) return false;
+  el._html = html;
+  el.innerHTML = html;
+  return true;
+}
+
+function listenGossip(attempt = 0) {
+  if (!window.FB?.firebaseReady || _gossip.listening) return;
+  _gossip.listening = true;
+  const { db, ref, onValue } = window.FB;
+  let retried = false;
+  const stopped = (what) => (err) => {
+    _gossip.listening = false;
+    console.warn(`gossip ${what} listener stopped:`, err?.message || err);
+    if (!retried) { retried = true; retryListenerAfterAuth(listenGossip, attempt); }
+  };
+  try { onValue(ref(db, ".info/serverTimeOffset"), (snap) => { STATE.serverTimeOffset = Number(snap.val()) || 0; }); } catch (err) { /* local clock it is */ }
+  onValue(ref(db, "gossipRounds"), (snap) => {
+    STATE.gossipRounds = snap.val() || {};
+    _gossip.roundsLoaded = true;
+    onGossipData();
+  }, stopped("rounds"));
+  onValue(ref(db, "gossipVotes"), (snap) => {
+    STATE.gossipVotes = snap.val() || {};
+    _gossip.votesLoaded = true;
+    onGossipData();
+  }, stopped("votes"));
+}
+
+function onGossipData() {
+  if (!_gossip.roundsLoaded || !_gossip.votesLoaded) return;
+  processGossipEvents(!_gossip.primed);
+  _gossip.primed = true;
+  _gossip.openSig = openGossipSignature();
+  refreshGossipViews();
+  ensureGossipTicker();
+  cleanupExpiredGossip();
+}
+
+function openGossipSignature() {
+  return Object.keys(STATE.gossipRounds || {})
+    .map((cornerId) => { const r = gossipOpenRoundAt(cornerId); return r ? gossipKey(cornerId, r.id) : ""; })
+    .filter(Boolean).sort().join("|");
+}
+
+// Toasts, the teller's celebration and the screen wake lock, each once per round.
+function processGossipEvents(firstLoad) {
+  const me = currentUserKey();
+  if (!me) return;
+  const announced = gossipLocalLog("cg.gossipAnnounced");
+  const celebrated = gossipLocalLog("cg.gossipCelebrated");
+  const revealSeen = gossipLocalLog("cg.gossipRevealSeen");
+  let keepAwake = false;
+  Object.keys(STATE.gossipRounds || {}).forEach((cornerId) => {
+    gossipRoundsAt(cornerId).forEach((round) => {
+      const key = gossipKey(cornerId, round.id);
+      const mine = isMyKey(round.tellerId);
+      const myVote = gossipVotesFor(cornerId, round.id)[me];
+      if (gossipIsOpen(cornerId, round)) {
+        if (mine || iAmAtCorner(cornerId)) keepAwake = true;
+        if (!mine && !myVote && iAmAtCorner(cornerId) && !announced[key]) {
+          gossipLocalMark("cg.gossipAnnounced", key);
+          announceGossipRound(cornerId, round);
+        }
+        return;
+      }
+      if (mine) {
+        if (!celebrated[key]) {
+          gossipLocalMark("cg.gossipCelebrated", key);
+          celebrateGossipResult(cornerId, round, firstLoad);
+        }
+      } else if (!revealSeen[key]) {
+        gossipLocalMark("cg.gossipRevealSeen", key);
+        const involved = !!myVote || !!(round.audience && round.audience[me]);
+        if (!firstLoad && involved) toastGossipResult(cornerId, round);
+      }
+    });
+  });
+  if (keepAwake) holdWakeLock("gossip"); else dropWakeLock("gossip");
+}
+
+function announceGossipRound(cornerId, round) {
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  toast(`🗣️ <strong>${escapeHtml(round.tellerName || T("Jemand", "Someone"))}</strong> ${T("hat frischen Gossip", "has fresh gossip")}${corner ? ` ${T("am", "at")} ${escapeHtml(corner.name)}` : ""}!<br><span style="font-size:11px;opacity:0.8;">${T("Tippen zum Hören & Punkte vergeben →", "Tap to listen & rate →")}</span>`, "gossip", () => focusGossip(cornerId));
+  try { playTeamCheckinSound(round.tellerTeam || STATE.team); } catch (err) { /* sound is optional */ }
+}
+
+function celebrateGossipResult(cornerId, round, whileAway) {
+  const res = gossipResult(cornerId, round);
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  if (!res.votes.length) {
+    toast(`🗣️ ${T("Deine Story", "Your story")}${corner ? ` ${T("am", "at")} ${escapeHtml(corner.name)}` : ""}: ${T("diesmal keine Bewertungen", "no ratings this time")} 🤷`);
+    return;
+  }
+  const v = res.verdict;
+  const text = `${v.emoji} <strong>${escapeHtml(T(v.de, v.en))}</strong><br>${res.votes.length} ${res.votes.length === 1 ? T("Bewertung", "rating") : T("Bewertungen", "ratings")} · Ø ${Math.round(res.avg)}${whileAway ? `<br><span style="font-size:12px;opacity:0.8;">${T("… während du weg warst", "… while you were away")}</span>` : ""}`;
+  if (round.karma !== false) showRewardCelebration(res.total, "karma", { emoji: "🗣️", text });
+  else toast(`🗣️ ${T("Deine Story", "Your story")}: <strong>${res.total}</strong> ${T("Punkte", "points")} ${v.emoji} — ${T("heute ohne Karma (Tageslimit)", "no karma today (daily limit)")}`, "gossip");
+  if (res.votes.length >= 2 && res.avg >= 17.5) unlockAchievement("gossip-bomb", "Bombe geplatzt", "💣", 40);
+}
+
+function toastGossipResult(cornerId, round) {
+  const res = gossipResult(cornerId, round);
+  if (!res.votes.length) return;
+  toast(`${res.verdict.emoji} ${T("Gossip von", "Gossip by")} <strong>${escapeHtml(round.tellerName || "?")}</strong>: <strong>${res.total}</strong> ${T("Punkte", "points")} — ${escapeHtml(T(res.verdict.de, res.verdict.en))}`, "gossip", () => focusGossip(cornerId));
+}
+
+function focusGossip(cornerId) {
+  const alreadyOpen = $("#detail-overlay")?.classList.contains("open") && STATE.detailCornerId === cornerId;
+  if (!alreadyOpen) openDetail(cornerId);
+  setTimeout(() => {
+    document.querySelector(`.gossip-section[data-corner-id="${CSS.escape(cornerId)}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, alreadyOpen ? 0 : 250);
+}
+
+function ensureGossipTicker() {
+  const anyOpen = !!openGossipSignature();
+  if (anyOpen && !_gossip.ticker) _gossip.ticker = setInterval(gossipTick, 1000);
+  else if (!anyOpen && _gossip.ticker) { clearInterval(_gossip.ticker); _gossip.ticker = null; }
+  updateGossipCountdowns();
+}
+function gossipTick() {
+  updateGossipCountdowns();
+  const sig = openGossipSignature();
+  if (sig !== _gossip.openSig) {          // a round just ran out of time
+    _gossip.openSig = sig;
+    processGossipEvents(false);
+    refreshGossipViews();
+    ensureGossipTicker();
+  }
+}
+function updateGossipCountdowns() {
+  document.querySelectorAll("[data-gossip-ends]").forEach((el) => {
+    el.textContent = formatDuration(Math.max(0, Number(el.dataset.gossipEnds) - serverNow()) / 1000);
+  });
+}
+
+function refreshGossipViews() {
+  if ($("#detail-overlay")?.classList.contains("open") && STATE.detailCornerId) {
+    const box = document.querySelector(`.gossip-section[data-corner-id="${CSS.escape(STATE.detailCornerId)}"]`);
+    if (box) renderGossipSection(STATE.detailCornerId, box);
+  }
+  const cardSig = openGossipSignature();
+  if (cardSig !== _gossip.cardSig) { _gossip.cardSig = cardSig; renderCards(); }
+}
+
+// Story text/audio is only readable for people at the corner (database rules),
+// so it is fetched per round instead of being part of a big listener.
+function ensureGossipContent(cornerId, roundId, attempt = 0) {
+  const key = gossipKey(cornerId, roundId);
+  const cur = GOSSIP_CONTENT[key];
+  if (cur && (cur.status === "ok" || cur.status === "loading")) return cur;
+  if (cur && Date.now() - Number(cur.at || 0) < 5000) return cur;   // missing/denied: retry later
+  GOSSIP_CONTENT[key] = { status: "loading", at: Date.now() };
+  const { db, ref, get } = window.FB;
+  get(ref(db, `gossipContent/${cornerId}/${roundId}`)).then((snap) => {
+    const data = snap.val();
+    GOSSIP_CONTENT[key] = data ? { status: "ok", data, at: Date.now() } : { status: "missing", at: Date.now() };
+    if (!data && attempt < 4) setTimeout(() => { if (GOSSIP_CONTENT[key]?.status === "missing") { delete GOSSIP_CONTENT[key]; ensureGossipContent(cornerId, roundId, attempt + 1); } }, 1500);
+    refreshGossipViews();
+  }).catch(() => {
+    GOSSIP_CONTENT[key] = { status: "denied", at: Date.now() };
+    refreshGossipViews();
+  });
+  return GOSSIP_CONTENT[key];
+}
+
+function gossipAudioSrc(data) {
+  const src = String((data && (data.audioUrl || data.audioData)) || "");
+  return /^(https?:|data:audio\/)/i.test(src) ? src : "";
+}
+
+function renderGossipStoryHtml(round, cs, mine) {
+  const head = `<div class="gs-story-head">${mine ? `<strong>${T("Deine Story", "Your story")}</strong>` : `<strong>${escapeHtml(round.tellerName || "?")}</strong> ${T("erzählt", "tells")}`}${round.hasAudio ? ` · 🎙️ ${formatDuration(round.audioDuration)}` : ""}</div>`;
+  if (cs.status === "denied") return `<div class="gs-story">${head}<p class="gs-hint">🤫 ${T("Nur für Leute, die hier eingecheckt sind.", "Only for people checked in here.")}</p></div>`;
+  if (cs.status !== "ok") return `<div class="gs-story">${head}<p class="gs-hint">${T("Story wird geladen …", "Loading story …")}</p></div>`;
+  const d = cs.data || {};
+  const src = gossipAudioSrc(d);
+  return `<div class="gs-story">${head}
+    ${d.text ? `<p class="gs-story-text">${escapeHtml(d.text)}</p>` : ""}
+    ${src ? `<audio controls preload="metadata" src="${escapeHtml(src)}"></audio><p class="gs-hint gs-audio-error" hidden>⚠️ ${T("Dein Gerät kann diese Aufnahme nicht abspielen — lass sie dir vorspielen 😉", "Your device can't play this recording — ask to hear it 😉")}</p>`
+      : (round.hasAudio ? `<p class="gs-hint">${T("Aufnahme nicht verfügbar.", "Recording unavailable.")}</p>` : "")}
+  </div>`;
+}
+
+function renderGossipResultCard(cornerId, round) {
+  const res = gossipResult(cornerId, round);
+  const mine = isMyKey(round.tellerId);
+  const who = mine ? T("dich", "you") : escapeHtml(round.tellerName || "?");
+  if (!res.votes.length) return `<div class="gs-result"><div class="gs-sub">${mine ? T("Deine Story", "Your story") : escapeHtml(round.tellerName || "?")}: ${T("keine Bewertungen", "no ratings")} 🤷</div></div>`;
+  return `<div class="gs-result">
+    <div class="gs-big">${res.verdict.emoji}</div>
+    <div class="gs-score">${res.total} ${T("Punkte", "points")}</div>
+    <div class="gs-sub">${T("für", "for")} <strong>${who}</strong> · ${escapeHtml(T(res.verdict.de, res.verdict.en))} · Ø ${Math.round(res.avg)}</div>
+    <div class="gs-votes">${res.votes.map((v) => `<span>${gossipScaleFor(v.pts).emoji} ${escapeHtml(v.name)} +${v.pts}</span>`).join("")}</div>
+    ${mine ? `<p class="gs-hint">${round.karma === false ? T("Just for fun — heute ohne Karma (Tageslimit erreicht).", "Just for fun — no karma today (daily limit).") : `→ <strong>+${res.total} Karma</strong> ${T("für dich", "for you")}`}</p>` : ""}
+  </div>`;
+}
+
+function renderGossipSection(cornerId, container) {
+  if (!container) return;
+  if (!container._ready) {
+    container.innerHTML = `<h3 class="gossip-title"><span class="gossip-live-dot" hidden></span>🗣️ ${T("Gossip-Runde", "Gossip round")}</h3><div class="gs-live"></div><div class="gs-controls"></div><div class="gs-results"></div><div class="gs-start"></div><div class="gs-history"></div>`;
+    container._ready = true;
+  }
+  const me = currentUserKey();
+  const here = iAmAtCorner(cornerId);
+  const crowd = gossipCrowdAt(cornerId);
+  const rounds = gossipRoundsAt(cornerId);
+  const open = rounds.find((r) => gossipIsOpen(cornerId, r)) || null;
+  const revealed = rounds.filter((r) => !gossipIsOpen(cornerId, r));
+  container.classList.toggle("live", !!open);
+  container.querySelector(".gossip-live-dot").hidden = !open;
+
+  // 1) The story itself (the running round, else the last one told here).
+  //    Rebuilt only when the round or its loading state changes, so a clip
+  //    keeps playing while ratings come in and through the reveal.
+  const live = container.querySelector(".gs-live");
+  const featured = open || revealed[0] || null;
+  let liveSig = "none";
+  let liveHtml = "";
+  if (featured && (here || isMyKey(featured.tellerId))) {
+    const cs = ensureGossipContent(cornerId, featured.id);
+    liveSig = `${featured.id}:${cs.status}`;
+    liveHtml = renderGossipStoryHtml(featured, cs, isMyKey(featured.tellerId));
+  }
+  if (live._sig !== liveSig) {
+    live._sig = liveSig;
+    live.innerHTML = liveHtml;
+    live.querySelectorAll("audio").forEach((a) => a.addEventListener("error", () => {
+      const hint = a.nextElementSibling;
+      if (hint) hint.hidden = false;
+    }));
+  }
+
+  // 2) Rating / waiting state of the open round.
+  let ctrl = "";
+  if (open) {
+    const votes = gossipVotesFor(cornerId, open.id);
+    const audience = Object.entries(open.audience || {});
+    const late = Object.keys(votes).filter((id) => !(open.audience || {})[id]);
+    const voted = Object.keys(votes).length;
+    const progress = `⏳ <span class="gs-countdown" data-gossip-ends="${gossipClosesAt(open)}"></span> · ${voted}/${audience.length + late.length} ${T("haben bewertet", "rated")}`;
+    const who = `<div class="gs-who">${audience.map(([id, name]) => `<span class="${votes[id] ? "done" : ""}">${votes[id] ? "✓ " : ""}${escapeHtml(name)}</span>`).join("")}</div>`;
+    const myVote = votes[me];
+    if (isMyKey(open.tellerId)) {
+      ctrl = `<p class="gs-meta">${progress}</p>${who}
+        <p class="gs-hint">${T("Die Punkte bleiben geheim, bis alle bewertet haben oder die Zeit um ist.", "Scores stay hidden until everyone rated or time is up.")}${open.karma === false ? " " + T("Heute ohne Karma — dein Tageslimit von 5 Storys ist erreicht.", "No karma today — your daily limit of 5 stories is reached.") : ""}</p>
+        <div class="gs-actions">${voted
+          ? `<button class="action-btn" data-gossip-reveal>🔓 ${T("Jetzt auflösen", "Reveal now")}</button>`
+          : `<button class="action-btn" data-gossip-withdraw>🗑️ ${T("Zurückziehen", "Withdraw")}</button>`}</div>`;
+    } else if (!here) {
+      ctrl = `<p class="gs-meta">${progress}</p><p class="gs-hint">${T("Gerade erzählt", "Right now")} <strong>${escapeHtml(open.tellerName || "?")}</strong> ${T("hier eine Story. Check ein, um mitzuhören und Punkte zu vergeben.", "is telling a story here. Check in to listen and rate.")}</p>`;
+    } else if (myVote) {
+      const s = gossipScaleFor(myVote.pts);
+      ctrl = `<p class="gs-meta">✓ ${T("Du hast", "You gave")} ${s ? s.emoji : ""} <strong>+${myVote.pts}</strong> ${T("vergeben — warte auf die anderen", "— waiting for the others")}</p><p class="gs-meta">${progress}</p>${who}`;
+    } else {
+      ctrl = `<p class="gs-rate-q">${T("Wie krass ist der Gossip? Deine Punkte gehen an", "How juicy is it? Your points go to")} <strong>${escapeHtml(open.tellerName || "?")}</strong>${open.karma === false ? "" : " (Karma)"}:</p>
+        <div class="gs-rate">${GOSSIP_SCALE.map((s) => `<button class="gs-rate-btn" data-gossip-rate="${s.pts}" aria-label="${escapeHtml(T(s.de, s.en))}, +${s.pts}"><span class="gs-e">${s.emoji}</span><span class="gs-l">${escapeHtml(T(s.de, s.en))}</span><span class="gs-p">+${s.pts}</span></button>`).join("")}</div>
+        <p class="gs-meta">${progress}</p>`;
+    }
+  }
+  const controls = container.querySelector(".gs-controls");
+  if (setHtmlIfChanged(controls, ctrl)) {
+    controls.querySelectorAll("[data-gossip-rate]").forEach((btn) => btn.addEventListener("click", () => rateGossip(cornerId, open.id, Number(btn.dataset.gossipRate))));
+    controls.querySelector("[data-gossip-reveal]")?.addEventListener("click", () => revealGossipNow(cornerId, open.id));
+    controls.querySelector("[data-gossip-withdraw]")?.addEventListener("click", () => withdrawGossip(cornerId, open.id));
+    updateGossipCountdowns();
+  }
+
+  // 3) Start a round (or why you can't yet).
+  let start = "";
+  if (!open) {
+    if (!window.FB?.firebaseReady) {
+      start = `<p class="gs-hint">${T("Gossip-Runden brauchen eine Verbindung.", "Gossip rounds need a connection.")}</p>`;
+    } else if (!here) {
+      start = `<p class="gs-hint">${T("Sobald mindestens zwei Leute hier eingecheckt sind, könnt ihr eine Gossip-Runde spielen: eine Person erzählt (aufschreiben oder einsprechen), die anderen vergeben Punkte — die landen als Karma bei der Person, die erzählt.", "Once at least two people are checked in here you can play a gossip round: one person tells a story (written or recorded), the others rate it — the points land as karma with the storyteller.")}</p>`;
+    } else if (!crowd.length) {
+      start = `<p class="gs-hint">${T("Du bist gerade allein hier eingecheckt. Sobald noch jemand eincheckt, kannst du eine Gossip-Runde starten.", "You're the only one checked in here. As soon as someone else checks in, you can start a gossip round.")}</p>`;
+    } else {
+      const names = crowd.map((p) => escapeHtml(p.name) + (p.asleep ? " 💤" : "")).join(", ");
+      const capped = gossipKarmaRoundsToday() >= GOSSIP_KARMA_ROUNDS_PER_DAY;
+      start = `<button class="action-btn gs-start-btn" data-gossip-start>🗣️ ${revealed.length ? T("Nächste Gossip-Runde starten", "Start the next gossip round") : T("Gossip-Runde starten", "Start a gossip round")}</button>
+        <p class="gs-hint">${T("Schreib deine Story auf oder sprich sie ein.", "Write your story down or record it.")} <strong>${names}</strong> ${crowd.length === 1 ? T("vergibt", "rates it with") : T("vergeben", "rate it with")} +2 ${T("bis", "to")} +20 ${T("Punkte → landen als Karma bei dir.", "points → they land as karma with you.")}${capped ? " " + T("Heute hattest du schon 5 Storys mit Karma — weitere zählen just for fun.", "You already had 5 karma stories today — more are just for fun.") : ""}</p>`;
+    }
+  }
+  const startBox = container.querySelector(".gs-start");
+  if (setHtmlIfChanged(startBox, start)) {
+    startBox.querySelector("[data-gossip-start]")?.addEventListener("click", () => openGossipComposer(cornerId));
+  }
+
+  // 4) Results of the last 24 hours: the latest one big, older ones compact.
+  let res = "";
+  let history = "";
+  if (revealed.length) {
+    const [latest, ...older] = revealed;
+    res = renderGossipResultCard(cornerId, latest);
+    if (older.length) {
+      history = `<div class="gs-history-title">${T("Vorher hier", "Earlier here")}</div>` + older.slice(0, 5).map((r) => {
+        const rr = gossipResult(cornerId, r);
+        return `<div class="gs-history-row"><span>${rr.verdict ? rr.verdict.emoji : "🤷"}</span><span class="gs-h-name">${escapeHtml(isMyKey(r.tellerId) ? T("Du", "You") : (r.tellerName || "?"))}</span><span class="gs-h-pts">${rr.total} ${T("P.", "pts")}</span><span class="gs-h-time">${clockTime(r.createdAt)}</span></div>`;
+      }).join("");
+    }
+    history += `<p class="gs-hint">🤫 ${T("Storys und Aufnahmen werden nach 24 Stunden gelöscht.", "Stories and recordings are deleted after 24 hours.")}</p>`;
+  }
+  setHtmlIfChanged(container.querySelector(".gs-results"), res);
+  setHtmlIfChanged(container.querySelector(".gs-history"), history);
+}
+
+async function rateGossip(cornerId, roundId, pts) {
+  const raw = STATE.gossipRounds?.[cornerId]?.[roundId];
+  const scale = gossipScaleFor(pts);
+  if (!raw || !scale || !STATE.nickname || !window.FB?.firebaseReady) return;
+  const round = { ...raw, id: roundId };
+  const me = currentUserKey();
+  if (isMyKey(round.tellerId)) { toast(T("Deine eigene Story kannst du nicht bewerten 😉", "You can't rate your own story 😉")); return; }
+  if (!iAmAtCorner(cornerId)) { toast(T("Nur wer hier eingecheckt ist, darf Punkte vergeben.", "Only people checked in here can rate.")); return; }
+  if (gossipVotesFor(cornerId, roundId)[me]) { toast(T("Schon bewertet ✓", "Already rated ✓")); return; }
+  if (!gossipIsOpen(cornerId, round)) { toast(T("Die Runde ist schon aufgelöst.", "This round is already revealed.")); return; }
+  if (_gossip.voting) return;
+  _gossip.voting = true;
+  document.querySelectorAll("[data-gossip-rate]").forEach((b) => { b.disabled = true; });
+  const { db, ref, set, serverTimestamp } = window.FB;
+  try {
+    await set(ref(db, `gossipVotes/${cornerId}/${roundId}/${me}`), { pts: scale.pts, name: String(STATE.nickname).slice(0, 40), team: STATE.team || "", at: serverTimestamp() });
+  } catch (err) {
+    console.warn("rateGossip failed:", err);
+    _gossip.voting = false;
+    document.querySelectorAll("[data-gossip-rate]").forEach((b) => { b.disabled = false; });
+    toast(T("Bewertung ging nicht durch — ist die Runde schon vorbei?", "Rating didn't go through — is the round over?"));
+    return;
+  }
+  _gossip.voting = false;
+  // The storyteller's karma is credited by each rater (as a transaction, so
+  // simultaneous ratings can't overwrite each other).
+  if (round.karma !== false) addKarmaPoints(round.tellerId, scale.pts, `Gossip: ${STATE.nickname} gab ${scale.emoji} +${scale.pts}`, round.tellerName);
+  addXp(GOSSIP_RATE_AURA, "Gossip bewertet");
+  if (bumpLocalCounter("cg.gossipRated") >= 10) unlockAchievement("gossip-jury", "Gossip-Jury", "⚖️", 25);
+  if (gossipIsOpen(cornerId, round)) {
+    toast(`${scale.emoji} <strong>+${scale.pts}</strong> ${T("für", "for")} ${escapeHtml(round.tellerName || "?")}${round.karma === false ? "" : " (Karma)"} · +${GOSSIP_RATE_AURA} Aura ${T("für dich", "for you")}`, "gossip");
+  }
+  maybeNotifyGossipResult(cornerId, round);
+}
+
+async function revealGossipNow(cornerId, roundId) {
+  const { db, ref, update, serverTimestamp } = window.FB;
+  try { await update(ref(db, `gossipRounds/${cornerId}/${roundId}`), { endedAt: serverTimestamp() }); }
+  catch (err) { console.warn("revealGossipNow failed:", err); toast(T("Auflösen hat nicht geklappt.", "Couldn't reveal.")); }
+}
+
+async function withdrawGossip(cornerId, roundId) {
+  if (!(await appConfirm(T("Story zurückziehen?", "Withdraw your story?"), T("Sie wird für alle gelöscht.", "It will be deleted for everyone."), T("Zurückziehen", "Withdraw")))) return;
+  const raw = STATE.gossipRounds?.[cornerId]?.[roundId];
+  const { db, ref, remove } = window.FB;
+  try {
+    await remove(ref(db, `gossipContent/${cornerId}/${roundId}`));
+    await remove(ref(db, `gossipRounds/${cornerId}/${roundId}`));
+    remove(ref(db, `gossipVotes/${cornerId}/${roundId}`)).catch(() => {});
+    if (raw?.hasAudio && window.FB.deleteFile) window.FB.deleteFile(`gossipAudio/${cornerId}/${roundId}`).catch(() => {});
+    toast(T("Story zurückgezogen.", "Story withdrawn."));
+  } catch (err) {
+    console.warn("withdrawGossip failed:", err);
+    toast(T("Zurückziehen hat nicht geklappt.", "Couldn't withdraw."));
+  }
+}
+
+// Push to the people at the corner (Cloud Function pushOnTargetedNotify).
+function sendTargetedPush(toIdList, payload) {
+  const toIds = {};
+  toIdList.filter(Boolean).forEach((id) => { toIds[id] = true; });
+  if (!Object.keys(toIds).length || !window.FB?.firebaseReady) return;
+  try {
+    const { db, ref, push, set } = window.FB;
+    set(push(ref(db, "notifyTargeted")), {
+      ...payload,
+      body: String(payload.body || "").slice(0, 200),
+      fromId: currentUserKey(),
+      fromTeam: STATE.team || "",
+      toIds,
+      createdAt: Date.now()
+    }).catch((err) => console.warn("targeted push event failed:", err));
+  } catch (err) { console.warn("targeted push event failed:", err); }
+}
+
+function maybeNotifyGossipResult(cornerId, round) {
+  if (!gossipAllVoted(cornerId, round)) return;     // the last rating triggers it
+  const res = gossipResult(cornerId, round);
+  if (!res.votes.length) return;
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  sendTargetedPush([round.tellerId], {
+    type: "gossip-result",
+    title: `${res.verdict.emoji} Deine Gossip-Story`,
+    body: `${res.total} Punkte von ${res.votes.length} Leuten${corner ? " am " + corner.name : ""} — ${res.verdict.de}${round.karma === false ? "" : ` (+${res.total} Karma)`}`,
+    query: `?corner=${encodeURIComponent(cornerId)}&gossip=1`
+  });
+}
+
+// Rounds older than 24 h: delete round, story, votes and recording.
+function cleanupExpiredGossip() {
+  if (!window.FB?.firebaseReady || Date.now() - _gossip.lastCleanup < 10 * 60 * 1000) return;
+  _gossip.lastCleanup = Date.now();
+  const { db, ref, remove } = window.FB;
+  const cutoff = serverNow() - GOSSIP_TTL_MS;
+  Object.entries(STATE.gossipRounds || {}).forEach(([cornerId, rounds]) => {
+    Object.entries(rounds || {}).forEach(([roundId, r]) => {
+      if (!r || Number(r.createdAt || 0) >= cutoff) return;
+      remove(ref(db, `gossipVotes/${cornerId}/${roundId}`)).catch(() => {});
+      remove(ref(db, `gossipContent/${cornerId}/${roundId}`)).catch(() => {});
+      if (r.hasAudio && window.FB.deleteFile) window.FB.deleteFile(`gossipAudio/${cornerId}/${roundId}`).catch(() => {});
+      remove(ref(db, `gossipRounds/${cornerId}/${roundId}`)).catch(() => {});
+    });
+  });
+  // Ratings whose round is gone (withdrawn / cleaned up elsewhere).
+  Object.entries(STATE.gossipVotes || {}).forEach(([cornerId, rounds]) => {
+    Object.entries(rounds || {}).forEach(([roundId, votes]) => {
+      if (STATE.gossipRounds?.[cornerId]?.[roundId]) return;
+      const newest = Math.max(0, ...Object.values(votes || {}).map((v) => Number(v && v.at) || 0));
+      if (serverNow() - newest > 60 * 60 * 1000) remove(ref(db, `gossipVotes/${cornerId}/${roundId}`)).catch(() => {});
+    });
+  });
+}
+
+/* ---- Composer: write and/or record ---- */
+var GOSSIP_DRAFT = { cornerId: null, publishing: false };
+var GOSSIP_REC = { recorder: null, stream: null, chunks: [], blob: null, url: "", startedAt: 0, duration: 0, timer: null, ctx: null, raf: 0, discardOnStop: false };
+
+function gossipHint(msg) { const el = $("#gossip-hint"); if (el) el.textContent = msg || ""; }
+function gossipRecording() { return !!(GOSSIP_REC.recorder && GOSSIP_REC.recorder.state === "recording"); }
+
+function pickGossipAudioMime() {
+  if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") return "";
+  // AAC in MP4 plays everywhere (incl. iPhone); WebM/Opus is the fallback.
+  const candidates = ["audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"];
+  return candidates.find((m) => { try { return MediaRecorder.isTypeSupported(m); } catch (e) { return false; } }) || "";
+}
+
+function updateGossipPublishState() {
+  const text = $("#gossip-text");
+  const btn = $("#gossip-publish");
+  if (!text || !btn) return;
+  btn.disabled = GOSSIP_DRAFT.publishing || gossipRecording() || (!text.value.trim() && !GOSSIP_REC.blob);
+  $("#gossip-text-count").textContent = String(text.value.length);
+}
+
+function updateGossipRecUi() {
+  const btn = $("#gossip-rec-btn");
+  if (!btn) return;
+  const recording = gossipRecording();
+  btn.classList.toggle("recording", recording);
+  btn.textContent = recording ? "⏹ " + T("Stopp", "Stop") : (GOSSIP_REC.blob ? "🎙️ " + T("Neu aufnehmen", "Record again") : "🎙️ " + T("Einsprechen", "Record"));
+  $("#gossip-rec-time").textContent = recording ? `● ${formatDuration((Date.now() - GOSSIP_REC.startedAt) / 1000)} / ${formatDuration(GOSSIP_MAX_RECORDING_S)}` : "";
+  document.querySelector(".gossip-meter")?.classList.toggle("on", recording);
+  $("#gossip-rec-preview").hidden = recording || !GOSSIP_REC.blob;
+  updateGossipPublishState();
+}
+
+function stopGossipStream() {
+  clearInterval(GOSSIP_REC.timer);
+  GOSSIP_REC.timer = null;
+  if (GOSSIP_REC.raf) cancelAnimationFrame(GOSSIP_REC.raf);
+  GOSSIP_REC.raf = 0;
+  if (GOSSIP_REC.ctx) { GOSSIP_REC.ctx.close().catch(() => {}); GOSSIP_REC.ctx = null; }
+  if (GOSSIP_REC.stream) { GOSSIP_REC.stream.getTracks().forEach((t) => t.stop()); GOSSIP_REC.stream = null; }
+  const fill = $("#gossip-meter-fill");
+  if (fill) fill.style.width = "0%";
+  dropWakeLock("gossip-rec");
+}
+
+function startGossipMeter(stream) {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    ctx.createMediaStreamSource(stream).connect(analyser);
+    GOSSIP_REC.ctx = ctx;
+    const buf = new Uint8Array(analyser.fftSize);
+    const fill = $("#gossip-meter-fill");
+    const loop = () => {
+      analyser.getByteTimeDomainData(buf);
+      let sum = 0;
+      for (let i = 0; i < buf.length; i++) { const v = (buf[i] - 128) / 128; sum += v * v; }
+      if (fill) fill.style.width = Math.min(100, Math.round(Math.sqrt(sum / buf.length) * 280)) + "%";
+      GOSSIP_REC.raf = requestAnimationFrame(loop);
+    };
+    loop();
+  } catch (err) { /* the meter is decoration only */ }
+}
+
+async function startGossipRecording() {
+  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+    gossipHint(T("Aufnehmen klappt in diesem Browser nicht — schreib die Story einfach auf ✍️", "Recording isn't supported in this browser — just write it down ✍️"));
+    return;
+  }
+  discardGossipRecording();
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+  } catch (err) {
+    gossipHint(T("Kein Zugriff aufs Mikro — erlaub ihn in den Einstellungen oder schreib die Story auf.", "No microphone access — allow it in your settings or write the story down."));
+    return;
+  }
+  const mime = pickGossipAudioMime();
+  let recorder;
+  try { recorder = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 48000 } : undefined); }
+  catch (err) {
+    try { recorder = new MediaRecorder(stream); }
+    catch (e) { stream.getTracks().forEach((t) => t.stop()); gossipHint(T("Aufnehmen klappt hier nicht — schreib die Story auf ✍️", "Recording doesn't work here — write it down ✍️")); return; }
+  }
+  GOSSIP_REC.stream = stream;
+  GOSSIP_REC.recorder = recorder;
+  GOSSIP_REC.chunks = [];
+  GOSSIP_REC.startedAt = Date.now();
+  GOSSIP_REC.discardOnStop = false;
+  recorder.ondataavailable = (e) => { if (e.data && e.data.size) GOSSIP_REC.chunks.push(e.data); };
+  recorder.onstop = () => {
+    const duration = Math.min(GOSSIP_MAX_RECORDING_S, (Date.now() - GOSSIP_REC.startedAt) / 1000);
+    const blob = GOSSIP_REC.chunks.length ? new Blob(GOSSIP_REC.chunks, { type: recorder.mimeType || mime || "audio/webm" }) : null;
+    stopGossipStream();
+    if (GOSSIP_REC.recorder === recorder) GOSSIP_REC.recorder = null;
+    if (GOSSIP_REC.discardOnStop) { GOSSIP_REC.discardOnStop = false; updateGossipRecUi(); return; }
+    GOSSIP_REC.blob = blob && blob.size ? blob : null;
+    GOSSIP_REC.duration = duration;
+    if (GOSSIP_REC.url) URL.revokeObjectURL(GOSSIP_REC.url);
+    GOSSIP_REC.url = GOSSIP_REC.blob ? URL.createObjectURL(GOSSIP_REC.blob) : "";
+    const audio = $("#gossip-rec-audio");
+    if (audio) audio.src = GOSSIP_REC.url;
+    updateGossipRecUi();
+  };
+  recorder.start(1000);
+  holdWakeLock("gossip-rec");
+  startGossipMeter(stream);
+  GOSSIP_REC.timer = setInterval(() => {
+    if ((Date.now() - GOSSIP_REC.startedAt) / 1000 >= GOSSIP_MAX_RECORDING_S) stopGossipRecording();
+    else updateGossipRecUi();
+  }, 250);
+  gossipHint("");
+  updateGossipRecUi();
+}
+
+function stopGossipRecording() {
+  clearInterval(GOSSIP_REC.timer);
+  GOSSIP_REC.timer = null;
+  const r = GOSSIP_REC.recorder;
+  if (r && r.state === "recording") { try { r.stop(); } catch (err) { stopGossipStream(); } }
+}
+
+function discardGossipRecording() {
+  if (gossipRecording()) { GOSSIP_REC.discardOnStop = true; stopGossipRecording(); }
+  GOSSIP_REC.blob = null;
+  GOSSIP_REC.duration = 0;
+  GOSSIP_REC.chunks = [];
+  if (GOSSIP_REC.url) { URL.revokeObjectURL(GOSSIP_REC.url); GOSSIP_REC.url = ""; }
+  const audio = $("#gossip-rec-audio");
+  if (audio) { try { audio.pause(); } catch (e) {} audio.removeAttribute("src"); }
+  updateGossipRecUi();
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function openGossipComposer(cornerId) {
+  if (!STATE.nickname) { toast(T("Bitte zuerst einen Namen wählen.", "Please pick a name first.")); return; }
+  if (!window.FB?.firebaseReady) { toast(T("Gossip-Runden brauchen eine Verbindung.", "Gossip rounds need a connection.")); return; }
+  if (!iAmAtCorner(cornerId)) { toast(T("Check zuerst hier ein 📍", "Check in here first 📍")); return; }
+  const crowd = gossipCrowdAt(cornerId);
+  if (!crowd.length) { toast(T("Gerade ist sonst niemand hier eingecheckt.", "Nobody else is checked in here right now.")); return; }
+  if (gossipOpenRoundAt(cornerId)) { toast(T("Es läuft schon eine Runde — erst auflösen 😉", "A round is already running 😉")); return; }
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  GOSSIP_DRAFT.cornerId = cornerId;
+  GOSSIP_DRAFT.publishing = false;
+  $("#gossip-title").textContent = "🗣️ " + T("Gossip-Runde", "Gossip round");
+  $("#gossip-sub").innerHTML = `${corner ? `${T("am", "at")} <strong>${escapeHtml(corner.name)}</strong> · ` : ""}${T("Es hören zu", "Listening")}: ${crowd.map((p) => escapeHtml(p.name) + (p.asleep ? " 💤" : "")).join(", ")}`;
+  $("#gossip-text-label").textContent = T("Deine Story (aufschreiben, einsprechen oder beides)", "Your story (write it, record it or both)");
+  $("#gossip-text").placeholder = T("Was ist passiert? Wer, wo, wann … 👀", "What happened? Who, where, when … 👀");
+  $("#gossip-privacy").textContent = T("🤫 Bleibt am Corner: Nur wer hier eingecheckt ist, kann deine Story lesen und hören — und nach 24 Stunden wird alles gelöscht. Die anderen bekommen eine Push-Nachricht.", "🤫 Stays at the corner: only people checked in here can read and hear your story — and everything is deleted after 24 hours. The others get a push notification.");
+  $("#gossip-cancel").textContent = T("Abbrechen", "Cancel");
+  $("#gossip-publish").textContent = "🚀 " + T("Raushauen", "Spill it");
+  gossipHint(gossipKarmaRoundsToday() >= GOSSIP_KARMA_ROUNDS_PER_DAY ? T("Heute schon 5 Storys mit Karma — diese zählt just for fun.", "Already 5 karma stories today — this one is just for fun.") : "");
+  discardGossipRecording();
+  $("#gossip-overlay").classList.add("open");
+  holdWakeLock("gossip-compose");
+  updateGossipRecUi();
+  if (!window.matchMedia("(pointer: coarse)").matches) setTimeout(() => $("#gossip-text")?.focus(), 80);
+}
+
+function closeGossipComposer() {
+  discardGossipRecording();
+  $("#gossip-overlay")?.classList.remove("open");
+  dropWakeLock("gossip-compose");
+}
+
+async function publishGossip() {
+  const cornerId = GOSSIP_DRAFT.cornerId;
+  if (!cornerId || GOSSIP_DRAFT.publishing) return;
+  const text = ($("#gossip-text").value || "").trim().slice(0, GOSSIP_TEXT_MAX);
+  const blob = GOSSIP_REC.blob;
+  if (!text && !blob) { gossipHint(T("Schreib deine Story auf oder sprich sie ein 🎙️", "Write or record your story 🎙️")); return; }
+  if (!iAmAtCorner(cornerId)) { gossipHint(T("Du bist hier nicht mehr eingecheckt.", "You're no longer checked in here.")); return; }
+  const crowd = gossipCrowdAt(cornerId);
+  if (!crowd.length) { gossipHint(T("Gerade ist sonst niemand hier eingecheckt.", "Nobody else is checked in here right now.")); return; }
+  if (gossipOpenRoundAt(cornerId)) { gossipHint(T("Jemand war schneller — es läuft schon eine Runde.", "Someone was faster — a round is already running.")); return; }
+  GOSSIP_DRAFT.publishing = true;
+  const pubBtn = $("#gossip-publish");
+  const label = pubBtn.textContent;
+  pubBtn.textContent = T("Wird gesendet …", "Sending …");
+  updateGossipPublishState();
+  const { db, ref, push, set, remove, serverTimestamp } = window.FB;
+  const me = currentUserKey();
+  const roundRef = push(ref(db, "gossipRounds/" + cornerId));
+  const roundId = roundRef.key;
+  const contentRef = ref(db, `gossipContent/${cornerId}/${roundId}`);
+  const audioPath = `gossipAudio/${cornerId}/${roundId}`;
+  let uploaded = false;
+  const fail = (msg) => {
+    GOSSIP_DRAFT.publishing = false;
+    pubBtn.textContent = label;
+    gossipHint(msg);
+    updateGossipPublishState();
+  };
+  try {
+    await broadcastPresence();   // the database rules check that I'm at this corner
+    const content = { by: me, createdAt: serverTimestamp() };
+    if (text) content.text = text;
+    let hasAudio = false;
+    if (blob) {
+      const mime = String(blob.type || "audio/webm").split(";")[0] || "audio/webm";
+      try {
+        if (typeof window.FB.uploadBlob !== "function") throw new Error("storage unavailable");
+        content.audioUrl = await window.FB.uploadBlob(audioPath, blob, mime);
+        uploaded = true;
+        hasAudio = true;
+      } catch (err) {
+        console.warn("Gossip audio upload failed, storing inline:", err);
+        const dataUrl = await blobToDataUrl(blob).catch(() => "");
+        if (dataUrl && dataUrl.length <= GOSSIP_INLINE_AUDIO_MAX) { content.audioData = dataUrl; hasAudio = true; }
+      }
+      if (hasAudio) content.audioMime = mime;
+      if (!hasAudio && !text) return fail(T("Die Aufnahme konnte nicht hochgeladen werden — schreib die Story bitte kurz auf.", "The recording couldn't be uploaded — please write the story down."));
+    }
+    const karma = gossipKarmaRoundsToday() < GOSSIP_KARMA_ROUNDS_PER_DAY;
+    const audience = {};
+    crowd.forEach((p) => { audience[p.id] = String(p.name).slice(0, 40); });
+    await set(contentRef, content);
+    try {
+      await set(roundRef, {
+        tellerId: me,
+        tellerName: String(STATE.nickname).slice(0, 40),
+        tellerTeam: STATE.team || "",
+        createdAt: serverTimestamp(),
+        windowMs: GOSSIP_WINDOW_MS,
+        hasText: !!text,
+        hasAudio,
+        audioDuration: hasAudio ? Math.round(GOSSIP_REC.duration) : 0,
+        karma,
+        audience
+      });
+    } catch (err) {
+      remove(contentRef).catch(() => {});
+      throw err;
+    }
+    GOSSIP_CONTENT[gossipKey(cornerId, roundId)] = { status: "ok", data: { ...content, createdAt: Date.now() }, at: Date.now() };
+    if (karma) countGossipKarmaRound();
+    addXp(GOSSIP_TELL_AURA, "Gossip erzählt");
+    unlockAchievement("first-gossip", "Klatschbase", "🗣️", 15);
+    if (bumpLocalCounter("cg.gossipTold") >= 10) unlockAchievement("gossip-legend", "Stammtisch-Legende", "👑", 75);
+    const corner = getAllCorners().find((c) => c.id === cornerId);
+    sendTargetedPush(crowd.map((p) => p.id), {
+      type: "gossip",
+      title: "🗣️ Gossip-Runde!",
+      body: `${STATE.nickname} hat frischen Gossip${corner ? " am " + corner.name : ""} — hör rein und vergib Punkte!`,
+      query: `?corner=${encodeURIComponent(cornerId)}&gossip=1`
+    });
+    $("#gossip-text").value = "";
+    GOSSIP_DRAFT.publishing = false;
+    pubBtn.textContent = label;
+    closeGossipComposer();
+    toast(`🗣️ <strong>${T("Gossip ist raus!", "Gossip is out!")}</strong><br><span style="font-size:11px;opacity:0.8;">${T("Jetzt erzählen — die anderen vergeben gleich Punkte.", "Tell it now — the others are about to rate it.")}</span>`, "gossip");
+    focusGossip(cornerId);
+  } catch (err) {
+    console.warn("publishGossip failed:", err);
+    if (uploaded && window.FB.deleteFile) window.FB.deleteFile(audioPath).catch(() => {});
+    const denied = /permission/i.test(String(err?.code || "") + String(err?.message || ""));
+    fail(denied
+      ? T("Der Server lässt die Runde nicht zu — bist du hier noch eingecheckt? (Neu eingerichtet? Dann müssen die Datenbank-Regeln deployt werden.)", "The server refused the round — are you still checked in here? (Freshly set up? Then the database rules need deploying.)")
+      : T("Gossip konnte nicht gesendet werden — Verbindung prüfen.", "Couldn't send the gossip — check your connection."));
+  }
+}
+
+function bindGossipComposer() {
+  const overlay = $("#gossip-overlay");
+  if (!overlay || overlay._bound) return;
+  overlay._bound = true;
+  $("#gossip-cancel").addEventListener("click", () => { if (!GOSSIP_DRAFT.publishing) closeGossipComposer(); });
+  $("#gossip-publish").addEventListener("click", publishGossip);
+  $("#gossip-rec-btn").addEventListener("click", () => { if (gossipRecording()) stopGossipRecording(); else startGossipRecording(); });
+  $("#gossip-rec-discard").addEventListener("click", discardGossipRecording);
+  $("#gossip-text").addEventListener("input", updateGossipPublishState);
+  // A stray tap next to the card must not throw away a recorded story.
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay && !GOSSIP_DRAFT.publishing && !gossipRecording() && !GOSSIP_REC.blob && !$("#gossip-text").value.trim()) closeGossipComposer();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay.classList.contains("open") && !GOSSIP_DRAFT.publishing) closeGossipComposer();
+  });
+}
+document.addEventListener("DOMContentLoaded", bindGossipComposer);
+
 function updateCheckinButtons() {
   const hasCooldown = STATE.lastCheckinCorner && (Date.now() - STATE.lastCheckinTime) < COOLDOWN_MS;
   const remaining = hasCooldown ? COOLDOWN_MS - (Date.now() - STATE.lastCheckinTime) : 0;
@@ -7912,6 +9195,7 @@ function openDetail(cornerId) {
     ${capturedHtml}
     ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("gerade hier", "here now")}: ${peopleHere.map((p) => escapeHtml(p)).join(", ")}</div>` : ""}
     ${peopleMessageTargets.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">${peopleMessageTargets.map((friend) => `<button class="action-btn" data-dm-user="${friend.id}">💬 ${escapeHtml(friend.nickname || friend.name || friend.id)}</button>`).join("")}</div>` : ""}
+    <div class="gossip-section" data-corner-id="${c.id}"></div>
     <div class="detail-quick-actions">
       <button class="detail-quick-btn" data-scroll-target=".corner-chat-section">💬 ${T("Chat", "Chat")}</button>
       <button class="detail-quick-btn" data-scroll-target=".comments-section">📝 ${T("Kommentare", "Comments")}</button>
@@ -7960,6 +9244,7 @@ function openDetail(cornerId) {
   renderEmojiVotes(cornerId, detailContent.querySelector(".emoji-votes"));
   renderBarometer(cornerId, detailContent.querySelector(".barometer-section"));
   STATE.detailCornerId = cornerId;
+  renderGossipSection(cornerId, detailContent.querySelector(".gossip-section"));
   refreshSupplySection(cornerId);
   renderPhotoGallery(cornerId, detailContent.querySelector(".photo-gallery"));
   renderVisitTrail(cornerId, detailContent.querySelector(".visit-trail"));
@@ -7996,6 +9281,7 @@ function renderCards() {
         <p class="card-area">${c.area || "—"} ${c.isCustom && c.createdBy ? `<span class="creator-label"> · von ${escapeHtml(c.createdBy)}</span>` : ""}</p>
         <h2 class="card-name">${c.name}</h2>
         ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("hier", "here")}: ${peopleHere.map((n) => escapeHtml(n)).join(", ")}</div>` : ""}
+        ${gossipOpenRoundAt(c.id) ? `<button class="card-gossip-live" data-gossip-card="${c.id}">🗣️ ${T("Gossip-Runde läuft", "Gossip round live")} →</button>` : ""}
         ${getDescription(c) ? `<p class="card-desc short-desc">${escapeHtml(getDescription(c))}</p>` : ""}
         ${feedbackCount(c.id) ? `<div class="card-feedback-teaser">💬 ${feedbackCount(c.id)} ${T("Community-Notizen", "community notes")}</div>` : ""}
       </div>
@@ -8010,6 +9296,7 @@ function renderCards() {
   $$(".photo-btn").forEach((btn) => btn.addEventListener("click", () => $(`.photo-input[data-id="${btn.dataset.id}"]`).click()));
   $$(".photo-input").forEach((inp) => inp.addEventListener("change", (e) => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(f, inp.dataset.id); }));
   $$(".detail-link").forEach((btn) => btn.addEventListener("click", () => openDetail(btn.dataset.id)));
+  $$("[data-gossip-card]").forEach((btn) => btn.addEventListener("click", () => focusGossip(btn.dataset.gossipCard)));
   $$('[data-action="map"]').forEach((btn) => btn.addEventListener("click", () => { const c = getAllCorners().find((x) => x.id === btn.dataset.id); $(`.tab[data-view="map"]`).click(); setTimeout(() => { if (STATE.mainMap) { STATE.mainMap.flyTo([c.lat, c.lng], 17, { duration: 0.7 }); STATE.mainMarkers[c.id]?.openPopup?.(); } }, 250); }));
   $$('[data-action="route"]').forEach((btn) => btn.addEventListener("click", () => { const c = getAllCorners().find((x) => x.id === btn.dataset.id); window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank"); }));
   $$(".checkin-btn").forEach((btn) => btn.addEventListener("click", () => manualCheckin(btn.dataset.id)));
@@ -8209,6 +9496,10 @@ function getAchievementCardsHtml() {
     { id: "recruiter", name: "Anwerber", emoji: "📨", desc: "Freunde eingeladen" },
     { id: "always-on", name: "Immer erreichbar", emoji: "🔔", desc: "Push aktiviert" },
     { id: "secured", name: "Abgesichert", emoji: "🔐", desc: "Profil gesichert (Google/Code)" },
+    { id: "first-gossip", name: "Klatschbase", emoji: "🗣️", desc: "Erste Gossip-Story erzählt" },
+    { id: "gossip-bomb", name: "Bombe geplatzt", emoji: "💣", desc: "Gossip mit Ø „Bombe!“ (ab 2 Bewertungen)" },
+    { id: "gossip-jury", name: "Gossip-Jury", emoji: "⚖️", desc: "10 Gossip-Storys bewertet" },
+    { id: "gossip-legend", name: "Stammtisch-Legende", emoji: "👑", desc: "10 Gossip-Storys erzählt" },
     { id: "level-100", name: "Vollendet", emoji: "🏆", desc: `Level ${MILESTONE_LEVEL} erreicht` }
   ];
   return items.map((a) => `<div class="achievement-card ${STATE.achievements.includes(a.id) ? 'unlocked' : 'locked'}"><div class="achievement-emoji">${a.emoji}</div><div class="achievement-name">${a.name}</div><div class="achievement-pts">${a.desc}</div></div>`).join("");
@@ -8232,6 +9523,8 @@ function renderTeamBattleSection() {
 }
 
 function renderLeaderboard() {
+  const helpBtn = $("#points-help-btn");
+  if (helpBtn) helpBtn.textContent = "📖 " + T("So sammelst du Punkte", "How to earn points");
   renderPopularCorner();
   renderTeamBattleSection();
   renderVisitLeaderboard();
@@ -8277,7 +9570,15 @@ function buildNotifSettingsHtml() {
     <div class="user-filter-list">${userRows}</div>` : ""}
     <div style="margin-top:14px;">
       <button class="notif-opt" id="enable-push-btn">🔔 ${T("Push verbinden", "Connect push")}</button>
-    </div>`;
+    </div>
+    <div class="notif-settings-label">${T("Handy gesperrt?", "Phone locked?")}</div>
+    <p class="notif-hint">${T(
+      "Du bleibst eingecheckt und für die anderen sichtbar (mit 💤), auch wenn dein Display aus ist — Push-Nachrichten (Nachschub, Gossip-Runden) kommen trotzdem an. Live-GPS und In-App-Hinweise pausieren, bis du die App wieder öffnest.",
+      "You stay checked in and visible to the others (with 💤) while your screen is off — push messages (supplies, gossip rounds) still arrive. Live GPS and in-app alerts pause until you reopen the app.")}</p>
+    ${wakeLockSupported() ? `<button class="notif-opt ${keepAwakeWhileCheckedIn() ? "active" : ""}" id="keep-awake-btn">📱 ${keepAwakeWhileCheckedIn()
+      ? T("Display bleibt an, solange ich eingecheckt bin", "Screen stays on while I'm checked in")
+      : T("Display wach halten, solange ich eingecheckt bin", "Keep screen on while checked in")}</button>
+    <p class="notif-hint">${T("Kostet Akku — praktisch, wenn das Handy beim Cornern auf dem Tisch liegt. Während Gossip-Runden bleibt das Display automatisch an.", "Costs battery — handy when your phone lies on the table. During gossip rounds the screen stays on automatically.")}</p>` : ""}`;
 }
 
 /* ---- Visit-history map: heat-style dots sized by how often you were there ---- */
@@ -8490,21 +9791,6 @@ function renderProfile() {
   const auraAbove = auraRank && auraRank > 1 ? allAuraPlayers[auraRankPos - 1] : null;
   const auraToOvertake = auraAbove ? auraAbove.total - aura + 1 : null;
 
-  const rewardRules = [
-    { emoji: "📍", stream: "Aura", streamClass: "aura", de: "Einchecken (Basis)", en: "Check-in (base)", pts: "5" },
-    { emoji: "👥", stream: "Aura", streamClass: "aura", de: "+ pro Person dort", en: "+ per person there", pts: "+6" },
-    { emoji: "🔥", stream: "Aura", streamClass: "aura", de: "+ beliebter Spot", en: "+ popular spot", pts: "+1–12" },
-    { emoji: "📸", stream: "Aura", streamClass: "aura", de: "Foto hochladen", en: "Upload photo", pts: "10" },
-    { emoji: "💬", stream: "Aura", streamClass: "aura", de: "Kommentar oder DM", en: "Comment or DM", pts: "2–5" },
-    { emoji: "🤝", stream: "Aura", streamClass: "aura", de: "Freund getroffen", en: "Meeting a friend", pts: "8" },
-    { emoji: "⚔️", stream: "Aura", streamClass: "aura", de: "Corner eingenommen", en: "Corner captured", pts: "25" },
-    { emoji: "🆘", stream: "Aura", streamClass: "aura", de: "Nachschub-Ruf senden", en: "Broadcast supply request", pts: "3" },
-    { emoji: "🛒", stream: "Karma", streamClass: "karma", de: "Nachschub gebracht", en: "Bring supplies", pts: "40" },
-    { emoji: "🎁", stream: "Karma", streamClass: "karma", de: "Leuten direkt helfen", en: "Directly help people", pts: "40" },
-    { emoji: "📨", stream: "Aura", streamClass: "aura", de: "Freunde einladen", en: "Invite friends", pts: "5" },
-    { emoji: "🔔", stream: "Aura", streamClass: "aura", de: "Push aktivieren", en: "Enable push", pts: "10" },
-  ];
-
   $("#profile-content").innerHTML = `
     <div class="profile-header">
       <div class="profile-avatar">${teamInfo?.emoji || '👤'}</div>
@@ -8527,7 +9813,7 @@ function renderProfile() {
         <div class="stream-value karma">${karma}</div>
         <div class="stream-desc">${karmaTier.emoji} ${T("Level", "Level")} ${karmaLevelInfo.level} · ${escapeHtml(karmaRankLabel)}</div>
       </div>
-      <div class="stream-card">
+      <div class="stream-card" id="matrix-stream-card" style="cursor:pointer;" title="${T("Zur Reward Matrix", "Go to the reward matrix")}">
         <div class="stream-kicker">🧬 ${T("Matrix", "Matrix")}</div>
         <div class="stream-value matrix">${matrixIdentity.emoji} ${matrixIdentity.name}</div>
         <div class="stream-desc">${matrixIdentity.desc}</div>
@@ -8539,21 +9825,11 @@ function renderProfile() {
       <div class="profile-stat"><div class="stat-icon">⚔️</div><div class="stat-value">${captureCount}</div><div class="stat-label">${T("Captures dabei", "Captures")}</div></div>
       <div class="profile-stat"><div class="stat-icon">💬</div><div class="stat-value">${commentCount}</div><div class="stat-label">${T("Kommentare", "Comments")}</div></div>
     </div>
-    <div class="team-battle-section">
+    <div class="team-battle-section" id="reward-matrix-section">
       <h3>🧭 ${T("Reward Matrix", "Reward Matrix")}</h3>
-      <p style="font-size:12px;color:var(--fg-dim);margin:0 0 12px;">${T("Aura belohnt Präsenz, Aktivität und Captures. Karma belohnt Nachschub und direkte Hilfe.", "Aura rewards presence, activity, and captures. Karma rewards bringing supplies and direct help.")}</p>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;">
-        <tr style="color:var(--fg-dim);font-size:10px;letter-spacing:1px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;">
-          <td style="padding:4px 6px;">${T("Aktion", "Action")}</td>
-          <td style="padding:4px 6px;text-align:center;">${T("Stream", "Stream")}</td>
-          <td style="padding:4px 6px;text-align:right;">${T("Punkte", "Points")}</td>
-        </tr>
-        ${rewardRules.map((r) => `<tr style="border-top:1px solid var(--line);">
-          <td style="padding:6px 6px;">${r.emoji} ${T(r.de, r.en)}</td>
-          <td style="padding:6px 6px;text-align:center;font-family:'JetBrains Mono',monospace;color:${r.streamClass === "karma" ? "var(--green)" : "var(--blue)"};">${r.stream}</td>
-          <td style="padding:6px 6px;text-align:right;font-family:'Anton',sans-serif;color:${r.streamClass === "karma" ? "var(--green)" : "var(--amber)"};">${r.pts}</td>
-        </tr>`).join("")}
-      </table>
+      <p style="font-size:12px;color:var(--fg-dim);margin:0 0 12px;">${T("✨ Aura = was du tust (da sein, mitmachen). 🎁 Karma = was andere dir geben (bestätigter Nachschub, Gossip-Punkte). Dein Feld ergibt sich aus beiden.", "✨ Aura = what you do (show up, join in). 🎁 Karma = what others give you (confirmed supplies, gossip points). Your cell comes from both.")}</p>
+      ${buildMatrixGridHtml(aura, karma)}
+      <button class="action-btn" id="profile-points-help" style="margin-top:12px;">📖 ${T("Alle Wege, Punkte zu sammeln", "All ways to earn points")}</button>
     </div>
     <div class="team-battle-section"><h3>🗺️ ${T("Deine Corner-Map", "Your Corner Map")}</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">${T("Kreisgröße = Anzahl Besuche, Tortenstücke = Team, mit dem du eingecheckt hast.", "Circle size = visit count, pie slices = team at check-in.")}</p><div id="profile-map-slot"></div></div>
     <div class="team-history"><h3>🧬 ${T("Team History", "Team History")}</h3><div class="team-history-grid">${TEAM_ORDER.map((teamId) => { const count = STATE.teamHistory.filter((entry) => entry.team === teamId).length; return `<div class="team-history-item"><div class="th-emoji">${TEAMS[teamId].emoji}</div><div class="th-count">${count}</div><div class="th-name">${TEAMS[teamId].name}</div></div>`; }).join("")}</div></div>
@@ -8603,6 +9879,17 @@ function renderProfile() {
     });
   });
   $("#enable-push-btn")?.addEventListener("click", enableFirebasePush);
+  $("#profile-points-help")?.addEventListener("click", openRewardGuide);
+  $("#matrix-stream-card")?.addEventListener("click", () => $("#reward-matrix-section")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  $("#keep-awake-btn")?.addEventListener("click", () => {
+    const on = !keepAwakeWhileCheckedIn();
+    localStorage.setItem("cg.keepAwake", on ? "1" : "0");
+    applyKeepAwakePref();
+    toast(on
+      ? (myPresenceCorner() ? T("📱 Display bleibt an, solange du eingecheckt bist", "📱 Screen stays on while you're checked in") : T("📱 Aktiv ab deinem nächsten Check-in", "📱 Active from your next check-in"))
+      : T("📱 Display darf wieder ausgehen", "📱 Screen may turn off again"));
+    renderProfile();
+  });
   $("#acct-google-btn")?.addEventListener("click", async () => {
     try {
       const email = await window.FB.linkGoogle();

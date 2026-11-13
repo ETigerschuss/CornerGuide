@@ -9,6 +9,15 @@ service firebase.storage {
                    && request.resource.size < 5 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*');
     }
+    // Gossip voice recordings: signed-in users only, audio under 3 MB. The app
+    // deletes them after 24 h (any signed-in client may clean up expired ones).
+    match /gossipAudio/{corner}/{file} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.size < 3 * 1024 * 1024
+                    && request.resource.contentType.matches('audio/.*');
+      allow delete: if request.auth != null;
+    }
     // Everything else is locked down.
     match /{allPaths=**} {
       allow read, write: if false;

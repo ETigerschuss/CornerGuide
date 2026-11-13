@@ -115,6 +115,47 @@
     "cornerStatus":    { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "cornerStatuses":  { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "achievements":    { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
-    "checkinFeedback": { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" }
+    "checkinFeedback": { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+
+    "gossipRounds": {
+      ".read": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)",
+      "$cornerId": {
+        "$roundId": {
+          ".write": "auth != null && (root.child('config').child('admins').child(auth.uid).val() === true || (root.child('accessGranted').child(auth.uid).exists() && ((!data.exists() && newData.child('tellerId').val() === auth.uid && root.child('presence').child(auth.uid).child('atCorner').val() === $cornerId) || (data.exists() && data.child('tellerId').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('createdAt').val() < now - 86400000))))",
+          ".validate": "newData.hasChildren(['tellerId', 'tellerName', 'createdAt', 'windowMs']) && newData.child('tellerId').isString() && newData.child('tellerName').isString() && newData.child('tellerName').val().length <= 40 && newData.child('createdAt').isNumber() && newData.child('createdAt').val() <= now + 60000 && newData.child('windowMs').isNumber() && newData.child('windowMs').val() > 0 && newData.child('windowMs').val() <= 1800000 && (!newData.child('endedAt').exists() || newData.child('endedAt').isNumber())"
+        }
+      }
+    },
+
+    "gossipContent": {
+      "$cornerId": {
+        "$roundId": {
+          ".read": "auth != null && (root.child('config').child('admins').child(auth.uid).val() === true || data.child('by').val() === auth.uid || (root.child('accessGranted').child(auth.uid).exists() && root.child('presence').child(auth.uid).child('atCorner').val() === $cornerId))",
+          ".write": "auth != null && (root.child('config').child('admins').child(auth.uid).val() === true || (root.child('accessGranted').child(auth.uid).exists() && ((!data.exists() && newData.child('by').val() === auth.uid && root.child('presence').child(auth.uid).child('atCorner').val() === $cornerId) || (data.exists() && data.child('by').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('createdAt').val() < now - 86400000))))",
+          ".validate": "newData.hasChildren(['by', 'createdAt']) && newData.child('createdAt').isNumber() && (!newData.child('text').exists() || (newData.child('text').isString() && newData.child('text').val().length <= 1000)) && (!newData.child('audioUrl').exists() || (newData.child('audioUrl').isString() && newData.child('audioUrl').val().length <= 2000)) && (!newData.child('audioData').exists() || (newData.child('audioData').isString() && newData.child('audioData').val().length <= 1600000))"
+        }
+      }
+    },
+
+    "gossipVotes": {
+      ".read": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)",
+      "$cornerId": {
+        "$roundId": {
+          ".write": "auth != null && !newData.exists() && (root.child('config').child('admins').child(auth.uid).val() === true || (root.child('accessGranted').child(auth.uid).exists() && (!root.child('gossipRounds').child($cornerId).child($roundId).exists() || root.child('gossipRounds').child($cornerId).child($roundId).child('createdAt').val() < now - 86400000)))",
+          "$voterId": {
+            ".write": "auth != null && auth.uid === $voterId && !data.exists() && newData.exists() && root.child('accessGranted').child(auth.uid).exists() && root.child('gossipRounds').child($cornerId).child($roundId).exists() && root.child('gossipRounds').child($cornerId).child($roundId).child('tellerId').val() !== auth.uid && !root.child('gossipRounds').child($cornerId).child($roundId).child('endedAt').exists() && now <= root.child('gossipRounds').child($cornerId).child($roundId).child('createdAt').val() + root.child('gossipRounds').child($cornerId).child($roundId).child('windowMs').val() && root.child('presence').child(auth.uid).child('atCorner').val() === $cornerId",
+            ".validate": "newData.hasChildren(['pts', 'at']) && newData.child('pts').isNumber() && (newData.child('pts').val() === 2 || newData.child('pts').val() === 5 || newData.child('pts').val() === 10 || newData.child('pts').val() === 15 || newData.child('pts').val() === 20) && newData.child('at').isNumber() && (!newData.child('name').exists() || (newData.child('name').isString() && newData.child('name').val().length <= 40))"
+          }
+        }
+      }
+    },
+
+    "notifyTargeted": {
+      ".read": false,
+      "$eventId": {
+        ".write": "auth != null && !data.exists() && newData.exists() && newData.child('fromId').val() === auth.uid && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)",
+        ".validate": "newData.hasChildren(['body', 'toIds', 'fromId']) && newData.child('body').isString() && newData.child('body').val().length <= 200"
+      }
+    }
   }
 }
