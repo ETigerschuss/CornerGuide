@@ -1,0 +1,63 @@
+name: Admin-Werkzeuge
+
+# Manual admin jobs with the Firebase service account (secret FIREBASE_SERVICE_ACCOUNT):
+#   add-admin        – give a Firebase user ID admin rights in the app (config/admins)
+#   export-feedback  – export comments + check-in feedback, encrypted with the given
+#                      public key (the repository and its logs are public!)
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Aktion"
+        type: choice
+        options: ["add-admin", "export-feedback"]
+        required: true
+      uid:
+        description: "Firebase-Nutzer-ID (für add-admin, steht im Profil unter „Konto & Profil sichern“)"
+        required: false
+        default: ""
+      pubkey:
+        description: "Öffentlicher RSA-Schlüssel als Base64-PEM (für export-feedback)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      HAS_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+    steps:
+      - name: Zugangsdaten prüfen
+        run: |
+          if [ "$HAS_SA" != "true" ]; then echo "::error::Secret FIREBASE_SERVICE_ACCOUNT fehlt."; exit 1; fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Service-Account-Schlüssel bereitstellen
+        env:
+          SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$SA_KEY" > "$RUNNER_TEMP/firebase-sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> "$GITHUB_ENV"
+
+      - name: Abhängigkeiten installieren
+        run: npm ci --prefix functions
+
+      - name: Aktion ausführen
+        env:
+          ACTION: ${{ inputs.action }}
+          UID_INPUT: ${{ inputs.uid }}
+          PUBKEY_B64: ${{ inputs.pubkey }}
+        run: NODE_PATH=functions/node_modules node .github/scripts/admin-tools.cjs
+
+      - name: Schlüssel entfernen
+        if: always()
+        run: rm -f "$RUNNER_TEMP/firebase-sa.json"
