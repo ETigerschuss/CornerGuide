@@ -37,9 +37,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git ls-remote --exit-code "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" refs/heads/admin-export >/dev/null \
-            && git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" --delete admin-export \
-            || echo "Kein Export-Branch vorhanden."
+          url="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git init -q "$RUNNER_TEMP/cleanup" && cd "$RUNNER_TEMP/cleanup"   # git push needs a repository
+          if git ls-remote --exit-code "$url" refs/heads/admin-export >/dev/null; then
+            git push -q "$url" --delete admin-export
+            echo "✔ Export-Branch gelöscht."
+          else
+            echo "Kein Export-Branch vorhanden."
+          fi
 
       - name: Zugangsdaten prüfen
         if: inputs.action != 'cleanup-export'
