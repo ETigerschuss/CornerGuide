@@ -3,7 +3,8 @@ name: Admin-Werkzeuge
 # Manual admin jobs with the Firebase service account (secret FIREBASE_SERVICE_ACCOUNT):
 #   add-admin        – give a Firebase user ID admin rights in the app (config/admins)
 #   export-feedback  – export comments + check-in feedback, encrypted with the given
-#                      public key (the repository and its logs are public!)
+#                      public key, to the branch "admin-export" (repo and logs are public!)
+#   cleanup-export   – delete the "admin-export" branch again
 
 on:
   workflow_dispatch:
@@ -11,7 +12,7 @@ on:
       action:
         description: "Aktion"
         type: choice
-        options: ["add-admin", "export-feedback"]
+        options: ["add-admin", "export-feedback", "cleanup-export"]
         required: true
       uid:
         description: "Firebase-Nutzer-ID (für add-admin, steht im Profil unter „Konto & Profil sichern“)"
@@ -23,7 +24,7 @@ on:
         default: ""
 
 permissions:
-  contents: read
+  contents: write   # only used to push / delete the encrypted "admin-export" branch
 
 jobs:
   run:
@@ -31,17 +32,30 @@ jobs:
     env:
       HAS_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
     steps:
+      - name: Export-Branch löschen
+        if: inputs.action == 'cleanup-export'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git ls-remote --exit-code "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" refs/heads/admin-export >/dev/null \
+            && git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" --delete admin-export \
+            || echo "Kein Export-Branch vorhanden."
+
       - name: Zugangsdaten prüfen
+        if: inputs.action != 'cleanup-export'
         run: |
           if [ "$HAS_SA" != "true" ]; then echo "::error::Secret FIREBASE_SERVICE_ACCOUNT fehlt."; exit 1; fi
 
       - uses: actions/checkout@v4
+        if: inputs.action != 'cleanup-export'
 
       - uses: actions/setup-node@v4
+        if: inputs.action != 'cleanup-export'
         with:
           node-version: 22
 
       - name: Service-Account-Schlüssel bereitstellen
+        if: inputs.action != 'cleanup-export'
         env:
           SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
@@ -49,15 +63,30 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> "$GITHUB_ENV"
 
       - name: Abhängigkeiten installieren
+        if: inputs.action != 'cleanup-export'
         run: npm ci --prefix functions
 
       - name: Aktion ausführen
+        if: inputs.action != 'cleanup-export'
         env:
           ACTION: ${{ inputs.action }}
           UID_INPUT: ${{ inputs.uid }}
           PUBKEY_B64: ${{ inputs.pubkey }}
+          EXPORT_FILE: ${{ runner.temp }}/export.b64
         run: NODE_PATH=functions/node_modules node .github/scripts/admin-tools.cjs
+
+      - name: Verschlüsselten Export ablegen
+        if: inputs.action == 'export-feedback'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir "$RUNNER_TEMP/export-repo" && cd "$RUNNER_TEMP/export-repo"
+          git init -q && cp "$RUNNER_TEMP/export.b64" export.b64
+          git add export.b64
+          git -c user.name="cornerguide-admin-tools" -c user.email="actions@users.noreply.github.com" commit -q -m "Encrypted feedback export"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/admin-export
+          echo "✔ Verschlüsselter Export liegt auf dem Branch admin-export."
 
       - name: Schlüssel entfernen
         if: always()
-        run: rm -f "$RUNNER_TEMP/firebase-sa.json"
+        run: rm -f "$RUNNER_TEMP/firebase-sa.json" "$RUNNER_TEMP/export.b64"

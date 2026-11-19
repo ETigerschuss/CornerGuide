@@ -4,7 +4,8 @@
 //
 //   ACTION=add-admin       UID_INPUT=<firebase uid>   → config/admins/<uid> = true
 //   ACTION=export-feedback PUBKEY_B64=<base64 PEM>    → comments + check-in feedback,
-//        encrypted (AES-256-GCM, key wrapped with RSA-OAEP-SHA256) and printed as base64
+//        gzipped, encrypted (AES-256-GCM, key wrapped with RSA-OAEP-SHA256), base64
+//        into EXPORT_FILE (the workflow pushes it to the "admin-export" branch)
 const crypto = require("crypto");
 const admin = require("firebase-admin");
 
@@ -26,17 +27,17 @@ async function exportFeedback(pubB64) {
   ]);
   const names = {};
   Object.entries(corners.val() || {}).forEach(([id, c]) => { names[id] = (c && c.name) || id; });
-  const payload = Buffer.from(JSON.stringify({ exportedAt: new Date().toISOString(), comments: comments.val() || {}, checkinFeedback: feedback.val() || {}, customCornerNames: names }));
+  const payload = require("zlib").gzipSync(Buffer.from(JSON.stringify({ exportedAt: new Date().toISOString(), comments: comments.val() || {}, checkinFeedback: feedback.val() || {}, customCornerNames: names })));
   const key = crypto.randomBytes(32);
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
   const enc = Buffer.concat([cipher.update(payload), cipher.final()]);
   const wrapped = crypto.publicEncrypt({ key: pem, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: "sha256" }, key);
   const blob = Buffer.concat([Buffer.from([wrapped.length >> 8, wrapped.length & 255]), wrapped, iv, cipher.getAuthTag(), enc]).toString("base64");
-  console.log("-----BEGIN CORNERGUIDE EXPORT-----");
-  for (let i = 0; i < blob.length; i += 100) console.log(blob.slice(i, i + 100));
-  console.log("-----END CORNERGUIDE EXPORT-----");
-  console.log(`✔ Export verschlüsselt (${payload.length} Bytes Klartext).`);
+  // Written to a file that the workflow pushes to the "admin-export" branch, so
+  // the requester can fetch the exact bytes with git (the log only shows sizes).
+  require("fs").writeFileSync(process.env.EXPORT_FILE || "export.b64", blob + "\n");
+  console.log(`✔ Export verschlüsselt (${payload.length} Bytes komprimiert, ${blob.length} Zeichen Base64).`);
 }
 
 (async () => {
