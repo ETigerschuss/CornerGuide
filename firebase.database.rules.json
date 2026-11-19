@@ -50,15 +50,28 @@
     "profileLocks": {
       ".read": "auth != null",
       "$profileKey": {
-        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists() && (!data.exists() || data.child('by').val() === auth.uid || root.child('config').child('admins').child(auth.uid).val() === true)",
-        ".validate": "newData.hasChildren(['by']) && newData.child('by').val() === auth.uid || root.child('config').child('admins').child(auth.uid).val() === true"
+        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists() && (!data.exists() || data.child('by').val() === auth.uid || root.child('config').child('admins').child(auth.uid).val() === true || (root.child('profileClaims').child($profileKey).child(auth.uid).child('code').isString() && root.child('recoveryProfiles').child(root.child('profileClaims').child($profileKey).child(auth.uid).child('code').val()).child('createdBy').val() === $profileKey))",
+        ".validate": "newData.hasChildren(['by']) && newData.child('by').isString() && (newData.child('by').val() === auth.uid || root.child('config').child('admins').child(auth.uid).val() === true || (data.child('by').val() === auth.uid && root.child('profileClaims').child($profileKey).child(newData.child('by').val()).exists()))"
+      }
+    },
+
+    "profileClaims": {
+      ".read": "auth != null && root.child('config').child('admins').child(auth.uid).val() === true",
+      "$profileKey": {
+        ".read": "auth != null && root.child('profileLocks').child($profileKey).child('by').val() === auth.uid",
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists() && (auth.uid === $uid || root.child('config').child('admins').child(auth.uid).val() === true || root.child('profileLocks').child($profileKey).child('by').val() === auth.uid)",
+          ".validate": "newData.hasChildren(['at', 'status']) && newData.child('at').isNumber() && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'approved' || newData.child('status').val() === 'rejected') && (auth.uid !== $uid || newData.child('status').val() === 'pending' || root.child('config').child('admins').child(auth.uid).val() === true) && (!newData.child('nickname').exists() || (newData.child('nickname').isString() && newData.child('nickname').val().length <= 40)) && (!newData.child('oldNickname').exists() || (newData.child('oldNickname').isString() && newData.child('oldNickname').val().length <= 40)) && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 200)) && (!newData.child('code').exists() || (newData.child('code').isString() && newData.child('code').val().length <= 20))"
+        }
       }
     },
 
     "recoveryProfiles": {
       "$code": {
         ".read": "auth != null",
-        ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)"
+        ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true) && (!data.exists() || data.child('createdBy').val() === auth.uid || (data.child('createdBy').isString() && root.child('profileLocks').child(data.child('createdBy').val()).child('by').val() === auth.uid) || root.child('config').child('admins').child(auth.uid).val() === true)",
+        ".validate": "newData.child('createdBy').val() === auth.uid || root.child('config').child('admins').child(auth.uid).val() === true"
       }
     },
 
@@ -127,7 +140,7 @@
       "$cornerId": {
         "$roundId": {
           ".write": "auth != null && (root.child('config').child('admins').child(auth.uid).val() === true || (root.child('accessGranted').child(auth.uid).exists() && ((!data.exists() && newData.child('tellerId').val() === auth.uid && root.child('presence').child(auth.uid).child('atCorner').val() === $cornerId) || (data.exists() && data.child('tellerId').val() === auth.uid) || (data.exists() && !newData.exists() && data.child('createdAt').val() < now - 86400000))))",
-          ".validate": "newData.hasChildren(['tellerId', 'tellerName', 'createdAt', 'windowMs']) && newData.child('tellerId').isString() && newData.child('tellerName').isString() && newData.child('tellerName').val().length <= 40 && newData.child('createdAt').isNumber() && newData.child('createdAt').val() <= now + 60000 && newData.child('windowMs').isNumber() && newData.child('windowMs').val() > 0 && newData.child('windowMs').val() <= 1800000 && (!newData.child('endedAt').exists() || newData.child('endedAt').isNumber())"
+          ".validate": "newData.hasChildren(['tellerId', 'tellerName', 'createdAt', 'windowMs']) && newData.child('tellerId').isString() && newData.child('tellerName').isString() && newData.child('tellerName').val().length <= 40 && newData.child('createdAt').isNumber() && newData.child('createdAt').val() <= now + 60000 && newData.child('windowMs').isNumber() && newData.child('windowMs').val() > 0 && newData.child('windowMs').val() <= 1800000 && (!newData.child('endedAt').exists() || newData.child('endedAt').isNumber()) && (!newData.child('title').exists() || (newData.child('title').isString() && newData.child('title').val().length <= 60))"
         }
       }
     },
@@ -165,6 +178,24 @@
             ".write": "auth != null && auth.uid === $uid && root.child('accessGranted').child(auth.uid).exists() && root.child('cornerDates').child($dateId).exists()",
             ".validate": "newData.hasChildren(['name', 'at']) && newData.child('name').isString() && newData.child('name').val().length <= 40 && newData.child('at').isNumber()"
           }
+        }
+      }
+    },
+
+    "feedback": {
+      ".read": "auth != null && root.child('config').child('admins').child(auth.uid).val() === true",
+      "$id": {
+        ".write": "auth != null && ((!data.exists() && newData.exists() && newData.child('by').val() === auth.uid && root.child('accessGranted').child(auth.uid).exists()) || root.child('config').child('admins').child(auth.uid).val() === true)",
+        ".validate": "newData.hasChildren(['by', 'text', 'at']) && newData.child('text').isString() && newData.child('text').val().length <= 1000 && newData.child('at').isNumber() && (!newData.child('name').exists() || (newData.child('name').isString() && newData.child('name').val().length <= 40))"
+      }
+    },
+
+    "gossipLog": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('profileLocks').child($uid).child('by').val() === auth.uid || root.child('config').child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists() && (auth.uid === $uid || root.child('profileLocks').child($uid).child('by').val() === auth.uid)",
+        "$entry": {
+          ".validate": "newData.hasChildren(['cornerId', 'at', 'role']) && newData.child('cornerId').isString() && newData.child('cornerId').val().length <= 120 && newData.child('at').isNumber() && (newData.child('role').val() === 'teller' || newData.child('role').val() === 'listener') && (!newData.child('title').exists() || (newData.child('title').isString() && newData.child('title').val().length <= 60))"
         }
       }
     },
