@@ -27,14 +27,23 @@ https://ETigerschuss.github.io/CornerGuide/
 - 💤 **Bleibt eingecheckt bei gesperrtem Handy** — wer eingecheckt ist, bleibt für die anderen am Corner sichtbar (mit 💤), auch wenn das Display aus ist
 - 📖 **„So sammelst du Punkte"** — vollständige Punkte-Übersicht + 3×3-Reward-Matrix (Level oben antippen oder im Ranking-Tab)
 - 📅 **Cornerdate** — Treffen an einem Corner planen: alle bekommen eine Push, können zusagen und es mit Uhrzeit, Ort und Karten-Pin in den Kalender übernehmen (`.ics` für iPhone/Android/Outlook, Link für Google Kalender) oder per WhatsApp teilen
-- 🌤️ **Corner-Check** — pro Corner: Sonne heute von–bis (Wettervorhersage + Sonnenstand, Sonnenuntergang, Golden Hour), nächster Kiosk/Späti/Tankstelle mit „offen/zu" und Fußweg-Route, Regen-Plan (überdacht? Unterstände in der Nähe, regenfeste Corners zum Ausweichen) — plus Wetter-Zeile oben in der Liste
+- 🌤️ **Corner-Check** — pro Corner: Sonne heute von–bis (Wettervorhersage + Sonnenstand, Sonnenuntergang, Golden Hour), nächster Kiosk/Späti/Tankstelle mit „offen/zu" und Fußweg-Route, Regen-Plan (überdacht? Unterstände in der Nähe, regenfeste Corners zum Ausweichen) — plus Wetter-Zeile oben auf Karte und Liste
 - 📲 **WhatsApp** — nach dem Check-in mit einem Tipp die Gruppe informieren (fertige Nachricht), optional automatisch nach jedem Check-in öffnen
+- 🗺️ **Karte als Startseite** — die App öffnet auf der Karte; ein Tipp auf einen Corner (Karte oder Liste) öffnet direkt die Detailansicht, „Einchecken" und „Route" stehen dort ganz oben
+- 🧲 **Folge mir** — persönlicher Link/QR (`?join=<id>`), der immer zu dem Corner führt, an dem man gerade eingecheckt ist. Neben einem gescannt: direkt eingecheckt, im selben Team, QR-Bonus. Als Link (WhatsApp): öffnet den Corner mit Route. „📨 Einladen" teilt automatisch diesen Link, solange man eingecheckt ist
+- 👤 **Profile der anderen** — Namen überall antippen (Freunde-Leiste, Ranking, „gerade hier", Besucher-Trail, Fotos): Status („gerade am …" mit Route), Level, Lieblings-Corner, wie oft man sich getroffen hat, gemeinsame Gossips, Corner-Karte, Achievements, Nachricht
+- 🔔 **Antippbare Hinweise** — „X ist am Corner Y" öffnet den Corner, Push-Nachrichten öffnen Corner, Chat oder Profil (`?corner=`, `?chat=`, `?profile=`)
+- 🗣️ **Gossip-Chronik** — im Profil: welche Gossip-Runden man hatte, wo, mit wem und wie viele Punkte; optional mit einer Schlagzeile, die die erzählende Person selbst wählt. Die Story selbst wird nie gespeichert
+- 🗺️ **Historie abspielen** — Flug durch die eigenen Check-ins: nah an jeden Münchner Corner, bei Ausflügen raus- und wieder reinzoomen, Kreise in der Teamfarbe des Check-ins, Tempo 1×/2×/4×
+- 🚻 **Karte in der Corner-Info** — ganz unten: Kiosk & Co., Toiletten (kostenlos/♿), Trinkbrunnen, Unterstände, zuschaltbar Mülleimer/Glascontainer und Bänke — jeweils mit Fußweg-Route
+- 🛟 **Profil-Rettung** — verlorene Profile anfragen und freigeben lassen (siehe unten)
+- 💡 **Feedback an die Macher** — Profil → „Idee oder Problem?"; Admins sehen es im Admin-Panel
 
 ## 🌤️ Corner-Check: woher kommen die Daten?
 
 - **Wetter** von [Open-Meteo](https://open-meteo.com) (kostenlos, ohne Schlüssel): Sonnenstunden, Regenwahrscheinlichkeit, Temperatur — 30 Minuten zwischengespeichert.
-- **Sonnenstand** wird lokal berechnet: Sonnenauf-/-untergang, Golden Hour und wann die Sonne hoch genug (über 15°) steht, um zwischen Häusern anzukommen.
-- **Kiosk, Späti, Tankstelle, Unterstände** aus [OpenStreetMap](https://www.openstreetmap.org) über die Overpass-API — 3 Tage pro Corner zwischengespeichert. Fehlt ein Kiosk, kann man ihn direkt in OpenStreetMap eintragen.
+- **Sonnenstand** wird lokal berechnet: Sonnenauf-/-untergang, Golden Hour und wann die Sonne hoch genug steht — zwischen Häusern über 15°, auf **offenen Plätzen** (Isar, Parks, Plätze) schon ab 4°. Ob ein Corner offen liegt, stimmt die Crew ab (🏞️ Offener Platz / 🏘️ Zwischen Häusern).
+- **Kiosk, Späti, Tankstelle, Unterstände, Toiletten, Trinkbrunnen, Mülleimer, Glascontainer, Bänke** aus [OpenStreetMap](https://www.openstreetmap.org) über die Overpass-API — 3 Tage pro Corner zwischengespeichert. Fehlt etwas, kann man es direkt in OpenStreetMap eintragen.
 - **Regenfest?** schätzt die Community ein (☂️ überdacht / 💧 wird nass); markierte Corners schlägt die App bei Regen als Ausweichspot vor.
 - Beide Dienste sehen nur die öffentlichen Koordinaten des Corners, keine Nutzerdaten.
 
@@ -62,7 +71,7 @@ automatisch, sobald die Regeln live sind):
 ```bash
 firebase deploy --only database,storage,functions
 ```
-- `database` — Regeln für `gossipRounds`, `gossipContent`, `gossipVotes`, `notifyTargeted`, `cornerDates`
+- `database` — Regeln für `gossipRounds`, `gossipContent`, `gossipVotes`, `notifyTargeted`, `cornerDates`, `profileClaims` (Profil-Rettung), `gossipLog` (Gossip-Chronik, nur für einen selbst lesbar), `feedback` (nur Admins lesen)
 - `storage` — Regel für Sprachaufnahmen unter `gossipAudio/`
 - `functions` — `pushOnTargetedNotify` schickt die Gossip-Pushes nur an die Leute am Corner
 
@@ -188,6 +197,31 @@ Profil jetzt sichern und auf jedem Browser/Gerät übernehmen — ohne Neu-Regis
 Voraussetzung: unter **Authentication → Sign-in method** zusätzlich **Google** und
 **E-Mail-Link (passwortlos)** aktivieren, und die Domain (`ETigerschuss.github.io`) unter den
 autorisierten Domains eintragen. Profile werden in der DB unter `userProfiles/{uid}` gespiegelt.
+
+### 🛟 Profil verloren? (Profil-Rettung)
+
+**Warum das passiert:** Wer anonym spielt, ist nur über einen Login in *diesem* Browser bekannt. Der ist weg, wenn
+Browserdaten gelöscht werden, Safari eine Seite nach 7 Tagen ohne Besuch leert, die App zum **iPhone-Home-Bildschirm**
+hinzugefügt wird (eigener Speicher!) oder man das Handy wechselt. Das alte Profil existiert dann noch, ist aber an den
+alten Login gebunden — und wurde in „Altes Profil übernehmen" bisher gar nicht angezeigt.
+
+**So holt man es zurück:**
+
+1. Zugangscode eingeben → „Warst du schon mal dabei?" → das alte Profil (🔒) suchen → **„Anfragen"** (optional mit
+   Notiz wie „neues Handy"). Tippt man seinen alten Namen neu ein, schlägt die App das Profil auch von selbst vor.
+2. Bestätigt wird von **einem Admin** (Admin-Panel → „🙋 Profil-Anfragen", mit Push) **oder vom alten Gerät**, falls es
+   noch funktioniert („📲 Profil auf ein anderes Gerät übertragen?").
+3. Danach zieht alles automatisch um: Aura, Karma, Achievements, Team, besuchte Corners, Check-in-Historie (Karte),
+   Begegnungen und Gossip-Chronik. Kam in der Zwischenzeit etwas mit dem neuen Profil dazu, wird es addiert.
+4. Mit einem **Recovery-Code** geht es ohne Freigabe: Der Code beweist das Profil und überträgt den *aktuellen* Stand.
+
+**Vorbeugen:** Profil → „Konto & Profil sichern" — am besten **Mit Google sichern**, oder den Recovery-Code über
+„📤 An mich schicken" in den eigenen Chat legen. Solange ein Profil nicht gesichert ist, erinnert die App daran
+(auf dem iPhone vor allem vor dem Hinzufügen zum Home-Bildschirm).
+
+**Admin werden** (z. B. nach eigenem Login-Verlust): Die eigene **Nutzer-ID** steht im Profil unter „Konto & Profil
+sichern". Im Repo unter *Actions → Admin-Werkzeuge → Run workflow* die Aktion `add-admin` mit dieser ID starten.
+Als Admin kann man ein gesperrtes Profil auch direkt übernehmen („🛠 Übernehmen").
 
 ### Empfohlener Weg für bestehende Nutzer (neues Gerät / neue Version)
 

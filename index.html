@@ -2598,6 +2598,16 @@ a.action-btn { text-decoration: none; }
 .pmap-controls #pmap-play { flex: 0 0 auto; font-size: 11px; padding: 6px 10px; }
 .pmap-controls #pmap-scrub { flex: 1 1 120px; min-width: 0; accent-color: var(--amber); }
 .pmap-controls #pmap-date { flex: 0 0 auto; font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); }
+.pmap-controls #pmap-speed { flex: 0 0 auto; font-size: 11px; padding: 6px 8px; }
+.pmap-frame { position: relative; }
+.pmap-caption { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 500; pointer-events: none; background: rgba(13,13,13,0.86); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; font-size: 12px; line-height: 1.35; opacity: 0; transform: translateY(6px); transition: opacity 0.25s, transform 0.25s; }
+.pmap-caption.on { opacity: 1; transform: none; }
+.pmap-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.cg-pie.pop { animation: pmap-pop 0.55s cubic-bezier(.2,1.6,.4,1); }
+.pmap-ring { position: absolute; inset: -9px; border: 3px solid var(--amber); border-radius: 50%; animation: pmap-ring 1.4s ease-out infinite; pointer-events: none; }
+@keyframes pmap-pop { 0% { transform: scale(0.2); } 100% { transform: scale(1); } }
+@keyframes pmap-ring { 0% { transform: scale(0.7); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cg-pie.pop, .pmap-ring { animation: none; } .pmap-caption { transition: none; } }
 
 /* ====================== LIVE LOCATION MARKERS ====================== */
 .live-user-marker { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); position: relative; }
@@ -2609,6 +2619,129 @@ a.action-btn { text-decoration: none; }
 .team-buttons { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 6px; }
 .team-btn { padding: 8px 3px; font-size: 20px; }
 .team-btn .team-label { font-size: 7px; letter-spacing: 0.3px; }
+
+
+/* Stacking: every overlay sits at 4000. Confirm/prompt dialogs and toasts are
+   opened FROM overlays (admin panel, claim list, profiles), so they must sit
+   above them — before, "Profil löschen?" opened hidden behind the admin panel. */
+#app-dialog.access-prompt { z-index: 4600; }
+.toast { z-index: 4700; }
+.celebration { z-index: 4500; }
+
+/* ====================== PUBLIC PROFILES ====================== */
+.user-profile-card { position: relative; max-width: 440px; width: 100%; max-height: 88vh; overflow-y: auto; text-align: left; }
+.access-prompt .up-close { position: absolute; top: 10px; right: 12px; width: auto; background: none; border: none; color: var(--fg-dim); font-size: 20px; font-weight: 400; cursor: pointer; padding: 4px 8px; border-radius: 8px; }
+.access-prompt .up-close:hover { background: var(--bg-3); color: var(--fg); }
+.up-head { display: flex; align-items: center; gap: 12px; margin: 0 28px 10px 0; }
+.up-avatar { flex: 0 0 auto; width: 54px; height: 54px; border-radius: 50%; border: 3px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 28px; background: var(--bg-3); }
+.access-prompt .up-name { font-size: 22px; margin: 0; line-height: 1.15; overflow-wrap: anywhere; text-align: left; }
+.up-sub { font-size: 12px; color: var(--fg-dim); margin-top: 2px; }
+.up-status { font-size: 13px; padding: 9px 12px; border-radius: 10px; background: var(--bg-3); border: 1px solid var(--line); margin-bottom: 10px; }
+.up-status.live { border-color: var(--green); }
+.up-status.off { color: var(--fg-dim); }
+.up-status-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.access-prompt .up-status-actions .action-btn, .access-prompt .up-actions .action-btn { flex: 1; width: auto; padding: 9px 12px; font-size: 12px; }
+.up-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+.up-stats div { background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; padding: 8px 4px; text-align: center; }
+.up-stats strong { display: block; font-size: 17px; }
+.up-stats span { display: block; font-size: 9px; color: var(--fg-dim); margin-top: 2px; }
+.up-matrix { font-size: 12px; color: var(--fg-dim); margin-bottom: 8px; line-height: 1.45; }
+.up-matrix strong { color: var(--fg); }
+.up-together { font-size: 13px; color: var(--amber); margin-bottom: 10px; }
+.up-map { height: 170px; border-radius: 12px; overflow: hidden; background: var(--bg-3); margin: 6px 0 10px; }
+#up-bottom h3 { font-size: 14px; margin: 14px 0 8px; }
+.up-favs { display: flex; flex-direction: column; gap: 6px; }
+.access-prompt .up-fav { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-3); color: var(--fg); font: inherit; font-size: 13px; font-weight: 400; text-align: left; cursor: pointer; }
+.access-prompt .up-fav:hover { background: var(--bg-2); color: var(--fg); border-color: var(--amber); }
+.up-fav-n { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--amber); }
+.up-ach { display: flex; flex-wrap: wrap; gap: 6px; font-size: 20px; }
+.up-empty { font-size: 13px; color: var(--fg-dim); }
+.up-actions { display: flex; gap: 8px; margin-top: 16px; }
+.friend-name { background: none; border: none; color: inherit; font: inherit; padding: 0; cursor: pointer; text-decoration: underline dotted rgba(255,255,255,0.35); text-underline-offset: 3px; }
+.lb-person, .visit-chip[data-user-profile] { cursor: pointer; }
+.people-chip { background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: inherit; font: inherit; font-size: 12px; padding: 2px 8px; border-radius: 999px; cursor: pointer; margin: 2px 2px 0 0; }
+
+/* ====================== COMMENT QUICK WINS ====================== */
+/* Map = landing page: on the map the big title shrinks to one line so the
+   map fills the phone screen right away. */
+body.map-first .hero { padding: calc(10px + var(--safe-top)) 16px 10px; }
+body.map-first .stamps { position: absolute; inset: 0; margin: 0; align-items: center; pointer-events: none; }
+body.map-first .stamp-logo { width: 34px; height: 34px; }
+body.map-first .stamp-incl { font-size: 22px; }
+body.map-first .title-block { margin: 0; padding: 0 44px; white-space: nowrap; }
+body.map-first .title-mingas, body.map-first .title-corner { font-size: clamp(17px, 5.4vw, 32px); display: inline-block; line-height: 1.15; margin: 0; }
+body.map-first .title-mingas::after { height: 3px; }
+body.map-first .title-intl, body.map-first .subtitle, body.map-first .meta-line { display: none; }
+body:not(.home-view) #weather-banner, body:not(.home-view) #cornerdates-strip { display: none !important; }
+body.map-first .weather-banner { font-size: 12px; padding: 8px 12px; }
+body.map-first .cd-strip { padding: 8px 12px; }
+body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
+#cards .card-body, #cards .card-photo img { cursor: pointer; }
+#cards .card-name::after { content: " ›"; color: var(--amber); }
+.photo-comment-btn { background: none; border: 1px solid var(--line); color: var(--fg-dim); border-radius: 999px; font: inherit; font-size: 11px; padding: 2px 8px; margin-left: auto; cursor: pointer; }
+.pc-img { width: 100%; max-height: 240px; object-fit: cover; border-radius: 10px; display: block; }
+.pc-meta { font-size: 12px; color: var(--fg-dim); margin: 8px 0; text-align: left; }
+.pc-list { max-height: 34vh; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin: 6px 0 10px; text-align: left; }
+.pc-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; padding: 7px 10px; border-radius: 10px; background: var(--bg-3); border: 1px solid var(--line); font-size: 13px; }
+.pc-text { flex: 1 1 140px; overflow-wrap: anywhere; }
+.pc-time { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); }
+.access-prompt .pc-del { width: auto; background: none; color: var(--fg-dim); padding: 0 4px; font-size: 12px; font-weight: 400; }
+.pc-input-row { display: flex; gap: 8px; }
+.pc-input-row input { flex: 1; min-width: 0; margin: 0; }
+.access-prompt .pc-send { width: auto; padding: 10px 16px; }
+.cd-reward { font-size: 12px; color: var(--amber); margin: 6px 0 0; line-height: 1.45; }
+.detail-origin { font-size: 12px; color: var(--fg-dim); margin: -4px 0 10px; }
+.ci-place-vote { align-items: center; margin-top: 8px; }
+.admin-fb { padding: 8px 10px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; }
+
+/* ====================== CORNER-INFO MAP ====================== */
+.ci-map { height: 280px; border-radius: 12px; overflow: hidden; background: var(--bg-3); margin-top: 8px; }
+.ci-map-legend { display: flex; flex-wrap: wrap; gap: 6px; }
+.ci-chip { font: inherit; font-size: 12px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg-3); color: var(--fg-dim); cursor: pointer; }
+.ci-chip.on { border-color: var(--amber); color: var(--fg); background: rgba(232,169,62,0.12); }
+.ci-chip-n { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--amber); }
+.ci-chip-n:empty { display: none; }
+.ci-map-pin { width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 2px solid #222; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 1px 5px rgba(0,0,0,0.45); }
+.ci-map-pin.closed { opacity: 0.55; filter: grayscale(0.6); }
+.ci-map-corner { font-size: 30px; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); }
+
+/* ====================== FOLGE MIR + DETAIL TOP BAR ====================== */
+.qr-note { font-size: 11.5px; color: var(--fg-dim); line-height: 1.45; margin: 8px 0; }
+.detail-topbar { display: flex; gap: 8px; align-items: stretch; margin: 0 0 12px; }
+.detail-topbar .checkin-btn { flex: 1; margin: 0; }
+.detail-topbar .action-btn { flex: 0 0 auto; }
+.detail-follow { font-size: 13px; margin: 0 0 8px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--green); background: rgba(184,255,58,0.06); }
+
+/* ====================== GOSSIP CHRONICLE ====================== */
+.gs-headline { color: var(--pink); font-weight: 700; font-size: 14px; margin-top: 4px; overflow-wrap: anywhere; }
+.gl-list { display: flex; flex-direction: column; gap: 6px; }
+.gl-row, .access-prompt .gl-row { display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-3); color: var(--fg); font: inherit; font-weight: 400; text-align: left; cursor: pointer; }
+.access-prompt .gl-row:hover { background: var(--bg-2); color: var(--fg); border-color: var(--pink); }
+.gl-emoji { font-size: 22px; line-height: 1.1; }
+.gl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.gl-title { color: var(--pink); font-weight: 700; font-size: 13px; overflow-wrap: anywhere; }
+.gl-line { font-size: 12px; overflow-wrap: anywhere; }
+.gl-line.dim { color: var(--fg-dim); font-size: 11px; }
+.gl-pts { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--green); text-align: right; white-space: nowrap; }
+.gl-pts small { color: var(--fg-dim); }
+.gl-more summary { cursor: pointer; font-size: 12px; color: var(--fg-dim); margin: 8px 0; }
+
+/* ====================== PROFILE RESCUE ====================== */
+.claim-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; }
+.claim-row .action-btn { padding: 6px 10px; font-size: 11px; white-space: nowrap; }
+.claim-search { width: 100%; margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-2, #151515); color: var(--fg); font-size: 14px; }
+.claim-hint { font-size: 11px; color: var(--fg-dim); line-height: 1.5; margin: 0 0 10px; }
+.admin-claim { padding: 10px 12px; background: var(--bg-3); border: 1px solid var(--amber); border-radius: 8px; margin-bottom: 8px; }
+.admin-claim-note { font-size: 12px; color: var(--fg-dim); font-style: italic; margin-top: 4px; }
+.admin-claim-warn { font-size: 11px; color: var(--pink); margin-top: 6px; }
+.admin-claim .action-btn { padding: 6px 10px; font-size: 11px; }
+.admin-badge { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--amber); color: #111; font-size: 11px; font-weight: 700; }
+.backup-banner { margin: 12px 0; padding: 12px 14px; border: 1px solid var(--amber); border-radius: 12px; background: rgba(232,169,62,0.08); font-size: 13px; line-height: 1.5; }
+.backup-banner .action-btn { padding: 6px 10px; font-size: 12px; }
+.acct-code-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; margin: 0 0 10px; }
+.acct-code { font-family: "JetBrains Mono", monospace; letter-spacing: 1px; color: var(--amber); }
+.acct-uid { margin: 12px 0 0; font-size: 11px; color: var(--fg-dim); line-height: 1.6; word-break: break-all; }
+.acct-uid code { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg); }
 
 </style>
 </head>
@@ -2649,8 +2782,8 @@ a.action-btn { text-decoration: none; }
 <!-- Sticky navigation: lives outside the hero so it stays pinned while scrolling -->
 <div class="tabs-bar">
   <nav class="tabs" role="tablist">
-    <button class="tab active" data-view="list">Liste</button>
-    <button class="tab" data-view="map">Karte</button>
+    <button class="tab active" data-view="map">Karte</button>
+    <button class="tab" data-view="list">Liste</button>
     <button class="tab" data-view="leaderboard">🏆 Ranking</button>
     <button class="tab" data-view="profile">👤 Profil</button>
   </nav>
@@ -2680,18 +2813,20 @@ a.action-btn { text-decoration: none; }
     </div>
   </div>
 
-  <section id="view-list" class="view active">
+  <!-- Weather + upcoming cornerdates: shown above the map and the list -->
+  <div id="weather-banner"></div>
+  <div id="cornerdates-strip"></div>
+
+  <section id="view-list" class="view">
     <div class="list-meta">
       <span><span class="count-num" id="corner-count">--</span> Spots gesamt</span>
       <button id="list-locate-btn" class="geo-btn" style="padding:6px 12px;font-size:12px;">📍 Standort an</button>
       <span id="me-position-meta">Standort aus</span>
     </div>
-    <div id="weather-banner"></div>
-    <div id="cornerdates-strip"></div>
     <div class="cards" id="cards"></div>
   </section>
 
-  <section id="view-map" class="view">
+  <section id="view-map" class="view active">
     <div class="map-toolbar">
       <button id="locate-btn" class="geo-btn">📍 Standort an</button>
       <span class="geo-status" id="geo-status">Standort aus</span>
@@ -2718,7 +2853,7 @@ a.action-btn { text-decoration: none; }
 <footer class="foot">
   Basiert auf der Maps-Liste <strong>Cornern als Lebensstil 🙌🍻</strong> von Florencia Porta<br>
   Gegründet vom Gossips Stammtisch: <strong>F · G · A · ÉT</strong><br>
-  Repo: CornerGuide · Alpha v0.6 · Echtzeit-Features powered by Firebase · 🏆 Gamification aktiv
+  Repo: CornerGuide · Alpha v0.7 · Echtzeit-Features powered by Firebase · 🏆 Gamification aktiv
 </footer>
 
 <!-- ============ FABs ============ -->
@@ -2809,6 +2944,8 @@ a.action-btn { text-decoration: none; }
   <div class="gossip-card">
     <h2 id="gossip-title">🗣️ Gossip-Runde</h2>
     <p class="gossip-sub" id="gossip-sub"></p>
+    <label class="ce-label" for="gossip-headline" id="gossip-headline-label">Schlagzeile für eure Chronik (optional)</label>
+    <input type="text" id="gossip-headline" class="ce-field" maxlength="60" autocomplete="off" placeholder="z. B. Die Sache mit dem Hausboot" />
     <label class="ce-label" for="gossip-text" id="gossip-text-label">Deine Story</label>
     <textarea id="gossip-text" class="ce-field" maxlength="1000" rows="5" placeholder="Was ist passiert? Wer, wo, wann … 👀"></textarea>
     <div class="gossip-count"><span id="gossip-text-count">0</span>/1000</div>
@@ -2964,6 +3101,29 @@ a.action-btn { text-decoration: none; }
   </div>
 </div>
 
+<!-- Someone else's profile (tap a name anywhere) -->
+<div id="user-profile-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card user-profile-card">
+    <button class="up-close" id="up-close" aria-label="Schließen">✕</button>
+    <div id="up-top"></div>
+    <div id="up-map" class="up-map"></div>
+    <div id="up-bottom"></div>
+  </div>
+</div>
+
+<!-- Comments on one photo -->
+<div id="photo-comments-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card user-profile-card">
+    <button class="up-close" id="pc-close" aria-label="Schließen">✕</button>
+    <h2 style="font-size:20px;margin:0 30px 10px 0;text-align:left;">💬 Foto-Kommentare</h2>
+    <div id="pc-body"></div>
+    <div class="pc-input-row">
+      <input type="text" id="pc-input" maxlength="300" autocomplete="off" placeholder="Kommentar schreiben…" />
+      <button class="pc-send" id="pc-send" aria-label="Senden">➤</button>
+    </div>
+  </div>
+</div>
+
 <!-- QR codes: personal + neutral sticker -->
 <div id="qr-overlay" class="access-prompt" style="display:none;">
   <div class="prompt-card" style="max-width:420px;max-height:88vh;overflow-y:auto;text-align:left;">
@@ -3031,13 +3191,18 @@ a.action-btn { text-decoration: none; }
   <div class="prompt-card" style="max-width:480px;max-height:85vh;overflow-y:auto;text-align:left;">
     <h2>🛠 Admin-Panel</h2>
     <p style="font-size:12px;color:var(--fg-dim);">Host-Werkzeuge. Löschen ist endgültig — Vorsicht.</p>
+    <h3 style="font-size:14px;margin:16px 0 8px;">🙋 Profil-Anfragen</h3>
+    <div id="admin-claims"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">🔗 Doppelte Profile</h3>
     <div id="admin-dupes"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">👥 Profile</h3>
     <div id="admin-profiles"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">📍 Eigene Spots</h3>
     <div id="admin-corners"></div>
+    <h3 style="font-size:14px;margin:16px 0 8px;">💡 Feedback</h3>
+    <div id="admin-feedback"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">🧹 Aufräumen</h3>
+    <button class="notif-opt" id="admin-dedupe-visits" style="margin-bottom:8px;">Doppelte Check-ins löschen (1 pro Person, Corner &amp; Tag)</button>
     <button class="notif-opt" id="admin-clean-presence" style="margin-bottom:8px;">Geister-Presence entfernen (&gt;45 min weg bzw. &gt;3 h ohne Lebenszeichen am Corner)</button>
     <button id="admin-close" class="action-btn" style="margin-top:12px;">Schließen</button>
   </div>
@@ -3237,7 +3402,7 @@ function loadNotifPref() {
 
 /* ====================== STATE ====================== */
 const STATE = {
-  view: "list",
+  view: "map",
   customSpots: loadCustomSpots(),
   mainMap: null,
   mainMarkers: {},
@@ -3379,6 +3544,10 @@ document.addEventListener("DOMContentLoaded", () => {
   checkNickname();
   renderCards();
   bindTabs();
+  // "Map muss landing page werden": start on the map.
+  STATE.view = "map";
+  document.body.classList.add("map-first", "home-view");
+  setTimeout(() => { if (!STATE.mainMap) initMainMap(); setTimeout(() => STATE.mainMap?.invalidateSize(), 80); }, 0);
   bindGeo();
   bindModal();
   bindDetailOverlay();
@@ -3391,6 +3560,8 @@ document.addEventListener("DOMContentLoaded", () => {
   bindGlobalXp();
   setupServiceWorker();
   openPendingSharedCorner();
+  openPendingProfile();
+  handlePendingJoin();
   if (STATE.pendingInviteName) {
     toast(`🍻 Einladung von <strong>${escapeHtml(STATE.pendingInviteName)}</strong>`);
     clearHandledQueryParam(INVITE_PARAM);
@@ -3579,6 +3750,7 @@ function listenPhotos() {
     STATE.photos = snapshot.val() || {};
     refreshAllPhotoGalleries();
     renderCards();
+    if (_photoCommentsOpen) renderPhotoComments();
   });
 }
 
@@ -3742,6 +3914,7 @@ function renderPhotoGallery(cornerId, container) {
         <div class="gallery-rating">
           ${starsHtml}
           <span class="gallery-avg">${avgRating} ${ratingValues.length > 0 ? `(${ratingValues.length})` : ""}</span>
+          ${window.FB?.firebaseReady ? `<button class="photo-comment-btn" data-corner="${cornerId}" data-photo="${p.key}" title="${T("Kommentare", "Comments")}">💬 ${Object.keys(p.comments || {}).length || ""}</button>` : ""}
         </div>
       </div>`;
     }).join("");
@@ -3792,12 +3965,76 @@ function renderPhotoGallery(cornerId, container) {
     });
   });
 
+  container.querySelectorAll(".photo-comment-btn").forEach((btn) => {
+    btn.addEventListener("click", () => openPhotoComments(btn.dataset.corner, btn.dataset.photo));
+  });
+
   // Bind lightbox on gallery images
   container.querySelectorAll(".gallery-img").forEach((img) => {
     img.addEventListener("click", () => {
       openLightbox(img.src, img.dataset.author || "");
     });
   });
+}
+
+/* ---- Photo comments ("Kommentare zu Fotos machen können") ---- */
+var _photoCommentsOpen = null;   // { cornerId, photoKey }
+function renderPhotoComments() {
+  const o = _photoCommentsOpen;
+  const body = $("#pc-body");
+  if (!o || !body) return;
+  const p = STATE.photos?.[o.cornerId]?.[o.photoKey];
+  if (!p) { body.innerHTML = `<p class="up-empty">${T("Foto nicht mehr da.", "Photo is gone.")}</p>`; return; }
+  const list = Object.entries(p.comments || {}).map(([id, c]) => ({ id, ...c })).sort((a, b) => Number(a.at || 0) - Number(b.at || 0));
+  body.innerHTML = `
+    <img class="pc-img" src="${escapeHtml(p.src)}" alt="Foto" />
+    <div class="pc-meta">📸 ${p.authorId ? `<button class="people-chip" data-user-profile="${escapeHtml(p.authorId)}">${escapeHtml(p.author || "?")}</button>` : escapeHtml(p.author || "?")} · ${timeAgo(p.time)}${p.caption ? ` · ${escapeHtml(p.caption)}` : ""}</div>
+    <div class="pc-list">${list.length ? list.map((c) => `<div class="pc-item">
+        <span class="pc-name">${c.by ? `<button class="people-chip" data-user-profile="${escapeHtml(c.by)}">${escapeHtml(c.name || "?")}</button>` : escapeHtml(c.name || "?")}</span>
+        <span class="pc-text">${escapeHtml(c.text || "")}</span>
+        <span class="pc-time">${timeAgo(c.at)}</span>
+        ${isMyKey(c.by) || STATE.isAdmin ? `<button class="pc-del" data-pc-del="${escapeHtml(c.id)}" title="${T("Löschen", "Delete")}">✕</button>` : ""}
+      </div>`).join("") : `<p class="up-empty">${T("Noch keine Kommentare — schreib den ersten!", "No comments yet — write the first!")}</p>`}</div>`;
+  body.querySelectorAll("[data-pc-del]").forEach((b) => b.addEventListener("click", () => {
+    window.FB.remove(window.FB.ref(window.FB.db, `photos/${o.cornerId}/${o.photoKey}/comments/${b.dataset.pcDel}`)).catch(() => toast(T("Löschen ging nicht.", "Could not delete.")));
+  }));
+  const list2 = body.querySelector(".pc-list");
+  if (list2) list2.scrollTop = list2.scrollHeight;
+}
+
+function openPhotoComments(cornerId, photoKey) {
+  const overlay = $("#photo-comments-overlay");
+  if (!overlay) return;
+  _photoCommentsOpen = { cornerId, photoKey };
+  renderPhotoComments();
+  overlay.style.display = "flex";
+  const close = () => { overlay.style.display = "none"; _photoCommentsOpen = null; };
+  $("#pc-close").onclick = close;
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+  const input = $("#pc-input");
+  input.value = "";
+  const send = async () => {
+    const text = input.value.trim().slice(0, 300);
+    if (!text) return;
+    if (!STATE.nickname || !window.FB?.firebaseReady) { toast(T("Bitte zuerst einen Namen wählen.", "Please pick a name first.")); return; }
+    const { db, ref, push, set } = window.FB;
+    try {
+      await set(push(ref(db, `photos/${cornerId}/${photoKey}/comments`)), { by: currentUserKey(), name: String(STATE.nickname).slice(0, 40), text, at: Date.now() });
+      input.value = "";
+      const p = STATE.photos?.[cornerId]?.[photoKey];
+      if (p && p.authorId && !isMyKey(p.authorId)) {
+        const corner = getAllCorners().find((c) => c.id === cornerId);
+        sendTargetedPush([p.authorId], { type: "photo-comment", title: "💬 Kommentar zu deinem Foto", body: `${STATE.nickname}: ${text.slice(0, 120)}`, query: `?corner=${encodeURIComponent(cornerId)}` });
+      }
+      const n = parseInt(localStorage.getItem("cg.photoCommentXpDay") === getTodayKey() ? (localStorage.getItem("cg.photoCommentXpN") || "0") : "0", 10);
+      if (n < 5) { addXp(2, "Foto kommentiert"); localStorage.setItem("cg.photoCommentXpDay", getTodayKey()); localStorage.setItem("cg.photoCommentXpN", String(n + 1)); }
+    } catch (err) {
+      console.warn("photo comment failed:", err);
+      toast(T("Kommentar konnte nicht gespeichert werden.", "Could not save the comment."));
+    }
+  };
+  $("#pc-send").onclick = send;
+  input.onkeydown = (e) => { if (e.key === "Enter") send(); };
 }
 
 function playAlarmSound() {
@@ -4169,7 +4406,18 @@ function startCooldownDisplay() {
 }
 
 /* ====================== VISIT TRAIL ====================== */
+// "Zähl die check-ins pro Person nur einmal pro Tag" — a second check-in at the
+// same corner on the same day is not stored again.
+function visitedTodayAt(cornerId) {
+  const me = currentUserKey();
+  const today = new Date().toDateString();
+  return Object.values(STATE.visits?.[cornerId] || {}).some((v) => v
+    && (v.userId ? (v.userId === me || isMyKey(v.userId)) : v.user === STATE.nickname)
+    && new Date(Number(v.time || 0)).toDateString() === today);
+}
+
 function recordVisit(cornerId) {
+  if (visitedTodayAt(cornerId)) return null;
   const visit = {
     user: STATE.nickname || "Anonym",
     // userId survives nickname changes; team drives the pie slices on the
@@ -4183,6 +4431,8 @@ function recordVisit(cornerId) {
     const { db, ref, push, set } = window.FB;
     const newRef = push(ref(db, "visits/" + cornerId));
     set(newRef, visit);
+    STATE.lastVisitRef = { cornerId, key: newRef.key, at: Date.now() };
+    return newRef.key;
   } else {
     const visits = loadLocalVisits();
     if (!visits[cornerId]) visits[cornerId] = [];
@@ -4234,7 +4484,7 @@ function renderVisitTrail(cornerId, container) {
   }
 
   const chips = sorted.map((v) => `
-    <li class="visit-chip">
+    <li class="visit-chip" ${v.userId ? `data-user-profile="${escapeHtml(v.userId)}"` : ""}>
       <span class="visit-name">${escapeHtml(v.user)}</span>
       <span class="visit-time">${timeAgo(v.time)}</span>
     </li>
@@ -4884,7 +5134,7 @@ function captureCorner(cornerId, team, users) {
 
   STATE.captured[cornerId] = captureData;
   const t = TEAMS[team];
-  toast(`${t?.emoji} Team ${t?.name} hat <strong>${getAllCorners().find(c => c.id === cornerId)?.name}</strong> eingenommen! 🏴`);
+  toast(`${t?.emoji} Team ${t?.name} hat <strong>${escapeHtml(getAllCorners().find(c => c.id === cornerId)?.name || "")}</strong> eingenommen! 🏴`, null, () => openDetail(cornerId));
 
   // Points for capture participants
   users.forEach((u) => addPoints(u, 25, "Corner eingenommen"));
@@ -5076,7 +5326,7 @@ function checkDwellAutoCheckin() {
   if (dwelled >= AUTO_CHECKIN_DWELL_MS && STATE.manualCheckinId !== nearId && STATE._autoCheckedCorner !== nearId) {
     STATE._autoCheckedCorner = nearId;
     manualCheckin(nearId);
-    toast(`🤖 ${T("5 Minuten am", "5 minutes at")} <strong>${escapeHtml(nearest.name)}</strong> — ${T("automatisch eingecheckt!", "auto checked in!")}`);
+    toast(`🤖 ${T("5 Minuten am", "5 minutes at")} <strong>${escapeHtml(nearest.name)}</strong> — ${T("automatisch eingecheckt!", "auto checked in!")}`, null, () => openDetail(nearest.id));
   }
 }
 
@@ -5386,6 +5636,13 @@ function applyIncomingLinks() {
   // A personal QR carries the sharer's team so the crew ends up together.
   const sharedTeam = (params.get("team") || "").trim();
   if (sharedTeam && autoCheckin) STATE.pendingSharedTeam = sharedTeam;
+  // Push about a profile request (admins / the profile's current device).
+  if (params.get("claims") === "1") STATE.pendingClaimsFocus = true;
+  if (params.get("feedback") === "1") STATE.pendingFeedbackFocus = true;
+  const joinId = (params.get("join") || "").trim();
+  if (joinId && /^[A-Za-z0-9_-]{1,128}$/.test(joinId)) STATE.pendingJoin = { id: joinId, here: params.get("here") === "1", name: sanitizeInviteName(params.get("n") || "").slice(0, 30) };
+  const profileKey = (params.get("profile") || "").trim();
+  if (profileKey && /^[A-Za-z0-9_-]{1,128}$/.test(profileKey)) STATE.pendingProfileKey = profileKey;
 }
 
 function clearHandledQueryParam(name) {
@@ -5447,10 +5704,12 @@ async function inviteFriends() {
     toast("Bitte gib zuerst einen Namen ein.");
     return;
   }
-  const url = buildShareUrl("", STATE.nickname);
+  // Checked in somewhere? Then the invite leads to me ("Folge mir").
+  const atCorner = !!myPresenceCorner() && !!window.FB?.firebaseReady;
+  const url = atCorner ? buildJoinUrl(false) : buildShareUrl("", STATE.nickname);
   try {
     if (navigator.share) {
-      await navigator.share({ title: "Minga Corner Guide", text: `${STATE.nickname} lädt dich zum Cornern ein 🍻`, url });
+      await navigator.share({ title: "Minga Corner Guide", text: atCorner ? followMeText() : `${STATE.nickname} lädt dich zum Cornern ein 🍻`, url });
       toast("📨 Einladung geteilt");
       addXp(5, "Freunde eingeladen");
       unlockAchievement("recruiter", "Anwerber", "📨", 15);
@@ -5765,6 +6024,7 @@ function buildRewardGuideHtml() {
     <table class="rg-table">
       ${row("🛒", "Nachschub mitgebracht — pro Person, die es bestätigt", "Brought supplies — per person who confirms", `+${SUPPLY_KARMA_PER_CONFIRM}`)}
       ${row("🗣️", "Gossip-Story erzählt — pro Person am Corner, die bewertet", "Told a gossip story — per person at the corner who rates it", "+2…+20")}
+      ${row("📅", "Cornerdate geplant — pro Zusage · pro Gast, der wirklich kommt", "Planned a cornerdate — per yes · per guest who really comes", `+${CORNERDATE_JOIN_KARMA} · +${CORNERDATE_ARRIVE_KARMA}`)}
     </table>
     <h4 class="rg-h aura">✨ ${T("Aura sammeln", "Collecting aura")}</h4>
     <table class="rg-table">
@@ -5811,7 +6071,7 @@ function maybeShowRewardTip(delayMs = 9000) {
   setTimeout(() => {
     if ($("#access-prompt")?.style.display === "flex" || localStorage.getItem("cg.rewardTipShown") === "1") return;
     localStorage.setItem("cg.rewardTipShown", "1");
-    toast(`📖 <strong>${T("So sammelst du Punkte", "How to earn points")}</strong><br><span style="font-size:11px;opacity:0.8;">${T("Aura, Karma, Gossip-Runden & deine Matrix — tippen zum Ansehen (oder später oben aufs Level tippen)", "Aura, karma, gossip rounds & your matrix — tap to see (or tap your level later)")}</span>`, null, openRewardGuide);
+    toastWhenFree(`📖 <strong>${T("So sammelst du Punkte", "How to earn points")}</strong><br><span style="font-size:11px;opacity:0.8;">${T("Aura, Karma, Gossip-Runden & deine Matrix — tippen zum Ansehen (oder später oben aufs Level tippen)", "Aura, karma, gossip rounds & your matrix — tap to see (or tap your level later)")}</span>`, null, openRewardGuide);
   }, delayMs);
 }
 document.addEventListener("DOMContentLoaded", () => maybeShowRewardTip());
@@ -5827,6 +6087,27 @@ function checkedInTodayAt(cornerId) {
     return log[cornerId] === new Date().toDateString();
   } catch (e) { return false; }
 }
+// "Ups falsch eingecheckt": the undo takes back the visit, its Aura and the
+// cooldown, so you can check in where you really are right away.
+function undoCheckin(cornerId) {
+  const g = STATE.lastCheckinGrant;
+  if (g && g.cornerId === cornerId && Date.now() - g.at < 15 * 60000) {
+    if (g.aura) addXp(-g.aura, "Check-in zurückgenommen");
+    if (g.firstVisit) { STATE.visitedCorners = STATE.visitedCorners.filter((id) => id !== cornerId); saveVisitedCorners(); }
+    if (g.today) {
+      try { const log = JSON.parse(localStorage.getItem("cg.checkinDays") || "{}"); delete log[cornerId]; localStorage.setItem("cg.checkinDays", JSON.stringify(log)); } catch (e) {}
+    }
+    if (g.visitKey && window.FB?.firebaseReady) window.FB.remove(window.FB.ref(window.FB.db, `visits/${cornerId}/${g.visitKey}`)).catch(() => {});
+  }
+  STATE.lastCheckinGrant = null;
+  STATE.lastVisitRef = null;
+  STATE.lastCheckinCorner = null;
+  STATE.lastCheckinTime = 0;
+  localStorage.removeItem("cg.lastCheckinCorner");
+  localStorage.removeItem("cg.lastCheckinTime");
+  updateCheckinButtons();
+}
+
 function markCheckedInToday(cornerId) {
   let log = {};
   try { log = JSON.parse(localStorage.getItem("cg.checkinDays") || "{}"); } catch (e) {}
@@ -5919,9 +6200,43 @@ function unlockAchievement(id, name, emoji, pts) {
   }
 }
 
+// "ÉT" typed again on a new phone: the old profile with that name is most
+// likely the same person — offer to take it back instead of starting at zero.
+function normalizeName(n) {
+  return String(n || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+function findProfileTwin(name) {
+  const want = normalizeName(name);
+  if (!want || want === "anonym") return null;
+  let best = null;
+  Object.entries(STATE.points || {}).forEach(([key, p]) => {
+    if (!p || isMyKey(key) || key === currentUserKey()) return;
+    if (normalizeName(p.nickname) !== want || Number(p.total || 0) < 10) return;
+    if (!best || Number(p.total) > best.total) best = { key, nickname: p.nickname, total: Number(p.total) };
+  });
+  return best;
+}
+
+async function offerProfileTwin(twin) {
+  const ok = await showDialog({
+    title: T(`„${twin.nickname}“ gibt es schon`, `“${twin.nickname}” already exists`),
+    text: T(`Ein Profil mit diesem Namen hat ${twin.total} Aura. Bist du das (neues Handy, Browser gelöscht)? Dann hol es dir zurück, statt bei null anzufangen.`, `A profile with this name has ${twin.total} aura. Is that you (new phone, cleared browser)? Take it back instead of starting from zero.`),
+    okLabel: T("Ja, das bin ich", "Yes, that's me"),
+    cancelLabel: T("Nein, ich bin neu", "No, I'm new")
+  });
+  if (ok !== true || !window.FB?.firebaseReady) return;
+  let lock = null;
+  try { lock = (await window.FB.get(window.FB.ref(window.FB.db, "profileLocks/" + twin.key))).val(); } catch (err) { lock = null; }
+  const uid = window.FB.getAuthUid?.() || "";
+  if (!lock || !lock.by || lock.by === uid || STATE.isAdmin) await claimExistingProfile(twin.key);
+  else await requestProfileClaim(twin.key, twin.nickname, lock);
+}
+
 function saveNickname() {
   const name = $("#nickname-input").value.trim();
   if (!name) { toast("Bitte gib einen Namen ein."); return; }
+  const twin = window.FB?.firebaseReady ? findProfileTwin(name) : null;
+  if (twin) setTimeout(() => offerProfileTwin(twin), 600);
   STATE.nickname = name;
   localStorage.setItem("cg.nickname", name);
   ensurePointIdentity();
@@ -6007,6 +6322,12 @@ function selectTeam(teamId) {
   if (!TEAMS[teamId]) return;
   const isFirstTeam = !STATE.team;
   STATE.team = teamId;
+  // Picked in the dialog right after checking in: that check-in counts for this
+  // team (circle colours on the profile map, team stats).
+  const lv = STATE.lastVisitRef;
+  if (lv && Date.now() - lv.at < 15 * 60000 && STATE.manualCheckinId === lv.cornerId && window.FB?.firebaseReady) {
+    window.FB.set(window.FB.ref(window.FB.db, `visits/${lv.cornerId}/${lv.key}/team`), teamId).catch(() => {});
+  }
   localStorage.setItem(TEAM_STORAGE_KEY, teamId);
   ensureTeamHistoryEntry(teamId);
   if (isFirstTeam) { addXp(5, "Team beigetreten"); }
@@ -6170,7 +6491,7 @@ function renderLiveLocationMarkers() {
       iconAnchor: [14, 14]
     });
     const marker = L.marker([info.lat, info.lng], { icon, zIndexOffset: 1200 }).addTo(STATE.mainMap);
-    marker.bindPopup(`<strong>${escapeHtml(info.nickname || userId)}</strong><br><button class="action-btn meetup-msg-btn" style="margin-top:6px;padding:6px 10px;font-size:11px;" data-user="${encodeURIComponent(userId)}">💬 Treffen?</button>`);
+    marker.bindPopup(`<strong>${escapeHtml(info.nickname || userId)}</strong><br><button class="action-btn meetup-msg-btn" style="margin-top:6px;padding:6px 10px;font-size:11px;" data-user="${encodeURIComponent(userId)}">💬 Treffen?</button> <button class="action-btn" style="margin-top:6px;padding:6px 10px;font-size:11px;" data-user-profile="${escapeHtml(userId)}">👤 Profil</button>`);
     marker.on("popupopen", (event) => {
       const btn = event.popup?.getElement()?.querySelector(".meetup-msg-btn");
       if (!btn) return;
@@ -6231,6 +6552,7 @@ function _activateAuthDependentFeatures(uid, status) {
   listenLiveLocations();
   listenDirectMessages();
   listenGossip();      // no-ops if already listening; cover auth arriving late
+  listenGossipLog();
   listenSupplyRuns();
   listenCornerDates();
   checkBackendFeatures();
@@ -6242,9 +6564,21 @@ function _activateAuthDependentFeatures(uid, status) {
   try {
     window.FB.onValue(window.FB.ref(window.FB.db, "config/admins/" + uid), (snap) => {
       STATE.isAdmin = snap.val() === true;
+      if (STATE.isAdmin) listenProfileClaimsAsAdmin();
+      else if (STATE.pendingClaimsFocus) { STATE.pendingClaimsFocus = false; clearHandledQueryParam("claims"); }
+      if (STATE.pendingFeedbackFocus) {
+        STATE.pendingFeedbackFocus = false;
+        clearHandledQueryParam("feedback");
+        if (STATE.isAdmin) openAdminSection("#admin-feedback");
+      }
       if (STATE.isAdmin && STATE.view === "profile") renderProfile();
     }, { onlyOnce: true });
   } catch (err) { console.warn("admin flag check failed:", err); }
+  // Profile rescue: finish my own pending requests (requests for my own profile
+  // are watched once ensureOwnProfileLock() has confirmed the lock).
+  watchPendingClaims();
+  clearHandledQueryParam("claimed");
+  setTimeout(maybeNudgeProfileBackup, 20000);
 }
 
 /* ====================== PROFILE CLOUD SYNC & ACCOUNT PORTABILITY ====================== */
@@ -6340,11 +6674,15 @@ async function refreshAccessForCurrentUser() {
 }
 
 /* ---- Anonymous recovery via a portable code (no account required) ---- */
+function savedRecoveryCode() { return localStorage.getItem("cg.recoveryCode") || ""; }
+
+// One code per person: reuse (and refresh) the saved one instead of minting a
+// new code on every tap, so the code someone wrote down keeps working.
 async function createRecoveryCode() {
   const uid = window.FB?.getAuthUid?.();
-  if (!uid || !window.FB?.firebaseReady) { toast("Recovery-Code nur online verfügbar."); return null; }
-  if (!STATE.nickname) { toast("Bitte zuerst einen Namen wählen."); return null; }
-  const code = (crypto?.randomUUID ? crypto.randomUUID().replace(/-/g, "") : (Date.now().toString(36) + Math.random().toString(36).slice(2)))
+  if (!uid || !window.FB?.firebaseReady) { toast(T("Recovery-Code nur online verfügbar.", "Recovery code only available online.")); return null; }
+  if (!STATE.nickname) { toast(T("Bitte zuerst einen Namen wählen.", "Please pick a name first.")); return null; }
+  const fresh = () => (crypto?.randomUUID ? crypto.randomUUID().replace(/-/g, "") : (Date.now().toString(36) + Math.random().toString(36).slice(2)))
     .slice(0, 10).toUpperCase();
   const snapshot = { ...buildProfileSnapshot(), createdBy: uid };
   try {
@@ -6352,25 +6690,35 @@ async function createRecoveryCode() {
     const accessSnap = await window.FB.get(window.FB.ref(window.FB.db, "accessGranted/" + uid));
     if (accessSnap.val()) snapshot.accessCode = accessSnap.val();
   } catch (err) { /* access code is optional in the bundle */ }
-  try {
-    await window.FB.set(window.FB.ref(window.FB.db, "recoveryProfiles/" + code), snapshot);
-    localStorage.setItem("cg.recoveryCode", code);
-    return code;
-  } catch (err) {
-    console.warn("createRecoveryCode failed:", err);
-    toast("Recovery-Code konnte nicht erstellt werden.");
-    return null;
+  for (const code of [savedRecoveryCode(), fresh()].filter(Boolean)) {
+    try {
+      await window.FB.set(window.FB.ref(window.FB.db, "recoveryProfiles/" + code), snapshot);
+      localStorage.setItem("cg.recoveryCode", code);
+      return code;
+    } catch (err) { console.warn("createRecoveryCode failed:", err); }
   }
+  toast(T("Recovery-Code konnte nicht erstellt werden.", "Could not create a recovery code."));
+  return null;
+}
+
+// Hand the code to the person's own chat/notes (outside this browser — that is the point).
+async function shareRecoveryCode(code) {
+  const text = T(`Mein Minga-Corner-Guide-Recovery-Code: ${code}\nProfil → Konto & Profil sichern → „Recovery-Code eingeben“.`, `My Minga Corner Guide recovery code: ${code}\nProfile → Secure account & profile → “Enter recovery code”.`);
+  try {
+    if (navigator.share) { await navigator.share({ title: "Recovery-Code", text }); return; }
+  } catch (err) { if (err && err.name === "AbortError") return; }
+  await copyText(code).catch(() => {});
+  toast(`🎟️ <strong>${escapeHtml(code)}</strong> ${T("kopiert — schick ihn dir selbst (z. B. WhatsApp an dich).", "copied — send it to yourself (e.g. WhatsApp to yourself).")}`);
 }
 
 async function claimRecoveryCode(rawCode) {
   const code = String(rawCode || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (!code) { toast("Bitte einen gültigen Code eingeben."); return; }
-  if (!window.FB?.firebaseReady) { toast("Übernahme nur online möglich."); return; }
+  if (!code) { toast(T("Bitte einen gültigen Code eingeben.", "Please enter a valid code.")); return; }
+  if (!window.FB?.firebaseReady) { toast(T("Übernahme nur online möglich.", "Only possible online.")); return; }
   try {
     const snap = await window.FB.get(window.FB.ref(window.FB.db, "recoveryProfiles/" + code));
     const remote = snap.val();
-    if (!remote) { toast("Code nicht gefunden — bitte prüfen."); return; }
+    if (!remote) { toast(T("Code nicht gefunden — bitte prüfen.", "Code not found — please check.")); return; }
     const uid = window.FB.getAuthUid?.();
     // Restore access first (validate rule checks the code exists) so writes are allowed.
     if (remote.accessCode && uid) {
@@ -6382,11 +6730,33 @@ async function claimRecoveryCode(rawCode) {
         reattachSharedListenersAfterGrant();
       } catch (err) { console.warn("recovery access grant failed:", err); }
     }
-    applyProfileSnapshot(remote);   // move the profile onto this device's uid
-    syncProfileToCloud();           // persist under the new uid as well
+    // The code proves ownership: move the LIVE profile (points earned since the
+    // code was made included) instead of restoring the old snapshot.
+    let moved = false;
+    const oldKey = remote.createdBy;
+    if (oldKey && uid && oldKey !== uid) {
+      try {
+        await window.FB.set(window.FB.ref(window.FB.db, `profileClaims/${oldKey}/${uid}`), {
+          at: Date.now(), status: "pending", code,
+          nickname: String(STATE.nickname || remote.nickname || "").slice(0, 40),
+          oldNickname: String(remote.nickname || "").slice(0, 40)
+        });
+        moved = await claimExistingProfile(oldKey, { quiet: true });
+      } catch (err) { console.warn("recovery live transfer failed:", err); }
+      window.FB.remove(window.FB.ref(window.FB.db, `profileClaims/${oldKey}/${uid}`)).catch(() => {});
+    }
+    if (!moved) {
+      applyProfileSnapshot(remote, { silent: true });   // move the profile onto this device's uid
+      syncProfileToCloud();                             // persist under the new uid as well
+    }
+    // Point the same code at this login, so it keeps working for the next switch.
+    localStorage.setItem("cg.recoveryCode", code);
+    createRecoveryCode().catch(() => {});
+    toast(T(`✅ Profil „${escapeHtml(STATE.nickname || remote.nickname || "")}“ übernommen — willkommen zurück!`, `✅ Profile “${escapeHtml(STATE.nickname || remote.nickname || "")}” restored — welcome back!`));
+    if (STATE.view === "profile") renderProfile();
   } catch (err) {
     console.warn("claimRecoveryCode failed:", err);
-    toast("Übernahme fehlgeschlagen.");
+    toast(T("Übernahme fehlgeschlagen.", "Takeover failed."));
   }
 }
 
@@ -6422,13 +6792,135 @@ function openQrDialog(corner) {
         <button class="action-btn" data-copy="${escapeHtml(sticker)}">🔗 Link kopieren</button>
         <button class="action-btn primary" id="qr-print">🖨️ Aufkleber drucken</button>
       </div>
+    </div>
+    <div class="qr-block">
+      <h3>🧲 ${T("Folge-mir-Code", "Follow-me code")}</h3>
+      <p>${T("Führt immer zu dem Corner, an dem du gerade eingecheckt bist — auch wenn ihr weiterzieht.", "Always leads to the corner you are checked in at — even when you move on.")}</p>
+      <button class="action-btn" id="qr-follow">🧲 ${T("Folge-mir-QR zeigen", "Show follow-me QR")}</button>
     </div>`;
   $("#qr-body").querySelectorAll("[data-copy]").forEach((b) =>
     b.addEventListener("click", async () => { await copyText(b.dataset.copy); toast("🔗 Link kopiert"); }));
   $("#qr-print")?.addEventListener("click", () => printCornerSticker(corner, sticker));
+  $("#qr-follow")?.addEventListener("click", openFollowMeDialog);
   $("#qr-close").onclick = () => { overlay.style.display = "none"; };
   overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
   overlay.style.display = "flex";
+}
+
+/* ====================== FOLGE MIR ======================
+   A personal link/QR that always leads to wherever its owner is checked in
+   right now — unlike a corner link it keeps working when the crew moves on.
+   QR scanned next to me: checked in right there, in my team, QR bonus.
+   Link (WhatsApp …): opens my current corner with route and check-in.    */
+function buildJoinUrl(onSite) {
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set("join", currentUserKey());
+  if (STATE.nickname) url.searchParams.set("n", STATE.nickname.slice(0, 30));
+  if (onSite) url.searchParams.set("here", "1");
+  return url.toString();
+}
+
+function followMeText() {
+  const here = myPresenceCorner();
+  const corner = here ? getAllCorners().find((c) => c.id === here) : null;
+  return corner
+    ? T(`${STATE.nickname} ist am ${corner.name} — komm vorbei! 🍻 Der Link führt immer dahin, wo ich gerade bin:`, `${STATE.nickname} is at ${corner.name} — come over! 🍻 This link always leads to where I am right now:`)
+    : T(`Komm zum Cornern! 🍻 Der Link führt immer dahin, wo ${STATE.nickname} gerade eingecheckt ist:`, `Come cornering! 🍻 This link always leads to where ${STATE.nickname} is checked in:`);
+}
+
+function openFollowMeDialog() {
+  const overlay = $("#qr-overlay");
+  if (!overlay) return;
+  if (!STATE.nickname || !window.FB?.firebaseReady) { toast(T("Folge-mir-Codes brauchen einen Namen und eine Verbindung.", "Follow-me codes need a name and a connection.")); return; }
+  const qrUrl = buildJoinUrl(true);
+  const linkUrl = buildJoinUrl(false);
+  const here = myPresenceCorner();
+  const corner = here ? getAllCorners().find((c) => c.id === here) : null;
+  $("#qr-title").innerHTML = corner
+    ? T(`Gerade bist du am <strong>${escapeHtml(corner.name)}</strong>.`, `You are at <strong>${escapeHtml(corner.name)}</strong> right now.`)
+    : T("Du bist gerade nirgends eingecheckt — der Code führt zu dir, sobald du eincheckst.", "You are not checked in anywhere — the code leads to you as soon as you check in.");
+  $("#qr-body").innerHTML = `
+    <div class="qr-block">
+      <h3>🧲 ${T("Folge mir", "Follow me")}</h3>
+      <p>${T("Zeigt immer auf den Corner, an dem du gerade eingecheckt bist — auch wenn ihr weiterzieht.", "Always points to the corner you are checked in at — even when you move on.")}</p>
+      <img src="${qrImageUrl(qrUrl, 320)}" alt="${T("Folge-mir-QR-Code", "Follow-me QR code")}" />
+      <p class="qr-note">📷 ${T("Neben dir gescannt: direkt eingecheckt, in deinem Team — und du bekommst den QR-Bonus.", "Scanned next to you: checked in right away, in your team — and you get the QR bonus.")}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="action-btn primary" id="join-share">📤 ${T("Link teilen", "Share link")}</button>
+        <button class="action-btn wa" id="join-wa">📲 WhatsApp</button>
+        <button class="action-btn" data-copy="${escapeHtml(linkUrl)}">🔗 ${T("Kopieren", "Copy")}</button>
+      </div>
+      <p class="qr-note">🔗 ${T("Per Link (z. B. WhatsApp): öffnet deinen aktuellen Corner mit Route — eingecheckt wird erst vor Ort.", "As a link (e.g. WhatsApp): opens your current corner with a route — checking in happens on site.")}</p>
+    </div>`;
+  $("#qr-body").querySelectorAll("[data-copy]").forEach((b) =>
+    b.addEventListener("click", async () => { await copyText(b.dataset.copy).catch(() => {}); toast(T("🔗 Link kopiert", "🔗 Link copied")); }));
+  $("#join-share")?.addEventListener("click", async () => {
+    try {
+      if (navigator.share) { await navigator.share({ title: "Minga Corner Guide", text: followMeText(), url: linkUrl }); return; }
+    } catch (err) { if (err && err.name === "AbortError") return; }
+    await copyText(linkUrl).catch(() => {});
+    toast(T("🔗 Link kopiert", "🔗 Link copied"));
+  });
+  $("#join-wa")?.addEventListener("click", () => openWhatsApp(`${followMeText()} ${linkUrl}`));
+  $("#qr-close").onclick = () => { overlay.style.display = "none"; };
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
+  overlay.style.display = "flex";
+}
+
+// Opened a follow-me link/QR: find where that person is right now.
+var _pendingJoinTimer = null;
+async function handlePendingJoin(attempt = 0) {
+  clearTimeout(_pendingJoinTimer);
+  const j = STATE.pendingJoin;
+  if (!j || attempt > 300) return;
+  const onboarding = !STATE.nickname
+    || (window.FB?.firebaseReady && localStorage.getItem("cg.accessGranted") !== "1")
+    || ["#access-prompt", "#claim-overlay", "#nickname-prompt"].some((sel) => $(sel)?.style.display === "flex");
+  if (onboarding || !window.FB?.firebaseReady || !window.FB.getAuthUid?.()) {
+    _pendingJoinTimer = setTimeout(() => handlePendingJoin(attempt + 1), 1000);
+    return;
+  }
+  STATE.pendingJoin = null;
+  ["join", "here", "n"].forEach(clearHandledQueryParam);
+  if (j.id === currentUserKey() || isMyKey(j.id)) { toast(T("🧲 Das ist dein eigener Folge-mir-Code 😉", "🧲 That's your own follow-me code 😉")); return; }
+  let p = STATE.friends?.[j.id] || null;
+  if (!p) {
+    try { p = (await window.FB.get(window.FB.ref(window.FB.db, "presence/" + j.id))).val(); } catch (err) { p = null; }
+  }
+  const name = (p && (p.nickname || p.name)) || STATE.points?.[j.id]?.nickname || j.name || T("Dein Freund", "Your friend");
+  const corner = p && presenceIsVisible(p) && p.atCorner ? getAllCorners().find((c) => c.id === p.atCorner) : null;
+  if (!corner) {
+    toast(`🧲 <strong>${escapeHtml(name)}</strong> ${T("ist gerade nirgends eingecheckt — schreib eine Nachricht!", "isn't checked in anywhere right now — send a message!")}`);
+    if (STATE.points?.[j.id] || p) openUserProfile(j.id);
+    return;
+  }
+  STATE.joinContext = { cornerId: corner.id, id: j.id, name, at: Date.now() };
+  if (j.here && STATE.manualCheckinId !== corner.id) {
+    // Scanned on site: in their team, they get the QR bonus.
+    if (p.team) STATE.pendingSharedTeam = p.team;
+    STATE.pendingReferrerId = j.id;
+    openDetail(corner.id);
+    scheduleAutoCheckin(corner.id);
+    toast(`🧲 ${T("Du bist bei", "You're with")} <strong>${escapeHtml(name)}</strong> ${T("am", "at")} <strong>${escapeHtml(corner.name)}</strong> — ${T("wirst eingecheckt", "checking you in")} 🍻`, "at-corner");
+  } else {
+    openDetail(corner.id);
+    toast(`🧲 <strong>${escapeHtml(name)}</strong> ${T("ist gerade am", "is at")} <strong>${escapeHtml(corner.name)}</strong> — ${T("Route und Einchecken oben", "route and check-in at the top")} 👆`, "friend-alert");
+  }
+}
+
+// Top of the corner detail: who you are following, plus the main actions.
+function detailTopBarHtml(c) {
+  const jc = STATE.joinContext;
+  const following = jc && jc.cornerId === c.id && Date.now() - jc.at < 3 * 3600000 && STATE.manualCheckinId !== c.id;
+  const here = STATE.manualCheckinId === c.id;
+  return `${following ? `<div class="detail-follow">🧲 ${T("Du folgst", "Following")} <button class="people-chip" data-user-profile="${escapeHtml(jc.id)}">${escapeHtml(jc.name)}</button> ${T("hierher", "here")}</div>` : ""}
+    <div class="detail-topbar">
+      <button class="checkin-btn ${here ? "checked-in" : ""}" data-id="${c.id}">${here ? "✅ " + T("Ich bin hier", "I'm here") + " &middot; 🚪 " + T("Auschecken", "Check out") : "📍 " + T("Einchecken", "Check in")}</button>
+      <button class="action-btn" data-action="route-detail" data-id="${c.id}">🧭 ${T("Route", "Route")}</button>
+      <button class="action-btn" data-action="follow-me" title="${T("Folge-mir-QR für Freunde", "Follow-me QR for friends")}">🧲</button>
+    </div>`;
 }
 
 // Print-ready sticker sheet for one corner.
@@ -6651,6 +7143,71 @@ async function appConfirm(title, text = "", okLabel = "Ja") {
   return r === true;
 }
 
+/* ====================== FEEDBACK TO THE MAKERS ====================== */
+async function sendAppFeedback() {
+  if (!window.FB?.firebaseReady || !STATE.nickname) { toast(T("Feedback braucht eine Verbindung und einen Namen.", "Feedback needs a connection and a name.")); return; }
+  const text = await appPrompt(T("💡 Idee oder Problem", "💡 Idea or problem"), "", T("Was sollen wir besser machen?", "What should we improve?"), { text: T("Geht direkt an die Admins.", "Goes straight to the admins."), okLabel: T("Senden", "Send") });
+  if (!text || !text.trim()) return;
+  const { db, ref, push, set } = window.FB;
+  try {
+    await set(push(ref(db, "feedback")), {
+      by: currentUserKey(), name: String(STATE.nickname).slice(0, 40), text: text.trim().slice(0, 1000),
+      at: Date.now(), view: STATE.view || "", corner: STATE.detailCornerId || "", lang: STATE.lang || "de"
+    });
+    const admins = await adminUids();
+    sendTargetedPush(admins, { type: "feedback", title: "💡 Neues Feedback", body: `${STATE.nickname}: ${text.trim().slice(0, 120)}`, query: "?feedback=1" });
+    addXp(3, "Feedback gegeben");
+    toast(T("💡 Danke! Ist bei den Admins angekommen.", "💡 Thanks! The admins got it."));
+  } catch (err) {
+    console.warn("sendAppFeedback failed:", err);
+    toast(T("Konnte nicht gesendet werden.", "Could not send."));
+  }
+}
+
+async function renderAdminFeedback() {
+  const el = $("#admin-feedback");
+  if (!el || !window.FB?.firebaseReady) return;
+  try {
+    const data = (await window.FB.get(window.FB.ref(window.FB.db, "feedback"))).val() || {};
+    const rows = Object.entries(data).map(([id, f]) => ({ id, ...f })).sort((a, b) => Number(b.at || 0) - Number(a.at || 0)).slice(0, 30);
+    el.innerHTML = rows.length ? rows.map((f) => `<div class="admin-fb">
+        <div style="font-size:11px;color:var(--fg-dim);">${escapeHtml(f.name || "?")} · ${new Date(Number(f.at || 0)).toLocaleString("de-DE")}</div>
+        <div style="font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;">${escapeHtml(f.text || "")}</div>
+        <button class="action-btn" data-fb-del="${escapeHtml(f.id)}" style="padding:3px 8px;font-size:10px;margin-top:4px;">✓ ${T("Erledigt", "Done")}</button>
+      </div>`).join("") : `<p style="color:var(--fg-dim);font-size:12px;">${T("Noch kein Feedback.", "No feedback yet.")}</p>`;
+    el.querySelectorAll("[data-fb-del]").forEach((b) => b.addEventListener("click", async () => {
+      await window.FB.remove(window.FB.ref(window.FB.db, "feedback/" + b.dataset.fbDel)).catch(() => {});
+      renderAdminFeedback();
+    }));
+  } catch (err) {
+    el.innerHTML = `<p style="color:var(--pink);font-size:12px;">${T("Konnte Feedback nicht laden (Regeln deployed?).", "Could not load feedback (rules deployed?).")}</p>`;
+  }
+}
+
+/* "Zähl die check-ins pro Person nur einmal pro Tag, lösche auch zu viele
+   check-ins!" — keeps the first check-in per person, corner and day.      */
+async function adminDedupeVisits() {
+  if (!STATE.isAdmin || !window.FB?.firebaseReady) return;
+  const { db, ref, get, update } = window.FB;
+  const data = (await get(ref(db, "visits"))).val() || {};
+  const updates = {};
+  Object.entries(data).forEach(([cornerId, entries]) => {
+    const seen = new Set();
+    Object.entries(entries || {}).sort((a, b) => Number(a[1]?.time || 0) - Number(b[1]?.time || 0)).forEach(([vid, v]) => {
+      if (!v) return;
+      const k = `${v.userId || v.user || "?"}|${new Date(Number(v.time || 0)).toDateString()}`;
+      if (seen.has(k)) updates[`visits/${cornerId}/${vid}`] = null; else seen.add(k);
+    });
+  });
+  const n = Object.keys(updates).length;
+  if (!n) { toast(T("Keine doppelten Check-ins gefunden. ✨", "No duplicate check-ins found. ✨")); return; }
+  if (!(await appConfirm(T(`${n} doppelte Check-ins löschen?`, `Delete ${n} duplicate check-ins?`), T("Pro Person, Corner und Tag bleibt der erste Check-in.", "The first check-in per person, corner and day stays."), T("Aufräumen", "Clean up")))) return;
+  try {
+    await update(ref(db), updates);
+    toast(T(`🧹 ${n} doppelte Check-ins gelöscht`, `🧹 ${n} duplicate check-ins deleted`));
+  } catch (err) { toast(T("Aufräumen fehlgeschlagen.", "Cleanup failed.")); }
+}
+
 /* ====================== ADMIN PANEL (host only) ====================== */
 const ADMIN_USER_NODES = ["points", "karmaPoints", "presence", "teams", "achievements", "pushTokens", "userPrefs", "userProfiles", "liveLocations"];
 
@@ -6754,6 +7311,10 @@ async function renderAdminPanel() {
   $("#admin-close").onclick = () => { overlay.style.display = "none"; };
   overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = "none"; };
   $("#admin-clean-presence").onclick = adminCleanPresence;
+  $("#admin-dedupe-visits").onclick = adminDedupeVisits;
+  renderAdminFeedback();
+  listenProfileClaimsAsAdmin();
+  renderAdminClaims();
   const profilesEl = $("#admin-profiles");
   profilesEl.innerHTML = `<p style="color:var(--fg-dim);font-size:12px;">Lade…</p>`;
   try {
@@ -6785,26 +7346,73 @@ async function renderAdminPanel() {
     b.addEventListener("click", () => adminDeleteCorner(b.dataset.adminDelCorner, b.dataset.name)));
 }
 
-function buildAccountSectionHtml() {
+// Is this profile safe if the browser forgets everything?
+function profileBackupState() {
   const online = !!window.FB?.firebaseReady;
   const info = window.FB?.getAccountInfo?.() || { anonymous: true, email: "", providers: [] };
-  const linked = online && !info.anonymous;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone = window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true;
+  return { online, info, linked: online && !info.anonymous, code: savedRecoveryCode(), iosBrowser: isIOS && !standalone };
+}
+
+// Shown on top of the profile until the profile survives a lost browser.
+function buildBackupBannerHtml() {
+  const st = profileBackupState();
+  if (!st.online || st.linked || !STATE.nickname) return "";
+  if (st.code && !st.iosBrowser) return "";
+  const text = st.iosBrowser
+    ? T("📲 iPhone: Die App auf dem Home-Bildschirm hat einen <strong>eigenen Speicher</strong> — dort startest du sonst mit leerem Profil. Sichere dein Profil vorher (Google, E-Mail oder Recovery-Code).", "📲 iPhone: the home-screen app has its <strong>own storage</strong> — you would start with an empty profile there. Secure your profile first (Google, email or recovery code).")
+    : T("🛟 Dein Profil hängt nur an diesem Browser. Werden die Browserdaten gelöscht oder wechselst du das Handy, ist es weg — sichere es in 10 Sekunden.", "🛟 Your profile only lives in this browser. If browser data is cleared or you switch phones, it is gone — secure it in 10 seconds.");
+  return `<div class="backup-banner">${text}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+    <button class="action-btn primary" data-backup-action="google">🔗 ${T("Mit Google", "With Google")}</button>
+    <button class="action-btn" data-backup-action="code">🎟️ ${T("Recovery-Code", "Recovery code")}</button>
+    <button class="action-btn" data-backup-action="more">${T("Mehr…", "More…")}</button>
+  </div></div>`;
+}
+
+function buildAccountSectionHtml() {
+  const st = profileBackupState();
+  const { online, info, linked } = st;
   const providerLabel = info.email ? escapeHtml(info.email)
-    : (info.providers || []).includes("google.com") ? "Google-Konto" : "Verknüpftes Konto";
+    : (info.providers || []).includes("google.com") ? "Google-Konto" : T("Verknüpftes Konto", "Linked account");
   const statusLine = !online
-    ? `<p style="color:var(--fg-dim);font-size:13px;">Offline — Konto-Funktionen brauchen eine Verbindung.</p>`
+    ? `<p style="color:var(--fg-dim);font-size:13px;">${T("Offline — Konto-Funktionen brauchen eine Verbindung.", "Offline — account features need a connection.")}</p>`
     : linked
-      ? `<p style="color:var(--green);font-size:13px;margin-bottom:10px;">✅ Gesichert als <strong>${providerLabel}</strong>. Dein Profil ist auf jedem Gerät mit diesem Login verfügbar.</p>`
-      : `<p style="color:var(--fg-dim);font-size:13px;margin-bottom:10px;">Du bist anonym unterwegs. Sichere dein Profil, damit es beim Browser- oder Gerätewechsel erhalten bleibt.</p>`;
+      ? `<p style="color:var(--green);font-size:13px;margin-bottom:10px;">✅ ${T("Gesichert als", "Secured as")} <strong>${providerLabel}</strong>. ${T("Dein Profil ist auf jedem Gerät mit diesem Login verfügbar.", "Your profile is available on every device with this login.")}</p>`
+      : `<p style="color:var(--fg-dim);font-size:13px;margin-bottom:10px;">${T("Du bist anonym unterwegs. Sichere dein Profil, damit es beim Browser- oder Gerätewechsel erhalten bleibt.", "You are anonymous. Secure your profile so it survives a new browser or phone.")}</p>`;
+  const uid = window.FB?.getAuthUid?.() || "";
+  const codeLine = online && st.code
+    ? `<div class="acct-code-line">🎟️ ${T("Dein Recovery-Code", "Your recovery code")}: <strong class="acct-code">${escapeHtml(st.code)}</strong>
+        <button class="action-btn" id="acct-code-share-btn" style="padding:4px 8px;font-size:11px;">📤 ${T("An mich schicken", "Send to myself")}</button></div>`
+    : "";
   const buttons = online ? `
       <div class="account-actions" style="display:flex;flex-wrap:wrap;gap:8px;">
-        <button class="notif-opt" id="acct-google-btn">🔗 Mit Google sichern</button>
-        <button class="notif-opt" id="acct-email-btn">✉️ Mit E-Mail sichern</button>
-        <button class="notif-opt" id="acct-code-create-btn">🎟️ Recovery-Code erstellen</button>
-        <button class="notif-opt" id="acct-code-claim-btn">📥 Recovery-Code eingeben</button>
-        <button class="notif-opt" id="acct-claim-btn">👥 Altes Profil übernehmen</button>
+        ${linked ? "" : `<button class="notif-opt" id="acct-google-btn">🔗 ${T("Mit Google sichern", "Secure with Google")}</button>
+        <button class="notif-opt" id="acct-email-btn">✉️ ${T("Mit E-Mail sichern", "Secure with email")}</button>`}
+        ${st.code ? "" : `<button class="notif-opt" id="acct-code-create-btn">🎟️ ${T("Recovery-Code erstellen", "Create recovery code")}</button>`}
+        <button class="notif-opt" id="acct-code-claim-btn">📥 ${T("Recovery-Code eingeben", "Enter recovery code")}</button>
+        <button class="notif-opt" id="acct-claim-btn">👥 ${T("Altes Profil übernehmen", "Take back an old profile")}</button>
       </div>` : "";
-  return `<div class="notification-toggle account-section"><h3>🔐 Konto & Profil sichern</h3>${statusLine}${buttons}</div>`;
+  const idLine = uid
+    ? `<p class="acct-uid">${T("Deine Nutzer-ID", "Your user ID")}: <code>${escapeHtml(uid)}</code> <button class="action-btn" id="acct-uid-copy" style="padding:2px 8px;font-size:10px;">📋</button><br><span>${T("Brauchst du nur, wenn ein Admin dir helfen soll.", "Only needed when an admin helps you.")}</span></p>`
+    : "";
+  return `<div class="notification-toggle account-section" id="account-section"><h3>🔐 ${T("Konto & Profil sichern", "Secure account & profile")}</h3>${statusLine}${codeLine}${buttons}${idLine}</div>`;
+}
+
+// Gentle reminder (at most every 5 days) once there is something to lose.
+function maybeNudgeProfileBackup() {
+  const st = profileBackupState();
+  if (!st.online || st.linked || st.code || !STATE.nickname) return;
+  if (getLevel(getCurrentAura()).level < 3) return;
+  const last = parseInt(localStorage.getItem("cg.backupNudgeAt") || "0", 10) || 0;
+  if (Date.now() - last < 5 * 86400000) return;
+  localStorage.setItem("cg.backupNudgeAt", String(Date.now()));
+  toastWhenFree(`🛟 <strong>${T("Sichere dein Profil", "Secure your profile")}</strong><br><span style="font-size:11px;opacity:0.8;">${T("Sonst ist es bei neuem Handy oder gelöschtem Browser weg. Tippen →", "Otherwise it is gone with a new phone or cleared browser. Tap →")}</span>`, null, () => goToAccountSection());
+}
+
+function goToAccountSection() {
+  $(`.tab[data-view="profile"]`)?.click();
+  setTimeout(() => $("#account-section")?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
 }
 
 // Reserve my own profile so it is never offered to anyone else in the claim
@@ -6814,11 +7422,52 @@ async function ensureOwnProfileLock() {
   const uid = window.FB.getAuthUid?.() || "";
   const key = currentUserKey();
   if (!uid || !key) return;
-  if (localStorage.getItem("cg.profileLocked") === key) return;
+  if (localStorage.getItem("cg.profileLocked") === key) { listenClaimsForMyProfile(); return; }
   try {
     await window.FB.set(window.FB.ref(window.FB.db, "profileLocks/" + key), { by: uid, at: Date.now(), nickname: STATE.nickname });
     localStorage.setItem("cg.profileLocked", key);
+    // Reading requests for my profile needs the lock — listen only now.
+    listenClaimsForMyProfile();
   } catch (err) { console.warn("ensureOwnProfileLock failed:", err); }
+}
+
+/* ====================== PROFILE RESCUE ======================
+   Who you are is an anonymous Firebase login stored in this browser. It is
+   gone when the browser data is cleared, when Safari wipes a site after a week
+   without a visit, when the app is added to the iPhone home screen (separate
+   storage!) or on a new phone. The old profile then still exists — but it is
+   locked to the lost login, and the claim list used to hide locked profiles,
+   so exactly the profiles people lost could not be taken back.
+   Now a locked profile can be REQUESTED: an admin or the old device (if it
+   still works) approves, and the requester's app moves everything over.
+   A recovery code proves ownership on its own, without anyone approving.   */
+
+function pendingClaimKeys() {
+  try { const v = JSON.parse(localStorage.getItem("cg.pendingClaims") || "[]"); return Array.isArray(v) ? v.filter((k) => typeof k === "string" && k) : []; }
+  catch (e) { return []; }
+}
+function setPendingClaimKeys(list) {
+  localStorage.setItem("cg.pendingClaims", JSON.stringify(Array.from(new Set(list)).slice(-5)));
+}
+
+// Last time a profile earned anything — helps to recognise "that was me".
+function lastRewardTime(entry) {
+  return rewardHistoryList(entry).reduce((max, h) => Math.max(max, Number(h && h.time) || 0), 0);
+}
+function sinceLabel(ms) {
+  if (!ms) return "";
+  const days = Math.floor((Date.now() - ms) / 86400000);
+  if (days < 1) return T("heute aktiv", "active today");
+  if (days < 2) return T("gestern aktiv", "active yesterday");
+  if (days < 60) return T(`vor ${days} Tagen aktiv`, `active ${days} days ago`);
+  return T(`vor ${Math.round(days / 30)} Monaten aktiv`, `active ${Math.round(days / 30)} months ago`);
+}
+
+async function adminUids() {
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, "config/admins"));
+    return Object.entries(snap.val() || {}).filter(([, v]) => v === true).map(([k]) => k);
+  } catch (err) { return []; }
 }
 
 /* ---- Claim an existing profile: friends who already played pick their old identity ---- */
@@ -6828,14 +7477,14 @@ async function openClaimOverlay(opts = {}) {
   if (!overlay || !list) return;
   // Welcome mode: shown right after entering the invite code, so returning
   // friends grab their old profile before anything else.
-  $("#claim-title").textContent = opts.welcome ? "👋 Warst du schon mal dabei?" : "👥 Altes Profil übernehmen";
-  $("#claim-close").textContent = opts.welcome ? "Nein, ich bin neu hier" : "Schließen";
+  $("#claim-title").textContent = opts.welcome ? T("👋 Warst du schon mal dabei?", "👋 Have you been here before?") : T("👥 Altes Profil übernehmen", "👥 Take back an old profile");
+  $("#claim-close").textContent = opts.welcome ? T("Nein, ich bin neu hier", "No, I'm new here") : T("Schließen", "Close");
   overlay.style.display = "flex";
   const closeAndContinue = () => { overlay.style.display = "none"; maybeShowNicknamePrompt(); };
   $("#claim-close").onclick = closeAndContinue;
   overlay.onclick = (e) => { if (e.target === overlay) closeAndContinue(); };
-  if (!window.FB?.firebaseReady) { list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Nur online verfügbar.</p>`; return; }
-  list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Lade Profile…</p>`;
+  if (!window.FB?.firebaseReady) { list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">${T("Nur online verfügbar.", "Only available online.")}</p>`; return; }
+  list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">${T("Lade Profile…", "Loading profiles…")}</p>`;
   try {
     const [snap, lockSnap] = await Promise.all([
       window.FB.get(window.FB.ref(window.FB.db, "points")),
@@ -6843,38 +7492,278 @@ async function openClaimOverlay(opts = {}) {
     ]);
     const data = snap.val() || {};
     const locks = lockSnap.val() || {};
+    const uid = window.FB.getAuthUid?.() || "";
     const mine = currentUserKey();
-    // A profile that somebody already claimed is off the table — it must never
-    // be offered to a second person.
+    const pending = pendingClaimKeys();
+    // Locked profiles stay in the list: they are exactly the ones people lose.
+    // Taking one over then needs an approval instead of a single tap.
     const rows = Object.entries(data)
-      .map(([key, p]) => ({ key, nickname: (p && p.nickname) || key, total: (p && p.total) || 0 }))
-      .filter((r) => r.key !== mine && r.nickname && !locks[r.key])
+      .map(([key, p]) => ({
+        key,
+        nickname: (p && p.nickname) || "",
+        total: Number((p && p.total) || 0),
+        last: lastRewardTime(p),
+        locked: !!(locks[key] && locks[key].by && locks[key].by !== uid)
+      }))
+      .filter((r) => r.key !== mine && !isMyKey(r.key) && r.nickname && r.nickname.toLowerCase() !== "anonym" && r.total > 0)
       .sort((a, b) => b.total - a.total);
-    const lockedCount = Object.keys(locks).filter((k) => data[k]).length;
     if (!rows.length) {
-      list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Keine übernehmbaren Profile${lockedCount ? ` — alle ${lockedCount} bestehenden Profile sind schon vergeben` : ""}.</p>`;
+      list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">${T("Keine anderen Profile gefunden.", "No other profiles found.")}</p>`;
       return;
     }
-    list.innerHTML = rows.map((r) => {
+    const rowHtml = (r) => {
       const { level } = getLevel(r.total);
       const tier = getLevelTier(level);
-      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-3);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;">
-        <span style="flex:1;font-weight:600;">${escapeHtml(r.nickname)}</span>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--fg-dim);white-space:nowrap;">${tier.emoji} Lv.${level} · ${r.total} Aura</span>
-        <button class="action-btn primary" data-claim-key="${escapeHtml(r.key)}" style="padding:6px 10px;font-size:11px;white-space:nowrap;">Das war ich</button>
+      let action;
+      if (!r.locked) action = `<button class="action-btn primary" data-claim-key="${escapeHtml(r.key)}">${T("Das war ich", "That was me")}</button>`;
+      else if (STATE.isAdmin) action = `<button class="action-btn primary" data-claim-key="${escapeHtml(r.key)}" title="${T("Als Admin direkt übernehmen", "Take over directly as admin")}">🛠 ${T("Übernehmen", "Take over")}</button>`;
+      else if (pending.includes(r.key)) action = `<button class="action-btn" data-claim-withdraw="${escapeHtml(r.key)}" title="${T("Anfrage zurückziehen", "Withdraw request")}">⏳ ${T("Angefragt", "Requested")}</button>`;
+      else action = `<button class="action-btn" data-claim-request="${escapeHtml(r.key)}">🔒 ${T("Anfragen", "Request")}</button>`;
+      return `<div class="claim-row" data-claim-name="${escapeHtml(r.nickname.toLowerCase())}">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.locked ? "🔒 " : ""}${escapeHtml(r.nickname)}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);">${tier.emoji} Lv.${level} · ${r.total} Aura${r.last ? " · " + sinceLabel(r.last) : ""}</div>
+        </div>
+        ${action}
       </div>`;
-    }).join("");
+    };
+    list.innerHTML = `
+      ${rows.length > 6 ? `<input type="search" id="claim-search" class="claim-search" placeholder="${T("Namen suchen…", "Search name…")}" autocomplete="off" />` : ""}
+      <p class="claim-hint">${T("🔒 = ist noch an ein anderes Gerät/Login gebunden. Ist es dein altes Profil, tippe „Anfragen“ — ein Admin oder dein altes Gerät bestätigt, danach zieht alles automatisch zu dir um.", "🔒 = still bound to another device/login. If it is your old profile, tap “Request” — an admin or your old device confirms, then everything moves over automatically.")}</p>
+      <div id="claim-rows">${rows.map(rowHtml).join("")}</div>`;
+    $("#claim-search")?.addEventListener("input", (e) => {
+      const q = String(e.target.value || "").trim().toLowerCase();
+      list.querySelectorAll(".claim-row").forEach((row) => { row.style.display = !q || row.dataset.claimName.includes(q) ? "" : "none"; });
+    });
     list.querySelectorAll("[data-claim-key]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const row = rows.find((x) => x.key === btn.dataset.claimKey);
-        if (await appConfirm(`Profil „${row ? row.nickname : ""}" übernehmen?`, "Punkte, Level, Achievements und besuchte Corners werden dir zugeordnet.", "Das war ich")) {
-          claimExistingProfile(btn.dataset.claimKey);
-        }
+        const ok = await showDialog({
+          title: T(`Profil „${row ? row.nickname : ""}“ übernehmen?`, `Take over “${row ? row.nickname : ""}”?`),
+          text: T("Punkte, Level, Achievements, Team und besuchte Corners werden mit deinem jetzigen Profil zusammengelegt.", "Points, levels, achievements, team and visited corners are merged into your current profile."),
+          okLabel: T("Das war ich", "That was me")
+        });
+        if (ok === true) claimExistingProfile(btn.dataset.claimKey);
+      });
+    });
+    list.querySelectorAll("[data-claim-request]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const row = rows.find((x) => x.key === btn.dataset.claimRequest);
+        if (row && await requestProfileClaim(row.key, row.nickname, locks[row.key])) openClaimOverlay(opts);
+      });
+    });
+    list.querySelectorAll("[data-claim-withdraw]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const key = btn.dataset.claimWithdraw;
+        if (!(await appConfirm(T("Anfrage zurückziehen?", "Withdraw request?"), "", T("Zurückziehen", "Withdraw")))) return;
+        await window.FB.remove(window.FB.ref(window.FB.db, `profileClaims/${key}/${uid}`)).catch(() => {});
+        setPendingClaimKeys(pendingClaimKeys().filter((k) => k !== key));
+        openClaimOverlay(opts);
       });
     });
   } catch (err) {
     console.warn("openClaimOverlay failed:", err);
-    list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">Konnte Profile nicht laden.</p>`;
+    list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">${T("Konnte Profile nicht laden.", "Could not load profiles.")}</p>`;
+  }
+}
+
+// Ask for a locked profile. Admins and the profile's current device get a push
+// and decide; the request waits in the background until then.
+async function requestProfileClaim(oldKey, oldNickname, lock) {
+  const uid = window.FB?.getAuthUid?.() || "";
+  if (!uid || !window.FB?.firebaseReady) { toast(T("Nur online möglich.", "Only possible online.")); return false; }
+  if (localStorage.getItem("cg.accessGranted") !== "1") { toast(T("Bitte zuerst den Zugangscode eingeben.", "Please enter the access code first.")); return false; }
+  const note = await appPrompt(
+    T(`„${oldNickname}“ anfragen`, `Request “${oldNickname}”`), "",
+    T("z. B. neues Handy, Browser gelöscht…", "e.g. new phone, cleared browser…"),
+    { text: T("Ein Admin oder dein altes Gerät bestätigt die Übernahme. Woran erkennen sie dich? (optional)", "An admin or your old device confirms. How will they recognise you? (optional)"), okLabel: T("Anfrage senden", "Send request") }
+  );
+  if (note === null) return false;
+  const { db, ref, set } = window.FB;
+  try {
+    await set(ref(db, `profileClaims/${oldKey}/${uid}`), {
+      at: Date.now(), status: "pending",
+      nickname: String(STATE.nickname || "").slice(0, 40),
+      oldNickname: String(oldNickname || "").slice(0, 40),
+      note: String(note || "").slice(0, 200)
+    });
+  } catch (err) {
+    console.warn("requestProfileClaim failed:", err);
+    toast(T("Anfrage konnte nicht gespeichert werden.", "Could not save the request."));
+    return false;
+  }
+  setPendingClaimKeys([...pendingClaimKeys(), oldKey]);
+  watchPendingClaims();
+  const admins = await adminUids();
+  sendTargetedPush([...admins, lock && lock.by].filter((id) => id && id !== uid), {
+    type: "profile-claim",
+    title: "🙋 Profil-Übernahme",
+    body: `${STATE.nickname || "Jemand"} möchte das Profil „${oldNickname}“ übernehmen — bitte bestätigen.`,
+    query: "?claims=1"
+  });
+  toast(T(`📨 Anfrage für „${escapeHtml(oldNickname)}“ gesendet. Sobald sie bestätigt ist, zieht dein Profil automatisch um.`, `📨 Request for “${escapeHtml(oldNickname)}” sent. Once confirmed, your profile moves over automatically.`));
+  return true;
+}
+
+// Requester side: wait for the approval (the lock switching to me) or a
+// rejection, then finish the move without any further tap.
+var _claimWatchers = {};
+function watchPendingClaims() {
+  const uid = window.FB?.getAuthUid?.() || "";
+  if (!uid || !window.FB?.firebaseReady) return;
+  const { db, ref, onValue, remove } = window.FB;
+  pendingClaimKeys().forEach((oldKey) => {
+    if (_claimWatchers[oldKey]) return;
+    const w = _claimWatchers[oldKey] = { done: false, unsub: [] };
+    const finish = () => {
+      w.done = true;
+      w.unsub.forEach((fn) => { try { fn(); } catch (e) {} });
+      delete _claimWatchers[oldKey];
+      setPendingClaimKeys(pendingClaimKeys().filter((k) => k !== oldKey));
+    };
+    w.unsub.push(onValue(ref(db, "profileLocks/" + oldKey), async (snap) => {
+      const lock = snap.val();
+      if (w.done || w.busy || !lock || lock.by !== uid) return;
+      // An optimistic local event can claim "the lock is mine" before the
+      // server answers — keep watching unless the move really went through.
+      w.busy = true;
+      const ok = await claimExistingProfile(oldKey, { approved: true, quietFail: true });
+      w.busy = false;
+      if (ok) finish();
+    }, () => {}));
+    w.unsub.push(onValue(ref(db, `profileClaims/${oldKey}/${uid}`), (snap) => {
+      const c = snap.val();
+      if (w.done || !c || c.status !== "rejected") return;
+      finish();
+      remove(ref(db, `profileClaims/${oldKey}/${uid}`)).catch(() => {});
+      toast(T(`❌ Deine Anfrage für „${escapeHtml(c.oldNickname || "?")}“ wurde abgelehnt.`, `❌ Your request for “${escapeHtml(c.oldNickname || "?")}” was declined.`));
+    }, () => {}));
+  });
+}
+
+/* ---- Deciding on requests: admins see all, the current owner sees its own ---- */
+var _profileClaims = {};        // admin view: { oldKey: { uid: claim } }
+var _profileClaimsPrimed = false;
+var _profileClaimsListening = false;
+function pendingClaimList(all = _profileClaims) {
+  const out = [];
+  Object.entries(all || {}).forEach(([oldKey, byUid]) => {
+    Object.entries(byUid || {}).forEach(([uid, c]) => { if (c && c.status === "pending") out.push({ oldKey, uid, ...c }); });
+  });
+  return out.sort((a, b) => Number(a.at || 0) - Number(b.at || 0));
+}
+
+function listenProfileClaimsAsAdmin() {
+  if (!STATE.isAdmin || _profileClaimsListening || !window.FB?.firebaseReady) return;
+  _profileClaimsListening = true;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "profileClaims"), (snap) => {
+    const before = pendingClaimList().length;
+    _profileClaims = snap.val() || {};
+    const now = pendingClaimList().length;
+    if (_profileClaimsPrimed && now > before) {
+      toast(`🙋 <strong>${T("Neue Profil-Anfrage", "New profile request")}</strong><br><span style="font-size:11px;opacity:0.8;">${T("Tippen zum Entscheiden →", "Tap to decide →")}</span>`, null, () => openAdminClaims());
+    }
+    _profileClaimsPrimed = true;
+    if (STATE.pendingClaimsFocus && now) { STATE.pendingClaimsFocus = false; clearHandledQueryParam("claims"); openAdminClaims(); }
+    if ($("#admin-overlay")?.style.display === "flex") renderAdminClaims();
+    if (STATE.view === "profile") renderProfile();
+  }, () => { _profileClaimsListening = false; });
+}
+
+function openAdminClaims() { openAdminSection("#admin-claims"); }
+function openAdminSection(sel) {
+  renderAdminPanel().then(() => setTimeout(() => $(sel)?.scrollIntoView({ behavior: "smooth", block: "start" }), 150));
+}
+
+function renderAdminClaims() {
+  const el = $("#admin-claims");
+  if (!el) return;
+  const claims = pendingClaimList();
+  if (!claims.length) { el.innerHTML = `<p style="color:var(--fg-dim);font-size:12px;">${T("Keine offenen Anfragen. ✨", "No open requests. ✨")}</p>`; return; }
+  el.innerHTML = claims.map((c, i) => {
+    const old = STATE.points?.[c.oldKey] || {};
+    const cur = STATE.points?.[c.uid] || {};
+    const ownerPresence = STATE.friends?.[c.oldKey];
+    const activeOwner = ownerPresence && Date.now() - Number(ownerPresence.lastSeen || 0) < 7 * 86400000;
+    return `<div class="admin-claim">
+      <div style="font-size:13px;"><strong>${escapeHtml((cur.nickname && cur.nickname !== "Anonym" ? cur.nickname : "") || c.nickname || T("Neues Profil", "New profile"))}</strong> <span style="color:var(--fg-dim);">(${Number(cur.total || 0)} Aura)</span> ${T("möchte", "wants")} <strong>„${escapeHtml(c.oldNickname || old.nickname || "?")}“</strong> <span style="color:var(--fg-dim);">(${Number(old.total || 0)} Aura${lastRewardTime(old) ? ", " + sinceLabel(lastRewardTime(old)) : ""})</span></div>
+      ${c.note ? `<div class="admin-claim-note">„${escapeHtml(c.note)}“</div>` : ""}
+      ${activeOwner ? `<div class="admin-claim-warn">⚠️ ${T("Das Profil war in den letzten Tagen noch online — vorher nachfragen!", "This profile was online in the last days — check first!")}</div>` : ""}
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button class="action-btn primary" data-claim-approve="${i}">✅ ${T("Freigeben", "Approve")}</button>
+        <button class="action-btn" data-claim-reject="${i}" style="border-color:var(--pink);color:var(--pink);">✖ ${T("Ablehnen", "Decline")}</button>
+      </div>
+    </div>`;
+  }).join("");
+  el.querySelectorAll("[data-claim-approve]").forEach((b) => b.addEventListener("click", () => decideProfileClaim(claims[+b.dataset.claimApprove], true)));
+  el.querySelectorAll("[data-claim-reject]").forEach((b) => b.addEventListener("click", () => decideProfileClaim(claims[+b.dataset.claimReject], false)));
+}
+
+async function decideProfileClaim(c, approve, others = null) {
+  if (!c || !window.FB?.firebaseReady) return;
+  const { db, ref, set, update } = window.FB;
+  const me = window.FB.getAuthUid?.() || "";
+  const oldName = c.oldNickname || STATE.points?.[c.oldKey]?.nickname || "?";
+  if (approve && !(await showDialog({
+    title: T(`„${oldName}“ an ${c.nickname || "?"} geben?`, `Give “${oldName}” to ${c.nickname || "?"}?`),
+    text: T("Die Punkte ziehen beim nächsten App-Start der Person automatisch um.", "The points move over automatically the next time that person opens the app."),
+    okLabel: T("Freigeben", "Approve")
+  }))) return;
+  try {
+    if (approve) {
+      await set(ref(db, "profileLocks/" + c.oldKey), { by: c.uid, at: Date.now(), nickname: String(c.nickname || "").slice(0, 40), approvedBy: me });
+    }
+    await update(ref(db, `profileClaims/${c.oldKey}/${c.uid}`), { status: approve ? "approved" : "rejected", decidedAt: Date.now() });
+    // Only one person can get a profile: decline the competing requests.
+    if (approve) {
+      const rivals = (others || pendingClaimList()).filter((x) => x.oldKey === c.oldKey && x.uid !== c.uid);
+      await Promise.all(rivals.map((x) => update(ref(db, `profileClaims/${x.oldKey}/${x.uid}`), { status: "rejected", decidedAt: Date.now() }).catch(() => {})));
+    }
+    sendTargetedPush([c.uid], approve
+      ? { type: "profile-claim-ok", title: "✅ Profil freigegeben", body: `„${oldName}“ gehört wieder dir — öffne die App, dein Profil zieht automatisch um.`, query: "?claimed=1" }
+      : { type: "profile-claim-no", title: "Profil-Anfrage", body: `Deine Anfrage für „${oldName}“ wurde abgelehnt.`, query: "?claimed=1" });
+    toast(approve ? T(`✅ „${escapeHtml(oldName)}“ freigegeben`, `✅ “${escapeHtml(oldName)}” approved`) : T("Anfrage abgelehnt.", "Request declined."));
+  } catch (err) {
+    console.warn("decideProfileClaim failed:", err);
+    toast(T("Konnte die Entscheidung nicht speichern.", "Could not save the decision."));
+  }
+}
+
+// The device that still owns a profile is asked directly ("Warst du das?") —
+// the common case of moving to a new phone while the old one still works.
+var _ownerClaimsUnsub = null;
+var _ownerClaimsAsked = {};
+function listenClaimsForMyProfile() {
+  const uid = window.FB?.getAuthUid?.() || "";
+  if (!uid || !window.FB?.firebaseReady || _ownerClaimsUnsub) return;
+  const { db, ref, onValue } = window.FB;
+  _ownerClaimsUnsub = onValue(ref(db, "profileClaims/" + uid), (snap) => {
+    const claims = pendingClaimList({ [uid]: snap.val() || {} });
+    claims.forEach(async (c) => {
+      if (_ownerClaimsAsked[c.uid]) return;
+      _ownerClaimsAsked[c.uid] = true;
+      const ok = await showDialog({
+        title: T("📲 Profil auf ein anderes Gerät übertragen?", "📲 Move your profile to another device?"),
+        text: T(`„${c.nickname || "Jemand"}“ möchte dein Profil „${STATE.nickname || ""}“ übernehmen${c.note ? ` („${c.note}“)` : ""}. Nur bestätigen, wenn du das selbst bist (z. B. neues Handy) — danach ist das Profil auf diesem Gerät weg.`,
+          `“${c.nickname || "Someone"}” wants to take over your profile “${STATE.nickname || ""}”${c.note ? ` (“${c.note}”)` : ""}. Only confirm if that is you (e.g. a new phone) — the profile then leaves this device.`),
+        okLabel: T("Ja, das bin ich", "Yes, that's me"),
+        cancelLabel: T("Nein, ablehnen", "No, decline")
+      });
+      decideProfileClaimAsOwner(c, ok === true);
+    });
+  }, () => { _ownerClaimsUnsub = null; });
+}
+
+async function decideProfileClaimAsOwner(c, approve) {
+  const { db, ref, set, update } = window.FB;
+  try {
+    if (approve) await set(ref(db, "profileLocks/" + c.oldKey), { by: c.uid, at: Date.now(), nickname: String(c.nickname || "").slice(0, 40), approvedBy: window.FB.getAuthUid?.() || "" });
+    await update(ref(db, `profileClaims/${c.oldKey}/${c.uid}`), { status: approve ? "approved" : "rejected", decidedAt: Date.now() });
+    toast(approve ? T("✅ Übertragen — dein Profil zieht auf das neue Gerät um.", "✅ Transferred — your profile moves to the new device.") : T("Anfrage abgelehnt.", "Request declined."));
+  } catch (err) {
+    console.warn("decideProfileClaimAsOwner failed:", err);
+    toast(T("Konnte die Entscheidung nicht speichern.", "Could not save the decision."));
   }
 }
 
@@ -6889,86 +7778,170 @@ function visitedCornersForNickname(nickname) {
   }
   return result;
 }
+function visitedCornersForKey(key) {
+  const result = [];
+  Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
+    if (Object.values(entries || {}).some((v) => v && v.userId === key)) result.push(cornerId);
+  });
+  return result;
+}
 
-async function claimExistingProfile(oldKey) {
-  if (!oldKey || !window.FB?.firebaseReady) return;
+// Two entries of the same person: add them up — unless one is a copy of the
+// other (an old recovery snapshot), which would double the points.
+function mergeClaimedRewards(current, incoming, nickname) {
+  if (!incoming) return current ? { ...current, nickname: nickname || current.nickname || "" } : null;
+  if (!current || !Number(current.total || 0)) return { ...incoming, history: rewardHistoryList(incoming).slice(-REWARD_HISTORY_MAX), nickname: nickname || incoming.nickname || "" };
+  const curHist = rewardHistoryList(current);
+  const incHist = rewardHistoryList(incoming);
+  const seen = new Set(curHist.map((h) => `${h && h.time}|${h && h.pts}`));
+  const shared = incHist.filter((h) => seen.has(`${h && h.time}|${h && h.pts}`)).length;
+  const last = incHist[incHist.length - 1];
+  // A copy carries the old profile's latest entry (nothing is added to a lost login).
+  const isCopy = incHist.length && ((last && seen.has(`${last.time}|${last.pts}`)) || shared >= incHist.length / 2);
+  if (isCopy) {
+    const best = pickClaimRewardEntry(current, incoming, nickname);
+    return { ...best, nickname: nickname || best.nickname || "" };
+  }
+  const history = [...curHist, ...incHist.filter((h) => !seen.has(`${h && h.time}|${h && h.pts}`))]
+    .sort((a, b) => Number(a && a.time || 0) - Number(b && b.time || 0))
+    .slice(-REWARD_HISTORY_MAX);
+  return { total: Number(current.total || 0) + Number(incoming.total || 0), history, nickname: nickname || current.nickname || incoming.nickname || "" };
+}
+
+/* Move a profile (oldKey) onto my current login. Used for unlocked profiles,
+   approved requests, recovery codes and admins. Returns true on success.    */
+async function claimExistingProfile(oldKey, opts = {}) {
+  if (!oldKey || !window.FB?.firebaseReady) return false;
   const newKey = currentUserKey();
-  if (!newKey) { toast("Bitte zuerst Zugang oder Login."); return; }
+  if (!newKey) { toast(T("Bitte zuerst Zugang oder Login.", "Please get access or log in first.")); return false; }
+  if (oldKey === newKey) return false;
   if (!STATE.points || typeof STATE.points !== "object") STATE.points = {};
   if (!STATE.karmaPoints || typeof STATE.karmaPoints !== "object") STATE.karmaPoints = {};
-  const { db, ref, get, set, remove } = window.FB;
+  const { db, ref, get, set, update, remove, runTransaction } = window.FB;
+  const uid = window.FB.getAuthUid?.() || "";
   try {
-    // Claim the lock FIRST. The rule only permits a write when the lock is
-    // unset (or already ours), so a second person gets permission_denied here
-    // instead of walking off with the same profile.
-    const uid = window.FB.getAuthUid?.() || "";
+    // Claim the lock FIRST. The rule only permits it when the lock is unset,
+    // already ours (approved), proven by a recovery code, or for admins — a
+    // second person gets permission_denied here instead of the profile.
     try {
       await set(ref(db, "profileLocks/" + oldKey), { by: uid, at: Date.now(), nickname: STATE.nickname || "" });
     } catch (lockErr) {
       console.warn("profile lock refused:", lockErr);
-      toast("🔒 Dieses Profil gehört schon jemandem.");
-      openClaimOverlay();
-      return;
+      if (!opts.quiet && !opts.quietFail) {
+        toast(T("🔒 Dieses Profil ist an ein anderes Gerät gebunden — tippe „Anfragen“.", "🔒 This profile is bound to another device — tap “Request”."));
+        openClaimOverlay();
+      }
+      return false;
     }
     const [pSnap, kSnap, aSnap, tSnap] = await Promise.all([
       get(ref(db, "points/" + oldKey)),
-      get(ref(db, "karmaPoints/" + oldKey)),
+      get(ref(db, "karmaPoints/" + oldKey)).catch(() => ({ val: () => null })),
       get(ref(db, "achievements/" + oldKey)),
       get(ref(db, "teams/" + oldKey))
     ]);
     const oldPoints = pSnap.val();
     const oldKarma = kSnap.val();
-    if (!oldPoints && !oldKarma) { toast("Profil nicht gefunden."); return; }
+    if (!oldPoints && !oldKarma) { if (!opts.quiet && !opts.quietFail) toast(T("Profil nicht gefunden.", "Profile not found.")); return false; }
     const nickname = oldPoints?.nickname || oldKarma?.nickname || STATE.nickname || "";
     if (nickname) { STATE.nickname = nickname; localStorage.setItem("cg.nickname", nickname); }
     const team = tSnap.val() && tSnap.val().team;
     if (team) { STATE.team = team; localStorage.setItem(TEAM_STORAGE_KEY, team); ensureTeamHistoryEntry(team); }
-    if (oldPoints || STATE.points[newKey]) STATE.points[newKey] = pickClaimRewardEntry(STATE.points[newKey], oldPoints, nickname);
-    if (oldKarma || STATE.karmaPoints[newKey]) STATE.karmaPoints[newKey] = pickClaimRewardEntry(STATE.karmaPoints[newKey], oldKarma, nickname);
+    // Merge on the server copy atomically (others may be rewarding me right now).
+    const mergeInto = async (node, incoming) => {
+      if (!incoming) return null;
+      const path = ref(db, node + "/" + newKey);
+      if (typeof runTransaction === "function") {
+        const res = await runTransaction(path, (cur) => mergeClaimedRewards(cur && typeof cur === "object" ? cur : null, incoming, nickname));
+        return res && res.snapshot ? res.snapshot.val() : null;
+      }
+      const merged = mergeClaimedRewards(STATE[node === "points" ? "points" : "karmaPoints"][newKey], incoming, nickname);
+      await set(path, merged);
+      return merged;
+    };
+    const [auraEntry, karmaEntry] = await Promise.all([mergeInto("points", oldPoints), mergeInto("karmaPoints", oldKarma)]);
+    if (auraEntry) STATE.points[newKey] = auraEntry;
+    if (karmaEntry) STATE.karmaPoints[newKey] = karmaEntry;
     savePoints();
     saveKarmaPoints();
-    const writes = [];
-    if (STATE.points[newKey]) writes.push(set(ref(db, "points/" + newKey), STATE.points[newKey]));
-    if (STATE.karmaPoints[newKey]) writes.push(set(ref(db, "karmaPoints/" + newKey), STATE.karmaPoints[newKey]));
-    // Carry over visited corners (reconstructed from the shared visits node by nickname).
-    const claimedVisited = visitedCornersForNickname(nickname);
+    // Visited corners: from the old key's check-ins (and, for very old
+    // check-ins without a user id, from the nickname).
+    const claimedVisited = Array.from(new Set([...visitedCornersForKey(oldKey), ...visitedCornersForNickname(nickname)]));
     if (claimedVisited.length) {
       STATE.visitedCorners = Array.from(new Set([...(STATE.visitedCorners || []), ...claimedVisited]));
       saveVisitedCorners();
     }
     const oldAch = aSnap.val() || {};
     const achIds = Object.keys(oldAch);
+    const updates = {};
     if (achIds.length) {
       STATE.achievements = Array.from(new Set([...(STATE.achievements || []), ...achIds]));
       saveAchievements();
-      writes.push(...achIds.map((id) => set(ref(db, "achievements/" + newKey + "/" + id), oldAch[id])));
+      achIds.forEach((id) => { updates[`achievements/${newKey}/${id}`] = oldAch[id]; });
     }
-    await Promise.all(writes);
+    if (team) updates[`teams/${newKey}`] = tSnap.val();
+    // Re-attribute the check-in history (profile map, history playback) and the
+    // "met each other" counts to the new login.
+    Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
+      Object.entries(entries || {}).forEach(([vid, v]) => {
+        if (v && v.userId === oldKey) updates[`visits/${cornerId}/${vid}/userId`] = newKey;
+      });
+    });
+    Object.entries(STATE.encounters || {}).forEach(([pairKey, e]) => {
+      const users = (e && e.users) || {};
+      if (!(oldKey in users)) return;
+      const other = Object.keys(users).find((id) => id !== oldKey);
+      if (!other || other === newKey) { updates[`encounters/${pairKey}`] = null; return; }
+      const nk = [newKey, other].sort().join("__");
+      const existing = STATE.encounters[nk] || updates[`encounters/${nk}`] || null;
+      updates[`encounters/${nk}`] = {
+        count: Number(existing?.count || 0) + Number(e.count || 0),
+        lastSeen: Math.max(Number(existing?.lastSeen || 0), Number(e.lastSeen || 0)),
+        lastCorner: (Number(existing?.lastSeen || 0) > Number(e.lastSeen || 0) ? existing?.lastCorner : e.lastCorner) || "",
+        users: { [newKey]: nickname, [other]: users[other] }
+      };
+      updates[`encounters/${pairKey}`] = null;
+    });
+    // Gossip chronicle of the old login (readable now that its lock is mine).
+    try {
+      const oldLog = (await get(ref(db, "gossipLog/" + oldKey))).val() || {};
+      Object.entries(oldLog).forEach(([id, g]) => { if (g && typeof g === "object") updates[`gossipLog/${uid}/${id}`] = g; });
+      if (Object.keys(oldLog).length) updates[`gossipLog/${oldKey}`] = null;
+    } catch (err) { /* no chronicle yet */ }
+    if (Object.keys(updates).length) await update(ref(db), updates).catch((err) => console.warn("claim: re-attribution failed:", err));
     // Remove the old identity so the same person doesn't appear twice.
-    if (oldKey !== newKey) {
-      await Promise.all([
-        remove(ref(db, "points/" + oldKey)),
-        remove(ref(db, "karmaPoints/" + oldKey)),
-        remove(ref(db, "achievements/" + oldKey)),
-        remove(ref(db, "teams/" + oldKey))
-      ]);
-    }
+    await Promise.all([
+      remove(ref(db, "points/" + oldKey)),
+      remove(ref(db, "karmaPoints/" + oldKey)).catch(() => {}),
+      remove(ref(db, "achievements/" + oldKey)),
+      remove(ref(db, "teams/" + oldKey)),
+      remove(ref(db, "presence/" + oldKey)).catch(() => {}),
+      remove(ref(db, `profileClaims/${oldKey}/${uid}`)).catch(() => {})
+    ]);
+    rememberMyKey(oldKey);
+    setPendingClaimKeys(pendingClaimKeys().filter((k) => k !== oldKey));
     ensurePointIdentity();
     syncIdentity();
     syncProfileToCloud();
     localStorage.removeItem("cg.profileLocked"); // the key changed — re-reserve
     ensureOwnProfileLock();
     updateNicknameBar();
+    renderFriendsBar();
     if (STATE.view === "profile") renderProfile();
     const overlay = $("#claim-overlay");
     if (overlay) overlay.style.display = "none";
     // Claimed profile brings its nickname — skip the "Wer bist du?" step.
     const nickPrompt = $("#nickname-prompt");
     if (nickPrompt && STATE.nickname) nickPrompt.style.display = "none";
-    toast(`✅ Profil „${escapeHtml(nickname)}" übernommen — willkommen zurück!`);
+    const total = Number(auraEntry?.total || 0);
+    if (!opts.quiet) {
+      if (opts.approved) showRewardCelebration(total, "aura", { emoji: "🛟", text: T(`„${escapeHtml(nickname)}“ ist zurück!`, `“${escapeHtml(nickname)}” is back!`) });
+      toast(T(`✅ Profil „${escapeHtml(nickname)}“ übernommen — willkommen zurück!`, `✅ Profile “${escapeHtml(nickname)}” restored — welcome back!`));
+    }
+    return true;
   } catch (err) {
     console.warn("claimExistingProfile failed:", err);
-    toast("Übernahme fehlgeschlagen.");
+    if (!opts.quiet && !opts.quietFail) toast(T("Übernahme fehlgeschlagen.", "Takeover failed."));
+    return false;
   }
 }
 
@@ -7069,17 +8042,11 @@ async function initFirebase() {
     if (!body) return;
     // With the app open, gossip rounds already show their own toast / celebration.
     if (/^gossip/.test(String(payload?.data?.type || ""))) return;
-    // The DM push carries ?chat=<peerId>&chatName=<name> — make the toast open it.
-    let openChatFn = null;
-    try {
-      const link = payload?.data?.url || payload?.fcmOptions?.link || "";
-      if (link) {
-        const p = new URL(link).searchParams;
-        const peer = p.get("chat");
-        if (peer) openChatFn = () => openChatThread(peer, p.get("chatName") || peer);
-      }
-    } catch (err) { /* malformed link: fall back to a plain toast */ }
-    toast(`🔔 ${escapeHtml(body)}${openChatFn ? `<br><span style="font-size:11px;opacity:0.7;">Tippen zum Öffnen →</span>` : ""}`, null, openChatFn);
+    // Pushes carry an in-app link (?chat=…, ?corner=…, ?profile=…) — the toast
+    // opens the same place the system notification would.
+    const link = payload?.data?.url || payload?.fcmOptions?.link || "";
+    const action = link ? deepLinkAction(link) : null;
+    toast(`🔔 ${escapeHtml(body)}${action ? `<br><span style="font-size:11px;opacity:0.7;">${T("Tippen zum Öffnen →", "Tap to open →")}</span>` : ""}`, null, action);
   });
   listenFriendPresence();
   listenSharedCorners();
@@ -7260,10 +8227,13 @@ function listenFriendPresence() {
 
 function friendAtCornerAlarm(friend, corner) {
   if (!shouldNotify(friend)) return;
-  toast(`🍻 <strong>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</strong> ${T("ist am", "is at")} <strong>${escapeHtml(corner.name)}</strong>!`, "friend-alert");
+  toast(`🍻 <strong>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</strong> ${T("ist am", "is at")} <strong>${escapeHtml(corner.name)}</strong>!<br><span style="font-size:11px;opacity:0.75;">${T("Tippen = zum Corner →", "Tap = open corner →")}</span>`, "friend-alert", () => openDetail(corner.id));
   if ("Notification" in window) {
-    if (Notification.permission === "granted") {
-      new Notification("Minga Corner Guide", { body: `${friend.nickname} ${T("ist gerade am", "is now at")} ${corner.name}!` });
+    if (Notification.permission === "granted" && document.hidden) {
+      try {
+        const n = new Notification("Minga Corner Guide", { body: `${friend.nickname} ${T("ist gerade am", "is now at")} ${corner.name}!` });
+        n.onclick = () => { try { window.focus(); } catch (e) {} openDetail(corner.id); n.close(); };
+      } catch (err) { /* some browsers only allow notifications from the service worker */ }
     } else if (Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -7291,7 +8261,7 @@ function renderFriendsBar() {
     const asleep = presenceIsAsleep(friend);
     return `<li class="friend-chip ${corner ? "" : "away"} ${asleep ? "asleep" : ""}" style="border-color:${TEAMS[friend.team]?.color || 'var(--line)'};">
       <span class="friend-dot" title="${escapeHtml(avail?.label || "")}" style="background:${avail?.color || TEAMS[friend.team]?.color || 'var(--fg-dim)'};"></span>
-      <span>${escapeHtml(getDisplayName(friend.nickname, friend.team))}</span>
+      <button class="friend-name" data-user-profile="${escapeHtml(friend.id)}" title="${T("Profil ansehen", "View profile")}">${escapeHtml(getDisplayName(friend.nickname, friend.team))}</button>
       ${asleep ? `<span class="friend-asleep" title="${T("Display aus — bekommt Push, sieht aber gerade nichts live", "Screen off — gets push, not watching live")}">💤 ${asleepSinceLabel(friend)}</span>` : ""}
       ${corner
         ? `<button class="friend-corner friend-goto" data-goto-corner="${escapeHtml(corner.id)}" title="${T("Zum Corner springen", "Go to corner")}">${statusLabel} →</button>`
@@ -7991,23 +8961,29 @@ function getBarometerData(cornerId) {
 
 function voteEmoji(cornerId, amenityKey) {
   const voteKey = currentUserKey();
+  let adding = false;
   if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
   if (window.FB?.firebaseReady) {
     const { db, ref, set, remove: fbRemove } = window.FB;
     const voteRef = ref(db, `emojiVotes/${cornerId}/${amenityKey}/${voteKey}`);
     const currentVotes = STATE.emojiVotes?.[cornerId]?.[amenityKey] || {};
+    adding = !currentVotes[voteKey];
     if (currentVotes[voteKey]) fbRemove(voteRef); else set(voteRef, true);
   } else {
     const votes = loadLocalEmojiVotes();
     if (!votes[cornerId]) votes[cornerId] = {};
     if (!votes[cornerId][amenityKey]) votes[cornerId][amenityKey] = {};
+    adding = !votes[cornerId][amenityKey][voteKey];
     if (votes[cornerId][amenityKey][voteKey]) delete votes[cornerId][amenityKey][voteKey];
     else votes[cornerId][amenityKey][voteKey] = true;
     localStorage.setItem("cg.emojiVotes", JSON.stringify(votes));
     STATE.emojiVotes = votes;
     refreshAllEmojiVotes();
   }
-  addXp(2, "Emoji Vote");
+  // Aura once per vote — toggling a vote back and forth used to farm +2 each tap.
+  const voted = gossipLocalLog("cg.voteXp");
+  const vk = cornerId + "|" + amenityKey;
+  if (adding && !voted[vk]) { gossipLocalMark("cg.voteXp", vk); addXp(2, "Emoji Vote"); }
 }
 
 function getEmojiVoteData(cornerId, amenityKey) {
@@ -8055,6 +9031,16 @@ function renderCornerStatusSection(cornerId, container) {
 
 function refreshAllCornerStatusSections() {
   $$(".corner-status-section").forEach((section) => renderCornerStatusSection(section.dataset.cornerId, section));
+}
+
+// Same as getPeopleAtCorner, with ids so the names can open profiles.
+function peopleAtCornerDetailed(cornerId) {
+  const people = [];
+  if (STATE.manualCheckinId === cornerId || STATE.atCornerId === cornerId) people.push({ id: currentUserKey(), label: getDisplayName(STATE.nickname || "Du", STATE.team) });
+  freshFriends().forEach((friend) => {
+    if (friend.atCorner === cornerId) people.push({ id: friend.id, label: getDisplayName(friend.nickname || friend.name, friend.team) + (presenceIsAsleep(friend) ? " 💤" : "") });
+  });
+  return people;
 }
 
 function getPeopleAtCorner(cornerId) {
@@ -8154,9 +9140,9 @@ function manualCheckin(cornerId) {
     toast(
       `${T("Eingecheckt am", "Checked in at")} <strong>${escapeHtml(corner.name)}</strong> 🍻<br><span style="font-size:11px;opacity:0.75;">${T("Tippen = rückgängig", "Tap to undo")}</span>`,
       "at-corner",
-      () => { if (STATE.manualCheckinId === cornerId) { manualCheckin(cornerId); toast(T("↩️ Check-in zurückgenommen", "↩️ Check-in undone")); } }
+      () => { if (STATE.manualCheckinId === cornerId) { manualCheckin(cornerId); undoCheckin(cornerId); toast(T("↩️ Check-in zurückgenommen", "↩️ Check-in undone")); } }
     );
-    recordVisit(cornerId);
+    const grant = STATE.lastCheckinGrant = { cornerId, at: Date.now(), aura: 0, firstVisit: false, today: false, visitKey: recordVisit(cornerId) };
     // Aura only once per day per corner, and it scales with the spot.
     if (checkedInTodayAt(cornerId)) {
       toast(T("Schon heute hier gewesen — keine Extra-Aura, aber schön dass du da bist 🍻", "Already been here today — no extra aura, but glad you're here 🍻"));
@@ -8164,6 +9150,8 @@ function manualCheckin(cornerId) {
       markCheckedInToday(cornerId);
       const k = checkinKarma(cornerId);
       addXp(k.total, `Check-in: ${corner.name}`);
+      grant.aura += k.total;
+      grant.today = true;
       const extras = [];
       if (k.social) extras.push(`+${k.social} ${T("weil was los ist", "social bonus")}`);
       if (k.popular) extras.push(`+${k.popular} ${T("beliebter Spot", "popular spot")}`);
@@ -8179,6 +9167,8 @@ function manualCheckin(cornerId) {
       STATE.visitedCorners.push(cornerId);
       saveVisitedCorners();
       addXp(10, `Neuer Corner: ${corner.name}`);
+      grant.aura += 10;
+      grant.firstVisit = true;
     }
     // Only the team picker on check-in. Describing a corner (Kiosk, Klo, Vibe)
     // is the owner's job via "Spot bearbeiten", not a quiz for every visitor.
@@ -8190,6 +9180,7 @@ function manualCheckin(cornerId) {
     if (corner.isCustom && corner.createdBy && corner.createdBy !== STATE.nickname) addPoints(corner.createdById || corner.createdBy, 3, "Jemand hat deinen Corner besucht");
     checkCaptureCondition(cornerId);
     logEncounters(cornerId);
+    rewardCornerDateArrival(cornerId);
     startCooldownDisplay();
     broadcastCheckinPush(corner);
     // Opt-in: open WhatsApp with the message ready. Only on a real tap — an
@@ -8243,6 +9234,7 @@ function broadcastCheckinPush(corner) {
       type: "checkin",
       title: "🍻 Minga Corner Guide",
       body: `${STATE.nickname} ist gerade am ${corner.name}!`,
+      query: `?corner=${encodeURIComponent(corner.id)}`,
       fromId: currentUserKey(),
       fromTeam: STATE.team || "",
       createdAt: Date.now()
@@ -8433,6 +9425,7 @@ function broadcastSupplyRequest() {
       type: "supply",
       title: "🆘 Nachschub gesucht!",
       body: `${STATE.nickname} braucht Nachschub${where}! 🍺🛒`,
+      query: corner ? `?corner=${encodeURIComponent(corner.id)}` : `?profile=${encodeURIComponent(currentUserKey())}`,
       fromId: currentUserKey(),
       fromTeam: STATE.team || "",
       createdAt: Date.now()
@@ -8604,6 +9597,91 @@ function openGossipSignature() {
     .filter(Boolean).sort().join("|");
 }
 
+/* ---- Gossip chronicle ----
+   Rounds (and the stories) are deleted after 24 h. What stays is a small
+   personal record per participant: who told it, where, who was there, the
+   score and the optional public headline — never the story itself.        */
+STATE.gossipLog = {};
+function gossipLogKey(cornerId, roundId) { return String(cornerId).replace(/[.#$\[\]\/]/g, "_") + "__" + roundId; }
+function logGossipRound(cornerId, round) {
+  const uid = window.FB?.getAuthUid?.() || "";
+  if (!uid || !window.FB?.firebaseReady || !round || !round.id) return;
+  const me = currentUserKey();
+  const mine = isMyKey(round.tellerId);
+  const votes = gossipVotesFor(cornerId, round.id);
+  const myVote = votes[me];
+  if (!mine && !myVote && !(round.audience && round.audience[me])) return;
+  const open = gossipIsOpen(cornerId, round);
+  const res = gossipResult(cornerId, round);
+  const sig = `${open ? 1 : 0}:${res.votes.length}:${res.total}`;
+  const key = gossipLogKey(cornerId, round.id);
+  const sigs = gossipLocalLog("cg.gossipLogSig");
+  if (sigs[key] === sig) return;
+  const people = {};
+  if (round.tellerId) people[round.tellerId] = String(round.tellerName || "?").slice(0, 40);
+  Object.entries(round.audience || {}).forEach(([id, name]) => { people[id] = String(name || "?").slice(0, 40); });
+  Object.entries(votes).forEach(([id, v]) => { people[id] = String((v && v.name) || people[id] || "?").slice(0, 40); });
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  const entry = {
+    cornerId: String(cornerId).slice(0, 120), cornerName: String(corner?.name || "").slice(0, 80),
+    roundId: round.id, at: Number(round.createdAt) || Date.now(),
+    tellerId: round.tellerId || "", tellerName: String(round.tellerName || "").slice(0, 40),
+    role: mine ? "teller" : "listener", people,
+    total: res.total, votes: res.votes.length, verdict: res.verdict ? res.verdict.emoji : "", open
+  };
+  if (round.title) entry.title = String(round.title).slice(0, 60);
+  if (!mine && myVote) entry.myPts = Number(myVote.pts) || 0;
+  STATE.gossipLog[key] = entry;
+  const { db, ref, set } = window.FB;
+  set(ref(db, `gossipLog/${uid}/${key}`), entry)
+    .then(() => { const all = gossipLocalLog("cg.gossipLogSig"); all[key] = sig; localStorage.setItem("cg.gossipLogSig", JSON.stringify(all)); })
+    .catch((err) => console.warn("gossip log write failed:", err?.message || err));
+}
+
+var _gossipLogListening = false;
+function listenGossipLog() {
+  const uid = window.FB?.getAuthUid?.() || "";
+  if (!uid || !window.FB?.firebaseReady || _gossipLogListening) return;
+  _gossipLogListening = true;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "gossipLog/" + uid), (snap) => {
+    STATE.gossipLog = snap.val() || {};
+    if (STATE.view === "profile") renderProfile();
+  }, () => { _gossipLogListening = false; });
+}
+
+function gossipLogEntries() {
+  return Object.values(STATE.gossipLog || {}).filter((g) => g && g.cornerId).sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
+}
+function sharedGossipsWith(key) {
+  return gossipLogEntries().filter((g) => g.tellerId === key || (g.people && key in g.people));
+}
+function gossipLogRowHtml(g) {
+  const me = currentUserKey();
+  const teller = isMyKey(g.tellerId) ? T("Du", "You") : (g.tellerName || "?");
+  const others = Object.entries(g.people || {}).filter(([id]) => id !== g.tellerId && !isMyKey(id) && id !== me).map(([, n]) => n);
+  const date = new Date(Number(g.at || 0)).toLocaleDateString(STATE.lang === "en" ? "en-GB" : "de-DE", { day: "2-digit", month: "2-digit", year: "2-digit" });
+  return `<button class="gl-row" data-gossip-corner="${escapeHtml(g.cornerId)}">
+    <span class="gl-emoji">${escapeHtml(g.verdict || "🗣️")}</span>
+    <span class="gl-main">
+      ${g.title ? `<span class="gl-title">„${escapeHtml(g.title)}“</span>` : ""}
+      <span class="gl-line">${isMyKey(g.tellerId) ? `<strong>${T("Du", "You")}</strong> ${T("hast erzählt", "told it")}` : `<strong>${escapeHtml(teller)}</strong> ${T("erzählte", "told it")}`} · ${escapeHtml(g.cornerName || "?")} · ${date}</span>
+      ${others.length ? `<span class="gl-line dim">${T("mit", "with")} ${others.slice(0, 6).map((n) => escapeHtml(n)).join(", ")}${others.length > 6 ? " …" : ""}</span>` : ""}
+    </span>
+    <span class="gl-pts">${g.open ? "⏳" : `${Number(g.total || 0)} P.`}${g.myPts ? `<br><small>${T("du", "you")}: +${g.myPts}</small>` : ""}</span>
+  </button>`;
+}
+function buildGossipChronicleHtml() {
+  const list = gossipLogEntries();
+  if (!list.length) return `<div class="team-battle-section gossip-chronicle"><h3>🗣️ ${T("Gossip-Chronik", "Gossip chronicle")}</h3><p style="font-size:12px;color:var(--fg-dim);margin:0;">${T("Noch keine Gossip-Runden. Wenn ihr zu zweit oder mehr an einem Corner eingecheckt seid, kann jemand eine starten — hier steht dann, wer wo was erzählt hat.", "No gossip rounds yet. When two or more of you are checked in at a corner, someone can start one — this is where you'll see who told what, where.")}</p></div>`;
+  const told = list.filter((g) => g.role === "teller").length;
+  return `<div class="team-battle-section gossip-chronicle"><h3>🗣️ ${T("Gossip-Chronik", "Gossip chronicle")}</h3>
+    <p style="font-size:12px;color:var(--fg-dim);margin:0 0 8px;">${T(`${list.length} ${list.length === 1 ? "Runde" : "Runden"} · ${told} selbst erzählt`, `${list.length} round${list.length === 1 ? "" : "s"} · ${told} told by you`)}</p>
+    <div class="gl-list">${list.slice(0, 8).map(gossipLogRowHtml).join("")}</div>
+    ${list.length > 8 ? `<details class="gl-more"><summary>${T(`Alle ${list.length} anzeigen`, `Show all ${list.length}`)}</summary><div class="gl-list">${list.slice(8).map(gossipLogRowHtml).join("")}</div></details>` : ""}
+  </div>`;
+}
+
 // Toasts, the teller's celebration and the screen wake lock, each once per round.
 function processGossipEvents(firstLoad) {
   const me = currentUserKey();
@@ -8617,6 +9695,7 @@ function processGossipEvents(firstLoad) {
       const key = gossipKey(cornerId, round.id);
       const mine = isMyKey(round.tellerId);
       const myVote = gossipVotesFor(cornerId, round.id)[me];
+      logGossipRound(cornerId, round);
       if (gossipIsOpen(cornerId, round)) {
         if (mine || iAmAtCorner(cornerId)) keepAwake = true;
         if (!mine && !myVote && iAmAtCorner(cornerId) && !announced[key]) {
@@ -8732,7 +9811,7 @@ function gossipAudioSrc(data) {
 }
 
 function renderGossipStoryHtml(round, cs, mine) {
-  const head = `<div class="gs-story-head">${mine ? `<strong>${T("Deine Story", "Your story")}</strong>` : `<strong>${escapeHtml(round.tellerName || "?")}</strong> ${T("erzählt", "tells")}`}${round.hasAudio ? ` · 🎙️ ${formatDuration(round.audioDuration)}` : ""}</div>`;
+  const head = `<div class="gs-story-head">${mine ? `<strong>${T("Deine Story", "Your story")}</strong>` : `<strong>${escapeHtml(round.tellerName || "?")}</strong> ${T("erzählt", "tells")}`}${round.hasAudio ? ` · 🎙️ ${formatDuration(round.audioDuration)}` : ""}${round.title ? `<div class="gs-headline">„${escapeHtml(round.title)}“</div>` : ""}</div>`;
   if (cs.status === "denied") return `<div class="gs-story">${head}<p class="gs-hint">🤫 ${T("Nur für Leute, die hier eingecheckt sind.", "Only for people checked in here.")}</p></div>`;
   if (cs.status !== "ok") return `<div class="gs-story">${head}<p class="gs-hint">${T("Story wird geladen …", "Loading story …")}</p></div>`;
   const d = cs.data || {};
@@ -9165,6 +10244,8 @@ function openGossipComposer(cornerId) {
   $("#gossip-title").textContent = "🗣️ " + T("Gossip-Runde", "Gossip round");
   $("#gossip-sub").innerHTML = `${corner ? `${T("am", "at")} <strong>${escapeHtml(corner.name)}</strong> · ` : ""}${T("Es hören zu", "Listening")}: ${crowd.map((p) => escapeHtml(p.name) + (p.asleep ? " 💤" : "")).join(", ")}`;
   $("#gossip-text-label").textContent = T("Deine Story (aufschreiben, einsprechen oder beides)", "Your story (write it, record it or both)");
+  $("#gossip-headline-label").textContent = T("Schlagzeile für eure Chronik (optional — sehen alle, die Story selbst nicht)", "Headline for your chronicle (optional — visible to everyone, the story itself is not)");
+  $("#gossip-headline").placeholder = T("z. B. Die Sache mit dem Hausboot", "e.g. The houseboat thing");
   $("#gossip-text").placeholder = T("Was ist passiert? Wer, wo, wann … 👀", "What happened? Who, where, when … 👀");
   $("#gossip-privacy").textContent = T("🤫 Bleibt am Corner: Nur wer hier eingecheckt ist, kann deine Story lesen und hören — und nach 24 Stunden wird alles gelöscht. Die anderen bekommen eine Push-Nachricht.", "🤫 Stays at the corner: only people checked in here can read and hear your story — and everything is deleted after 24 hours. The others get a push notification.");
   $("#gossip-cancel").textContent = T("Abbrechen", "Cancel");
@@ -9187,6 +10268,7 @@ async function publishGossip() {
   const cornerId = GOSSIP_DRAFT.cornerId;
   if (!cornerId || GOSSIP_DRAFT.publishing) return;
   const text = ($("#gossip-text").value || "").trim().slice(0, GOSSIP_TEXT_MAX);
+  const headline = ($("#gossip-headline")?.value || "").replace(/\s+/g, " ").trim().slice(0, 60);
   const blob = GOSSIP_REC.blob;
   if (!text && !blob) { gossipHint(T("Schreib deine Story auf oder sprich sie ein 🎙️", "Write or record your story 🎙️")); return; }
   if (!iAmAtCorner(cornerId)) { gossipHint(T("Du bist hier nicht mehr eingecheckt.", "You're no longer checked in here.")); return; }
@@ -9246,7 +10328,8 @@ async function publishGossip() {
         hasAudio,
         audioDuration: hasAudio ? Math.round(GOSSIP_REC.duration) : 0,
         karma,
-        audience
+        audience,
+        ...(headline ? { title: headline } : {})
       });
     } catch (err) {
       remove(contentRef).catch(() => {});
@@ -9265,6 +10348,7 @@ async function publishGossip() {
       query: `?corner=${encodeURIComponent(cornerId)}&gossip=1`
     });
     $("#gossip-text").value = "";
+    if ($("#gossip-headline")) $("#gossip-headline").value = "";
     GOSSIP_DRAFT.publishing = false;
     pubBtn.textContent = label;
     closeGossipComposer();
@@ -9331,6 +10415,11 @@ function cornerWhatsAppText(cornerId) {
 const CORNERDATE_KEEP_MS = 24 * 60 * 60 * 1000;   // ended dates are deleted after this
 const CORNERDATE_PLAN_AURA = 5;
 const CORNERDATE_JOIN_AURA = 2;
+// "Wieso bekomme ich keine Aura wenn ich ein Corner Date geplant habe?! Ich
+// bringe auch das Bier mit!" — planning paid out silently. Now it shows, and
+// whoever plans gets karma from the people who say yes and who really come.
+const CORNERDATE_JOIN_KARMA = 3;      // for the planner, per person who says "bin dabei"
+const CORNERDATE_ARRIVE_KARMA = 5;    // for the planner, per guest who checks in during the date
 STATE.cornerDates = {};
 var _cornerDates = { listening: false, primed: false, lastCleanup: 0 };
 var CD_DRAFT = { cornerId: null, saving: false, saved: null };
@@ -9603,12 +10692,14 @@ async function saveCornerDate() {
       }).catch(() => {});
     } catch (e) { /* push is a bonus */ }
   }
-  if (bumpDailyCount("cg.cdPlanned") <= 3) addXp(CORNERDATE_PLAN_AURA, "Cornerdate geplant");   // max 3 per day
+  const planAura = bumpDailyCount("cg.cdPlanned") <= 3;   // max 3 per day
+  if (planAura) addXp(CORNERDATE_PLAN_AURA, "Cornerdate geplant");
   unlockAchievement("first-cornerdate", "Date-Planer", "📅", 15);
   $("#cd-form").hidden = true;
   const done = $("#cd-done");
   done.innerHTML = `<div class="cd-done-title">✅ ${T("Geplant!", "Planned!")}</div>
     <p class="gossip-sub">${escapeHtml(formatDateRange(start, end))} ${T("am", "at")} <strong>${escapeHtml(corner.name)}</strong>${notifyAll ? ` · ${T("alle wurden benachrichtigt", "everyone was notified")}` : ""}</p>
+    <p class="cd-reward">${planAura ? `✨ <strong>+${CORNERDATE_PLAN_AURA} Aura</strong> ${T("fürs Planen", "for planning")} · ` : ""}🎁 ${T(`+${CORNERDATE_JOIN_KARMA} Karma pro Zusage, +${CORNERDATE_ARRIVE_KARMA} pro Gast, der wirklich kommt`, `+${CORNERDATE_JOIN_KARMA} karma per yes, +${CORNERDATE_ARRIVE_KARMA} per guest who really shows up`)}</p>
     <div class="cd-actions">
       <button class="action-btn primary" data-cd-ics>📅 ${T("In meinen Kalender (iPhone, Android, Outlook)", "Add to my calendar (iPhone, Android, Outlook)")}</button>
       <a class="action-btn" href="${escapeHtml(googleCalendarUrl(saved))}" target="_blank" rel="noopener">🗓️ Google ${T("Kalender", "Calendar")}</a>
@@ -9619,6 +10710,21 @@ async function saveCornerDate() {
   done.querySelector("[data-cd-ics]").addEventListener("click", () => downloadCornerDateIcs(saved));
   done.querySelector("[data-cd-wa]").addEventListener("click", () => openWhatsApp(cornerDateWhatsAppText(saved)));
   done.querySelector("[data-cd-close]").addEventListener("click", closeCornerDatePlanner);
+}
+
+// Checked in at a corner while a cornerdate runs there: the planner gets karma.
+function rewardCornerDateArrival(cornerId) {
+  const now = Date.now();
+  Object.entries(STATE.cornerDates || {}).forEach(([id, d]) => {
+    if (!d || d.cornerId !== cornerId || !d.byId || isMyKey(d.byId)) return;
+    if (now < Number(d.start) - 30 * 60000 || now > Number(d.end)) return;
+    const seen = gossipLocalLog("cg.cdArrived");
+    if (seen[id]) return;
+    gossipLocalMark("cg.cdArrived", id);
+    addKarmaPoints(d.byId, CORNERDATE_ARRIVE_KARMA, `${STATE.nickname} ist zu deinem Cornerdate gekommen`, d.byName);
+    sendTargetedPush([d.byId], { type: "cornerdate-here", title: "📅 Dein Cornerdate läuft!", body: `${STATE.nickname} ist da (+${CORNERDATE_ARRIVE_KARMA} Karma)`, query: `?corner=${encodeURIComponent(cornerId)}&date=1` });
+    toast(`📅 ${T("Pünktlich zum Cornerdate von", "Right on time for")} <strong>${escapeHtml(d.byName || "?")}</strong> — ${T(`+${CORNERDATE_ARRIVE_KARMA} Karma für die Planung`, `+${CORNERDATE_ARRIVE_KARMA} karma for planning it`)} 🎁`);
+  });
 }
 
 function bumpDailyCount(key) {
@@ -9643,7 +10749,14 @@ async function toggleCornerDateGoing(dateId) {
     } else {
       await set(ref(db, `cornerDates/${dateId}/going/${me}`), { name: String(STATE.nickname).slice(0, 40), at: Date.now() });
       const joined = gossipLocalLog("cg.cdJoined");
-      if (!joined[dateId]) { gossipLocalMark("cg.cdJoined", dateId); addXp(CORNERDATE_JOIN_AURA, "Cornerdate zugesagt"); }
+      if (!joined[dateId]) {
+        gossipLocalMark("cg.cdJoined", dateId);
+        addXp(CORNERDATE_JOIN_AURA, "Cornerdate zugesagt");
+        if (d.byId && !isMyKey(d.byId)) {
+          addKarmaPoints(d.byId, CORNERDATE_JOIN_KARMA, `${STATE.nickname} kommt zu deinem Cornerdate`, d.byName);
+          sendTargetedPush([d.byId], { type: "cornerdate-yes", title: "📅 Zusage!", body: `${STATE.nickname} ist bei deinem Cornerdate dabei (+${CORNERDATE_JOIN_KARMA} Karma)`, query: `?corner=${encodeURIComponent(d.cornerId)}&date=1` });
+        }
+      }
       toast(`✋ ${T("Du bist dabei!", "You're in!")} <span style="font-size:11px;opacity:0.8;">${T("Tipp: „📅 Kalender“ trägt's dir ein.", "Tip: “📅 Calendar” adds it for you.")}</span>`);
     }
   } catch (err) {
@@ -9700,8 +10813,24 @@ const PLACE_KINDS = {
   shelter: { emoji: "🛖", de: "Unterstand", en: "Shelter", rain: true },
   stop:    { emoji: "🚏", de: "Haltestelle mit Dach", en: "Covered stop", rain: true },
   arcade:  { emoji: "🏛️", de: "Arkade / Durchgang", en: "Arcade / passage", rain: true },
-  roof:    { emoji: "⛱️", de: "Überdachung", en: "Canopy", rain: true }
+  roof:    { emoji: "⛱️", de: "Überdachung", en: "Canopy", rain: true },
+  toilet:  { emoji: "🚻", de: "Toilette", en: "Toilet", amenity: true },
+  water:   { emoji: "🚰", de: "Trinkwasser", en: "Drinking water", amenity: true },
+  bin:     { emoji: "🗑️", de: "Mülleimer", en: "Bin", amenity: true },
+  glass:   { emoji: "🍾", de: "Glascontainer", en: "Bottle bank", amenity: true },
+  bench:   { emoji: "🪑", de: "Bank", en: "Bench", amenity: true }
 };
+// Map layers in the corner info (legend chips toggle them).
+const CI_MAP_GROUPS = [
+  { id: "supply", emoji: "🏪", de: "Kiosk & Co.", en: "Shops", kinds: ["kiosk", "spaeti", "drinks", "super", "fuel"], on: true },
+  { id: "toilet", emoji: "🚻", de: "Toiletten", en: "Toilets", kinds: ["toilet"], on: true },
+  { id: "water", emoji: "🚰", de: "Trinkwasser", en: "Water", kinds: ["water"], on: true },
+  { id: "rain", emoji: "☂️", de: "Unterstand", en: "Shelter", kinds: ["shelter", "stop", "arcade", "roof"], on: true },
+  { id: "bin", emoji: "🗑️", de: "Mülleimer", en: "Bins", kinds: ["bin", "glass"], on: false },
+  { id: "bench", emoji: "🪑", de: "Bänke", en: "Benches", kinds: ["bench"], on: false }
+];
+// How many of each kind are kept (nearest first) so benches can't push the kiosks out.
+const PLACE_CAPS = { kiosk: 8, spaeti: 8, drinks: 4, super: 4, fuel: 3, shelter: 4, stop: 4, arcade: 4, roof: 4, toilet: 6, water: 6, bin: 8, glass: 4, bench: 12 };
 const RAINY_CODES = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99];
 var _infoInflight = {};
 
@@ -9771,6 +10900,8 @@ function sunDay(ms, lat, lng) {
     if (prev >= -0.833 && el < -0.833) out.set = t;
     if (prev < 15 && el >= 15) out.highFrom = t;
     if (prev >= 15 && el < 15) out.highTo = t;
+    if (prev < 4 && el >= 4) out.openFrom = t;     // open squares, parks, the Isar
+    if (prev >= 4 && el < 4) out.openTo = t;
     if (prev >= 6 && el < 6) out.golden = t;
     out.maxEl = Math.max(out.maxEl, el);
     prev = el;
@@ -9862,15 +10993,51 @@ function weatherBlockHtml(an) {
     <div class="ci-hours">${strip}</div>`;
 }
 
+// "Weils so ein offener Platz ist sollte die Sonne schon länger da sein":
+// the 15° rule is for streets between houses. The crew says what kind of
+// place a corner is; open places get the sun from ~4° above the horizon.
+function cornerIsOpenPlace(cornerId) {
+  const open = getEmojiVoteData(cornerId, "offen").count;
+  const houses = getEmojiVoteData(cornerId, "haeuser").count;
+  if (open !== houses) return open > houses;
+  const c = getAllCorners().find((x) => x.id === cornerId);
+  const text = `${c?.name || ""} ${c?.area || ""} ${(c?.tags || []).join(" ")} ${c?.description || ""}`.toLowerCase();
+  return /isar|park|wiese|flaucher|ufer|see|platz|garten|blick|hügel|huegel/.test(text);
+}
+function bindPlaceVotes(container, corner) {
+  container.querySelectorAll("[data-place-vote]").forEach((btn) => btn.addEventListener("click", () => {
+    const key = btn.dataset.placeVote;
+    const other = key === "offen" ? "haeuser" : "offen";
+    if (getEmojiVoteData(corner.id, other).myVote) voteEmoji(corner.id, other);   // one opinion per person
+    voteEmoji(corner.id, key);
+    setTimeout(() => {
+      const box = container.querySelector(".ci-sun");
+      if (!box) return;
+      box.innerHTML = sunBlockHtml(corner);
+      bindPlaceVotes(container, corner);
+    }, 150);
+  }));
+}
 function sunBlockHtml(corner) {
   const s = sunDay(Date.now(), corner.lat, corner.lng);
   const parts = [];
   if (s.set) parts.push(`🌇 ${T("Sonnenuntergang", "Sunset")} <strong>${clockOf(s.set)}</strong>`);
   if (s.golden) parts.push(`${T("Golden Hour ab", "golden hour from")} ${clockOf(s.golden)}`);
-  const high = s.highFrom && s.highTo
-    ? `${T("Zwischen Häusern kommt die Sonne nur hoch genug (über 15°) von ca.", "Between buildings the sun is only high enough (above 15°) from about")} ${clockOf(s.highFrom)} ${T("bis", "to")} ${clockOf(s.highTo)}.`
-    : T("Die Sonne steht heute zu tief für Straßen zwischen Häusern — offene Spots (Isar, Parks) bevorzugen.", "The sun stays too low today for streets between buildings — prefer open spots (Isar, parks).");
-  return `<div class="ci-line">${parts.join(" · ")}</div><div class="ci-small">${high}</div>`;
+  const open = cornerIsOpenPlace(corner.id);
+  const line = open
+    ? (s.openFrom && s.openTo
+      ? `🏞️ ${T("Offener Platz: Sonne von ca.", "Open place: sun from about")} <strong>${clockOf(s.openFrom)}</strong> ${T("bis", "to")} <strong>${clockOf(s.openTo)}</strong> ${T("(ab 4° über dem Horizont).", "(from 4° above the horizon).")}`
+      : T("Heute kaum Sonne über dem Horizont.", "Hardly any sun above the horizon today."))
+    : (s.highFrom && s.highTo
+      ? `🏘️ ${T("Zwischen Häusern kommt die Sonne nur hoch genug (über 15°) von ca.", "Between buildings the sun is only high enough (above 15°) from about")} ${clockOf(s.highFrom)} ${T("bis", "to")} ${clockOf(s.highTo)}.`
+      : T("Die Sonne steht heute zu tief für Straßen zwischen Häusern — offene Spots (Isar, Parks) bevorzugen.", "The sun stays too low today for streets between buildings — prefer open spots (Isar, parks)."));
+  const o = getEmojiVoteData(corner.id, "offen");
+  const h = getEmojiVoteData(corner.id, "haeuser");
+  return `<div class="ci-line">${parts.join(" · ")}</div><div class="ci-small">${line}</div>
+    <div class="ci-votes ci-place-vote" data-corner-id="${escapeHtml(corner.id)}"><span class="ci-small">${T("Wie liegt der Corner?", "What kind of place?")}</span>
+      <button class="action-btn ${o.myVote ? "voted" : ""}" data-place-vote="offen">🏞️ ${T("Offener Platz", "Open place")} ${o.count || ""}</button>
+      <button class="action-btn ${h.myVote ? "voted" : ""}" data-place-vote="haeuser">🏘️ ${T("Zwischen Häusern", "Between houses")} ${h.count || ""}</button>
+    </div>`;
 }
 
 // Opening hours in the common OSM syntax ("Mo-Sa 07:00-22:00; Su off", "24/7",
@@ -9925,10 +11092,16 @@ function getNearbyPlaces(corner) {
     `nwr["amenity"="shelter"](around:600,${lat},${lng});` +
     `nwr["covered"~"^(yes|arcade)$"]["highway"](around:400,${lat},${lng});` +
     `nwr["building"="roof"](around:400,${lat},${lng});` +
-    `);out center tags 150;`;
+    `nwr["amenity"="toilets"](around:800,${lat},${lng});` +
+    `nwr["amenity"="drinking_water"](around:800,${lat},${lng});` +
+    `nwr["amenity"="recycling"]["recycling:glass_bottles"="yes"](around:600,${lat},${lng});` +
+    `nwr["amenity"="waste_basket"](around:200,${lat},${lng});` +
+    `nwr["amenity"="bench"](around:150,${lat},${lng});` +
+    `);out center tags 400;`;
   const tryMirror = (i) => fetchJson(`${OVERPASS_URLS[i]}?data=${encodeURIComponent(q)}`, 25000)
     .catch((err) => { if (i + 1 < OVERPASS_URLS.length) return tryMirror(i + 1); throw err; });
-  return cachedFetch(`cg.osm.${corner.id}`, PLACES_TTL_MS, () => tryMirror(0).then((json) => condensePlaces(json, corner)));
+  // v2: the query now also brings toilets, water, bins and benches.
+  return cachedFetch(`cg.osm2.${corner.id}`, PLACES_TTL_MS, () => tryMirror(0).then((json) => condensePlaces(json, corner)));
 }
 function condensePlaces(json, corner) {
   const out = [];
@@ -9946,20 +11119,40 @@ function condensePlaces(json, corner) {
     else if (t.amenity === "shelter") kind = t.shelter_type === "public_transport" ? "stop" : "shelter";
     else if (t.covered && t.highway) kind = "arcade";
     else if (t.building === "roof") kind = "roof";
+    else if (t.amenity === "toilets") kind = "toilet";
+    else if (t.amenity === "drinking_water") kind = "water";
+    else if (t.amenity === "recycling") kind = "glass";
+    else if (t.amenity === "waste_basket") kind = "bin";
+    else if (t.amenity === "bench") kind = "bench";
     if (!kind) return;
-    out.push({ kind, name: String(t.name || t.brand || t.operator || "").slice(0, 60), hours: String(t.opening_hours || "").slice(0, 120), lat, lng, d: Math.round(haversine(corner.lat, corner.lng, lat, lng)) });
+    const entry = { kind, name: String(t.name || t.brand || t.operator || "").slice(0, 60), hours: String(t.opening_hours || "").slice(0, 120), lat, lng, d: Math.round(haversine(corner.lat, corner.lng, lat, lng)) };
+    if (kind === "toilet") { entry.fee = t.fee === "no" ? "no" : t.fee === "yes" ? "yes" : ""; entry.wc = t.wheelchair === "yes"; }
+    out.push(entry);
   });
-  return out.sort((a, b) => a.d - b.d).slice(0, 60);
+  const counts = {};
+  return out.sort((a, b) => a.d - b.d).filter((p) => {
+    counts[p.kind] = (counts[p.kind] || 0) + 1;
+    return counts[p.kind] <= (PLACE_CAPS[p.kind] || 6);
+  });
+}
+
+// Extra facts shown with a place (formatted at render time, not cached).
+function placeInfo(p) {
+  const out = [];
+  if (p.fee === "no") out.push(T("kostenlos", "free"));
+  else if (p.fee === "yes") out.push(T("kostenpflichtig", "paid"));
+  if (p.wc) out.push("♿");
+  return out.join(" · ");
 }
 
 function placeRowHtml(p) {
   const k = PLACE_KINDS[p.kind];
-  const open = PLACE_KINDS[p.kind].supply ? osmOpenNow(p.hours) : null;
+  const open = PLACE_KINDS[p.kind].supply || p.kind === "toilet" ? osmOpenNow(p.hours) : null;
   const status = open === true ? `<span class="ci-open">● ${T("offen", "open")}</span> · ` : open === false ? `<span class="ci-closed">● ${T("zu", "closed")}</span> · ` : "";
   return `<div class="ci-place">
     <div class="ci-p-main">
       <div class="ci-p-name">${k.emoji} ${escapeHtml(p.name || T(k.de, k.en))}</div>
-      <div class="ci-p-meta">${status}${formatDistance(p.d)}${p.name ? ` · ${escapeHtml(T(k.de, k.en))}` : ""}${p.hours && open === null ? ` · ${escapeHtml(p.hours)}` : ""}</div>
+      <div class="ci-p-meta">${status}${formatDistance(p.d)}${p.name ? ` · ${escapeHtml(T(k.de, k.en))}` : ""}${placeInfo(p) ? ` · ${escapeHtml(placeInfo(p))}` : ""}${p.hours && open === null ? ` · ${escapeHtml(p.hours)}` : ""}</div>
     </div>
     <a class="action-btn" href="${escapeHtml(walkingRouteUrl(p.lat, p.lng))}" target="_blank" rel="noopener">🧭 Route</a>
   </div>`;
@@ -10019,25 +11212,130 @@ function rainAlternativesHtml(corner) {
     </div>`).join("");
 }
 
+// Nearest toilet and drinking fountain ("No bathroom" / "Trinkwasser auch dabei").
+function amenityBlockHtml(places) {
+  const toilets = places.filter((p) => p.kind === "toilet").slice(0, 2);
+  const water = places.filter((p) => p.kind === "water").slice(0, 1);
+  const rows = [...toilets, ...water];
+  if (!rows.length) return `<div class="ci-small">${T("Laut OpenStreetMap keine öffentliche Toilette und kein Trinkbrunnen im Umkreis von 800 m — eure Check-in-Notizen helfen den anderen.", "No public toilet or drinking fountain within 800 m according to OpenStreetMap — your check-in notes help the others.")}</div>`;
+  return rows.map(placeRowHtml).join("") + (toilets.length ? "" : `<div class="ci-small">${T("Keine öffentliche Toilette im Umkreis von 800 m eingetragen.", "No public toilet within 800 m on the map.")}</div>`);
+}
+
+function ciGroupOn(g) {
+  try { const v = JSON.parse(localStorage.getItem("cg.ciLayers") || "{}"); return g.id in v ? !!v[g.id] : g.on; }
+  catch (e) { return g.on; }
+}
+function setCiGroupOn(g, on) {
+  let v = {};
+  try { v = JSON.parse(localStorage.getItem("cg.ciLayers") || "{}"); } catch (e) { v = {}; }
+  v[g.id] = !!on;
+  localStorage.setItem("cg.ciLayers", JSON.stringify(v));
+}
+
+// The little map at the bottom of the corner info. Built when it scrolls into
+// view (saves tiles), one map at a time.
+var _ciMap = null;
+function mountCornerInfoMap(container, corner) {
+  const el = container.querySelector(".ci-map");
+  if (!el || typeof L === "undefined") return;
+  const build = () => {
+    if (!el.isConnected || container._ciMap) return;
+    if (_ciMap) { try { _ciMap.remove(); } catch (e) {} _ciMap = null; }
+    const map = L.map(el, { zoomControl: true, attributionControl: false, scrollWheelZoom: false, tap: true });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, crossOrigin: true }).addTo(map);
+    map.setView([corner.lat, corner.lng], 16);
+    _ciMap = container._ciMap = map;
+    container._ciLayers = [];
+    drawCornerInfoMap(container, corner);
+    setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 80);
+  };
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) { io.disconnect(); build(); }
+    }, { rootMargin: "200px" });
+    io.observe(el);
+  } else {
+    build();
+  }
+}
+
+function drawCornerInfoMap(container, corner) {
+  const map = container._ciMap;
+  if (!map) return;
+  (container._ciLayers || []).forEach((l) => { try { map.removeLayer(l); } catch (e) {} });
+  container._ciLayers = [];
+  const add = (layer) => { layer.addTo(map); container._ciLayers.push(layer); };
+  add(L.marker([corner.lat, corner.lng], {
+    icon: L.divIcon({ className: "", html: `<div class="ci-map-corner">📍</div>`, iconSize: [34, 34], iconAnchor: [17, 32] }),
+    zIndexOffset: 1000
+  }).bindPopup(`<strong>${escapeHtml(corner.name)}</strong>`));
+  if (STATE.geoActive && STATE.userPos) {
+    add(L.circleMarker([STATE.userPos.lat, STATE.userPos.lng], { radius: 7, color: "#fff", weight: 2, fillColor: "#6cb6ff", fillOpacity: 1 }).bindPopup(T("Du", "You")));
+  }
+  const places = container._places || [];
+  const counts = {};
+  const visible = [];
+  CI_MAP_GROUPS.forEach((g) => {
+    const list = places.filter((p) => g.kinds.includes(p.kind));
+    counts[g.id] = list.length;
+    if (ciGroupOn(g)) visible.push(...list);
+  });
+  visible.forEach((p) => {
+    const k = PLACE_KINDS[p.kind];
+    const open = k.supply || p.kind === "toilet" ? osmOpenNow(p.hours) : null;
+    const status = open === true ? `<span class="ci-open">● ${T("offen", "open")}</span><br>` : open === false ? `<span class="ci-closed">● ${T("zu", "closed")}</span><br>` : "";
+    add(L.marker([p.lat, p.lng], {
+      icon: L.divIcon({ className: "", html: `<div class="ci-map-pin ${open === false ? "closed" : ""}">${k.emoji}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] })
+    }).bindPopup(`<strong>${escapeHtml(p.name || T(k.de, k.en))}</strong><br>${status}${formatDistance(p.d)}${placeInfo(p) ? ` · ${escapeHtml(placeInfo(p))}` : ""}${p.hours && open === null ? `<br><small>${escapeHtml(p.hours)}</small>` : ""}<br><a href="${escapeHtml(walkingRouteUrl(p.lat, p.lng))}" target="_blank" rel="noopener">🧭 Route</a>`));
+  });
+  container.querySelectorAll("[data-ci-group]").forEach((b) => {
+    const n = b.querySelector(".ci-chip-n");
+    if (n) n.textContent = counts[b.dataset.ciGroup] ? String(counts[b.dataset.ciGroup]) : "";
+  });
+  // Frame the corner and what is switched on (within 600 m, so one far
+  // supermarket doesn't zoom the map out).
+  const near = visible.filter((p) => p.d <= 600).map((p) => [p.lat, p.lng]);
+  if (near.length && !container._ciFramed) {
+    container._ciFramed = true;
+    map.fitBounds(L.latLngBounds([[corner.lat, corner.lng], ...near]), { padding: [24, 24], maxZoom: 17 });
+  }
+}
+
 function renderCornerInfoSection(cornerId, container) {
   const corner = getAllCorners().find((c) => c.id === cornerId);
   if (!container || !corner || typeof corner.lat !== "number") return;
   container.innerHTML = `<h3>🌤️ ${T("Corner-Check", "Corner check")}</h3>
     <div class="ci-block"><div class="ci-h">☀️ ${T("Sonne & Wetter heute", "Sun & weather today")}</div>
       <div class="ci-wx"><div class="ci-small">${T("Wetter wird geladen …", "Loading weather …")}</div></div>
-      ${sunBlockHtml(corner)}
+      <div class="ci-sun">${sunBlockHtml(corner)}</div>
     </div>
     <div class="ci-block"><div class="ci-h">🏪 ${T("Nachschub in der Nähe", "Supplies nearby")}</div>
       <div class="ci-supply"><div class="ci-small">${T("Suche Kiosk, Späti & Tankstelle …", "Looking for kiosks, shops & petrol stations …")}</div></div>
+    </div>
+    <div class="ci-block"><div class="ci-h">🚻 ${T("Toilette & Trinkwasser", "Toilet & drinking water")}</div>
+      <div class="ci-amen"><div class="ci-small">${T("Suche Toiletten & Trinkbrunnen …", "Looking for toilets & fountains …")}</div></div>
     </div>
     <div class="ci-block ci-rainblock"><div class="ci-h">☔ ${T("Bei Regen", "When it rains")}</div>
       <div class="ci-rain-vote" data-corner-id="${escapeHtml(corner.id)}">${rainVoteHtml(corner.id)}</div>
       <div class="ci-shelter"></div>
       <div class="ci-alt">${rainAlternativesHtml(corner)}</div>
     </div>
-    <div class="ci-attr">${T("Wetter", "Weather")}: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> · ${T("Orte", "Places")}: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>`;
+    <div class="ci-block ci-mapblock"><div class="ci-h">🗺️ ${T("Karte: was ist in der Nähe?", "Map: what's nearby?")}</div>
+      <div class="ci-map-legend">${CI_MAP_GROUPS.map((g) => `<button class="ci-chip ${ciGroupOn(g) ? "on" : ""}" data-ci-group="${g.id}">${g.emoji} ${T(g.de, g.en)} <span class="ci-chip-n"></span></button>`).join("")}</div>
+      <div class="ci-map" id="ci-map-${escapeHtml(corner.id)}"></div>
+    </div>
+    <div class="ci-attr">${T("Wetter", "Weather")}: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> · ${T("Orte & Karte", "Places & map")}: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>`;
   bindRainVotes(container.querySelector(".ci-rain-vote"), corner.id);
+  bindPlaceVotes(container, corner);
   container.querySelectorAll("[data-open-corner]").forEach((b) => b.addEventListener("click", () => focusDetailSection(b.dataset.openCorner, ".corner-info-section")));
+  container.querySelectorAll("[data-ci-group]").forEach((b) => b.addEventListener("click", () => {
+    const g = CI_MAP_GROUPS.find((x) => x.id === b.dataset.ciGroup);
+    if (!g) return;
+    setCiGroupOn(g, !ciGroupOn(g));
+    b.classList.toggle("on", ciGroupOn(g));
+    drawCornerInfoMap(container, corner);
+  }));
+  mountCornerInfoMap(container, corner);
   const stillHere = () => container.isConnected && STATE.detailCornerId === cornerId;
   getWeather(corner.lat, corner.lng).then((wx) => {
     if (!stillHere()) return;
@@ -10054,7 +11352,11 @@ function renderCornerInfoSection(cornerId, container) {
     container.querySelector(".ci-shelter").innerHTML = shelters.length
       ? `<div class="ci-small" style="margin-top:6px;">${T("Überdacht in der Nähe", "Covered spots nearby")}:</div>${shelters.map(placeRowHtml).join("")}`
       : "";
+    container.querySelector(".ci-amen").innerHTML = amenityBlockHtml(places);
+    container._places = places;
+    if (container._ciMap) drawCornerInfoMap(container, corner);
   }).catch(() => {
+    if (stillHere()) container.querySelector(".ci-amen").innerHTML = `<div class="ci-small">${T("Gerade nicht erreichbar.", "Unreachable right now.")}</div>`;
     if (!stillHere()) return;
     container.querySelector(".ci-supply").innerHTML = `<div class="ci-small">${T("Karte gerade nicht erreichbar.", "Map data unreachable right now.")} <a href="https://www.google.com/maps/search/kiosk/@${corner.lat},${corner.lng},16z" target="_blank" rel="noopener">${T("Kiosk in Google Maps suchen", "Search kiosks on Google Maps")}</a></div>`;
   });
@@ -10111,6 +11413,15 @@ function distanceLabel(c) {
   return d < 1000 ? `${Math.round(d)} m` : `${(d / 1000).toFixed(1)} km`;
 }
 
+// "Es muss erkennbar sein wer der Urheber des Corners ist und Datum"
+function cornerOriginHtml(c) {
+  if (!c.isCustom) return `🗺️ ${T("Aus der Original-Liste „Cornern als Lebensstil“", "From the original list “Cornern als Lebensstil”")}`;
+  const who = c.createdBy ? (c.createdById ? `<button class="people-chip" data-user-profile="${escapeHtml(c.createdById)}">${escapeHtml(c.createdBy)}</button>` : `<strong>${escapeHtml(c.createdBy)}</strong>`) : T("jemandem aus der Crew", "someone from the crew");
+  const ts = Number(c.createdAt) || Number(String(c.id || "").split("-")[1]) || 0;
+  const when = ts > 1500000000000 ? ` ${T("am", "on")} ${new Date(ts).toLocaleDateString(STATE.lang === "en" ? "en-GB" : "de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}` : "";
+  return `✍️ ${T("Eingetragen von", "Added by")} ${who}${when}`;
+}
+
 function openDetail(cornerId) {
   const c = getAllCorners().find((x) => x.id === cornerId);
   if (!c) return;
@@ -10128,6 +11439,7 @@ function openDetail(cornerId) {
   const capturedHtml = capturedInfo?.team ? `<div class="detail-people-here" style="border-color:${TEAMS[capturedInfo.team]?.color || 'var(--line)'};color:${TEAMS[capturedInfo.team]?.color || 'var(--fg)'};background:rgba(255,255,255,0.05);">${TEAMS[capturedInfo.team]?.emoji || ''} ${T("Eingenommen von Team", "Captured by team")} ${TEAMS[capturedInfo.team]?.name || capturedInfo.team}</div>` : "";
   const teamPickerHtml = STATE.manualCheckinId === cornerId ? renderTeamPickerHtml() : "";
   $("#detail-content").innerHTML = `
+    ${detailTopBarHtml(c)}
     <div class="detail-hero-photo">${photoSrc ? `<img src="${photoSrc}" alt="${escapeHtml(c.name)}" />` : `<div class="card-photo-empty" style="height:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h3l2-3h8l2 3h3v13H3z"/><circle cx="12" cy="13" r="4"/></svg></div>`}</div>
     <div class="detail-stats">
       <div class="detail-stat"><span class="stat-num">${visits}</span><span class="stat-label">${T("Besuche", "Visits")}</span></div>
@@ -10136,12 +11448,14 @@ function openDetail(cornerId) {
       <div class="detail-stat"><span class="stat-num">${distanceLabel(c)}</span><span class="stat-label">${T("Entfernung", "Distance")}</span></div>
     </div>
     <div class="detail-where">📍 ${escapeHtml(c.area || "München")}${typeof c.lat === "number" ? ` · <span class="dw-coords">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span>` : ""}</div>
+    <div class="detail-origin">${cornerOriginHtml(c)}</div>
     ${capturedHtml}
-    ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("gerade hier", "here now")}: ${peopleHere.map((p) => escapeHtml(p)).join(", ")}</div>` : ""}
+    ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("gerade hier", "here now")}: ${peopleAtCornerDetailed(c.id).map((p) => p.id ? `<button class="people-chip" data-user-profile="${escapeHtml(p.id)}">${escapeHtml(p.label)}</button>` : escapeHtml(p.label)).join(" ")}</div>` : ""}
     ${peopleMessageTargets.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">${peopleMessageTargets.map((friend) => `<button class="action-btn" data-dm-user="${friend.id}">💬 ${escapeHtml(friend.nickname || friend.name || friend.id)}</button>`).join("")}</div>` : ""}
     <div class="gossip-section" data-corner-id="${c.id}"></div>
     <div class="detail-quick-actions">
       <button class="detail-quick-btn" data-scroll-target=".corner-info-section">🌤️ ${T("Sonne · Kiosk · Regen", "Sun · Kiosk · Rain")}</button>
+      <button class="detail-quick-btn" data-scroll-target=".ci-mapblock">🗺️ ${T("Kiosk · Klo · Wasser", "Kiosk · Loo · Water")}</button>
       ${_backendFeatures.ok && _cornerDates.primed ? `<button class="detail-quick-btn" data-scroll-target=".cornerdate-section">📅 Cornerdate</button>` : ""}
       <button class="detail-quick-btn" data-scroll-target=".corner-chat-section">💬 ${T("Chat", "Chat")}</button>
       <button class="detail-quick-btn" data-scroll-target=".comments-section">📝 ${T("Kommentare", "Comments")}</button>
@@ -10175,9 +11489,10 @@ function openDetail(cornerId) {
       ${canEditCorner(c) ? `<button class="action-btn" data-action="edit-corner" data-id="${c.id}">✏️ ${T("Bearbeiten", "Edit")}</button>` : ""}
     </div>`;
   const detailContent = $("#detail-content");
-  detailContent.querySelector(".checkin-btn")?.addEventListener("click", (e) => { manualCheckin(e.target.closest("[data-id]").dataset.id); setTimeout(() => openDetail(cornerId), 100); });
+  detailContent.querySelectorAll(".checkin-btn").forEach((b) => b.addEventListener("click", (e) => { manualCheckin(e.target.closest("[data-id]").dataset.id); setTimeout(() => openDetail(cornerId), 100); }));
+  detailContent.querySelector('[data-action="follow-me"]')?.addEventListener("click", openFollowMeDialog);
   detailContent.querySelector('[data-action="map-detail"]')?.addEventListener("click", () => { closeDetail(); $(`.tab[data-view="map"]`).click(); setTimeout(() => STATE.mainMap?.flyTo([c.lat, c.lng], 17, { duration: 0.7 }), 250); });
-  detailContent.querySelector('[data-action="route-detail"]')?.addEventListener("click", () => { window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank"); });
+  detailContent.querySelectorAll('[data-action="route-detail"]').forEach((b) => b.addEventListener("click", () => { window.open(walkingRouteUrl(c.lat, c.lng), "_blank"); }));
   detailContent.querySelector('[data-action="share-corner"]')?.addEventListener("click", () => { shareCornerLink(c.id); });
   detailContent.querySelector('[data-action="whatsapp-corner"]')?.addEventListener("click", () => openWhatsApp(cornerWhatsAppText(c.id)));
   detailContent.querySelector('[data-action="qr-corner"]')?.addEventListener("click", () => openQrDialog(c));
@@ -10245,13 +11560,24 @@ function renderCards() {
       </div>`;
     root.appendChild(card);
   });
-  $$(".photo-btn").forEach((btn) => btn.addEventListener("click", () => $(`.photo-input[data-id="${btn.dataset.id}"]`).click()));
-  $$(".photo-input").forEach((inp) => inp.addEventListener("change", (e) => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(f, inp.dataset.id); }));
-  $$(".detail-link").forEach((btn) => btn.addEventListener("click", () => openDetail(btn.dataset.id)));
-  $$("[data-gossip-card]").forEach((btn) => btn.addEventListener("click", () => focusGossip(btn.dataset.gossipCard)));
-  $$('[data-action="map"]').forEach((btn) => btn.addEventListener("click", () => { const c = getAllCorners().find((x) => x.id === btn.dataset.id); $(`.tab[data-view="map"]`).click(); setTimeout(() => { if (STATE.mainMap) { STATE.mainMap.flyTo([c.lat, c.lng], 17, { duration: 0.7 }); STATE.mainMarkers[c.id]?.openPopup?.(); } }, 250); }));
-  $$('[data-action="route"]').forEach((btn) => btn.addEventListener("click", () => { const c = getAllCorners().find((x) => x.id === btn.dataset.id); window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank"); }));
-  $$(".checkin-btn").forEach((btn) => btn.addEventListener("click", () => manualCheckin(btn.dataset.id)));
+  root.querySelectorAll(".photo-btn").forEach((btn) => btn.addEventListener("click", () => $(`.photo-input[data-id="${btn.dataset.id}"]`).click()));
+  root.querySelectorAll(".photo-input").forEach((inp) => inp.addEventListener("change", (e) => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(f, inp.dataset.id); }));
+  root.querySelectorAll(".detail-link").forEach((btn) => btn.addEventListener("click", () => openDetail(btn.dataset.id)));
+  // "der Detailsbutton ist schwierig zu erkennen": the whole card opens it.
+  $$("#cards .card").forEach((card) => {
+    const id = card.id.replace(/^card-/, "");
+    card.querySelectorAll(".card-body, .card-photo img").forEach((el) => el.addEventListener("click", (e) => {
+      if (e.target.closest("button, a, input")) return;
+      openDetail(id);
+    }));
+  });
+  root.querySelectorAll("[data-gossip-card]").forEach((btn) => btn.addEventListener("click", () => focusGossip(btn.dataset.gossipCard)));
+  root.querySelectorAll('[data-action="map"]').forEach((btn) => btn.addEventListener("click", () => { const c = getAllCorners().find((x) => x.id === btn.dataset.id); $(`.tab[data-view="map"]`).click(); setTimeout(() => { if (STATE.mainMap) { STATE.mainMap.flyTo([c.lat, c.lng], 17, { duration: 0.7 }); STATE.mainMarkers[c.id]?.openPopup?.(); } }, 250); }));
+  root.querySelectorAll('[data-action="route"]').forEach((btn) => btn.addEventListener("click", () => { const c = getAllCorners().find((x) => x.id === btn.dataset.id); window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, "_blank"); }));
+  // Only the list's own buttons: binding every .checkin-btn in the document
+  // also hit the open corner detail again on each re-render, so one tap there
+  // checked in and right back out.
+  root.querySelectorAll(".checkin-btn").forEach((btn) => btn.addEventListener("click", () => manualCheckin(btn.dataset.id)));
   updateCheckinButtons();
 }
 
@@ -10264,7 +11590,8 @@ function rebuildMainMarkers() {
     const icon = L.divIcon({ className: "", html: `<div class="corner-marker ${c.isCustom ? "custom" : ""}" data-id="${c.id}"><span class="num">${cornerNumber(c.id)}</span>${capture ? `<span class="team-badge">${TEAMS[capture.team]?.emoji || "🏳️"}</span>` : ""}</div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
     const marker = L.marker([c.lat, c.lng], { icon }).addTo(STATE.mainMap);
     marker.bindPopup(`<strong>${escapeHtml(c.name)}</strong><br><small>${escapeHtml(c.area || "")}</small>${capture ? `<br><small>${TEAMS[capture.team]?.emoji || ''} ${TEAMS[capture.team]?.name || ''}</small>` : ""}`);
-    marker.on("click", () => { $(`.tab[data-view="list"]`).click(); setTimeout(() => document.getElementById("card-" + c.id)?.scrollIntoView({ behavior: "smooth", block: "center" }), 150); });
+    // The map is the landing page now: a tap opens the corner right away.
+    marker.on("click", () => { marker.closePopup(); openDetail(c.id); });
     STATE.mainMarkers[c.id] = marker;
   });
   renderLiveLocationMarkers();
@@ -10403,7 +11730,7 @@ function renderRewardLeaderboard(container, {
     container.innerHTML = `<div class="leaderboard-section"><h3>${kind === "karma" ? "🎁" : "✨"} ${title}</h3><p style="color:var(--fg-dim);font-size:13px;">${emptyText}</p></div>`;
     return;
   }
-  container.innerHTML = `<div class="leaderboard-section"><h3>${kind === "karma" ? "🎁" : "✨"} ${title}</h3><ul class="leaderboard-list">${sorted.map((x, i) => { const level = getLevel(x.total).level; const tier = getLevelTier(level); const team = TEAMS[STATE.teams[x.user]?.team] || TEAMS[x.user === currentUserKey() ? STATE.team : ""]; return `<li class="leaderboard-item ${x.user === currentUserKey() ? 'current-user' : ''}"><span class="lb-rank">${i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</span><span class="lb-name">${team?.emoji || '👤'} ${escapeHtml(x.nickname)} ${x.user === currentUserKey() ? T('(du)', '(you)') : ''}</span><span class="lb-score" style="color:${accent};">${tier.emoji} Lv.${level} · ${x.total}</span></li>`; }).join("")}</ul></div>`;
+  container.innerHTML = `<div class="leaderboard-section"><h3>${kind === "karma" ? "🎁" : "✨"} ${title}</h3><ul class="leaderboard-list">${sorted.map((x, i) => { const level = getLevel(x.total).level; const tier = getLevelTier(level); const team = TEAMS[STATE.teams[x.user]?.team] || TEAMS[x.user === currentUserKey() ? STATE.team : ""]; return `<li class="leaderboard-item ${x.user === currentUserKey() ? 'current-user' : ''}"><span class="lb-rank">${i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}</span><span class="lb-name lb-person" data-user-profile="${escapeHtml(x.user)}">${team?.emoji || '👤'} ${escapeHtml(x.nickname)} ${x.user === currentUserKey() ? T('(du)', '(you)') : ''}</span><span class="lb-score" style="color:${accent};">${tier.emoji} Lv.${level} · ${x.total}</span></li>`; }).join("")}</ul></div>`;
 }
 
 function renderPointsLeaderboard() {
@@ -10551,31 +11878,47 @@ var _pmapLayers = [];         // markers/lines currently drawn
 var _pmapTimer = null;        // animation interval
 var _pmapIndex = null;        // visits shown (null = all)
 
-// My visits, chronologically, enriched with the corner's coordinates.
+// My visits, chronologically, enriched with the corner's coordinates. One
+// entry per corner and day (repeated check-ins the same day count once), and
+// old check-ins without a team get the team I had back then.
 function myVisitLog() {
   const me = currentUserKey();
   const byId = {};
   getAllCorners().forEach((c) => { byId[c.id] = c; });
-  const log = [];
+  const raw = [];
   Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
     const corner = byId[cornerId];
     if (!corner || typeof corner.lat !== "number" || typeof corner.lng !== "number") return;
     Object.values(entries || {}).forEach((v) => {
       if (!v) return;
-      const mine = v.userId ? v.userId === me : v.user === STATE.nickname;
+      const mine = v.userId ? (v.userId === me || isMyKey(v.userId)) : v.user === STATE.nickname;
       if (!mine) return;
-      log.push({ cornerId, name: corner.name, lat: corner.lat, lng: corner.lng, team: v.team || "", time: Number(v.time || 0) });
+      raw.push({ cornerId, name: corner.name, area: corner.area || "", lat: corner.lat, lng: corner.lng, team: v.team || teamAtTime(Number(v.time || 0)), time: Number(v.time || 0) });
     });
   });
-  return log.sort((a, b) => a.time - b.time);
+  raw.sort((a, b) => a.time - b.time);
+  const seen = new Set();
+  return raw.filter((v) => {
+    const k = v.cornerId + "|" + new Date(v.time).toDateString();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+// Which team did I have at a given moment? (teamHistory: newest first)
+function teamAtTime(ms) {
+  const hist = Array.isArray(STATE.teamHistory) ? STATE.teamHistory.filter((h) => h && h.team) : [];
+  if (!hist.length) return "";
+  const hit = hist.find((h) => Number(h.changedAt || 0) <= ms);
+  return (hit || hist[hist.length - 1]).team;
 }
 
 function myVisitCount(cornerId) {
-  const entries = STATE.visits?.[cornerId] ? Object.values(STATE.visits[cornerId]) : [];
-  return entries.filter((v) => v && v.user === STATE.nickname).length;
+  return myVisitLog().filter((v) => v.cornerId === cornerId).length;
 }
 
-function pieIconHtml(slices, size) {
+function pieIconHtml(slices, size, extraClass = "") {
   // conic-gradient pie; kept semi-transparent so the map stays readable
   let acc = 0;
   const stops = slices.map((sl) => {
@@ -10584,7 +11927,7 @@ function pieIconHtml(slices, size) {
     return `${sl.color} ${from.toFixed(2)}deg ${to.toFixed(2)}deg`;
   }).join(", ");
   const bg = slices.length ? `conic-gradient(${stops})` : NEUTRAL_TEAM_COLOR;
-  return `<div class="cg-pie" style="width:${size}px;height:${size}px;background:${bg};"></div>`;
+  return `<div class="cg-pie ${extraClass}" style="width:${size}px;height:${size}px;background:${bg};"></div>`;
 }
 
 // Aggregate visits into per-corner totals and team slices.
@@ -10600,14 +11943,19 @@ function aggregateVisits(log) {
   return byCorner;
 }
 
+function teamColor(teamKey) {
+  return !teamKey || teamKey === "__none" ? NEUTRAL_TEAM_COLOR : (getTeamInfo(teamKey)?.color || NEUTRAL_TEAM_COLOR);
+}
+
 function clearProfileMapLayers() {
   const map = STATE.profileMap;
   _pmapLayers.forEach((l) => { try { map.removeLayer(l); } catch (e) {} });
   _pmapLayers = [];
 }
 
-/* Draw the map for the first `upto` visits (undefined = all). */
-function drawProfileMap(upto) {
+/* Draw the map for the first `upto` visits (undefined = all). `focus` (a
+   visit) gets a pulsing ring in its team colour and pops in.              */
+function drawProfileMap(upto, focus = null) {
   const map = STATE.profileMap;
   if (!map) return;
   const full = myVisitLog();
@@ -10620,14 +11968,19 @@ function drawProfileMap(upto) {
     if (typeof c.lat !== "number" || typeof c.lng !== "number") return;
     if (visitedIds.has(c.id)) return;
     const m = L.circleMarker([c.lat, c.lng], { radius: 4, color: "#666", fillColor: "#666", fillOpacity: 0.3, weight: 1, interactive: true })
-      .bindPopup(`<strong>${escapeHtml(c.name)}</strong><br>Noch nie da — auf geht's! 🍻`);
+      .bindPopup(`<strong>${escapeHtml(c.name)}</strong><br>${T("Noch nie da — auf geht's! 🍻", "Never been — let's go! 🍻")}`);
     m.addTo(map); _pmapLayers.push(m);
   });
 
-  // thin trail connecting consecutive visits in chronological order
+  // thin trail connecting consecutive visits; the newest leg in team colour
   if (log.length > 1) {
-    const line = L.polyline(log.map((v) => [v.lat, v.lng]), { color: "#e8a93e", weight: 1.5, opacity: 0.5, dashArray: "4 4", interactive: false });
+    const line = L.polyline(log.map((v) => [v.lat, v.lng]), { color: "#e8a93e", weight: 1.5, opacity: 0.45, dashArray: "4 4", interactive: false });
     line.addTo(map); _pmapLayers.push(line);
+    if (focus) {
+      const a = log[log.length - 2], b = log[log.length - 1];
+      const leg = L.polyline([[a.lat, a.lng], [b.lat, b.lng]], { color: teamColor(b.team), weight: 3, opacity: 0.9, interactive: false, className: "pmap-leg" });
+      leg.addTo(map); _pmapLayers.push(leg);
+    }
   }
 
   // one pie per visited corner: size = number of visits, slices = teams
@@ -10635,17 +11988,19 @@ function drawProfileMap(upto) {
   Object.values(agg).forEach((e) => {
     const size = Math.min(64, 18 + (e.count - 1) * 7);   // grows only
     const slices = Object.entries(e.teams).map(([teamKey, n]) => ({
-      color: teamKey === "__none" ? NEUTRAL_TEAM_COLOR : (TEAMS[teamKey]?.color || NEUTRAL_TEAM_COLOR),
+      color: teamColor(teamKey),
       frac: n / e.count,
-      label: teamKey === "__none" ? "ohne Team" : (TEAMS[teamKey]?.name || teamKey),
+      label: teamKey === "__none" ? T("ohne Team", "no team") : (getTeamInfo(teamKey)?.name || teamKey),
       n
     }));
-    const icon = L.divIcon({ className: "cg-pie-wrap", html: pieIconHtml(slices, size), iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+    const isFocus = focus && focus.cornerId === e.cornerId;
+    const ring = isFocus ? `<div class="pmap-ring" style="border-color:${teamColor(focus.team)};"></div>` : "";
+    const icon = L.divIcon({ className: "cg-pie-wrap", html: ring + pieIconHtml(slices, size, isFocus ? "pop" : ""), iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
     const breakdown = slices.sort((a, b) => b.n - a.n)
       .map((sl) => `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${sl.color};margin-right:4px;"></span>${escapeHtml(sl.label)}: ${sl.n}x`)
       .join("<br>");
-    const m = L.marker([e.lat, e.lng], { icon, riseOnHover: true, zIndexOffset: 500 })
-      .bindPopup(`<strong>${escapeHtml(e.name)}</strong><br>${e.count}x eingecheckt<br><small>${breakdown}</small><br><small>zuletzt: ${e.last ? new Date(e.last).toLocaleDateString("de-DE") : "—"}</small>`);
+    const m = L.marker([e.lat, e.lng], { icon, riseOnHover: true, zIndexOffset: isFocus ? 1000 : 500 })
+      .bindPopup(`<strong>${escapeHtml(e.name)}</strong><br>${e.count}x ${T("eingecheckt", "checked in")}<br><small>${breakdown}</small><br><small>${T("zuletzt", "last")}: ${e.last ? new Date(e.last).toLocaleDateString("de-DE") : "—"}</small>`);
     m.addTo(map); _pmapLayers.push(m);
   });
 
@@ -10654,36 +12009,128 @@ function drawProfileMap(upto) {
   if (dateEl) {
     const shown = log.length, total = full.length;
     const last = log[log.length - 1];
-    dateEl.textContent = total === 0 ? "noch keine Check-ins"
+    dateEl.textContent = total === 0 ? T("noch keine Check-ins", "no check-ins yet")
       : `${shown}/${total} Check-ins${last ? " · " + new Date(last.time).toLocaleDateString("de-DE") : ""}`;
   }
   const scrub = document.getElementById("pmap-scrub");
   if (scrub) { scrub.max = String(Math.max(1, full.length)); if (typeof upto !== "number") scrub.value = String(full.length); }
 }
 
-function stopProfileMapAnimation() {
-  if (_pmapTimer) { clearInterval(_pmapTimer); _pmapTimer = null; }
-  const btn = document.getElementById("pmap-play");
-  if (btn) btn.textContent = "▶︎ Historie abspielen";
+/* ---- History playback: a little flight through my cornering life ----
+   Munich corners are visited up close; a trip out of town zooms out until
+   both places are visible, flies there, and zooms out again on the way back.
+   Finally everything is shown at once.                                     */
+const MUNICH_RADIUS_M = 20000;   // around MUNICH_CENTER (Marienplatz)
+const PMAP_CORNER_ZOOM = 15;
+var _pmapTour = null;     // { id } of the running playback
+var _pmapSpeed = 1;
+
+function isInMunich(v) { return haversine(v.lat, v.lng, MUNICH_CENTER[0], MUNICH_CENTER[1]) <= MUNICH_RADIUS_M; }
+function pmapSleep(ms) { return new Promise((r) => setTimeout(r, Math.max(0, ms / _pmapSpeed))); }
+function reducedMotion() { return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches; }
+
+// Leaflet camera moves as promises (resolve on moveend, with a safety timeout).
+function pmapMove(fn, seconds) {
+  const map = STATE.profileMap;
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => { if (done) return; done = true; map.off("moveend", finish); resolve(); };
+    map.on("moveend", finish);
+    setTimeout(finish, (seconds * 1000) / _pmapSpeed + 600);
+    try { fn(); } catch (e) { finish(); }
+  });
+}
+function pmapFlyTo(latlng, zoom, seconds) {
+  const map = STATE.profileMap;
+  if (reducedMotion()) { map.setView(latlng, zoom, { animate: false }); return Promise.resolve(); }
+  return pmapMove(() => map.flyTo(latlng, zoom, { duration: seconds / _pmapSpeed }), seconds);
+}
+function pmapFlyToBounds(points, seconds, maxZoom = PMAP_CORNER_ZOOM) {
+  const map = STATE.profileMap;
+  const b = L.latLngBounds(points);
+  if (reducedMotion()) { map.fitBounds(b, { padding: [36, 36], maxZoom, animate: false }); return Promise.resolve(); }
+  return pmapMove(() => map.flyToBounds(b, { padding: [36, 36], maxZoom, duration: seconds / _pmapSpeed }), seconds);
 }
 
-function playProfileMapHistory() {
-  const total = myVisitLog().length;
-  if (!total) { toast("Noch keine Check-ins zum Abspielen."); return; }
-  if (_pmapTimer) { stopProfileMapAnimation(); return; }
-  let i = 0;
+function setPmapCaption(html) {
+  const el = document.getElementById("pmap-caption");
+  if (!el) return;
+  el.innerHTML = html || "";
+  el.classList.toggle("on", !!html);
+}
+
+function stopProfileMapAnimation() {
+  _pmapTour = null;
+  setPmapCaption("");
+  const btn = document.getElementById("pmap-play");
+  if (btn) btn.textContent = "▶︎ " + T("Historie abspielen", "Play history");
+}
+
+async function playProfileMapHistory() {
+  const map = STATE.profileMap;
+  const log = myVisitLog();
+  if (!log.length) { toast(T("Noch keine Check-ins zum Abspielen.", "No check-ins to play yet.")); return; }
+  if (_pmapTour) { stopProfileMapAnimation(); _pmapIndex = null; drawProfileMap(); return; }
+  if (!map) return;
+  const tour = _pmapTour = { id: Date.now() };
+  const alive = () => _pmapTour === tour && document.body.contains(document.getElementById("profile-map"));
+  const btn = document.getElementById("pmap-play");
+  if (btn) btn.textContent = "⏹ " + T("Stopp", "Stop");
+  // Long histories run faster, so a tour stays around a minute.
+  const pace = Math.max(0.3, Math.min(1, 40 / log.length));
+  const all = log.map((v) => [v.lat, v.lng]);
   _pmapIndex = 0;
   drawProfileMap(0);
-  const btn = document.getElementById("pmap-play");
-  if (btn) btn.textContent = "⏸ Pause";
-  _pmapTimer = setInterval(() => {
-    i++;
-    _pmapIndex = i;
+  setPmapCaption(`🗺️ ${T(`${log.length} Check-ins — los geht's!`, `${log.length} check-ins — here we go!`)}`);
+  await pmapFlyToBounds(all, 1.0);
+  await pmapSleep(700);
+  let prev = null;
+  for (let i = 0; i < log.length; i++) {
+    if (!alive()) return;
+    const v = log[i];
+    const here = isInMunich(v);
+    if (prev && prev.cornerId !== v.cornerId) {
+      const dist = haversine(prev.lat, prev.lng, v.lat, v.lng);
+      if (dist > 30000 || here !== isInMunich(prev)) {
+        // Trip out of town (or back home): zoom out until both are visible, then in.
+        setPmapCaption(here ? `🏠 ${T("Zurück nach München", "Back to Munich")}` : `✈️ ${T("Ausflug", "Trip")}${v.area ? ` · ${escapeHtml(v.area)}` : ""}`);
+        await pmapFlyToBounds([[prev.lat, prev.lng], [v.lat, v.lng]], 1.4, 12);
+        if (!alive()) return;
+        await pmapSleep(500);
+        await pmapFlyTo([v.lat, v.lng], here ? PMAP_CORNER_ZOOM : 13, 1.6);
+      } else if (dist > 700 || map.getZoom() < PMAP_CORNER_ZOOM - 1) {
+        await pmapFlyTo([v.lat, v.lng], PMAP_CORNER_ZOOM, 0.6 + 0.6 * pace);
+      } else {
+        await pmapMove(() => map.panTo([v.lat, v.lng], { duration: 0.4 / _pmapSpeed }), 0.4);
+      }
+    } else if (!prev) {
+      await pmapFlyTo([v.lat, v.lng], here ? PMAP_CORNER_ZOOM : 13, 1.2);
+    }
+    if (!alive()) return;
+    _pmapIndex = i + 1;
+    drawProfileMap(i + 1, v);
     const scrub = document.getElementById("pmap-scrub");
-    if (scrub) scrub.value = String(i);
-    drawProfileMap(i);
-    if (i >= total) { stopProfileMapAnimation(); _pmapIndex = null; }
-  }, 600);
+    if (scrub) scrub.value = String(i + 1);
+    const team = getTeamInfo(v.team);
+    const date = new Date(v.time).toLocaleDateString(STATE.lang === "en" ? "en-GB" : "de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
+    setPmapCaption(`<span class="pmap-dot" style="background:${teamColor(v.team)};"></span><strong>${escapeHtml(v.name)}</strong> · ${date}${team ? ` · ${team.emoji} ${escapeHtml(team.name)}` : ""}${here ? "" : " · ✈️"}`);
+    await pmapSleep(500 + 900 * pace);
+    prev = v;
+  }
+  if (!alive()) return;
+  // Finale: zoom back out to the whole picture.
+  const corners = new Set(log.map((v) => v.cornerId)).size;
+  setPmapCaption(`🎉 <strong>${log.length}</strong> Check-ins · <strong>${corners}</strong> Corners`);
+  drawProfileMap();
+  await pmapFlyToBounds(all, 1.6);
+  await pmapSleep(2500);
+  if (_pmapTour === tour) { stopProfileMapAnimation(); _pmapIndex = null; }
+}
+
+function cyclePmapSpeed() {
+  _pmapSpeed = _pmapSpeed >= 4 ? 1 : _pmapSpeed * 2;
+  const b = document.getElementById("pmap-speed");
+  if (b) b.textContent = `⏩ ${_pmapSpeed}x`;
 }
 
 // Build the persistent wrapper once, then re-attach it after each profile render.
@@ -10693,10 +12140,14 @@ function mountProfileMap() {
   if (!_profileMapWrap) {
     _profileMapWrap = document.createElement("div");
     _profileMapWrap.innerHTML = `
-      <div id="profile-map" style="height:260px;border-radius:12px;overflow:hidden;background:var(--bg-3);"></div>
+      <div class="pmap-frame">
+        <div id="profile-map" style="height:300px;border-radius:12px;overflow:hidden;background:var(--bg-3);"></div>
+        <div id="pmap-caption" class="pmap-caption"></div>
+      </div>
       <div class="pmap-controls">
-        <button class="action-btn" id="pmap-play">▶︎ Historie abspielen</button>
-        <input type="range" id="pmap-scrub" min="0" max="1" value="1" aria-label="Zeitpunkt" />
+        <button class="action-btn" id="pmap-play">▶︎ ${T("Historie abspielen", "Play history")}</button>
+        <button class="action-btn" id="pmap-speed" title="${T("Tempo", "Speed")}">⏩ 1x</button>
+        <input type="range" id="pmap-scrub" min="0" max="1" value="1" aria-label="${T("Zeitpunkt", "Point in time")}" />
         <span id="pmap-date"></span>
       </div>`;
   }
@@ -10710,16 +12161,249 @@ function mountProfileMap() {
     if (log.length) map.fitBounds(log.map((v) => [v.lat, v.lng]), { padding: [30, 30], maxZoom: 15 });
     else map.setView([48.135, 11.555], 12);
     _profileMapWrap.querySelector("#pmap-play").addEventListener("click", playProfileMapHistory);
+    _profileMapWrap.querySelector("#pmap-speed").addEventListener("click", cyclePmapSpeed);
     _profileMapWrap.querySelector("#pmap-scrub").addEventListener("input", (e) => {
       stopProfileMapAnimation();
       const v = parseInt(e.target.value, 10) || 0;
-      const total = myVisitLog().length;
-      _pmapIndex = v >= total ? null : v;
-      drawProfileMap(_pmapIndex === null ? undefined : v);
+      const full = myVisitLog();
+      _pmapIndex = v >= full.length ? null : v;
+      const focus = v > 0 ? full[v - 1] : null;
+      drawProfileMap(_pmapIndex === null ? undefined : v, focus);
+      if (focus) STATE.profileMap.panTo([focus.lat, focus.lng], { animate: true });
     });
   }
-  drawProfileMap(_pmapIndex === null ? undefined : _pmapIndex);
+  // While a playback runs it owns the map; re-renders must not reset it.
+  if (!_pmapTour) drawProfileMap(_pmapIndex === null ? undefined : _pmapIndex);
   setTimeout(() => { try { STATE.profileMap.invalidateSize(); } catch (e) {} }, 60);
+}
+
+/* ====================== PUBLIC PROFILES ======================
+   Tap a name anywhere (friends bar, ranking, best friends, "gerade hier",
+   visitor trail, notifications) to see that person: where they are right
+   now, level, favourite corners, how often you met, their corner map.     */
+// Check-ins of any person, oldest first (by user id; very old check-ins
+// without an id are matched by nickname).
+function visitLogFor(key, nickname) {
+  const byId = {};
+  getAllCorners().forEach((c) => { byId[c.id] = c; });
+  const log = [];
+  Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
+    const corner = byId[cornerId];
+    if (!corner || typeof corner.lat !== "number" || typeof corner.lng !== "number") return;
+    Object.values(entries || {}).forEach((v) => {
+      if (!v) return;
+      if (!(v.userId ? v.userId === key : (nickname && v.user === nickname))) return;
+      log.push({ cornerId, name: corner.name, area: corner.area || "", lat: corner.lat, lng: corner.lng, team: v.team || "", time: Number(v.time || 0) });
+    });
+  });
+  // one check-in per corner and day, like on my own profile
+  const seen = new Set();
+  return log.sort((a, b) => a.time - b.time).filter((v) => {
+    const k = v.cornerId + "|" + new Date(v.time).toDateString();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+function personInfo(key) {
+  const p = STATE.points?.[key] || {};
+  const k = STATE.karmaPoints?.[key] || {};
+  const presence = STATE.friends?.[key] || null;
+  const nickname = (p.nickname && p.nickname !== "Anonym" ? p.nickname : "") || k.nickname || presence?.nickname || presence?.name || T("Unbekannt", "Unknown");
+  const teamId = STATE.teams?.[key]?.team || presence?.team || "";
+  return {
+    key, nickname, teamId,
+    aura: Number(p.total || 0), karma: Number(k.total || 0), presence,
+    visible: !!(presence && presenceIsVisible(presence)),
+    lastActive: Math.max(lastRewardTime(p), lastRewardTime(k), Number(presence?.lastSeen || 0))
+  };
+}
+
+function encounterCountWith(key) {
+  const me = currentUserKey();
+  const e = STATE.encounters?.[[me, key].sort().join("__")];
+  return Number(e?.count || 0);
+}
+
+var _upMap = null;
+var _upMapLayers = [];
+function drawUserProfileMap(log) {
+  const el = document.getElementById("up-map");
+  if (!el || typeof L === "undefined") return;
+  if (!_upMap) {
+    _upMap = L.map(el, { zoomControl: false, attributionControl: false, scrollWheelZoom: false });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, crossOrigin: true }).addTo(_upMap);
+  }
+  _upMapLayers.forEach((l) => { try { _upMap.removeLayer(l); } catch (e) {} });
+  _upMapLayers = [];
+  const agg = Object.values(aggregateVisits(log));
+  agg.forEach((e) => {
+    const size = Math.min(44, 14 + (e.count - 1) * 5);
+    const slices = Object.entries(e.teams).map(([teamKey, n]) => ({ color: teamKey === "__none" ? NEUTRAL_TEAM_COLOR : (getTeamInfo(teamKey)?.color || NEUTRAL_TEAM_COLOR), frac: n / e.count }));
+    const icon = L.divIcon({ className: "cg-pie-wrap", html: pieIconHtml(slices, size), iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+    const m = L.marker([e.lat, e.lng], { icon }).bindPopup(`<strong>${escapeHtml(e.name)}</strong><br>${e.count}x`);
+    m.addTo(_upMap);
+    _upMapLayers.push(m);
+  });
+  setTimeout(() => {
+    try {
+      _upMap.invalidateSize();
+      if (agg.length) _upMap.fitBounds(agg.map((e) => [e.lat, e.lng]), { padding: [24, 24], maxZoom: 14 });
+      else _upMap.setView([48.137, 11.575], 11);
+    } catch (e) {}
+  }, 60);
+}
+
+function renderUserProfile(key, achievements) {
+  const info = personInfo(key);
+  const team = getTeamInfo(info.teamId);
+  const auraLv = getLevel(info.aura).level;
+  const karmaLv = getLevel(info.karma).level;
+  const tier = getLevelTier(auraLv);
+  const matrix = getMatrixIdentity(info.aura, info.karma);
+  const log = visitLogFor(key, info.nickname);
+  const agg = Object.values(aggregateVisits(log)).sort((a, b) => b.count - a.count || b.last - a.last);
+  const corner = info.visible && info.presence?.atCorner ? getAllCorners().find((c) => c.id === info.presence.atCorner) : null;
+  const avail = AVAILABILITY[info.presence?.status] || null;
+  let status;
+  if (corner) {
+    const since = Number(info.presence.checkedInAt || 0);
+    status = `<div class="up-status live">🟢 ${T("Gerade am", "Right now at")} <strong>${escapeHtml(corner.name)}</strong>${since ? ` · ${T("seit", "since")} ${clockOf(since)}` : ""}${presenceIsAsleep(info.presence) ? " 💤" : ""}
+      <div class="up-status-actions">
+        <button class="action-btn primary" data-up-corner="${escapeHtml(corner.id)}">📍 ${T("Zum Corner", "Open corner")}</button>
+        <button class="action-btn" data-up-route="${escapeHtml(corner.id)}">🧭 ${T("Hingehen", "Go there")}</button>
+      </div></div>`;
+  } else if (info.visible) {
+    status = `<div class="up-status">🟢 ${T("Online", "Online")}${avail ? ` · ${escapeHtml(avail.label)}` : ""}</div>`;
+  } else {
+    status = `<div class="up-status off">⚪ ${info.lastActive ? sinceLabel(info.lastActive) : T("Gerade nicht online", "Not online right now")}</div>`;
+  }
+  const met = encounterCountWith(key);
+  const gossips = typeof sharedGossipsWith === "function" ? sharedGossipsWith(key) : [];
+  const together = [
+    met ? `🤝 ${T(`${met}x zusammen gecornert`, `cornered together ${met}x`)}` : "",
+    gossips.length ? `🗣️ ${T(`${gossips.length} Gossip-Runde${gossips.length === 1 ? "" : "n"} zusammen`, `${gossips.length} gossip round${gossips.length === 1 ? "" : "s"} together`)}` : ""
+  ].filter(Boolean);
+  const ach = Object.entries(achievements || {}).sort((a, b) => Number(b[1]?.time || 0) - Number(a[1]?.time || 0));
+  $("#up-top").innerHTML = `
+    <div class="up-head">
+      <div class="up-avatar" style="border-color:${team?.color || "var(--line)"};">${team?.emoji || "👤"}</div>
+      <div style="min-width:0;">
+        <h2 class="up-name">${escapeHtml(info.nickname)}</h2>
+        <div class="up-sub">${team ? `${team.emoji} ${escapeHtml(team.name)} · ` : ""}${tier.emoji} ${escapeHtml(tier.name)}</div>
+      </div>
+    </div>
+    ${status}
+    <div class="up-stats">
+      <div><strong>${info.aura}</strong><span>✨ Aura · Lv.${auraLv}</span></div>
+      <div><strong>${info.karma}</strong><span>🎁 Karma · Lv.${karmaLv}</span></div>
+      <div><strong>${log.length}</strong><span>🍻 Check-ins</span></div>
+      <div><strong>${agg.length}</strong><span>📍 Corners</span></div>
+    </div>
+    <div class="up-matrix">${matrix.emoji} <strong>${escapeHtml(matrix.name)}</strong> — ${escapeHtml(matrix.desc)}</div>
+    ${together.length ? `<div class="up-together">${together.join(" · ")}</div>` : ""}`;
+  $("#up-bottom").innerHTML = `
+    ${agg.length ? `<h3>⭐ ${T("Lieblings-Corner", "Favourite corners")}</h3>
+      <div class="up-favs">${agg.slice(0, 3).map((e) => `<button class="up-fav" data-up-corner="${escapeHtml(e.cornerId)}"><span>${escapeHtml(e.name)}</span><span class="up-fav-n">${e.count}x</span></button>`).join("")}</div>` : `<p class="up-empty">${T("Noch keine Check-ins.", "No check-ins yet.")}</p>`}
+    ${gossips.length ? `<h3>🗣️ ${T("Eure Gossips", "Your gossips")}</h3>${gossips.slice(0, 5).map((g) => gossipLogRowHtml(g)).join("")}` : ""}
+    ${ach.length ? `<h3>🏆 Achievements (${ach.length})</h3><div class="up-ach">${ach.slice(0, 24).map(([id, a]) => `<span title="${escapeHtml(a?.name || id)}">${escapeHtml(a?.emoji || "🏆")}</span>`).join("")}</div>` : ""}
+    <div class="up-actions">
+      <button class="action-btn primary" id="up-dm">💬 ${T("Nachricht", "Message")}</button>
+      <button class="action-btn" id="up-close-2">${T("Schließen", "Close")}</button>
+    </div>`;
+  const body = $("#user-profile-overlay");
+  body.querySelectorAll("[data-up-corner]").forEach((b) => b.addEventListener("click", () => { closeUserProfile(); openDetail(b.dataset.upCorner); }));
+  body.querySelectorAll("[data-up-route]").forEach((b) => b.addEventListener("click", () => {
+    const c = getAllCorners().find((x) => x.id === b.dataset.upRoute);
+    if (c) window.open(walkingRouteUrl(c.lat, c.lng), "_blank");
+  }));
+  $("#up-dm")?.addEventListener("click", () => { closeUserProfile(); openChatThread(key, info.nickname); });
+  $("#up-close-2")?.addEventListener("click", closeUserProfile);
+  body.querySelectorAll("[data-gossip-corner]").forEach((b) => b.addEventListener("click", () => { closeUserProfile(); openDetail(b.dataset.gossipCorner); }));
+  drawUserProfileMap(log);
+}
+
+async function openUserProfile(key) {
+  if (!key) return;
+  if (key === currentUserKey() || isMyKey(key)) {
+    closeUserProfile();
+    $(`.tab[data-view="profile"]`)?.click();
+    return;
+  }
+  const overlay = $("#user-profile-overlay");
+  if (!overlay) return;
+  STATE.viewedProfileKey = key;
+  $("#up-close").onclick = closeUserProfile;
+  overlay.onclick = (e) => { if (e.target === overlay) closeUserProfile(); };
+  overlay.style.display = "flex";
+  overlay.scrollTop = 0;
+  overlay.querySelector(".user-profile-card").scrollTop = 0;
+  renderUserProfile(key, null);
+  if (!window.FB?.firebaseReady) return;
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, "achievements/" + key));
+    if (STATE.viewedProfileKey === key && overlay.style.display === "flex") renderUserProfile(key, snap.val() || {});
+  } catch (err) { /* achievements are optional */ }
+}
+
+function closeUserProfile() {
+  const overlay = $("#user-profile-overlay");
+  if (overlay) overlay.style.display = "none";
+  STATE.viewedProfileKey = null;
+}
+
+// One delegated handler: any element with data-user-profile="<key>" opens it.
+document.addEventListener("click", (e) => {
+  const el = e.target && e.target.closest ? e.target.closest("[data-user-profile]") : null;
+  if (!el || !el.dataset.userProfile) return;
+  e.preventDefault();
+  e.stopPropagation();
+  openUserProfile(el.dataset.userProfile);
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("#user-profile-overlay")?.style.display === "flex") closeUserProfile(); });
+
+// Someone (?profile=<key> link, push) wants a profile — open it once the
+// onboarding (access code, "warst du schon mal da?", name) is done and the
+// person's data has arrived.
+var _pendingProfileTimer = null;
+function openPendingProfile(attempt = 0) {
+  clearTimeout(_pendingProfileTimer);
+  const key = STATE.pendingProfileKey;
+  if (!key || attempt > 300) return;
+  const onboarding = !STATE.nickname
+    || (window.FB?.firebaseReady && localStorage.getItem("cg.accessGranted") !== "1")
+    || ["#access-prompt", "#claim-overlay", "#nickname-prompt"].some((sel) => $(sel)?.style.display === "flex");
+  const known = !!(STATE.points?.[key] || STATE.friends?.[key]);
+  if (onboarding || (!known && attempt < 10)) {
+    _pendingProfileTimer = setTimeout(() => openPendingProfile(attempt + 1), 1000);
+    return;
+  }
+  STATE.pendingProfileKey = null;
+  clearHandledQueryParam("profile");
+  openUserProfile(key);
+}
+
+/* ---- Tappable notifications ----
+   Every push/notification link is a plain query string (?corner=…, ?chat=…,
+   ?profile=…, ?claims=1). The same parser turns it into an in-app action, so
+   a toast for a push received while the app is open opens the same place.  */
+function deepLinkAction(link) {
+  let p;
+  try { p = new URL(link, window.location.href).searchParams; } catch (e) { return null; }
+  const chat = p.get("chat");
+  if (chat) return () => openChatThread(chat, p.get("chatName") || chat);
+  const profile = p.get("profile");
+  const corner = p.get(SHARE_CORNER_PARAM);
+  if (corner) {
+    if (p.get("gossip") === "1") return () => focusGossip(corner);
+    if (p.get("date") === "1") return () => focusDetailSection(corner, ".cornerdate-section");
+    return () => openDetail(corner);
+  }
+  if (profile) return () => openUserProfile(profile);
+  if (p.get("claims") === "1" && STATE.isAdmin) return () => openAdminClaims();
+  if (p.get("feedback") === "1" && STATE.isAdmin) return () => openAdminSection("#admin-feedback");
+  return null;
 }
 
 function renderProfile() {
@@ -10734,7 +12418,7 @@ function renderProfile() {
   const teamInfo = getTeamInfo(STATE.team);
   const captureCount = Object.values(STATE.captureHistory).filter((entry) => entry.capturedBy?.includes(currentUserKey())).length;
   const commentCount = Object.values(STATE.comments).reduce((sum, entry) => sum + Object.values(entry || {}).filter((comment) => comment.author === STATE.nickname).length, 0);
-  const totalCheckins = Object.values(STATE.visits).reduce((sum, entry) => sum + Object.values(entry || {}).filter((visit) => visit.user === STATE.nickname).length, 0);
+  const totalCheckins = myVisitLog().length;   // one per corner and day, all my logins
   const bestFriends = Object.entries(STATE.encounters).filter(([, entry]) => entry.users && Object.keys(entry.users).includes(currentUserKey())).map(([, entry]) => { const other = Object.entries(entry.users).find(([id]) => id !== currentUserKey()); return { id: other?.[0], name: other?.[1] || 'Anonym', count: entry.count || 0 }; }).sort((a, b) => b.count - a.count).slice(0, 8);
   const recentMessages = (STATE.directMessages || []).slice(-8).reverse();
 
@@ -10760,6 +12444,7 @@ function renderProfile() {
         ${levelInfo.reachedMilestone ? ` · 🏆 Lv.${MILESTONE_LEVEL} ${T("geschafft", "reached")}` : ` · 🎖️ Lv.${MILESTONE_LEVEL} = ${T("Meilenstein", "Milestone")}`}
       </div>
     </div>
+    ${buildBackupBannerHtml()}
     <div class="stream-grid">
       <div class="stream-card">
         <div class="stream-kicker">✨ ${T("Aura Stream", "Aura stream")}</div>
@@ -10792,8 +12477,12 @@ function renderProfile() {
     <div class="team-battle-section"><h3>🗺️ ${T("Deine Corner-Map", "Your Corner Map")}</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">${T("Kreisgröße = Anzahl Besuche, Tortenstücke = Team, mit dem du eingecheckt hast.", "Circle size = visit count, pie slices = team at check-in.")}</p><div id="profile-map-slot"></div></div>
     <div class="team-history"><h3>🧬 ${T("Team History", "Team History")}</h3><div class="team-history-grid">${TEAM_ORDER.map((teamId) => { const count = STATE.teamHistory.filter((entry) => entry.team === teamId).length; return `<div class="team-history-item"><div class="th-emoji">${TEAMS[teamId].emoji}</div><div class="th-count">${count}</div><div class="th-name">${TEAMS[teamId].name}</div></div>`; }).join("")}</div></div>
     <div class="team-battle-section"><h3>🏆 ${T("Team Leaderboard", "Team Leaderboard")}</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.min(100, Math.max(4, row.total * 8))}%;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
-    <div class="best-friends-section"><h3>🤝 ${T("Best Friends", "Best Friends")}</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">${T("Noch keine Begegnungen geloggt.", "No encounters logged yet.")}</p>`}</div>
-    ${STATE.isAdmin ? `<div class="team-battle-section"><h3>🛠 Admin</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">${T("Host-Werkzeuge: Profile & Spots verwalten.", "Host tools: manage profiles & spots.")}</p><button class="notif-opt" id="admin-open-btn">🛠 ${T("Admin-Panel öffnen", "Open admin panel")}</button></div>` : ""}
+    ${buildGossipChronicleHtml()}
+    <div class="best-friends-section"><h3>🤝 ${T("Best Friends", "Best Friends")}</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name lb-person" ${friend.id ? `data-user-profile="${escapeHtml(friend.id)}"` : ""}>${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">${T("Noch keine Begegnungen geloggt.", "No encounters logged yet.")}</p>`}</div>
+    ${STATE.isAdmin ? `<div class="team-battle-section"><h3>🛠 Admin</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">${T("Host-Werkzeuge: Profile & Spots verwalten.", "Host tools: manage profiles & spots.")}</p><button class="notif-opt" id="admin-open-btn">🛠 ${T("Admin-Panel öffnen", "Open admin panel")}${pendingClaimList().length ? ` <span class="admin-badge">🙋 ${pendingClaimList().length}</span>` : ""}</button></div>` : ""}
+    <div class="team-battle-section feedback-box"><h3>💡 ${T("Idee oder Problem?", "Idea or problem?")}</h3>
+      <p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">${T("Schreib's direkt an die Macher — landet nicht in den Corner-Kommentaren.", "Tell the makers directly — it does not end up in the corner comments.")}</p>
+      <button class="notif-opt" id="feedback-btn">💡 ${T("Feedback senden", "Send feedback")}</button></div>
     ${buildAccountSectionHtml()}
     <div class="notification-toggle"><h3>🔔 ${T("Benachrichtigungen", "Notifications")}</h3>${buildNotifSettingsHtml()}</div>
     <div class="notification-toggle" style="margin-top:12px;">
@@ -10879,19 +12568,33 @@ function renderProfile() {
       toast(`${T("Konnte Link nicht senden", "Could not send link")}: ${escapeHtml(err?.message || "")}`);
     }
   });
-  $("#acct-code-create-btn")?.addEventListener("click", async () => {
+  const createAndShareCode = async () => {
     const code = await createRecoveryCode();
     if (!code) return;
-    await copyText(code).catch(() => {});
-    toast(`🎟️ ${T("Recovery-Code", "Recovery code")}: <strong>${code}</strong><br>${T("Kopiert — sicher aufbewahren!", "Copied — keep it safe!")}`);
     unlockAchievement("secured", "Abgesichert", "🔐", 20);
+    renderProfile();
+    await shareRecoveryCode(code);
+  };
+  $("#acct-code-create-btn")?.addEventListener("click", createAndShareCode);
+  $("#acct-code-share-btn")?.addEventListener("click", () => { const c = savedRecoveryCode(); if (c) { createRecoveryCode(); shareRecoveryCode(c); } });
+  $("#acct-uid-copy")?.addEventListener("click", async () => {
+    await copyText(window.FB?.getAuthUid?.() || "").catch(() => {});
+    toast(T("📋 Nutzer-ID kopiert", "📋 User ID copied"));
   });
+  $$("#profile-content [data-backup-action]").forEach((btn) => btn.addEventListener("click", () => {
+    const a = btn.dataset.backupAction;
+    if (a === "google") $("#acct-google-btn")?.click();
+    else if (a === "code") createAndShareCode();
+    else $("#account-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }));
   $("#acct-code-claim-btn")?.addEventListener("click", async () => {
     const code = await appPrompt(T("Recovery-Code eingeben", "Enter recovery code"), "", "CODE", { codeStyle: true, text: T("Stellt dein Profil von einem anderen Gerät wieder her.", "Restores your profile from another device."), okLabel: T("Übernehmen", "Apply") });
     if (code) await claimRecoveryCode(code);
   });
   $("#acct-claim-btn")?.addEventListener("click", openClaimOverlay);
   $("#admin-open-btn")?.addEventListener("click", renderAdminPanel);
+  $("#feedback-btn")?.addEventListener("click", sendAppFeedback);
+  $$("#profile-content [data-gossip-corner]").forEach((btn) => btn.addEventListener("click", () => openDetail(btn.dataset.gossipCorner)));
   $$("#profile-content [data-reply-id]").forEach((btn) => btn.addEventListener("click", () => {
     const msg = recentMessages.find((entry) => entry.fromId === btn.dataset.replyId);
     sendDirectMessagePrompt(btn.dataset.replyId, msg?.fromName || btn.dataset.replyId);
@@ -10904,6 +12607,8 @@ function bindTabs() {
     t.addEventListener("click", () => {
       const v = t.dataset.view;
       STATE.view = v;
+      document.body.classList.toggle("map-first", v === "map");
+      document.body.classList.toggle("home-view", v === "map" || v === "list");
       $$(".tab").forEach((x) => x.classList.toggle("active", x === t));
       $$(".view").forEach((x) => x.classList.toggle("active", x.id === "view-" + v));
       if (v === "map") { if (!STATE.mainMap) initMainMap(); setTimeout(() => STATE.mainMap?.invalidateSize(), 50); }
@@ -10927,6 +12632,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (fbTitle) fbTitle.textContent = "🍻 Friends out there";
   }
 });
+
+// Tips and reminders wait until no other message is on screen — they used to
+// replace things like "Ben ist am Corner" a second after they appeared.
+function toastWhenFree(html, variant, onClick, tries = 0) {
+  const el = $("#toast");
+  if (el && el.classList.contains("show") && tries < 20) {
+    setTimeout(() => toastWhenFree(html, variant, onClick, tries + 1), 2500);
+    return;
+  }
+  toast(html, variant, onClick);
+}
 
 let toastTimer = null;
 function toast(html, variant, onClick) {

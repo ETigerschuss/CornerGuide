@@ -3,7 +3,8 @@
 // prints user data in clear text: exports are encrypted for the requester.
 //
 //   ACTION=add-admin       UID_INPUT=<firebase uid>   → config/admins/<uid> = true
-//   ACTION=export-feedback PUBKEY_B64=<base64 PEM>    → comments + check-in feedback,
+//   ACTION=export-feedback PUBKEY_B64=<base64 PEM>    → comments, check-in feedback and
+//        the in-app "Idee oder Problem?" feedback,
 //        gzipped, encrypted (AES-256-GCM, key wrapped with RSA-OAEP-SHA256), base64
 //        into EXPORT_FILE (the workflow pushes it to the "admin-export" branch)
 const crypto = require("crypto");
@@ -22,12 +23,12 @@ async function exportFeedback(pubB64) {
   const pem = Buffer.from(String(pubB64 || ""), "base64").toString("utf8");
   if (!pem.includes("PUBLIC KEY")) throw new Error("Kein gültiger öffentlicher Schlüssel übergeben.");
   const db = admin.database();
-  const [comments, feedback, corners] = await Promise.all([
-    db.ref("comments").get(), db.ref("checkinFeedback").get(), db.ref("corners").get()
+  const [comments, feedback, corners, appFeedback] = await Promise.all([
+    db.ref("comments").get(), db.ref("checkinFeedback").get(), db.ref("corners").get(), db.ref("feedback").get()
   ]);
   const names = {};
   Object.entries(corners.val() || {}).forEach(([id, c]) => { names[id] = (c && c.name) || id; });
-  const payload = require("zlib").gzipSync(Buffer.from(JSON.stringify({ exportedAt: new Date().toISOString(), comments: comments.val() || {}, checkinFeedback: feedback.val() || {}, customCornerNames: names })));
+  const payload = require("zlib").gzipSync(Buffer.from(JSON.stringify({ exportedAt: new Date().toISOString(), comments: comments.val() || {}, checkinFeedback: feedback.val() || {}, appFeedback: appFeedback.val() || {}, customCornerNames: names })));
   const key = crypto.randomBytes(32);
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
