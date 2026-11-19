@@ -2,7 +2,7 @@
   "name": "cornerguide-functions",
   "description": "Cloud Functions for CornerGuide push notifications",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "main": "index.js",
   "dependencies": {
