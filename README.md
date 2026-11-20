@@ -36,7 +36,9 @@ https://ETigerschuss.github.io/CornerGuide/
 - 🗣️ **Gossip-Chronik** — im Profil: welche Gossip-Runden man hatte, wo, mit wem und wie viele Punkte; optional mit einer Schlagzeile, die die erzählende Person selbst wählt. Die Story selbst wird nie gespeichert
 - 🗺️ **Historie abspielen** — Flug durch die eigenen Check-ins: nah an jeden Münchner Corner, bei Ausflügen raus- und wieder reinzoomen, Kreise in der Teamfarbe des Check-ins, Tempo 1×/2×/4×
 - 🚻 **Karte in der Corner-Info** — ganz unten: Kiosk & Co., Toiletten (kostenlos/♿), Trinkbrunnen, Unterstände, zuschaltbar Mülleimer/Glascontainer und Bänke — jeweils mit Fußweg-Route
-- 🛟 **Profil-Rettung** — verlorene Profile anfragen und freigeben lassen (siehe unten)
+- 👋 **„Wer bist du?"** — neues Handy oder Browser gelöscht: nach dem Einladungscode einfach den eigenen Namen antippen, fertig (siehe unten)
+- 🏙️ **Stadtbezirke** — die 25 Münchner Stadtbezirke mit Nummer (01 Altstadt-Lehel … 25 Laim): Grenzen auf der Karte (Namen ab Zoomstufe 13, ein-/ausblendbar), Bezirksnummer an jedem Corner, Filter in der Liste, Bezirk in der Detailansicht mit „Grenzen zeigen"
+- 📍 **Pin setzen beim neuen Spot** — Karte im „Neuer Spot"-Fenster: tippen oder Pin ziehen, Koordinaten, Bezirk und Stadtteil füllen sich selbst; Warnung, wenn der Pin zu nah an einem bestehenden Corner liegt
 - 💡 **Feedback an die Macher** — Profil → „Idee oder Problem?"; Admins sehen es im Admin-Panel
 
 ## 🌤️ Corner-Check: woher kommen die Daten?
@@ -71,7 +73,7 @@ automatisch, sobald die Regeln live sind):
 ```bash
 firebase deploy --only database,storage,functions
 ```
-- `database` — Regeln für `gossipRounds`, `gossipContent`, `gossipVotes`, `notifyTargeted`, `cornerDates`, `profileClaims` (Profil-Rettung), `gossipLog` (Gossip-Chronik, nur für einen selbst lesbar), `feedback` (nur Admins lesen)
+- `database` — Regeln für `gossipRounds`, `gossipContent`, `gossipVotes`, `notifyTargeted`, `cornerDates`, `gossipLog` (Gossip-Chronik, nur für einen selbst lesbar), `feedback` (nur Admins lesen)
 - `storage` — Regel für Sprachaufnahmen unter `gossipAudio/`
 - `functions` — `pushOnTargetedNotify` schickt die Gossip-Pushes nur an die Leute am Corner
 
@@ -198,38 +200,43 @@ Voraussetzung: unter **Authentication → Sign-in method** zusätzlich **Google*
 **E-Mail-Link (passwortlos)** aktivieren, und die Domain (`ETigerschuss.github.io`) unter den
 autorisierten Domains eintragen. Profile werden in der DB unter `userProfiles/{uid}` gespiegelt.
 
-### 🛟 Profil verloren? (Profil-Rettung)
+### 👋 Neues Handy? Profil wählen
 
-**Warum das passiert:** Wer anonym spielt, ist nur über einen Login in *diesem* Browser bekannt. Der ist weg, wenn
-Browserdaten gelöscht werden, Safari eine Seite nach 7 Tagen ohne Besuch leert, die App zum **iPhone-Home-Bildschirm**
-hinzugefügt wird (eigener Speicher!) oder man das Handy wechselt. Das alte Profil existiert dann noch, ist aber an den
-alten Login gebunden — und wurde in „Altes Profil übernehmen" bisher gar nicht angezeigt.
+**Warum ein Profil „verschwindet":** Wer anonym spielt, ist nur über einen Login in *diesem* Browser bekannt. Der ist
+weg, wenn Browserdaten gelöscht werden, Safari eine Seite nach 7 Tagen ohne Besuch leert, die App zum
+**iPhone-Home-Bildschirm** hinzugefügt wird (eigener Speicher!) oder man das Handy wechselt. Das Profil selbst bleibt in
+der Datenbank.
 
-**So holt man es zurück:**
+**So einfach geht's zurück:** Einladungscode eingeben → „👋 Wer bist du?" → **den eigenen Namen antippen** → bestätigen.
+Punkte, Level, Achievements, Team, Corners, Check-in-Historie, Begegnungen und Gossip-Chronik sind sofort da; was man
+auf dem neuen Gerät schon gesammelt hat, wird dazugezählt. Später geht das jederzeit über Profil → „Profil wählen".
+Tippt man seinen alten Namen neu ein, bietet die App das Profil auch von selbst an.
 
-1. Zugangscode eingeben → „Warst du schon mal dabei?" → das alte Profil (🔒) suchen → **„Anfragen"** (optional mit
-   Notiz wie „neues Handy"). Tippt man seinen alten Namen neu ein, schlägt die App das Profil auch von selbst vor.
-2. Bestätigt wird von **einem Admin** (Admin-Panel → „🙋 Profil-Anfragen", mit Push) **oder vom alten Gerät**, falls es
-   noch funktioniert („📲 Profil auf ein anderes Gerät übertragen?").
-3. Danach zieht alles automatisch um: Aura, Karma, Achievements, Team, besuchte Corners, Check-in-Historie (Karte),
-   Begegnungen und Gossip-Chronik. Kam in der Zwischenzeit etwas mit dem neuen Profil dazu, wird es addiert.
-4. Mit einem **Recovery-Code** geht es ohne Freigabe: Der Code beweist das Profil und überträgt den *aktuellen* Stand.
+Es gibt bewusst keine Freigabe — es spielen nur Freunde mit. Ist das Profil gerade auf einem anderen Handy online, warnt
+die App kurz; das andere Gerät bekommt Bescheid und fragt dort neu „Wer bist du?". Mit einem **Recovery-Code**
+(Profil → „Konto & Profil sichern") geht der Umzug auch direkt vom Zugangs-Bildschirm aus.
 
-**Vorbeugen:** Profil → „Konto & Profil sichern" — am besten **Mit Google sichern**, oder den Recovery-Code über
-„📤 An mich schicken" in den eigenen Chat legen. Solange ein Profil nicht gesichert ist, erinnert die App daran
-(auf dem iPhone vor allem vor dem Hinzufügen zum Home-Bildschirm).
+**Dauerhaft sichern:** „Mit Google sichern" — dann ist es auf jedem Gerät mit demselben Login automatisch dasselbe Profil.
+
+### 🔑 „Permission denied" beim Speichern?
+
+Früher merkte sich die App „Zugang gewährt" nur im Browser. Fehlte der Zugang in der Datenbank für den *aktuellen*
+Login (z. B. nach einem Login-Wechsel oder aus einer älteren App-Version), scheiterte jedes Speichern — etwa beim
+Eintragen eines neuen Corners. Jetzt prüft die App das bei jedem Start: Ist der Einladungscode bekannt, wird der Zugang
+still repariert, sonst fragt sie einmal nach dem Code. Profil und Punkte bleiben dabei erhalten.
 
 **Admin werden** (z. B. nach eigenem Login-Verlust): Die eigene **Nutzer-ID** steht im Profil unter „Konto & Profil
 sichern". Im Repo unter *Actions → Admin-Werkzeuge → Run workflow* die Aktion `add-admin` mit dieser ID starten.
-Als Admin kann man ein gesperrtes Profil auch direkt übernehmen („🛠 Übernehmen").
 
-### Empfohlener Weg für bestehende Nutzer (neues Gerät / neue Version)
+## 🏙️ Stadtbezirke: woher kommen die Grenzen?
 
-1. **Einladungscode eingeben** — direkt danach fragt die App: „Warst du schon mal dabei?"
-2. **Dein altes Profil antippen** („Das war ich") — Punkte, Level, Achievements und besuchte
-   Corners werden übernommen
-3. **„🔗 Mit Google sichern"** — ab jetzt ist das Profil an den Login gebunden und auf
-   jedem Gerät verfügbar. Das ist der sicherste Weg.
+Die 25 Stadtbezirke stammen aus [OpenStreetMap](https://www.openstreetmap.org/copyright) (© OpenStreetMap-Mitwirkende,
+ODbL; Grenzen `admin_level=9` innerhalb von München). Der Workflow **„Stadtbezirke-Daten"**
+(`.github/workflows/district-data.yml`, Skript `.github/scripts/build-districts.cjs`) lädt sie, ordnet ihnen die
+offiziellen Nummern zu, vereinfacht die Linien mit [mapshaper](https://mapshaper.org) so, dass Nachbarbezirke lückenlos
+aneinander grenzen, und schreibt `data/stadtbezirke.json` (~50 KB). Die App lädt die Datei einmal und berechnet den
+Bezirk jedes Corners aus seinen Koordinaten. Neu erzeugen: *Actions → Stadtbezirke-Daten → Run workflow*; danach in
+`index.html` die Version in `DISTRICTS_URL` erhöhen, damit Handys die neue Datei statt der zwischengespeicherten laden.
 
 ## 📷 Corner-Fotos (Firebase Storage)
 
