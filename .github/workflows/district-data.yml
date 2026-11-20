@@ -1,0 +1,56 @@
+name: Stadtbezirke-Daten
+
+# Builds data/stadtbezirke.json (Munich's 25 city districts with their numbers
+# and outlines) from OpenStreetMap. Runs by hand ("Run workflow") or when the
+# builder changes on a work branch, and commits the result to that branch.
+# Data: © OpenStreetMap contributors, ODbL.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/**"]
+    paths:
+      - ".github/scripts/build-districts.cjs"
+      - ".github/workflows/district-data.yml"
+
+permissions:
+  contents: write   # commit the generated file back to the branch
+
+concurrency:
+  group: district-data-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Bezirke aus OpenStreetMap laden
+        run: node .github/scripts/build-districts.cjs raw "$RUNNER_TEMP/raw.geojson"
+
+      # Topology-aware simplification: shared borders stay shared (no gaps).
+      - name: Grenzen vereinfachen
+        run: npx --yes mapshaper@0.6 "$RUNNER_TEMP/raw.geojson" -simplify dp interval=8 keep-shapes -o format=geojson precision=0.00001 "$RUNNER_TEMP/simplified.geojson"
+
+      - name: App-Datei schreiben
+        run: |
+          mkdir -p data
+          node .github/scripts/build-districts.cjs finish "$RUNNER_TEMP/simplified.geojson" data/stadtbezirke.json
+
+      - name: Ergebnis einchecken
+        run: |
+          if git diff --quiet -- data/stadtbezirke.json && git ls-files --error-unmatch data/stadtbezirke.json >/dev/null 2>&1; then
+            echo "Keine Änderung."
+            exit 0
+          fi
+          git config user.name "cornerguide-data"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/stadtbezirke.json
+          git commit -q -m "data: Munich city districts from OpenStreetMap"
+          git push -q origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
+          echo "✔ data/stadtbezirke.json aktualisiert ($(wc -c < data/stadtbezirke.json) Bytes)."

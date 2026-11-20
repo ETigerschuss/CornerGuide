@@ -2628,6 +2628,24 @@ a.action-btn { text-decoration: none; }
 .toast { z-index: 4700; }
 .celebration { z-index: 4500; }
 
+/* ====================== STADTBEZIRKE + PIN PICKER ====================== */
+.district-badge { display: inline-block; min-width: 22px; padding: 1px 5px; margin-right: 6px; border-radius: 6px; background: var(--amber); color: #111; font-family: "JetBrains Mono", monospace; font-size: 10px; font-weight: 700; text-align: center; vertical-align: 1px; }
+.detail-district { font-size: 12px; color: var(--fg-dim); margin: -4px 0 6px; }
+.detail-district strong { color: var(--amber); }
+.district-filter { flex: 1 1 160px; min-width: 0; max-width: 100%; padding: 7px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg-3); color: var(--fg); font: inherit; font-size: 12px; }
+.district-empty { font-size: 13px; color: var(--fg-dim); padding: 18px 4px; text-align: center; }
+.geo-btn.district-toggle.on { border-color: var(--amber); color: var(--amber); background: rgba(232,169,62,0.12); }
+.district-label-wrap { background: none !important; border: none !important; }
+.district-label { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; pointer-events: none; text-align: center; line-height: 1.1; text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,0.9); }
+.district-label b { display: inline-block; font-family: "JetBrains Mono", monospace; font-size: 12px; color: #111; background: rgba(232,169,62,0.92); border-radius: 6px; padding: 1px 5px; text-shadow: none; }
+.district-label span { display: none; font-size: 11px; font-weight: 700; color: #f4e9d1; margin-left: 4px; }
+.district-names .district-label span { display: inline; }
+.spot-pin-map { height: 220px; border-radius: 12px; overflow: hidden; background: var(--bg-3); border: 1px solid var(--line); }
+.spot-pin-info { font-size: 12px; color: var(--fg-dim); margin-top: 6px; line-height: 1.45; min-height: 18px; }
+.spot-pin-info strong { color: var(--amber); }
+.spot-pin-warn { color: var(--pink); }
+.spot-pin { font-size: 32px; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); cursor: grab; }
+
 /* ====================== PUBLIC PROFILES ====================== */
 .user-profile-card { position: relative; max-width: 440px; width: 100%; max-height: 88vh; overflow-y: auto; text-align: left; }
 .access-prompt .up-close { position: absolute; top: 10px; right: 12px; width: auto; background: none; border: none; color: var(--fg-dim); font-size: 20px; font-weight: 400; cursor: pointer; padding: 4px 8px; border-radius: 8px; }
@@ -2727,15 +2745,14 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
 .gl-more summary { cursor: pointer; font-size: 12px; color: var(--fg-dim); margin: 8px 0; }
 
 /* ====================== PROFILE RESCUE ====================== */
-.claim-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; }
-.claim-row .action-btn { padding: 6px 10px; font-size: 11px; white-space: nowrap; }
+.access-prompt .claim-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; background: var(--bg-3); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; font: inherit; font-weight: 400; text-align: left; cursor: pointer; }
+.access-prompt .claim-row:hover, .access-prompt .claim-row:focus-visible { background: var(--bg-2); color: var(--fg); border-color: var(--amber); }
+.claim-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.claim-row-name { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.claim-row-meta { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); }
+.claim-row-cta { font-size: 12px; color: var(--amber); white-space: nowrap; }
 .claim-search { width: 100%; margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-2, #151515); color: var(--fg); font-size: 14px; }
 .claim-hint { font-size: 11px; color: var(--fg-dim); line-height: 1.5; margin: 0 0 10px; }
-.admin-claim { padding: 10px 12px; background: var(--bg-3); border: 1px solid var(--amber); border-radius: 8px; margin-bottom: 8px; }
-.admin-claim-note { font-size: 12px; color: var(--fg-dim); font-style: italic; margin-top: 4px; }
-.admin-claim-warn { font-size: 11px; color: var(--pink); margin-top: 6px; }
-.admin-claim .action-btn { padding: 6px 10px; font-size: 11px; }
-.admin-badge { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--amber); color: #111; font-size: 11px; font-weight: 700; }
 .backup-banner { margin: 12px 0; padding: 12px 14px; border: 1px solid var(--amber); border-radius: 12px; background: rgba(232,169,62,0.08); font-size: 13px; line-height: 1.5; }
 .backup-banner .action-btn { padding: 6px 10px; font-size: 12px; }
 .acct-code-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; margin: 0 0 10px; }
@@ -2820,6 +2837,7 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
   <section id="view-list" class="view">
     <div class="list-meta">
       <span><span class="count-num" id="corner-count">--</span> Spots gesamt</span>
+      <select id="district-filter" class="district-filter" hidden aria-label="Stadtbezirk"></select>
       <button id="list-locate-btn" class="geo-btn" style="padding:6px 12px;font-size:12px;">📍 Standort an</button>
       <span id="me-position-meta">Standort aus</span>
     </div>
@@ -2829,6 +2847,7 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
   <section id="view-map" class="view active">
     <div class="map-toolbar">
       <button id="locate-btn" class="geo-btn">📍 Standort an</button>
+      <button id="district-toggle" class="geo-btn district-toggle">🏙️ Bezirke an</button>
       <span class="geo-status" id="geo-status">Standort aus</span>
     </div>
     <div class="map-shell"><div id="main-map"></div></div>
@@ -2905,6 +2924,11 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
     <div class="field">
       <label>Tags (Komma-getrennt)</label>
       <input type="text" id="f-tags" maxlength="120" placeholder="Kiosk, Sunset, ruhig" />
+    </div>
+    <div class="field">
+      <label>Ort <span class="req">*</span></label>
+      <div id="spot-pin-map" class="spot-pin-map"></div>
+      <div id="spot-pin-info" class="spot-pin-info"></div>
     </div>
     <div class="coord-row">
       <div class="field">
@@ -3078,7 +3102,7 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
 <div id="access-prompt" class="access-prompt" style="display:none;">
   <div class="prompt-card">
     <h2>🔒 Zugang</h2>
-    <p>Gib den Einladungscode ein, um Zugang zu erhalten.</p>
+    <p id="access-text">Gib den Einladungscode ein, um Zugang zu erhalten.</p>
     <input type="text" id="access-code-input" placeholder="CODE" maxlength="30" autocomplete="off" autocapitalize="characters" />
     <div class="access-error" id="access-error"></div>
     <button id="access-code-save">Bestätigen</button>
@@ -3094,8 +3118,8 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
 <!-- Claim an existing (old) profile: pick yourself from the list of past users -->
 <div id="claim-overlay" class="access-prompt" style="display:none;">
   <div class="prompt-card" style="max-width:440px;max-height:82vh;overflow-y:auto;text-align:left;">
-    <h2 id="claim-title">👥 Altes Profil übernehmen</h2>
-    <p style="font-size:13px;color:var(--fg-dim);">Warst du schon dabei? Wähle dein altes Profil — Punkte, Level, Achievements und besuchte Corners werden dir zugeordnet.</p>
+    <h2 id="claim-title">👥 Profil wählen</h2>
+    <p id="claim-intro" style="font-size:13px;color:var(--fg-dim);">Tipp auf deinen Namen — Punkte, Level, Team und Corners sind sofort wieder da.</p>
     <div id="claim-list" style="margin:14px 0;"></div>
     <button id="claim-close" class="action-btn">Schließen</button>
   </div>
@@ -3191,8 +3215,6 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
   <div class="prompt-card" style="max-width:480px;max-height:85vh;overflow-y:auto;text-align:left;">
     <h2>🛠 Admin-Panel</h2>
     <p style="font-size:12px;color:var(--fg-dim);">Host-Werkzeuge. Löschen ist endgültig — Vorsicht.</p>
-    <h3 style="font-size:14px;margin:16px 0 8px;">🙋 Profil-Anfragen</h3>
-    <div id="admin-claims"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">🔗 Doppelte Profile</h3>
     <div id="admin-dupes"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">👥 Profile</h3>
@@ -3544,6 +3566,13 @@ document.addEventListener("DOMContentLoaded", () => {
   checkNickname();
   renderCards();
   bindTabs();
+  loadDistricts();
+  $("#district-filter")?.addEventListener("change", (e) => setDistrictFilter(e.target.value));
+  $("#district-toggle")?.addEventListener("click", () => {
+    localStorage.setItem("cg.districtsOn", districtsVisible() ? "0" : "1");
+    drawDistrictLayer();
+  });
+  updateDistrictToggle();
   // "Map muss landing page werden": start on the map.
   STATE.view = "map";
   document.body.classList.add("map-first", "home-view");
@@ -3615,11 +3644,12 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden && typeof checkBackendFeatures === "function" && !_backendFeatures.ok) checkBackendFeatures(true);
 });
 
-function checkAccessGranted() {
-  // Fast path: already granted in localStorage
-  if (localStorage.getItem("cg.accessGranted") === "1") return;
-
-  // Bind the modal immediately so UI is responsive
+// The access gate's buttons, bound once (also when the prompt only shows up
+// later because the grant turned out to be missing).
+var _accessPromptBound = false;
+function bindAccessPrompt() {
+  if (_accessPromptBound) return;
+  _accessPromptBound = true;
   const input = $("#access-code-input");
   const btn = $("#access-code-save");
   const errEl = $("#access-error");
@@ -3652,11 +3682,14 @@ function checkAccessGranted() {
       toast(`Google-Login fehlgeschlagen (${escapeHtml(err?.code || "?")}): ${escapeHtml(err?.message || "")}`);
     }
   });
+}
 
-  if (!window.FB?.firebaseReady) {
-    // Firebase not configured – allow access so app works in offline/dev mode
-    return;
-  }
+function checkAccessGranted() {
+  bindAccessPrompt();
+  if (!window.FB?.firebaseReady) return;   // offline/dev mode: no gate
+  // localStorage only remembers that SOME login had access here. Verify the
+  // current one against the database once auth is ready (see verifyAccessGrant).
+  if (localStorage.getItem("cg.accessGranted") === "1") return;
 
   // Async: wait for auth UID, then verify Firebase flag
   window.FB.authReady.then((uid) => {
@@ -3668,6 +3701,7 @@ function checkAccessGranted() {
     get(ref(db, "accessGranted/" + uid)).then((snap) => {
       if (snap.val() !== null) {
         localStorage.setItem("cg.accessGranted", "1");
+        localStorage.setItem("cg.accessCode", String(snap.val()));
         // Already granted – make sure the prompt stays hidden, continue onboarding
         maybeShowNicknamePrompt();
         return;
@@ -3681,9 +3715,52 @@ function checkAccessGranted() {
   });
 }
 
-function showAccessPrompt() {
+function showAccessPrompt(reason = "") {
+  bindAccessPrompt();
+  const text = $("#access-text");
+  if (text) text.textContent = reason === "missing"
+    ? "Für dieses Gerät ist dein Zugang nicht mehr hinterlegt (z. B. nach einem Login-Wechsel) — darum ging Speichern nicht. Gib den Einladungscode aus der Gruppe einmal neu ein, dein Profil bleibt erhalten."
+    : "Gib den Einladungscode ein, um Zugang zu erhalten.";
   $("#access-prompt").style.display = "flex";
   setTimeout(() => $("#access-code-input").focus(), 100);
+}
+
+/* "Ich konnte keinen neuen Corner hinzufügen wegen irgendeiner Firebase-
+   Autorisierung": the app trusted a remembered "access granted" although the
+   database had no grant for the CURRENT login (new login after a Google link,
+   a reset browser, grants from an older version). Every write then failed.
+   Now the grant is checked once per login; a known code repairs it silently,
+   otherwise the code is asked for again — once.                          */
+var _accessVerified = {};
+async function verifyAccessGrant(opts = {}) {
+  const uid = window.FB?.getAuthUid?.() || "";
+  if (!uid || !window.FB?.firebaseReady) return false;
+  if (_accessVerified[uid] === true && !opts.interactive) return true;
+  const { db, ref, get, set } = window.FB;
+  let val;
+  try { val = (await get(ref(db, "accessGranted/" + uid))).val(); }
+  catch (err) { return false; }   // offline: decide later
+  if (val) {
+    _accessVerified[uid] = true;
+    localStorage.setItem("cg.accessGranted", "1");
+    localStorage.setItem("cg.accessCode", String(val));
+    return true;
+  }
+  const known = localStorage.getItem("cg.accessCode");
+  if (known) {
+    try {
+      await set(ref(db, "accessGranted/" + uid), known);
+      _accessVerified[uid] = true;
+      localStorage.setItem("cg.accessGranted", "1");
+      reattachSharedListenersAfterGrant();
+      console.log("Zugang für diesen Login automatisch wiederhergestellt.");
+      return true;
+    } catch (err) { console.warn("stored access code no longer valid:", err); }
+  }
+  // No grant and nothing to repair it with: ask once (keeps profile and data).
+  localStorage.removeItem("cg.accessGranted");
+  showAccessPrompt("missing");
+  return false;
 }
 
 async function submitAccessCode() {
@@ -3711,12 +3788,19 @@ async function submitAccessCode() {
     // under accessCodes/{code} before allowing the write.
     await set(ref(db, "accessGranted/" + uid), code);
     localStorage.setItem("cg.accessGranted", "1");
+    localStorage.setItem("cg.accessCode", code);
+    _accessVerified[uid] = true;
     $("#access-prompt").style.display = "none";
-    toast("✅ Zugang gewährt – willkommen!");
     reattachSharedListenersAfterGrant();
-    // Returning friends: offer to claim their old profile right away instead of
-    // starting fresh and migrating later from the profile tab.
-    setTimeout(() => openClaimOverlay({ welcome: true }), 500);
+    if (STATE.nickname) {
+      // Someone who already has a profile here only re-confirmed access.
+      toast(`✅ Zugang bestätigt — weiter geht's, ${escapeHtml(STATE.nickname)}!`);
+      broadcastPresence();
+    } else {
+      toast("✅ Zugang gewährt – willkommen!");
+      // Returning friends pick themselves right away instead of starting fresh.
+      setTimeout(() => openClaimOverlay({ welcome: true }), 500);
+    }
   } catch (err) {
     console.warn("Access code validation failed:", err);
     errEl.textContent = "Ungültiger Code. Bitte erneut versuchen.";
@@ -4949,6 +5033,244 @@ function handlePhotoUpload(file, cornerId) {
 }
 
 /* ====================== MAIN MAP ====================== */
+/* ====================== STADTBEZIRKE ======================
+   Munich's 25 city districts with their official numbers ("02 Ludwigsvorstadt-
+   Isarvorstadt"): outlines on the map, the district of every corner, a list
+   filter. Outlines from OpenStreetMap (data/stadtbezirke.json, ~50 KB, built
+   by the "Stadtbezirke-Daten" workflow), loaded once.                      */
+// The service worker serves same-origin files cache-first: bump ?v= whenever
+// data/stadtbezirke.json is regenerated, so phones fetch the new outlines.
+const DISTRICTS_URL = "data/stadtbezirke.json?v=2026-11-20";
+var _districts = null;          // [{ nr, name, label, polys, bbox, feature }]
+var _districtsPromise = null;
+var _districtCache = {};
+function loadDistricts() {
+  if (_districtsPromise) return _districtsPromise;
+  _districtsPromise = fetch(DISTRICTS_URL)
+    .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then((gj) => {
+      _districts = (gj.features || []).map((f) => {
+        const polys = f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates;
+        let minX = 180, minY = 90, maxX = -180, maxY = -90;
+        polys.forEach((rings) => rings[0].forEach(([x, y]) => {
+          if (x < minX) minX = x; if (x > maxX) maxX = x;
+          if (y < minY) minY = y; if (y > maxY) maxY = y;
+        }));
+        return { nr: String(f.properties.nr), name: String(f.properties.name), label: f.properties.label, polys, bbox: [minX, minY, maxX, maxY], feature: f };
+      });
+      _districtCache = {};
+      onDistrictsLoaded();
+      return _districts;
+    })
+    .catch((err) => { console.warn("Stadtbezirke nicht verfügbar:", err); _districtsPromise = null; return null; });
+  return _districtsPromise;
+}
+
+function pointInRings(x, y, rings) {
+  let inside = false;
+  rings.forEach((r) => {
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+      const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+      if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+    }
+  });
+  return inside;
+}
+function districtAt(lat, lng) {
+  if (!_districts || typeof lat !== "number" || typeof lng !== "number") return null;
+  for (const d of _districts) {
+    if (lng < d.bbox[0] || lng > d.bbox[2] || lat < d.bbox[1] || lat > d.bbox[3]) continue;
+    if (d.polys.some((rings) => pointInRings(lng, lat, rings))) return d;
+  }
+  return null;
+}
+function cornerDistrict(c) {
+  if (!c || typeof c.lat !== "number" || !_districts) return null;
+  const k = `${c.id}|${c.lat}|${c.lng}`;
+  if (!(k in _districtCache)) _districtCache[k] = districtAt(c.lat, c.lng);
+  return _districtCache[k];
+}
+function districtBadgeHtml(c) {
+  const d = cornerDistrict(c);
+  return d ? `<span class="district-badge" title="${T("Stadtbezirk", "District")} ${escapeHtml(d.nr)} · ${escapeHtml(d.name)}">${escapeHtml(d.nr)}</span>` : "";
+}
+function detailDistrictHtml(c) {
+  const d = cornerDistrict(c);
+  if (d) return `🏙️ ${T("Stadtbezirk", "District")} <strong>${escapeHtml(d.nr)}</strong> · ${escapeHtml(d.name)} <button class="people-chip" data-district-map="${escapeHtml(d.nr)}">🗺️ ${T("Grenzen zeigen", "Show outline")}</button>`;
+  if (_districts && typeof c.lat === "number") return `🏞️ ${T("Außerhalb der Münchner Stadtbezirke", "Outside Munich's city districts")}`;
+  return "";
+}
+function districtCornerCounts() {
+  const counts = { out: 0 };
+  getAllCorners().forEach((c) => {
+    const d = cornerDistrict(c);
+    if (d) counts[d.nr] = (counts[d.nr] || 0) + 1; else counts.out++;
+  });
+  return counts;
+}
+
+/* ---- main map layer: outlines, numbers (names from zoom 13), popups ---- */
+var _districtLayer = null;
+function districtsVisible() { return localStorage.getItem("cg.districtsOn") !== "0"; }
+function updateDistrictToggle() {
+  const b = $("#district-toggle");
+  if (!b) return;
+  b.classList.toggle("on", districtsVisible());
+  b.textContent = districtsVisible() ? T("🏙️ Bezirke an", "🏙️ Districts on") : T("🏙️ Bezirke aus", "🏙️ Districts off");
+}
+function drawDistrictLayer() {
+  const map = STATE.mainMap;
+  updateDistrictToggle();
+  if (!map || typeof L === "undefined") return;
+  if (_districtLayer) { map.removeLayer(_districtLayer); _districtLayer = null; }
+  if (!_districts || !districtsVisible()) return;
+  const counts = districtCornerCounts();
+  const group = L.layerGroup();
+  _districts.forEach((d) => {
+    const shape = L.geoJSON(d.feature, { style: { color: "#e8a93e", weight: 1.6, opacity: 0.8, dashArray: "6 5", fillColor: "#e8a93e", fillOpacity: 0.035 } });
+    shape.on("click", (e) => {
+      const box = document.createElement("div");
+      const n = counts[d.nr] || 0;
+      box.innerHTML = `<strong>${escapeHtml(d.nr)} · ${escapeHtml(d.name)}</strong><br>${n} ${n === 1 ? "Corner" : "Corners"}${n ? `<br><button class="action-btn" style="margin-top:6px;padding:5px 10px;font-size:11px;">📋 ${T("In der Liste zeigen", "Show in list")}</button>` : ""}`;
+      box.querySelector("button")?.addEventListener("click", () => { map.closePopup(); setDistrictFilter(d.nr); $(`.tab[data-view="list"]`)?.click(); });
+      L.popup().setLatLng(e.latlng).setContent(box).openOn(map);
+    });
+    group.addLayer(shape);
+    if (Array.isArray(d.label)) {
+      group.addLayer(L.marker(d.label, {
+        icon: L.divIcon({ className: "district-label-wrap", html: `<div class="district-label"><b>${escapeHtml(d.nr)}</b><span>${escapeHtml(d.name)}</span></div>`, iconSize: [0, 0] }),
+        interactive: false, keyboard: false, zIndexOffset: -1000
+      }));
+    }
+  });
+  group.addTo(map);
+  _districtLayer = group;
+  syncDistrictLabelZoom(map);
+}
+function syncDistrictLabelZoom(map) {
+  if (map) map.getContainer().classList.toggle("district-names", map.getZoom() >= 13);
+}
+function highlightDistrict(nr) {
+  const d = (_districts || []).find((x) => x.nr === nr);
+  if (!d) return;
+  if (!districtsVisible()) { localStorage.setItem("cg.districtsOn", "1"); }
+  $(`.tab[data-view="map"]`)?.click();
+  setTimeout(() => {
+    const map = STATE.mainMap;
+    if (!map) return;
+    drawDistrictLayer();
+    map.fitBounds([[d.bbox[1], d.bbox[0]], [d.bbox[3], d.bbox[2]]], { padding: [24, 24] });
+    const hl = L.geoJSON(d.feature, { style: { color: "#ff2e6c", weight: 3, opacity: 1, fillColor: "#ff2e6c", fillOpacity: 0.08 }, interactive: false }).addTo(map);
+    setTimeout(() => { try { map.removeLayer(hl); } catch (e) {} }, 6000);
+  }, 260);
+}
+
+/* ---- list filter ---- */
+function setDistrictFilter(value) {
+  STATE.districtFilter = value || "";
+  const sel = $("#district-filter");
+  if (sel) sel.value = STATE.districtFilter;
+  renderCards();
+}
+function refreshDistrictFilter() {
+  const sel = $("#district-filter");
+  if (!sel) return;
+  if (!_districts) { sel.hidden = true; return; }
+  const counts = districtCornerCounts();
+  const opts = _districts.filter((d) => counts[d.nr]).map((d) => `<option value="${escapeHtml(d.nr)}">${escapeHtml(d.nr)} ${escapeHtml(d.name)} (${counts[d.nr]})</option>`);
+  if (counts.out) opts.push(`<option value="out">🏞️ ${T("Außerhalb Münchens", "Outside Munich")} (${counts.out})</option>`);
+  sel.innerHTML = `<option value="">🏙️ ${T("Alle Stadtbezirke", "All districts")}</option>${opts.join("")}`;
+  sel.value = STATE.districtFilter || "";
+  if (sel.value !== (STATE.districtFilter || "")) STATE.districtFilter = "";
+  sel.hidden = false;
+}
+function cornerMatchesDistrictFilter(c) {
+  const f = STATE.districtFilter || "";
+  if (!f || !_districts) return true;
+  const d = cornerDistrict(c);
+  return f === "out" ? !d : !!d && d.nr === f;
+}
+
+function onDistrictsLoaded() {
+  refreshDistrictFilter();
+  renderCards();
+  drawDistrictLayer();
+  if ($("#detail-overlay")?.classList.contains("open") && STATE.detailCornerId) {
+    const c = getAllCorners().find((x) => x.id === STATE.detailCornerId);
+    const box = document.querySelector("#detail-content .detail-district");
+    if (c && box) { box.innerHTML = detailDistrictHtml(c); bindDetailDistrict(box); }
+  }
+  if (_pinMap) drawPinDistricts();
+}
+function bindDetailDistrict(box) {
+  box?.querySelectorAll("[data-district-map]").forEach((b) => b.addEventListener("click", () => { closeDetail(); highlightDistrict(b.dataset.districtMap); }));
+}
+
+/* ====================== PIN PICKER (new spot) ======================
+   "Um einen neuen Spot hinzuzufügen sollte man auch eine Pin-setzen-auf-der-
+   Karte-Funktion haben": tap the map or drag the pin; the coordinates, the
+   district and (if empty) the Stadtteil field fill themselves.            */
+var _pinMap = null;
+var _pinMarker = null;
+var _pinDistrictLayer = null;
+function pinIcon() {
+  return L.divIcon({ className: "", html: `<div class="spot-pin">📍</div>`, iconSize: [36, 36], iconAnchor: [18, 34] });
+}
+function drawPinDistricts() {
+  if (!_pinMap || !_districts) return;
+  if (_pinDistrictLayer) _pinMap.removeLayer(_pinDistrictLayer);
+  _pinDistrictLayer = L.geoJSON({ type: "FeatureCollection", features: _districts.map((d) => d.feature) }, { style: { color: "#e8a93e", weight: 1.2, opacity: 0.7, dashArray: "5 5", fill: false }, interactive: false }).addTo(_pinMap);
+}
+function mountPinPicker() {
+  const el = $("#spot-pin-map");
+  if (!el || typeof L === "undefined") return;
+  if (!_pinMap) {
+    _pinMap = L.map(el, { zoomControl: true, attributionControl: false, scrollWheelZoom: false });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, crossOrigin: true }).addTo(_pinMap);
+    _pinMap.on("click", (e) => setSpotPin(e.latlng.lat, e.latlng.lng));
+    drawPinDistricts();
+  }
+  if (_pinMarker) { _pinMap.removeLayer(_pinMarker); _pinMarker = null; }
+  // With GPS on you are probably standing at the spot: start with the pin there.
+  if (STATE.geoActive && STATE.userPos) {
+    _pinMap.setView([STATE.userPos.lat, STATE.userPos.lng], 17);
+    setSpotPin(STATE.userPos.lat, STATE.userPos.lng);
+  } else {
+    const c = STATE.mainMap ? STATE.mainMap.getCenter() : { lat: MUNICH_CENTER[0], lng: MUNICH_CENTER[1] };
+    _pinMap.setView([c.lat, c.lng], STATE.mainMap ? Math.max(14, STATE.mainMap.getZoom()) : 13);
+    $("#spot-pin-info").innerHTML = `👆 ${T("Tipp auf die Karte, wo der Spot ist — den Pin kannst du danach noch verschieben.", "Tap the map where the spot is — you can drag the pin afterwards.")}`;
+  }
+  setTimeout(() => { try { _pinMap.invalidateSize(); } catch (e) {} }, 250);
+}
+function setSpotPin(lat, lng, opts = {}) {
+  if (!_pinMap) return;
+  if (!_pinMarker) {
+    _pinMarker = L.marker([lat, lng], { draggable: true, icon: pinIcon(), zIndexOffset: 1000 }).addTo(_pinMap);
+    _pinMarker.on("dragend", () => { const p = _pinMarker.getLatLng(); setSpotPin(p.lat, p.lng); });
+  } else {
+    _pinMarker.setLatLng([lat, lng]);
+  }
+  if (!opts.keepFields) {
+    $("#f-lat").value = lat.toFixed(6);
+    $("#f-lng").value = lng.toFixed(6);
+  }
+  updateSpotPinInfo(lat, lng);
+}
+function updateSpotPinInfo(lat, lng) {
+  const info = $("#spot-pin-info");
+  const d = districtAt(lat, lng);
+  const parts = [];
+  if (d) parts.push(`🏙️ <strong>${escapeHtml(d.nr)} ${escapeHtml(d.name)}</strong>`);
+  else if (_districts) parts.push(`🏞️ ${T("Außerhalb der Münchner Stadtbezirke", "Outside Munich's districts")}`);
+  let near = null, nearD = Infinity;
+  getAllCorners().forEach((c) => { const m = haversine(lat, lng, c.lat, c.lng); if (m < nearD) { nearD = m; near = c; } });
+  if (near && nearD < MIN_CORNER_DISTANCE_METERS) parts.push(`<span class="spot-pin-warn">⚠️ ${T(`nur ${Math.round(nearD)} m von „${escapeHtml(near.name)}“ — mindestens ${MIN_CORNER_DISTANCE_METERS} m Abstand`, `only ${Math.round(nearD)} m from “${escapeHtml(near.name)}” — keep ${MIN_CORNER_DISTANCE_METERS} m apart`)}</span>`);
+  if (info) info.innerHTML = parts.join(" · ") || "📍";
+  // Fill the Stadtteil field with the district unless the user typed one.
+  const area = $("#f-area");
+  if (area && d && (!area.value.trim() || area.dataset.auto === "1")) { area.value = d.name; area.dataset.auto = "1"; }
+}
+
 function initMainMap() {
   if (typeof L === "undefined") { toast("Karte konnte nicht geladen werden. Internetverbindung prüfen?"); return; }
   const map = L.map("main-map", { zoomControl: true }).setView([48.135, 11.555], 13);
@@ -4958,7 +5280,10 @@ function initMainMap() {
     crossOrigin: true
   }).addTo(map);
   STATE.mainMap = map;
+  map.attributionControl?.addAttribution(T("Stadtbezirke", "Districts") + " © OpenStreetMap-Mitwirkende");
+  map.on("zoomend", () => syncDistrictLabelZoom(map));
   rebuildMainMarkers();
+  drawDistrictLayer();
   if (STATE.geoActive && STATE.userPos) focusMainMapOnUser(STATE.userPos.lat, STATE.userPos.lng);
   else focusMainMapOnMunich();
 }
@@ -5051,13 +5376,21 @@ function bindModal() {
   $("#modal-backdrop").addEventListener("click", (e) => { if (e.target.id === "modal-backdrop") closeModal(); });
   $("#modal-save").addEventListener("click", saveNewSpot);
   $("#use-location").addEventListener("click", fillCurrentLocation);
+  // Typed coordinates move the pin; a typed Stadtteil is never overwritten.
+  ["#f-lat", "#f-lng"].forEach((sel) => $(sel).addEventListener("change", () => {
+    const lat = parseFloat($("#f-lat").value), lng = parseFloat($("#f-lng").value);
+    if (!isNaN(lat) && !isNaN(lng) && _pinMap) { setSpotPin(lat, lng, { keepFields: true }); _pinMap.setView([lat, lng], Math.max(_pinMap.getZoom(), 16)); }
+  }));
+  $("#f-area").addEventListener("input", () => { $("#f-area").dataset.auto = "0"; });
   $("#copy-export").addEventListener("click", copyExport);
 }
 
 function openModal() {
   ["f-name", "f-area", "f-desc", "f-tags", "f-lat", "f-lng"].forEach((id) => { $("#" + id).value = ""; });
+  $("#f-area").dataset.auto = "";
   refreshExportBlock();
   $("#modal-backdrop").classList.add("open");
+  mountPinPicker();
   setTimeout(() => $("#f-name").focus(), 100);
 }
 function closeModal() { $("#modal-backdrop").classList.remove("open"); }
@@ -5069,6 +5402,7 @@ function fillCurrentLocation() {
     (pos) => {
       $("#f-lat").value = pos.coords.latitude.toFixed(6);
       $("#f-lng").value = pos.coords.longitude.toFixed(6);
+      if (_pinMap) { setSpotPin(pos.coords.latitude, pos.coords.longitude); _pinMap.setView([pos.coords.latitude, pos.coords.longitude], 17); }
       $("#use-location").textContent = "📍 Übernommen";
       setTimeout(() => $("#use-location").textContent = "📍 Aktuellen Standort verwenden", 2000);
     },
@@ -5637,7 +5971,6 @@ function applyIncomingLinks() {
   const sharedTeam = (params.get("team") || "").trim();
   if (sharedTeam && autoCheckin) STATE.pendingSharedTeam = sharedTeam;
   // Push about a profile request (admins / the profile's current device).
-  if (params.get("claims") === "1") STATE.pendingClaimsFocus = true;
   if (params.get("feedback") === "1") STATE.pendingFeedbackFocus = true;
   const joinId = (params.get("join") || "").trim();
   if (joinId && /^[A-Za-z0-9_-]{1,128}$/.test(joinId)) STATE.pendingJoin = { id: joinId, here: params.get("here") === "1", name: sanitizeInviteName(params.get("n") || "").slice(0, 30) };
@@ -6225,11 +6558,7 @@ async function offerProfileTwin(twin) {
     cancelLabel: T("Nein, ich bin neu", "No, I'm new")
   });
   if (ok !== true || !window.FB?.firebaseReady) return;
-  let lock = null;
-  try { lock = (await window.FB.get(window.FB.ref(window.FB.db, "profileLocks/" + twin.key))).val(); } catch (err) { lock = null; }
-  const uid = window.FB.getAuthUid?.() || "";
-  if (!lock || !lock.by || lock.by === uid || STATE.isAdmin) await claimExistingProfile(twin.key);
-  else await requestProfileClaim(twin.key, twin.nickname, lock);
+  await claimExistingProfile(twin.key);
 }
 
 function saveNickname() {
@@ -6564,8 +6893,6 @@ function _activateAuthDependentFeatures(uid, status) {
   try {
     window.FB.onValue(window.FB.ref(window.FB.db, "config/admins/" + uid), (snap) => {
       STATE.isAdmin = snap.val() === true;
-      if (STATE.isAdmin) listenProfileClaimsAsAdmin();
-      else if (STATE.pendingClaimsFocus) { STATE.pendingClaimsFocus = false; clearHandledQueryParam("claims"); }
       if (STATE.pendingFeedbackFocus) {
         STATE.pendingFeedbackFocus = false;
         clearHandledQueryParam("feedback");
@@ -6574,11 +6901,8 @@ function _activateAuthDependentFeatures(uid, status) {
       if (STATE.isAdmin && STATE.view === "profile") renderProfile();
     }, { onlyOnce: true });
   } catch (err) { console.warn("admin flag check failed:", err); }
-  // Profile rescue: finish my own pending requests (requests for my own profile
-  // are watched once ensureOwnProfileLock() has confirmed the lock).
-  watchPendingClaims();
-  clearHandledQueryParam("claimed");
-  setTimeout(maybeNudgeProfileBackup, 20000);
+  // localStorage saying "access granted" is no proof for THIS login — check.
+  verifyAccessGrant();
 }
 
 /* ====================== PROFILE CLOUD SYNC & ACCOUNT PORTABILITY ====================== */
@@ -6735,15 +7059,8 @@ async function claimRecoveryCode(rawCode) {
     let moved = false;
     const oldKey = remote.createdBy;
     if (oldKey && uid && oldKey !== uid) {
-      try {
-        await window.FB.set(window.FB.ref(window.FB.db, `profileClaims/${oldKey}/${uid}`), {
-          at: Date.now(), status: "pending", code,
-          nickname: String(STATE.nickname || remote.nickname || "").slice(0, 40),
-          oldNickname: String(remote.nickname || "").slice(0, 40)
-        });
-        moved = await claimExistingProfile(oldKey, { quiet: true });
-      } catch (err) { console.warn("recovery live transfer failed:", err); }
-      window.FB.remove(window.FB.ref(window.FB.db, `profileClaims/${oldKey}/${uid}`)).catch(() => {});
+      try { moved = await claimExistingProfile(oldKey, { quiet: true }); }
+      catch (err) { console.warn("recovery live transfer failed:", err); }
     }
     if (!moved) {
       applyProfileSnapshot(remote, { silent: true });   // move the profile onto this device's uid
@@ -7313,8 +7630,6 @@ async function renderAdminPanel() {
   $("#admin-clean-presence").onclick = adminCleanPresence;
   $("#admin-dedupe-visits").onclick = adminDedupeVisits;
   renderAdminFeedback();
-  listenProfileClaimsAsAdmin();
-  renderAdminClaims();
   const profilesEl = $("#admin-profiles");
   profilesEl.innerHTML = `<p style="color:var(--fg-dim);font-size:12px;">Lade…</p>`;
   try {
@@ -7355,17 +7670,13 @@ function profileBackupState() {
   return { online, info, linked: online && !info.anonymous, code: savedRecoveryCode(), iosBrowser: isIOS && !standalone };
 }
 
-// Shown on top of the profile until the profile survives a lost browser.
+// iPhone in Safari: the home-screen app starts with its own (empty) storage.
+// Tell people what to do there — pick their name — before they wonder.
 function buildBackupBannerHtml() {
   const st = profileBackupState();
-  if (!st.online || st.linked || !STATE.nickname) return "";
-  if (st.code && !st.iosBrowser) return "";
-  const text = st.iosBrowser
-    ? T("📲 iPhone: Die App auf dem Home-Bildschirm hat einen <strong>eigenen Speicher</strong> — dort startest du sonst mit leerem Profil. Sichere dein Profil vorher (Google, E-Mail oder Recovery-Code).", "📲 iPhone: the home-screen app has its <strong>own storage</strong> — you would start with an empty profile there. Secure your profile first (Google, email or recovery code).")
-    : T("🛟 Dein Profil hängt nur an diesem Browser. Werden die Browserdaten gelöscht oder wechselst du das Handy, ist es weg — sichere es in 10 Sekunden.", "🛟 Your profile only lives in this browser. If browser data is cleared or you switch phones, it is gone — secure it in 10 seconds.");
-  return `<div class="backup-banner">${text}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-    <button class="action-btn primary" data-backup-action="google">🔗 ${T("Mit Google", "With Google")}</button>
-    <button class="action-btn" data-backup-action="code">🎟️ ${T("Recovery-Code", "Recovery code")}</button>
+  if (!st.online || st.linked || !STATE.nickname || !st.iosBrowser) return "";
+  return `<div class="backup-banner">${T("📲 iPhone: Fügst du die App zum Home-Bildschirm hinzu, startet sie mit eigenem Speicher — tipp dort bei „Wer bist du?“ einfach deinen Namen an. Mit Google gesichert bist du überall automatisch du.", "📲 iPhone: add the app to your home screen and it starts with its own storage — just tap your name at “Who are you?” there. Secured with Google you are yourself everywhere.")}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+    <button class="action-btn primary" data-backup-action="google">🔗 ${T("Mit Google sichern", "Secure with Google")}</button>
     <button class="action-btn" data-backup-action="more">${T("Mehr…", "More…")}</button>
   </div></div>`;
 }
@@ -7391,28 +7702,12 @@ function buildAccountSectionHtml() {
         <button class="notif-opt" id="acct-email-btn">✉️ ${T("Mit E-Mail sichern", "Secure with email")}</button>`}
         ${st.code ? "" : `<button class="notif-opt" id="acct-code-create-btn">🎟️ ${T("Recovery-Code erstellen", "Create recovery code")}</button>`}
         <button class="notif-opt" id="acct-code-claim-btn">📥 ${T("Recovery-Code eingeben", "Enter recovery code")}</button>
-        <button class="notif-opt" id="acct-claim-btn">👥 ${T("Altes Profil übernehmen", "Take back an old profile")}</button>
+        <button class="notif-opt" id="acct-claim-btn">👥 ${T("Profil wählen (Gerät gewechselt?)", "Pick your profile (new device?)")}</button>
       </div>` : "";
   const idLine = uid
     ? `<p class="acct-uid">${T("Deine Nutzer-ID", "Your user ID")}: <code>${escapeHtml(uid)}</code> <button class="action-btn" id="acct-uid-copy" style="padding:2px 8px;font-size:10px;">📋</button><br><span>${T("Brauchst du nur, wenn ein Admin dir helfen soll.", "Only needed when an admin helps you.")}</span></p>`
     : "";
   return `<div class="notification-toggle account-section" id="account-section"><h3>🔐 ${T("Konto & Profil sichern", "Secure account & profile")}</h3>${statusLine}${codeLine}${buttons}${idLine}</div>`;
-}
-
-// Gentle reminder (at most every 5 days) once there is something to lose.
-function maybeNudgeProfileBackup() {
-  const st = profileBackupState();
-  if (!st.online || st.linked || st.code || !STATE.nickname) return;
-  if (getLevel(getCurrentAura()).level < 3) return;
-  const last = parseInt(localStorage.getItem("cg.backupNudgeAt") || "0", 10) || 0;
-  if (Date.now() - last < 5 * 86400000) return;
-  localStorage.setItem("cg.backupNudgeAt", String(Date.now()));
-  toastWhenFree(`🛟 <strong>${T("Sichere dein Profil", "Secure your profile")}</strong><br><span style="font-size:11px;opacity:0.8;">${T("Sonst ist es bei neuem Handy oder gelöschtem Browser weg. Tippen →", "Otherwise it is gone with a new phone or cleared browser. Tap →")}</span>`, null, () => goToAccountSection());
-}
-
-function goToAccountSection() {
-  $(`.tab[data-view="profile"]`)?.click();
-  setTimeout(() => $("#account-section")?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
 }
 
 // Reserve my own profile so it is never offered to anyone else in the claim
@@ -7422,12 +7717,11 @@ async function ensureOwnProfileLock() {
   const uid = window.FB.getAuthUid?.() || "";
   const key = currentUserKey();
   if (!uid || !key) return;
-  if (localStorage.getItem("cg.profileLocked") === key) { listenClaimsForMyProfile(); return; }
+  if (localStorage.getItem("cg.profileLocked") === key) { watchOwnProfileLock(); return; }
   try {
     await window.FB.set(window.FB.ref(window.FB.db, "profileLocks/" + key), { by: uid, at: Date.now(), nickname: STATE.nickname });
     localStorage.setItem("cg.profileLocked", key);
-    // Reading requests for my profile needs the lock — listen only now.
-    listenClaimsForMyProfile();
+    watchOwnProfileLock();
   } catch (err) { console.warn("ensureOwnProfileLock failed:", err); }
 }
 
@@ -7435,20 +7729,10 @@ async function ensureOwnProfileLock() {
    Who you are is an anonymous Firebase login stored in this browser. It is
    gone when the browser data is cleared, when Safari wipes a site after a week
    without a visit, when the app is added to the iPhone home screen (separate
-   storage!) or on a new phone. The old profile then still exists — but it is
-   locked to the lost login, and the claim list used to hide locked profiles,
-   so exactly the profiles people lost could not be taken back.
-   Now a locked profile can be REQUESTED: an admin or the old device (if it
-   still works) approves, and the requester's app moves everything over.
-   A recovery code proves ownership on its own, without anyone approving.   */
-
-function pendingClaimKeys() {
-  try { const v = JSON.parse(localStorage.getItem("cg.pendingClaims") || "[]"); return Array.isArray(v) ? v.filter((k) => typeof k === "string" && k) : []; }
-  catch (e) { return []; }
-}
-function setPendingClaimKeys(list) {
-  localStorage.setItem("cg.pendingClaims", JSON.stringify(Array.from(new Set(list)).slice(-5)));
-}
+   storage!) or on a new phone. The profile itself stays in the database.
+   Among friends the simplest fix is the right one: on a new device you pick
+   yourself from the list — one tap, no codes, no approval. The device that
+   had the profile before is told and asks "who are you?" again.            */
 
 // Last time a profile earned anything — helps to recognise "that was me".
 function lastRewardTime(entry) {
@@ -7470,15 +7754,18 @@ async function adminUids() {
   } catch (err) { return []; }
 }
 
-/* ---- Claim an existing profile: friends who already played pick their old identity ---- */
+/* ---- "Wer bist du?": pick your profile from the list ---- */
 async function openClaimOverlay(opts = {}) {
   const overlay = $("#claim-overlay");
   const list = $("#claim-list");
   if (!overlay || !list) return;
   // Welcome mode: shown right after entering the invite code, so returning
   // friends grab their old profile before anything else.
-  $("#claim-title").textContent = opts.welcome ? T("👋 Warst du schon mal dabei?", "👋 Have you been here before?") : T("👥 Altes Profil übernehmen", "👥 Take back an old profile");
-  $("#claim-close").textContent = opts.welcome ? T("Nein, ich bin neu hier", "No, I'm new here") : T("Schließen", "Close");
+  $("#claim-title").textContent = opts.welcome ? T("👋 Wer bist du?", "👋 Who are you?") : T("👥 Profil wählen", "👥 Pick your profile");
+  $("#claim-intro").textContent = opts.welcome
+    ? T("Warst du schon mal dabei? Tipp auf deinen Namen — Punkte, Level, Team und Corners sind sofort wieder da.", "Been here before? Tap your name — points, level, team and corners are back right away.")
+    : T("Tipp auf deinen Namen — dein Profil wechselt auf dieses Gerät. Was du hier schon gesammelt hast, wird dazugezählt.", "Tap your name — your profile moves to this device. What you collected here is added.");
+  $("#claim-close").textContent = opts.welcome ? T("Ich bin neu hier", "I'm new here") : T("Schließen", "Close");
   overlay.style.display = "flex";
   const closeAndContinue = () => { overlay.style.display = "none"; maybeShowNicknamePrompt(); };
   $("#claim-close").onclick = closeAndContinue;
@@ -7486,51 +7773,30 @@ async function openClaimOverlay(opts = {}) {
   if (!window.FB?.firebaseReady) { list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">${T("Nur online verfügbar.", "Only available online.")}</p>`; return; }
   list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">${T("Lade Profile…", "Loading profiles…")}</p>`;
   try {
-    const [snap, lockSnap] = await Promise.all([
-      window.FB.get(window.FB.ref(window.FB.db, "points")),
-      window.FB.get(window.FB.ref(window.FB.db, "profileLocks")).catch(() => ({ val: () => ({}) }))
-    ]);
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, "points"));
     const data = snap.val() || {};
-    const locks = lockSnap.val() || {};
-    const uid = window.FB.getAuthUid?.() || "";
     const mine = currentUserKey();
-    const pending = pendingClaimKeys();
-    // Locked profiles stay in the list: they are exactly the ones people lose.
-    // Taking one over then needs an approval instead of a single tap.
     const rows = Object.entries(data)
-      .map(([key, p]) => ({
-        key,
-        nickname: (p && p.nickname) || "",
-        total: Number((p && p.total) || 0),
-        last: lastRewardTime(p),
-        locked: !!(locks[key] && locks[key].by && locks[key].by !== uid)
-      }))
+      .map(([key, p]) => ({ key, nickname: (p && p.nickname) || "", total: Number((p && p.total) || 0), last: lastRewardTime(p) }))
       .filter((r) => r.key !== mine && !isMyKey(r.key) && r.nickname && r.nickname.toLowerCase() !== "anonym" && r.total > 0)
-      .sort((a, b) => b.total - a.total);
+      .sort((a, b) => a.nickname.localeCompare(b.nickname, "de", { sensitivity: "base" }));
     if (!rows.length) {
       list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">${T("Keine anderen Profile gefunden.", "No other profiles found.")}</p>`;
       return;
     }
-    const rowHtml = (r) => {
-      const { level } = getLevel(r.total);
-      const tier = getLevelTier(level);
-      let action;
-      if (!r.locked) action = `<button class="action-btn primary" data-claim-key="${escapeHtml(r.key)}">${T("Das war ich", "That was me")}</button>`;
-      else if (STATE.isAdmin) action = `<button class="action-btn primary" data-claim-key="${escapeHtml(r.key)}" title="${T("Als Admin direkt übernehmen", "Take over directly as admin")}">🛠 ${T("Übernehmen", "Take over")}</button>`;
-      else if (pending.includes(r.key)) action = `<button class="action-btn" data-claim-withdraw="${escapeHtml(r.key)}" title="${T("Anfrage zurückziehen", "Withdraw request")}">⏳ ${T("Angefragt", "Requested")}</button>`;
-      else action = `<button class="action-btn" data-claim-request="${escapeHtml(r.key)}">🔒 ${T("Anfragen", "Request")}</button>`;
-      return `<div class="claim-row" data-claim-name="${escapeHtml(r.nickname.toLowerCase())}">
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.locked ? "🔒 " : ""}${escapeHtml(r.nickname)}</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);">${tier.emoji} Lv.${level} · ${r.total} Aura${r.last ? " · " + sinceLabel(r.last) : ""}</div>
-        </div>
-        ${action}
-      </div>`;
-    };
     list.innerHTML = `
       ${rows.length > 6 ? `<input type="search" id="claim-search" class="claim-search" placeholder="${T("Namen suchen…", "Search name…")}" autocomplete="off" />` : ""}
-      <p class="claim-hint">${T("🔒 = ist noch an ein anderes Gerät/Login gebunden. Ist es dein altes Profil, tippe „Anfragen“ — ein Admin oder dein altes Gerät bestätigt, danach zieht alles automatisch zu dir um.", "🔒 = still bound to another device/login. If it is your old profile, tap “Request” — an admin or your old device confirms, then everything moves over automatically.")}</p>
-      <div id="claim-rows">${rows.map(rowHtml).join("")}</div>`;
+      <div id="claim-rows">${rows.map((r) => {
+        const { level } = getLevel(r.total);
+        const tier = getLevelTier(level);
+        return `<button class="claim-row" data-claim-key="${escapeHtml(r.key)}" data-claim-name="${escapeHtml(r.nickname.toLowerCase())}">
+          <span class="claim-row-main">
+            <span class="claim-row-name">${escapeHtml(r.nickname)}</span>
+            <span class="claim-row-meta">${tier.emoji} Lv.${level} · ${r.total} Aura${r.last ? " · " + sinceLabel(r.last) : ""}</span>
+          </span>
+          <span class="claim-row-cta">${T("Das bin ich", "That's me")} →</span>
+        </button>`;
+      }).join("")}</div>`;
     $("#claim-search")?.addEventListener("input", (e) => {
       const q = String(e.target.value || "").trim().toLowerCase();
       list.querySelectorAll(".claim-row").forEach((row) => { row.style.display = !q || row.dataset.claimName.includes(q) ? "" : "none"; });
@@ -7538,27 +7804,18 @@ async function openClaimOverlay(opts = {}) {
     list.querySelectorAll("[data-claim-key]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const row = rows.find((x) => x.key === btn.dataset.claimKey);
+        if (!row) return;
+        // Only warn when that profile is in use on another phone right now.
+        const p = STATE.friends?.[row.key];
+        const activeElsewhere = p && presenceIsVisible(p) && Date.now() - Number(p.lastSeen || 0) < 2 * 3600000;
         const ok = await showDialog({
-          title: T(`Profil „${row ? row.nickname : ""}“ übernehmen?`, `Take over “${row ? row.nickname : ""}”?`),
-          text: T("Punkte, Level, Achievements, Team und besuchte Corners werden mit deinem jetzigen Profil zusammengelegt.", "Points, levels, achievements, team and visited corners are merged into your current profile."),
-          okLabel: T("Das war ich", "That was me")
+          title: T(`Du bist „${row.nickname}“?`, `You are “${row.nickname}”?`),
+          text: activeElsewhere
+            ? T(`„${row.nickname}“ ist gerade auf einem anderen Handy online. Wenn du das bist (neues Handy), tipp auf „Ja“ — das andere Gerät fragt dann neu, wer es ist.`, `“${row.nickname}” is online on another phone right now. If that's you (new phone), tap “Yes” — the other device will then ask who it is.`)
+            : T("Punkte, Level, Achievements, Team und deine Corners kommen auf dieses Gerät.", "Points, level, achievements, team and your corners move to this device."),
+          okLabel: T("Ja, das bin ich", "Yes, that's me")
         });
-        if (ok === true) claimExistingProfile(btn.dataset.claimKey);
-      });
-    });
-    list.querySelectorAll("[data-claim-request]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const row = rows.find((x) => x.key === btn.dataset.claimRequest);
-        if (row && await requestProfileClaim(row.key, row.nickname, locks[row.key])) openClaimOverlay(opts);
-      });
-    });
-    list.querySelectorAll("[data-claim-withdraw]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const key = btn.dataset.claimWithdraw;
-        if (!(await appConfirm(T("Anfrage zurückziehen?", "Withdraw request?"), "", T("Zurückziehen", "Withdraw")))) return;
-        await window.FB.remove(window.FB.ref(window.FB.db, `profileClaims/${key}/${uid}`)).catch(() => {});
-        setPendingClaimKeys(pendingClaimKeys().filter((k) => k !== key));
-        openClaimOverlay(opts);
+        if (ok === true) claimExistingProfile(row.key);
       });
     });
   } catch (err) {
@@ -7567,204 +7824,36 @@ async function openClaimOverlay(opts = {}) {
   }
 }
 
-// Ask for a locked profile. Admins and the profile's current device get a push
-// and decide; the request waits in the background until then.
-async function requestProfileClaim(oldKey, oldNickname, lock) {
+// The device that had a profile notices when someone picks it on another
+// device, and asks "who are you?" again instead of carrying on as a ghost.
+var _ownLockUnsub = null;
+function watchOwnProfileLock() {
   const uid = window.FB?.getAuthUid?.() || "";
-  if (!uid || !window.FB?.firebaseReady) { toast(T("Nur online möglich.", "Only possible online.")); return false; }
-  if (localStorage.getItem("cg.accessGranted") !== "1") { toast(T("Bitte zuerst den Zugangscode eingeben.", "Please enter the access code first.")); return false; }
-  const note = await appPrompt(
-    T(`„${oldNickname}“ anfragen`, `Request “${oldNickname}”`), "",
-    T("z. B. neues Handy, Browser gelöscht…", "e.g. new phone, cleared browser…"),
-    { text: T("Ein Admin oder dein altes Gerät bestätigt die Übernahme. Woran erkennen sie dich? (optional)", "An admin or your old device confirms. How will they recognise you? (optional)"), okLabel: T("Anfrage senden", "Send request") }
-  );
-  if (note === null) return false;
-  const { db, ref, set } = window.FB;
-  try {
-    await set(ref(db, `profileClaims/${oldKey}/${uid}`), {
-      at: Date.now(), status: "pending",
-      nickname: String(STATE.nickname || "").slice(0, 40),
-      oldNickname: String(oldNickname || "").slice(0, 40),
-      note: String(note || "").slice(0, 200)
-    });
-  } catch (err) {
-    console.warn("requestProfileClaim failed:", err);
-    toast(T("Anfrage konnte nicht gespeichert werden.", "Could not save the request."));
-    return false;
-  }
-  setPendingClaimKeys([...pendingClaimKeys(), oldKey]);
-  watchPendingClaims();
-  const admins = await adminUids();
-  sendTargetedPush([...admins, lock && lock.by].filter((id) => id && id !== uid), {
-    type: "profile-claim",
-    title: "🙋 Profil-Übernahme",
-    body: `${STATE.nickname || "Jemand"} möchte das Profil „${oldNickname}“ übernehmen — bitte bestätigen.`,
-    query: "?claims=1"
-  });
-  toast(T(`📨 Anfrage für „${escapeHtml(oldNickname)}“ gesendet. Sobald sie bestätigt ist, zieht dein Profil automatisch um.`, `📨 Request for “${escapeHtml(oldNickname)}” sent. Once confirmed, your profile moves over automatically.`));
-  return true;
-}
-
-// Requester side: wait for the approval (the lock switching to me) or a
-// rejection, then finish the move without any further tap.
-var _claimWatchers = {};
-function watchPendingClaims() {
-  const uid = window.FB?.getAuthUid?.() || "";
-  if (!uid || !window.FB?.firebaseReady) return;
-  const { db, ref, onValue, remove } = window.FB;
-  pendingClaimKeys().forEach((oldKey) => {
-    if (_claimWatchers[oldKey]) return;
-    const w = _claimWatchers[oldKey] = { done: false, unsub: [] };
-    const finish = () => {
-      w.done = true;
-      w.unsub.forEach((fn) => { try { fn(); } catch (e) {} });
-      delete _claimWatchers[oldKey];
-      setPendingClaimKeys(pendingClaimKeys().filter((k) => k !== oldKey));
-    };
-    w.unsub.push(onValue(ref(db, "profileLocks/" + oldKey), async (snap) => {
-      const lock = snap.val();
-      if (w.done || w.busy || !lock || lock.by !== uid) return;
-      // An optimistic local event can claim "the lock is mine" before the
-      // server answers — keep watching unless the move really went through.
-      w.busy = true;
-      const ok = await claimExistingProfile(oldKey, { approved: true, quietFail: true });
-      w.busy = false;
-      if (ok) finish();
-    }, () => {}));
-    w.unsub.push(onValue(ref(db, `profileClaims/${oldKey}/${uid}`), (snap) => {
-      const c = snap.val();
-      if (w.done || !c || c.status !== "rejected") return;
-      finish();
-      remove(ref(db, `profileClaims/${oldKey}/${uid}`)).catch(() => {});
-      toast(T(`❌ Deine Anfrage für „${escapeHtml(c.oldNickname || "?")}“ wurde abgelehnt.`, `❌ Your request for “${escapeHtml(c.oldNickname || "?")}” was declined.`));
-    }, () => {}));
-  });
-}
-
-/* ---- Deciding on requests: admins see all, the current owner sees its own ---- */
-var _profileClaims = {};        // admin view: { oldKey: { uid: claim } }
-var _profileClaimsPrimed = false;
-var _profileClaimsListening = false;
-function pendingClaimList(all = _profileClaims) {
-  const out = [];
-  Object.entries(all || {}).forEach(([oldKey, byUid]) => {
-    Object.entries(byUid || {}).forEach(([uid, c]) => { if (c && c.status === "pending") out.push({ oldKey, uid, ...c }); });
-  });
-  return out.sort((a, b) => Number(a.at || 0) - Number(b.at || 0));
-}
-
-function listenProfileClaimsAsAdmin() {
-  if (!STATE.isAdmin || _profileClaimsListening || !window.FB?.firebaseReady) return;
-  _profileClaimsListening = true;
+  if (!uid || !window.FB?.firebaseReady || _ownLockUnsub) return;
   const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "profileClaims"), (snap) => {
-    const before = pendingClaimList().length;
-    _profileClaims = snap.val() || {};
-    const now = pendingClaimList().length;
-    if (_profileClaimsPrimed && now > before) {
-      toast(`🙋 <strong>${T("Neue Profil-Anfrage", "New profile request")}</strong><br><span style="font-size:11px;opacity:0.8;">${T("Tippen zum Entscheiden →", "Tap to decide →")}</span>`, null, () => openAdminClaims());
-    }
-    _profileClaimsPrimed = true;
-    if (STATE.pendingClaimsFocus && now) { STATE.pendingClaimsFocus = false; clearHandledQueryParam("claims"); openAdminClaims(); }
-    if ($("#admin-overlay")?.style.display === "flex") renderAdminClaims();
+  _ownLockUnsub = onValue(ref(db, "profileLocks/" + uid), (snap) => {
+    const lock = snap.val();
+    if (!lock || !lock.by || lock.by === uid || !STATE.nickname) return;
+    const name = STATE.nickname;
+    try { _ownLockUnsub(); } catch (e) {}
+    _ownLockUnsub = null;
+    STATE.nickname = "";
+    localStorage.removeItem("cg.nickname");
+    localStorage.removeItem("cg.profileLocked");
+    if (STATE.points) delete STATE.points[uid];
+    if (STATE.karmaPoints) delete STATE.karmaPoints[uid];
+    savePoints();
+    saveKarmaPoints();
+    if (window.FB?.firebaseReady) window.FB.remove(window.FB.ref(window.FB.db, "presence/" + uid)).catch(() => {});
+    updateNicknameBar();
     if (STATE.view === "profile") renderProfile();
-  }, () => { _profileClaimsListening = false; });
+    toast(T(`📲 „${escapeHtml(name)}“ ist jetzt auf einem anderen Gerät. Wer bist du hier?`, `📲 “${escapeHtml(name)}” is on another device now. Who are you here?`));
+    setTimeout(() => openClaimOverlay({ welcome: true }), 800);
+  }, () => { _ownLockUnsub = null; });
 }
 
-function openAdminClaims() { openAdminSection("#admin-claims"); }
 function openAdminSection(sel) {
   renderAdminPanel().then(() => setTimeout(() => $(sel)?.scrollIntoView({ behavior: "smooth", block: "start" }), 150));
-}
-
-function renderAdminClaims() {
-  const el = $("#admin-claims");
-  if (!el) return;
-  const claims = pendingClaimList();
-  if (!claims.length) { el.innerHTML = `<p style="color:var(--fg-dim);font-size:12px;">${T("Keine offenen Anfragen. ✨", "No open requests. ✨")}</p>`; return; }
-  el.innerHTML = claims.map((c, i) => {
-    const old = STATE.points?.[c.oldKey] || {};
-    const cur = STATE.points?.[c.uid] || {};
-    const ownerPresence = STATE.friends?.[c.oldKey];
-    const activeOwner = ownerPresence && Date.now() - Number(ownerPresence.lastSeen || 0) < 7 * 86400000;
-    return `<div class="admin-claim">
-      <div style="font-size:13px;"><strong>${escapeHtml((cur.nickname && cur.nickname !== "Anonym" ? cur.nickname : "") || c.nickname || T("Neues Profil", "New profile"))}</strong> <span style="color:var(--fg-dim);">(${Number(cur.total || 0)} Aura)</span> ${T("möchte", "wants")} <strong>„${escapeHtml(c.oldNickname || old.nickname || "?")}“</strong> <span style="color:var(--fg-dim);">(${Number(old.total || 0)} Aura${lastRewardTime(old) ? ", " + sinceLabel(lastRewardTime(old)) : ""})</span></div>
-      ${c.note ? `<div class="admin-claim-note">„${escapeHtml(c.note)}“</div>` : ""}
-      ${activeOwner ? `<div class="admin-claim-warn">⚠️ ${T("Das Profil war in den letzten Tagen noch online — vorher nachfragen!", "This profile was online in the last days — check first!")}</div>` : ""}
-      <div style="display:flex;gap:6px;margin-top:8px;">
-        <button class="action-btn primary" data-claim-approve="${i}">✅ ${T("Freigeben", "Approve")}</button>
-        <button class="action-btn" data-claim-reject="${i}" style="border-color:var(--pink);color:var(--pink);">✖ ${T("Ablehnen", "Decline")}</button>
-      </div>
-    </div>`;
-  }).join("");
-  el.querySelectorAll("[data-claim-approve]").forEach((b) => b.addEventListener("click", () => decideProfileClaim(claims[+b.dataset.claimApprove], true)));
-  el.querySelectorAll("[data-claim-reject]").forEach((b) => b.addEventListener("click", () => decideProfileClaim(claims[+b.dataset.claimReject], false)));
-}
-
-async function decideProfileClaim(c, approve, others = null) {
-  if (!c || !window.FB?.firebaseReady) return;
-  const { db, ref, set, update } = window.FB;
-  const me = window.FB.getAuthUid?.() || "";
-  const oldName = c.oldNickname || STATE.points?.[c.oldKey]?.nickname || "?";
-  if (approve && !(await showDialog({
-    title: T(`„${oldName}“ an ${c.nickname || "?"} geben?`, `Give “${oldName}” to ${c.nickname || "?"}?`),
-    text: T("Die Punkte ziehen beim nächsten App-Start der Person automatisch um.", "The points move over automatically the next time that person opens the app."),
-    okLabel: T("Freigeben", "Approve")
-  }))) return;
-  try {
-    if (approve) {
-      await set(ref(db, "profileLocks/" + c.oldKey), { by: c.uid, at: Date.now(), nickname: String(c.nickname || "").slice(0, 40), approvedBy: me });
-    }
-    await update(ref(db, `profileClaims/${c.oldKey}/${c.uid}`), { status: approve ? "approved" : "rejected", decidedAt: Date.now() });
-    // Only one person can get a profile: decline the competing requests.
-    if (approve) {
-      const rivals = (others || pendingClaimList()).filter((x) => x.oldKey === c.oldKey && x.uid !== c.uid);
-      await Promise.all(rivals.map((x) => update(ref(db, `profileClaims/${x.oldKey}/${x.uid}`), { status: "rejected", decidedAt: Date.now() }).catch(() => {})));
-    }
-    sendTargetedPush([c.uid], approve
-      ? { type: "profile-claim-ok", title: "✅ Profil freigegeben", body: `„${oldName}“ gehört wieder dir — öffne die App, dein Profil zieht automatisch um.`, query: "?claimed=1" }
-      : { type: "profile-claim-no", title: "Profil-Anfrage", body: `Deine Anfrage für „${oldName}“ wurde abgelehnt.`, query: "?claimed=1" });
-    toast(approve ? T(`✅ „${escapeHtml(oldName)}“ freigegeben`, `✅ “${escapeHtml(oldName)}” approved`) : T("Anfrage abgelehnt.", "Request declined."));
-  } catch (err) {
-    console.warn("decideProfileClaim failed:", err);
-    toast(T("Konnte die Entscheidung nicht speichern.", "Could not save the decision."));
-  }
-}
-
-// The device that still owns a profile is asked directly ("Warst du das?") —
-// the common case of moving to a new phone while the old one still works.
-var _ownerClaimsUnsub = null;
-var _ownerClaimsAsked = {};
-function listenClaimsForMyProfile() {
-  const uid = window.FB?.getAuthUid?.() || "";
-  if (!uid || !window.FB?.firebaseReady || _ownerClaimsUnsub) return;
-  const { db, ref, onValue } = window.FB;
-  _ownerClaimsUnsub = onValue(ref(db, "profileClaims/" + uid), (snap) => {
-    const claims = pendingClaimList({ [uid]: snap.val() || {} });
-    claims.forEach(async (c) => {
-      if (_ownerClaimsAsked[c.uid]) return;
-      _ownerClaimsAsked[c.uid] = true;
-      const ok = await showDialog({
-        title: T("📲 Profil auf ein anderes Gerät übertragen?", "📲 Move your profile to another device?"),
-        text: T(`„${c.nickname || "Jemand"}“ möchte dein Profil „${STATE.nickname || ""}“ übernehmen${c.note ? ` („${c.note}“)` : ""}. Nur bestätigen, wenn du das selbst bist (z. B. neues Handy) — danach ist das Profil auf diesem Gerät weg.`,
-          `“${c.nickname || "Someone"}” wants to take over your profile “${STATE.nickname || ""}”${c.note ? ` (“${c.note}”)` : ""}. Only confirm if that is you (e.g. a new phone) — the profile then leaves this device.`),
-        okLabel: T("Ja, das bin ich", "Yes, that's me"),
-        cancelLabel: T("Nein, ablehnen", "No, decline")
-      });
-      decideProfileClaimAsOwner(c, ok === true);
-    });
-  }, () => { _ownerClaimsUnsub = null; });
-}
-
-async function decideProfileClaimAsOwner(c, approve) {
-  const { db, ref, set, update } = window.FB;
-  try {
-    if (approve) await set(ref(db, "profileLocks/" + c.oldKey), { by: c.uid, at: Date.now(), nickname: String(c.nickname || "").slice(0, 40), approvedBy: window.FB.getAuthUid?.() || "" });
-    await update(ref(db, `profileClaims/${c.oldKey}/${c.uid}`), { status: approve ? "approved" : "rejected", decidedAt: Date.now() });
-    toast(approve ? T("✅ Übertragen — dein Profil zieht auf das neue Gerät um.", "✅ Transferred — your profile moves to the new device.") : T("Anfrage abgelehnt.", "Request declined."));
-  } catch (err) {
-    console.warn("decideProfileClaimAsOwner failed:", err);
-    toast(T("Konnte die Entscheidung nicht speichern.", "Could not save the decision."));
-  }
 }
 
 // Reconstruct which corners a nickname has visited from the shared visits node.
@@ -7820,16 +7909,15 @@ async function claimExistingProfile(oldKey, opts = {}) {
   const { db, ref, get, set, update, remove, runTransaction } = window.FB;
   const uid = window.FB.getAuthUid?.() || "";
   try {
-    // Claim the lock FIRST. The rule only permits it when the lock is unset,
-    // already ours (approved), proven by a recovery code, or for admins — a
-    // second person gets permission_denied here instead of the profile.
+    // Take the lock first: the device that had this profile watches its lock
+    // and asks "who are you?" again once it moves here.
     try {
       await set(ref(db, "profileLocks/" + oldKey), { by: uid, at: Date.now(), nickname: STATE.nickname || "" });
     } catch (lockErr) {
       console.warn("profile lock refused:", lockErr);
       if (!opts.quiet && !opts.quietFail) {
-        toast(T("🔒 Dieses Profil ist an ein anderes Gerät gebunden — tippe „Anfragen“.", "🔒 This profile is bound to another device — tap “Request”."));
-        openClaimOverlay();
+        toast(T("Übernahme ging nicht — fehlt der Zugang? Bitte Einladungscode prüfen.", "Takeover failed — missing access? Please check the invite code."));
+        verifyAccessGrant({ interactive: true });
       }
       return false;
     }
@@ -7914,11 +8002,9 @@ async function claimExistingProfile(oldKey, opts = {}) {
       remove(ref(db, "karmaPoints/" + oldKey)).catch(() => {}),
       remove(ref(db, "achievements/" + oldKey)),
       remove(ref(db, "teams/" + oldKey)),
-      remove(ref(db, "presence/" + oldKey)).catch(() => {}),
-      remove(ref(db, `profileClaims/${oldKey}/${uid}`)).catch(() => {})
+      remove(ref(db, "presence/" + oldKey)).catch(() => {})
     ]);
     rememberMyKey(oldKey);
-    setPendingClaimKeys(pendingClaimKeys().filter((k) => k !== oldKey));
     ensurePointIdentity();
     syncIdentity();
     syncProfileToCloud();
@@ -11448,6 +11534,7 @@ function openDetail(cornerId) {
       <div class="detail-stat"><span class="stat-num">${distanceLabel(c)}</span><span class="stat-label">${T("Entfernung", "Distance")}</span></div>
     </div>
     <div class="detail-where">📍 ${escapeHtml(c.area || "München")}${typeof c.lat === "number" ? ` · <span class="dw-coords">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span>` : ""}</div>
+    <div class="detail-district">${detailDistrictHtml(c)}</div>
     <div class="detail-origin">${cornerOriginHtml(c)}</div>
     ${capturedHtml}
     ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("gerade hier", "here now")}: ${peopleAtCornerDetailed(c.id).map((p) => p.id ? `<button class="people-chip" data-user-profile="${escapeHtml(p.id)}">${escapeHtml(p.label)}</button>` : escapeHtml(p.label)).join(" ")}</div>` : ""}
@@ -11462,8 +11549,8 @@ function openDetail(cornerId) {
       <button class="detail-quick-btn" data-scroll-target=".photo-gallery">📸 ${T("Fotos", "Photos")}</button>
       <button class="detail-quick-btn" data-scroll-target=".visit-trail">👣 ${T("Besuche", "Visits")}</button>
     </div>
-    <p class="card-area" style="margin-top:14px;">${c.area || "—"}</p>
-    <h2 class="card-name" style="margin-bottom:14px;">${c.name}</h2>
+    <p class="card-area" style="margin-top:14px;">${escapeHtml(c.area || "—")}</p>
+    <h2 class="card-name" style="margin-bottom:14px;">${escapeHtml(c.name)}</h2>
     ${effectiveDesc ? `<p class="card-desc">${escapeHtml(effectiveDesc)}</p>` : ""}
     <div class="detail-feedback" data-corner-id="${c.id}">${renderFeedbackSummary(c.id)}</div>
     <ul class="card-tags" style="margin-bottom:14px;">${(c.tags || []).map((t) => `<li>#${escapeHtml(t)}</li>`).join("")}</ul>
@@ -11491,6 +11578,7 @@ function openDetail(cornerId) {
   const detailContent = $("#detail-content");
   detailContent.querySelectorAll(".checkin-btn").forEach((b) => b.addEventListener("click", (e) => { manualCheckin(e.target.closest("[data-id]").dataset.id); setTimeout(() => openDetail(cornerId), 100); }));
   detailContent.querySelector('[data-action="follow-me"]')?.addEventListener("click", openFollowMeDialog);
+  bindDetailDistrict(detailContent.querySelector(".detail-district"));
   detailContent.querySelector('[data-action="map-detail"]')?.addEventListener("click", () => { closeDetail(); $(`.tab[data-view="map"]`).click(); setTimeout(() => STATE.mainMap?.flyTo([c.lat, c.lng], 17, { duration: 0.7 }), 250); });
   detailContent.querySelectorAll('[data-action="route-detail"]').forEach((b) => b.addEventListener("click", () => { window.open(walkingRouteUrl(c.lat, c.lng), "_blank"); }));
   detailContent.querySelector('[data-action="share-corner"]')?.addEventListener("click", () => { shareCornerLink(c.id); });
@@ -11524,7 +11612,10 @@ function closeDetail() { detailXpCornerId = null; $("#detail-overlay").classList
 function renderCards() {
   const root = $("#cards");
   root.innerHTML = "";
-  const all = getSortedCorners();
+  const all = getSortedCorners().filter(cornerMatchesDistrictFilter);
+  if (!all.length && STATE.districtFilter) {
+    root.innerHTML = `<p class="district-empty">${T("Keine Corners in diesem Stadtbezirk — noch nicht! Tipp auf ➕, um den ersten einzutragen.", "No corners in this district — yet! Tap ➕ to add the first.")}</p>`;
+  }
   all.forEach((c, i) => {
     const photoSrc = getCornerCoverPhoto(c.id);
     const peopleHere = getPeopleAtCorner(c.id);
@@ -11545,8 +11636,8 @@ function renderCards() {
         <button class="photo-btn" data-id="${c.id}">📷 ${photoSrc ? T("Ändern", "Change") : T("Hinzufügen", "Add")}</button>
       </div>
       <div class="card-body">
-        <p class="card-area">${c.area || "—"} ${c.isCustom && c.createdBy ? `<span class="creator-label"> · von ${escapeHtml(c.createdBy)}</span>` : ""}</p>
-        <h2 class="card-name">${c.name}</h2>
+        <p class="card-area">${districtBadgeHtml(c)}${escapeHtml(c.area || "—")} ${c.isCustom && c.createdBy ? `<span class="creator-label"> · von ${escapeHtml(c.createdBy)}</span>` : ""}</p>
+        <h2 class="card-name">${escapeHtml(c.name)}</h2>
         ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("hier", "here")}: ${peopleHere.map((n) => escapeHtml(n)).join(", ")}</div>` : ""}
         ${gossipOpenRoundAt(c.id) ? `<button class="card-gossip-live" data-gossip-card="${c.id}">🗣️ ${T("Gossip-Runde läuft", "Gossip round live")} →</button>` : ""}
         ${getDescription(c) ? `<p class="card-desc short-desc">${escapeHtml(getDescription(c))}</p>` : ""}
@@ -11680,6 +11771,14 @@ async function saveNewSpot() {
       await set(ref(db, "corners/" + spot.id), spot);
       toast(`✅ Spot <strong>${escapeHtml(name)}</strong> live gespeichert`);
     } catch (err) {
+      if (/permission/i.test(String(err?.code || "") + String(err?.message || ""))) {
+        // Usually a missing access grant for this login — repair or ask for the code.
+        const ok = await verifyAccessGrant({ interactive: true });
+        toast(ok
+          ? "🔑 Zugang wurde erneuert — tipp bitte nochmal auf „Speichern“."
+          : "🔑 Für dieses Gerät fehlt der Zugang — Einladungscode eingeben, dann nochmal speichern. Deine Eingaben bleiben stehen.");
+        return;
+      }
       const reason = err?.message ? ` (${escapeHtml(err.message)})` : "";
       toast(`❌ Spot konnte nicht in Firebase gespeichert werden${reason}`);
       return;
@@ -12401,7 +12500,6 @@ function deepLinkAction(link) {
     return () => openDetail(corner);
   }
   if (profile) return () => openUserProfile(profile);
-  if (p.get("claims") === "1" && STATE.isAdmin) return () => openAdminClaims();
   if (p.get("feedback") === "1" && STATE.isAdmin) return () => openAdminSection("#admin-feedback");
   return null;
 }
@@ -12479,7 +12577,7 @@ function renderProfile() {
     <div class="team-battle-section"><h3>🏆 ${T("Team Leaderboard", "Team Leaderboard")}</h3>${getTeamBattleRows().map((row) => `<div class="team-battle-item"><span class="tb-emoji">${TEAMS[row.teamId].emoji}</span><span class="tb-name">${TEAMS[row.teamId].name}</span><div class="tb-bar"><div class="tb-bar-fill" style="width:${Math.min(100, Math.max(4, row.total * 8))}%;background:${TEAMS[row.teamId].color};"></div></div><span class="tb-score">${row.total}</span></div>`).join("")}</div>
     ${buildGossipChronicleHtml()}
     <div class="best-friends-section"><h3>🤝 ${T("Best Friends", "Best Friends")}</h3>${bestFriends.length ? bestFriends.map((friend) => `<div class="friend-encounter"><span class="fe-name lb-person" ${friend.id ? `data-user-profile="${escapeHtml(friend.id)}"` : ""}>${escapeHtml(friend.name)}</span><span class="fe-count">${friend.count}x</span></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">${T("Noch keine Begegnungen geloggt.", "No encounters logged yet.")}</p>`}</div>
-    ${STATE.isAdmin ? `<div class="team-battle-section"><h3>🛠 Admin</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">${T("Host-Werkzeuge: Profile & Spots verwalten.", "Host tools: manage profiles & spots.")}</p><button class="notif-opt" id="admin-open-btn">🛠 ${T("Admin-Panel öffnen", "Open admin panel")}${pendingClaimList().length ? ` <span class="admin-badge">🙋 ${pendingClaimList().length}</span>` : ""}</button></div>` : ""}
+    ${STATE.isAdmin ? `<div class="team-battle-section"><h3>🛠 Admin</h3><p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">${T("Host-Werkzeuge: Profile & Spots verwalten.", "Host tools: manage profiles & spots.")}</p><button class="notif-opt" id="admin-open-btn">🛠 ${T("Admin-Panel öffnen", "Open admin panel")}</button></div>` : ""}
     <div class="team-battle-section feedback-box"><h3>💡 ${T("Idee oder Problem?", "Idea or problem?")}</h3>
       <p style="font-size:12px;color:var(--fg-dim);margin:0 0 10px;">${T("Schreib's direkt an die Macher — landet nicht in den Corner-Kommentaren.", "Tell the makers directly — it does not end up in the corner comments.")}</p>
       <button class="notif-opt" id="feedback-btn">💡 ${T("Feedback senden", "Send feedback")}</button></div>

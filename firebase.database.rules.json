@@ -50,20 +50,8 @@
     "profileLocks": {
       ".read": "auth != null",
       "$profileKey": {
-        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists() && (!data.exists() || data.child('by').val() === auth.uid || root.child('config').child('admins').child(auth.uid).val() === true || (root.child('profileClaims').child($profileKey).child(auth.uid).child('code').isString() && root.child('recoveryProfiles').child(root.child('profileClaims').child($profileKey).child(auth.uid).child('code').val()).child('createdBy').val() === $profileKey))",
-        ".validate": "newData.hasChildren(['by']) && newData.child('by').isString() && (newData.child('by').val() === auth.uid || root.child('config').child('admins').child(auth.uid).val() === true || (data.child('by').val() === auth.uid && root.child('profileClaims').child($profileKey).child(newData.child('by').val()).exists()))"
-      }
-    },
-
-    "profileClaims": {
-      ".read": "auth != null && root.child('config').child('admins').child(auth.uid).val() === true",
-      "$profileKey": {
-        ".read": "auth != null && root.child('profileLocks').child($profileKey).child('by').val() === auth.uid",
-        "$uid": {
-          ".read": "auth != null && auth.uid === $uid",
-          ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists() && (auth.uid === $uid || root.child('config').child('admins').child(auth.uid).val() === true || root.child('profileLocks').child($profileKey).child('by').val() === auth.uid)",
-          ".validate": "newData.hasChildren(['at', 'status']) && newData.child('at').isNumber() && (newData.child('status').val() === 'pending' || newData.child('status').val() === 'approved' || newData.child('status').val() === 'rejected') && (auth.uid !== $uid || newData.child('status').val() === 'pending' || root.child('config').child('admins').child(auth.uid).val() === true) && (!newData.child('nickname').exists() || (newData.child('nickname').isString() && newData.child('nickname').val().length <= 40)) && (!newData.child('oldNickname').exists() || (newData.child('oldNickname').isString() && newData.child('oldNickname').val().length <= 40)) && (!newData.child('note').exists() || (newData.child('note').isString() && newData.child('note').val().length <= 200)) && (!newData.child('code').exists() || (newData.child('code').isString() && newData.child('code').val().length <= 20))"
-        }
+        ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)",
+        ".validate": "newData.hasChildren(['by']) && newData.child('by').isString() && (newData.child('by').val() === auth.uid || root.child('config').child('admins').child(auth.uid).val() === true)"
       }
     },
 
