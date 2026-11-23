@@ -212,6 +212,12 @@ Punkte, Level, Achievements, Team, Corners, Check-in-Historie, Begegnungen und G
 auf dem neuen Gerät schon gesammelt hat, wird dazugezählt. Später geht das jederzeit über Profil → „Profil wählen".
 Tippt man seinen alten Namen neu ein, bietet die App das Profil auch von selbst an.
 
+**Ranking zeigt ein höheres Level als das Profil?** Dann liegen die Punkte noch unter einem früheren Login desselben
+Geräts (das Ranking zählt alle Logins dieses Geräts als „du“, das Profil nur den aktuellen). Die App legt solche
+früheren Logins jetzt von selbst zusammen, sobald der Zugang bestätigt ist — danach zeigen Profil und Ranking dasselbe
+Level. Gibt es noch ein Profil mit genau deinem Namen (z. B. vom alten Handy), bietet das Profil „🔗 Ja,
+zusammenführen“ an.
+
 Es gibt bewusst keine Freigabe — es spielen nur Freunde mit. Ist das Profil gerade auf einem anderen Handy online, warnt
 die App kurz; das andere Gerät bekommt Bescheid und fragt dort neu „Wer bist du?". Mit einem **Recovery-Code**
 (Profil → „Konto & Profil sichern") geht der Umzug auch direkt vom Zugangs-Bildschirm aus.
