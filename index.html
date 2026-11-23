@@ -873,20 +873,6 @@ input, textarea { cursor: text; }
 .coord-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
 .modal-actions .action-btn { flex: 1; justify-content: center; }
-.export-block {
-  background: var(--bg-3);
-  border: 1px solid var(--line);
-  padding: 12px;
-  border-radius: 8px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 11px;
-  color: var(--fg-dim);
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 200px;
-  overflow-y: auto;
-  margin-top: 12px;
-}
 
 /* ====================== TOAST ====================== */
 .toast.tappable { cursor: pointer; border-left-color: var(--blue); }
@@ -2907,7 +2893,7 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
   <div class="modal" role="dialog" aria-labelledby="modal-title">
     <div class="modal-handle"></div>
     <h2 id="modal-title">Neuer Spot</h2>
-    <p class="sub">Trag ihn ein — wird für alle sichtbar gespeichert.</p>
+    <p class="sub">Trag ihn ein — alle sehen ihn sofort auf Karte und Liste.</p>
 
     <div class="field">
       <label>Name <span class="req">*</span></label>
@@ -2949,12 +2935,6 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
       <button class="action-btn primary" id="modal-save">Speichern</button>
     </div>
 
-    <details style="margin-top: 18px;">
-      <summary style="cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--fg-dim); letter-spacing: 1px; text-transform: uppercase;">Deine Spots für's Repo exportieren</summary>
-      <p style="font-size: 12px; color: var(--fg-dim); margin: 10px 0;">Kopiere den Code und füge ihn in der index.html ins <code>CORNERS</code>-Array ein, damit andere ihn auch sehen.</p>
-      <div id="export-block" class="export-block">Noch keine eigenen Spots.</div>
-      <button class="action-btn" id="copy-export" style="margin-top: 8px;">📋 In Zwischenablage</button>
-    </details>
   </div>
 </div>
 
@@ -3744,6 +3724,7 @@ async function verifyAccessGrant(opts = {}) {
     _accessVerified[uid] = true;
     localStorage.setItem("cg.accessGranted", "1");
     localStorage.setItem("cg.accessCode", String(val));
+    setTimeout(consolidateMyKeys, 1500);
     return true;
   }
   const known = localStorage.getItem("cg.accessCode");
@@ -3754,12 +3735,17 @@ async function verifyAccessGrant(opts = {}) {
       localStorage.setItem("cg.accessGranted", "1");
       reattachSharedListenersAfterGrant();
       console.log("Zugang für diesen Login automatisch wiederhergestellt.");
+      setTimeout(consolidateMyKeys, 1500);
       return true;
     } catch (err) { console.warn("stored access code no longer valid:", err); }
   }
-  // No grant and nothing to repair it with: ask once (keeps profile and data).
-  localStorage.removeItem("cg.accessGranted");
-  showAccessPrompt("missing");
+  // No grant and nothing to repair it with. Someone who had access here before
+  // is asked once (profile and data stay); brand-new people get the normal
+  // invitation prompt from checkAccessGranted() instead of this explanation.
+  if (localStorage.getItem("cg.accessGranted") === "1") {
+    localStorage.removeItem("cg.accessGranted");
+    showAccessPrompt("missing");
+  }
   return false;
 }
 
@@ -3792,6 +3778,7 @@ async function submitAccessCode() {
     _accessVerified[uid] = true;
     $("#access-prompt").style.display = "none";
     reattachSharedListenersAfterGrant();
+    setTimeout(consolidateMyKeys, 1500);
     if (STATE.nickname) {
       // Someone who already has a profile here only re-confirmed access.
       toast(`✅ Zugang bestätigt — weiter geht's, ${escapeHtml(STATE.nickname)}!`);
@@ -5382,13 +5369,11 @@ function bindModal() {
     if (!isNaN(lat) && !isNaN(lng) && _pinMap) { setSpotPin(lat, lng, { keepFields: true }); _pinMap.setView([lat, lng], Math.max(_pinMap.getZoom(), 16)); }
   }));
   $("#f-area").addEventListener("input", () => { $("#f-area").dataset.auto = "0"; });
-  $("#copy-export").addEventListener("click", copyExport);
 }
 
 function openModal() {
   ["f-name", "f-area", "f-desc", "f-tags", "f-lat", "f-lng"].forEach((id) => { $("#" + id).value = ""; });
   $("#f-area").dataset.auto = "";
-  refreshExportBlock();
   $("#modal-backdrop").classList.add("open");
   mountPinPicker();
   setTimeout(() => $("#f-name").focus(), 100);
@@ -5426,31 +5411,6 @@ function deleteCustomSpot(id) {
   updateCounts();
   rebuildMainMarkers();
   toast("Spot gelöscht.");
-}
-
-function refreshExportBlock() {
-  const block = $("#export-block");
-  if (!STATE.customSpots.length) {
-    block.textContent = "Noch keine eigenen Spots.";
-    return;
-  }
-  const code = STATE.customSpots.map((s) => {
-    return `  {
-    id: "${s.id}",
-    name: ${JSON.stringify(s.name)},
-    area: ${JSON.stringify(s.area)},
-    lat: ${s.lat}, lng: ${s.lng},
-    description: ${JSON.stringify(s.description)},
-    tags: ${JSON.stringify(s.tags)}
-  }`;
-  }).join(",\n");
-  block.textContent = code + ",";
-}
-
-function copyExport() {
-  const text = $("#export-block").textContent;
-  if (!navigator.clipboard) { toast("Clipboard nicht verfügbar."); return; }
-  navigator.clipboard.writeText(text).then(() => toast("Kopiert. Ab in die index.html ins CORNERS-Array!"));
 }
 
 /* ====================== TEAMS SYSTEM ====================== */
@@ -6543,7 +6503,7 @@ function findProfileTwin(name) {
   if (!want || want === "anonym") return null;
   let best = null;
   Object.entries(STATE.points || {}).forEach(([key, p]) => {
-    if (!p || isMyKey(key) || key === currentUserKey()) return;
+    if (!p || key === currentUserKey()) return;
     if (normalizeName(p.nickname) !== want || Number(p.total || 0) < 10) return;
     if (!best || Number(p.total) > best.total) best = { key, nickname: p.nickname, total: Number(p.total) };
   });
@@ -6903,6 +6863,10 @@ function _activateAuthDependentFeatures(uid, status) {
   } catch (err) { console.warn("admin flag check failed:", err); }
   // localStorage saying "access granted" is no proof for THIS login — check.
   verifyAccessGrant();
+  if (!_consolidateVisibilityBound) {
+    _consolidateVisibilityBound = true;
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && _accessVerified[window.FB?.getAuthUid?.() || ""]) consolidateMyKeys(); });
+  }
 }
 
 /* ====================== PROFILE CLOUD SYNC & ACCOUNT PORTABILITY ====================== */
@@ -7778,7 +7742,7 @@ async function openClaimOverlay(opts = {}) {
     const mine = currentUserKey();
     const rows = Object.entries(data)
       .map(([key, p]) => ({ key, nickname: (p && p.nickname) || "", total: Number((p && p.total) || 0), last: lastRewardTime(p) }))
-      .filter((r) => r.key !== mine && !isMyKey(r.key) && r.nickname && r.nickname.toLowerCase() !== "anonym" && r.total > 0)
+      .filter((r) => r.key !== mine && r.nickname && r.nickname.toLowerCase() !== "anonym" && r.total > 0)
       .sort((a, b) => a.nickname.localeCompare(b.nickname, "de", { sensitivity: "base" }));
     if (!rows.length) {
       list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">${T("Keine anderen Profile gefunden.", "No other profiles found.")}</p>`;
@@ -7852,6 +7816,69 @@ function watchOwnProfileLock() {
   }, () => { _ownLockUnsub = null; });
 }
 
+/* "Im Ranking Lv. 17, im Profil Lv. 2": the ranking counts every earlier
+   login of this device (cg.myKeys) as "me", the profile only the current one.
+   Moving the points to the new login used to run BEFORE the access grant
+   was confirmed, failed with permission_denied and was never retried — so
+   the points stayed behind under the old login. Now, once access is
+   confirmed, every earlier login with points is merged into the current one. */
+/* One-shot read that cannot hang forever. A plain get() was seen to stall
+   right after listeners had been refused (no access yet) and re-attached;
+   a one-shot listener is raced against it, with a time limit on top.   */
+function readOnce(path, ms = 7000) {
+  const { db, ref, get, onValue } = window.FB;
+  return new Promise((resolve, reject) => {
+    let done = false, fails = 0;
+    const ok = (v) => { if (!done) { done = true; clearTimeout(timer); resolve(v); } };
+    const bad = (err) => { if (!done && ++fails >= 2) { done = true; clearTimeout(timer); reject(err); } };
+    const timer = setTimeout(() => { if (!done) { done = true; reject(new Error("read timeout: " + path)); } }, ms);
+    get(ref(db, path)).then((snap) => ok(snap.val()), bad);
+    try { onValue(ref(db, path), (snap) => ok(snap.val()), bad, { onlyOnce: true }); } catch (err) { bad(err); }
+  });
+}
+// Same for writes: never wait forever on a stalled acknowledgement.
+function withTimeout(promise, ms, label) {
+  return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error("timeout: " + label)), ms))]);
+}
+
+var _consolidating = false;
+var _consolidateRetries = 0;
+var _consolidateVisibilityBound = false;
+async function consolidateMyKeys() {
+  const uid = window.FB?.getAuthUid?.() || "";
+  if (!uid || _consolidating || !window.FB?.firebaseReady) return;
+  _consolidating = true;
+  let merged = 0, failed = false;
+  try {
+    for (const key of myKeys()) {
+      if (!key || key === uid || /[.#$\[\]\/]/.test(key)) continue;
+      let p = null, k = null;
+      try { [p, k] = await Promise.all([readOnce("points/" + key), readOnce("karmaPoints/" + key).catch(() => null)]); }
+      catch (err) { failed = true; continue; }
+      if (!p && !k) continue;
+      const ok = await withTimeout(claimExistingProfile(key, { quiet: true, consolidate: true }), 25000, "merge").catch(() => false);
+      if (ok) merged++; else failed = true;
+    }
+  } finally { _consolidating = false; }
+  // Something stalled: try again a little later (and on the next app start).
+  if (failed && _consolidateRetries++ < 4) setTimeout(consolidateMyKeys, 10000 * _consolidateRetries);
+  if (merged) {
+    const lv = getLevel(getCurrentAura()).level;
+    toastWhenFree(`🔗 <strong>${T("Deine früheren Punkte sind zusammengeführt", "Your earlier points are merged")}</strong><br><span style="font-size:11px;opacity:0.8;">${T(`Profil und Ranking zeigen jetzt beide Lv. ${lv}.`, `Profile and ranking now both show Lv. ${lv}.`)}</span>`, "at-corner");
+  }
+}
+
+// Another profile with exactly my name and more points is almost certainly
+// me on an earlier phone — offer to merge it right in the profile.
+function profileTwinBannerHtml() {
+  if (!STATE.nickname || !window.FB?.firebaseReady) return "";
+  const twin = findProfileTwin(STATE.nickname);
+  if (!twin) return "";
+  const lv = getLevel(twin.total).level;
+  return `<div class="backup-banner twin-banner">👀 ${T(`Es gibt noch ein Profil <strong>„${escapeHtml(twin.nickname)}“</strong> (Lv. ${lv}, ${twin.total} Aura). Bist du das? Dann leg beide zusammen — die Punkte werden addiert.`, `There is another profile <strong>“${escapeHtml(twin.nickname)}”</strong> (Lv. ${lv}, ${twin.total} aura). Is that you? Merge them — the points are added up.`)}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><button class="action-btn primary" data-twin-merge="${escapeHtml(twin.key)}">🔗 ${T("Ja, zusammenführen", "Yes, merge")}</button></div></div>`;
+}
+
 function openAdminSection(sel) {
   renderAdminPanel().then(() => setTimeout(() => $(sel)?.scrollIntoView({ behavior: "smooth", block: "start" }), 150));
 }
@@ -7912,7 +7939,7 @@ async function claimExistingProfile(oldKey, opts = {}) {
     // Take the lock first: the device that had this profile watches its lock
     // and asks "who are you?" again once it moves here.
     try {
-      await set(ref(db, "profileLocks/" + oldKey), { by: uid, at: Date.now(), nickname: STATE.nickname || "" });
+      await withTimeout(set(ref(db, "profileLocks/" + oldKey), { by: uid, at: Date.now(), nickname: STATE.nickname || "" }), 15000, "lock");
     } catch (lockErr) {
       console.warn("profile lock refused:", lockErr);
       if (!opts.quiet && !opts.quietFail) {
@@ -7921,19 +7948,22 @@ async function claimExistingProfile(oldKey, opts = {}) {
       }
       return false;
     }
-    const [pSnap, kSnap, aSnap, tSnap] = await Promise.all([
-      get(ref(db, "points/" + oldKey)),
-      get(ref(db, "karmaPoints/" + oldKey)).catch(() => ({ val: () => null })),
-      get(ref(db, "achievements/" + oldKey)),
-      get(ref(db, "teams/" + oldKey))
+    const [oldPoints, oldKarma, oldAchievements, oldTeam] = await Promise.all([
+      readOnce("points/" + oldKey),
+      readOnce("karmaPoints/" + oldKey).catch(() => null),
+      readOnce("achievements/" + oldKey).catch(() => null),
+      readOnce("teams/" + oldKey).catch(() => null)
     ]);
-    const oldPoints = pSnap.val();
-    const oldKarma = kSnap.val();
     if (!oldPoints && !oldKarma) { if (!opts.quiet && !opts.quietFail) toast(T("Profil nicht gefunden.", "Profile not found.")); return false; }
-    const nickname = oldPoints?.nickname || oldKarma?.nickname || STATE.nickname || "";
+    // Name and team: the profile I pick wins. When merging my own earlier
+    // logins, the bigger profile wins, and "Anonym" never replaces a name.
+    const oldNick = String(oldPoints?.nickname || oldKarma?.nickname || "").trim();
+    const oldIsBigger = Number(oldPoints?.total || 0) >= Number(STATE.points?.[newKey]?.total || 0);
+    const takeOld = !!oldNick && oldNick.toLowerCase() !== "anonym" && (!opts.consolidate || !STATE.nickname || oldIsBigger);
+    const nickname = takeOld ? oldNick : (STATE.nickname || oldNick || "");
     if (nickname) { STATE.nickname = nickname; localStorage.setItem("cg.nickname", nickname); }
-    const team = tSnap.val() && tSnap.val().team;
-    if (team) { STATE.team = team; localStorage.setItem(TEAM_STORAGE_KEY, team); ensureTeamHistoryEntry(team); }
+    const team = oldTeam && oldTeam.team;
+    if (team && (!opts.consolidate || !STATE.team || oldIsBigger)) { STATE.team = team; localStorage.setItem(TEAM_STORAGE_KEY, team); ensureTeamHistoryEntry(team); }
     // Merge on the server copy atomically (others may be rewarding me right now).
     const mergeInto = async (node, incoming) => {
       if (!incoming) return null;
@@ -7958,7 +7988,7 @@ async function claimExistingProfile(oldKey, opts = {}) {
       STATE.visitedCorners = Array.from(new Set([...(STATE.visitedCorners || []), ...claimedVisited]));
       saveVisitedCorners();
     }
-    const oldAch = aSnap.val() || {};
+    const oldAch = oldAchievements || {};
     const achIds = Object.keys(oldAch);
     const updates = {};
     if (achIds.length) {
@@ -7966,7 +7996,7 @@ async function claimExistingProfile(oldKey, opts = {}) {
       saveAchievements();
       achIds.forEach((id) => { updates[`achievements/${newKey}/${id}`] = oldAch[id]; });
     }
-    if (team) updates[`teams/${newKey}`] = tSnap.val();
+    if (team && STATE.team === team) updates[`teams/${newKey}`] = oldTeam;
     // Re-attribute the check-in history (profile map, history playback) and the
     // "met each other" counts to the new login.
     Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
@@ -7991,7 +8021,7 @@ async function claimExistingProfile(oldKey, opts = {}) {
     });
     // Gossip chronicle of the old login (readable now that its lock is mine).
     try {
-      const oldLog = (await get(ref(db, "gossipLog/" + oldKey))).val() || {};
+      const oldLog = (await readOnce("gossipLog/" + oldKey)) || {};
       Object.entries(oldLog).forEach(([id, g]) => { if (g && typeof g === "object") updates[`gossipLog/${uid}/${id}`] = g; });
       if (Object.keys(oldLog).length) updates[`gossipLog/${oldKey}`] = null;
     } catch (err) { /* no chronicle yet */ }
@@ -8005,6 +8035,11 @@ async function claimExistingProfile(oldKey, opts = {}) {
       remove(ref(db, "presence/" + oldKey)).catch(() => {})
     ]);
     rememberMyKey(oldKey);
+    // Gone locally too, so the ranking never keeps showing the old login.
+    delete STATE.points[oldKey];
+    delete STATE.karmaPoints[oldKey];
+    savePoints();
+    saveKarmaPoints();
     ensurePointIdentity();
     syncIdentity();
     syncProfileToCloud();
@@ -11769,7 +11804,6 @@ async function saveNewSpot() {
     try {
       const { db, ref, set } = window.FB;
       await set(ref(db, "corners/" + spot.id), spot);
-      toast(`✅ Spot <strong>${escapeHtml(name)}</strong> live gespeichert`);
     } catch (err) {
       if (/permission/i.test(String(err?.code || "") + String(err?.message || ""))) {
         // Usually a missing access grant for this login — repair or ask for the code.
@@ -11789,20 +11823,25 @@ async function saveNewSpot() {
     toast(`💾 Spot <strong>${escapeHtml(name)}</strong> lokal gespeichert (nur auf diesem Gerät)`);
   }
   closeModal(); renderCards(); updateCounts(); rebuildMainMarkers(); unlockAchievement("first-corner", "Entdecker", "🗺️", 30); addXp(50, `Corner hinzugefügt: ${name}`); if (STATE.customSpots.filter((s) => (s.createdById || s.createdBy) === currentUserKey()).length >= 3) unlockAchievement("three-corners", "Kartograph", "🧭", 50);
+  // Last, so the achievement toast does not replace it.
+  if (window.FB?.firebaseReady) toast(`✅ <strong>${escapeHtml(name)}</strong> ist eingetragen — alle sehen den Spot sofort auf Karte und Liste. +50 Aura 🍻`, "at-corner", () => openDetail(spot.id));
 }
 
 function openLightbox(src, author) { $("#lightbox-img").src = src; $("#lightbox-author").textContent = author ? `📸 von ${author}` : ""; $("#lightbox").classList.add("open"); addXp(2, "Lightbox"); }
 
-function listenPoints() {
+function listenPoints(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
   const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "points"), (snapshot) => { STATE.points = snapshot.val() || {}; ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); });
+  // A listener attached before sign-in is refused; try again once signed in.
+  onValue(ref(db, "points"), (snapshot) => { STATE.points = snapshot.val() || {}; ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); },
+    () => retryListenerAfterAuth(listenPoints, attempt));
 }
 
-function listenKarmaPoints() {
+function listenKarmaPoints(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
   const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "karmaPoints"), (snapshot) => { STATE.karmaPoints = snapshot.val() || {}; ensurePointIdentity(false); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); });
+  onValue(ref(db, "karmaPoints"), (snapshot) => { STATE.karmaPoints = snapshot.val() || {}; ensurePointIdentity(false); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); },
+    () => retryListenerAfterAuth(listenKarmaPoints, attempt));
 }
 
 function getRewardLeaders(kind, limit = 10) {
@@ -12542,6 +12581,7 @@ function renderProfile() {
         ${levelInfo.reachedMilestone ? ` · 🏆 Lv.${MILESTONE_LEVEL} ${T("geschafft", "reached")}` : ` · 🎖️ Lv.${MILESTONE_LEVEL} = ${T("Meilenstein", "Milestone")}`}
       </div>
     </div>
+    ${profileTwinBannerHtml()}
     ${buildBackupBannerHtml()}
     <div class="stream-grid">
       <div class="stream-card">
@@ -12692,6 +12732,11 @@ function renderProfile() {
   $("#acct-claim-btn")?.addEventListener("click", openClaimOverlay);
   $("#admin-open-btn")?.addEventListener("click", renderAdminPanel);
   $("#feedback-btn")?.addEventListener("click", sendAppFeedback);
+  $$("#profile-content [data-twin-merge]").forEach((btn) => btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    const ok = await claimExistingProfile(btn.dataset.twinMerge);
+    if (!ok) btn.disabled = false;
+  }));
   $$("#profile-content [data-gossip-corner]").forEach((btn) => btn.addEventListener("click", () => openDetail(btn.dataset.gossipCorner)));
   $$("#profile-content [data-reply-id]").forEach((btn) => btn.addEventListener("click", () => {
     const msg = recentMessages.find((entry) => entry.fromId === btn.dataset.replyId);
