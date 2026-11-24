@@ -36,9 +36,12 @@ https://ETigerschuss.github.io/CornerGuide/
 - 🗣️ **Gossip-Chronik** — im Profil: welche Gossip-Runden man hatte, wo, mit wem und wie viele Punkte; optional mit einer Schlagzeile, die die erzählende Person selbst wählt. Die Story selbst wird nie gespeichert
 - 🗺️ **Historie abspielen** — Flug durch die eigenen Check-ins: nah an jeden Münchner Corner, bei Ausflügen raus- und wieder reinzoomen, Kreise in der Teamfarbe des Check-ins, Tempo 1×/2×/4×
 - 🚻 **Karte in der Corner-Info** — ganz unten: Kiosk & Co., Toiletten (kostenlos/♿), Trinkbrunnen, Unterstände, zuschaltbar Mülleimer/Glascontainer und Bänke — jeweils mit Fußweg-Route
-- 👋 **„Wer bist du?"** — neues Handy oder Browser gelöscht: nach dem Einladungscode einfach den eigenen Namen antippen, fertig (siehe unten)
+- 👋 **„Wer bist du?"** — ein Bildschirm, zwei gleich einfache Wege: „✨ Neu hier?" (Namen eingeben) oder „👋 Schon dabei?" (eigenen Namen antippen). Ein Profil kann auf mehreren Geräten gleichzeitig angemeldet sein — beim nächsten Öffnen geht's direkt weiter (siehe unten)
+- 🔗 **Links führen direkt hin** — WhatsApp-Corner-Link (`?corner=…&come=1`): Corner mit „📍 Ich bin da — einchecken" und Route ganz oben; wer schon dort ist (≤ 150 m), ist sofort eingecheckt. Cornerdate-Link (`?corner=…&cd=<id>`): Einladung mit einem Tipp „✋ Bin dabei". Auf einem neuen Gerät warten die Links, bis man gesagt hat, wer man ist
+- ✨ **Updates kommen von selbst** — die App prüft beim Zurückkehren, ob es eine neue Version gibt, und lädt sie, wenn gerade nichts offen ist (sonst: „🔄 Neue Version da — tippen")
 - 🏙️ **Stadtbezirke** — die 25 Münchner Stadtbezirke mit Nummer (01 Altstadt-Lehel … 25 Laim): Grenzen auf der Karte (Namen ab Zoomstufe 13, ein-/ausblendbar), Bezirksnummer an jedem Corner, Filter in der Liste, Bezirk in der Detailansicht mit „Grenzen zeigen"
-- 📍 **Pin setzen beim neuen Spot** — Karte im „Neuer Spot"-Fenster: tippen oder Pin ziehen, Koordinaten, Bezirk und Stadtteil füllen sich selbst; Warnung, wenn der Pin zu nah an einem bestehenden Corner liegt
+- 📍 **Neuer Spot nur durch Tippen** — der Pin steht gleich da, wo man ist (oder: auf die Karte tippen/Pin ziehen); Bezirk, Stadtteil und ein Name („Ecke A/B", Platz, Park) kommen automatisch. Emojis 🚻 Toilette, 💧 Wasser, ☂️ Dach, ⚽ Sport, 🏪 Kiosk und 🌿 Kiffen ok sind aus OpenStreetMap vorausgefüllt und mit einem Tipp umschaltbar; Beschreibung ist optional. Warnung, wenn der Pin zu nah an einem bestehenden Corner liegt
+- 🌿 **Regeln am Spot** — bei jedem Corner (Detail → Corner-Check) und beim Eintragen: Schule/Kita/Spielplatz/Sportplatz im 100-m-Umkreis, Fußgängerzone, Parköffnungszeiten, Verbotszonen der Stadt (siehe unten)
 - 💡 **Feedback an die Macher** — Profil → „Idee oder Problem?"; Admins sehen es im Admin-Panel
 
 ## 🌤️ Corner-Check: woher kommen die Daten?
@@ -207,20 +210,18 @@ weg, wenn Browserdaten gelöscht werden, Safari eine Seite nach 7 Tagen ohne Bes
 **iPhone-Home-Bildschirm** hinzugefügt wird (eigener Speicher!) oder man das Handy wechselt. Das Profil selbst bleibt in
 der Datenbank.
 
-**So einfach geht's zurück:** Einladungscode eingeben → „👋 Wer bist du?" → **den eigenen Namen antippen** → bestätigen.
-Punkte, Level, Achievements, Team, Corners, Check-in-Historie, Begegnungen und Gossip-Chronik sind sofort da; was man
-auf dem neuen Gerät schon gesammelt hat, wird dazugezählt. Später geht das jederzeit über Profil → „Profil wählen".
-Tippt man seinen alten Namen neu ein, bietet die App das Profil auch von selbst an.
+**So einfach geht's zurück:** Einladungscode eingeben → „👋 Wer bist du?" → **den eigenen Namen antippen** — fertig, ohne
+weitere Frage. Neu dabei? Im selben Fenster oben den Namen eingeben → „Los geht's". Falsch getippt? Die Willkommens-Meldung
+antippen („Nicht du?") macht es rückgängig. Tippt man seinen alten Namen neu ein, bietet die App das Profil auch von selbst an.
 
-**Ranking zeigt ein höheres Level als das Profil?** Dann liegen die Punkte noch unter einem früheren Login desselben
-Geräts (das Ranking zählt alle Logins dieses Geräts als „du“, das Profil nur den aktuellen). Die App legt solche
-früheren Logins jetzt von selbst zusammen, sobald der Zugang bestätigt ist — danach zeigen Profil und Ranking dasselbe
-Level. Gibt es noch ein Profil mit genau deinem Namen (z. B. vom alten Handy), bietet das Profil „🔗 Ja,
-zusammenführen“ an.
+**Ein Profil, mehrere Geräte:** Auf dem iPhone öffnet ein WhatsApp-Link nie die installierte App, sondern Safari — mit
+eigenem Login. Früher *zog* „Wer bist du?" das Profil dorthin um und warf die installierte App raus, die beim nächsten
+Öffnen wieder fragte. Jetzt *schließt sich* der neue Login dem Profil nur an (`points/<login>.aliasOf`): nichts wird
+verschoben, alle Geräte bleiben angemeldet, Profil und Ranking zählen die Punkte aller Logins einer Person zusammen und
+zeigen dasselbe Level, Freunde sehen die Person nur einmal. Frühere Logins desselben Geräts verknüpft die App von selbst,
+sobald der Zugang bestätigt ist. Auch der **Recovery-Code** (Profil → „Konto & Profil sichern") verknüpft so, statt umzuziehen.
 
-Es gibt bewusst keine Freigabe — es spielen nur Freunde mit. Ist das Profil gerade auf einem anderen Handy online, warnt
-die App kurz; das andere Gerät bekommt Bescheid und fragt dort neu „Wer bist du?". Mit einem **Recovery-Code**
-(Profil → „Konto & Profil sichern") geht der Umzug auch direkt vom Zugangs-Bildschirm aus.
+Es gibt bewusst keine Freigabe — es spielen nur Freunde mit.
 
 **Dauerhaft sichern:** „Mit Google sichern" — dann ist es auf jedem Gerät mit demselben Login automatisch dasselbe Profil.
 
@@ -233,6 +234,41 @@ still repariert, sonst fragt sie einmal nach dem Code. Profil und Punkte bleiben
 
 **Admin werden** (z. B. nach eigenem Login-Verlust): Die eigene **Nutzer-ID** steht im Profil unter „Konto & Profil
 sichern". Im Repo unter *Actions → Admin-Werkzeuge → Run workflow* die Aktion `add-admin` mit dieser ID starten.
+
+## 🌿 Regeln am Spot: was prüft die App?
+
+Beim Eintragen eines Corners und in jeder Detailansicht (Corner-Check → „Regeln & Ausstattung") fragt die App
+OpenStreetMap (Overpass) nach der Umgebung — 3 Tage zwischengespeichert. **Automatische Einschätzung, ohne Gewähr.**
+Stand der Regeln: November 2026.
+
+- **Kiffen (§ 5 KCanG, [Gesetzestext](https://www.gesetze-im-internet.de/kcang/__5.html))** — verboten in Sichtweite von
+  Schulen, Kinder- und Jugendeinrichtungen, Spielplätzen und öffentlich zugänglichen Sportstätten; Sichtweite endet
+  100 m vom Eingangsbereich. Die App misst bis zum Gelände (strenger als bis zum Eingang). In **Fußgängerzonen** von
+  7 bis 20 Uhr verboten, nie in Anwesenheit von Minderjährigen.
+- **Bayern (Cannabisfolgenbegrenzungsgesetz, 2024)** — kein Rauchen/Dampfen auf Volksfesten, in Biergärten und
+  Außenbereichen von Gaststätten (Hinweis, wenn ein Biergarten direkt nebenan ist).
+- **München, Alter Botanischer Garten / Karl-Stützel-Platz** — Alkohol *und* Cannabis rund um die Uhr verboten
+  ([ACVV](https://stadt.muenchen.de/rathaus/stadtrecht/vorschrift/331.html), gilt bis 14.01.2027).
+- **München, Hauptbahnhof** — Alkohol rund um die Uhr verboten im Umfeld (Bahnhofplatz, Arnulf-, Bayer-, Schützen-,
+  Prielmayer-, Luitpoldstraße u. a.; [Verordnung](https://stadt.muenchen.de/rathaus/stadtrecht/vorschrift/330.html), gilt
+  bis 30.04.2028). Die App erkennt die Zone nur ungefähr und verweist auf die genauen Straßen.
+- **Englischer Garten, Hofgarten, Finanzgarten** — das Kiffverbot der Schlösserverwaltung von 2024 hat der BayVGH am
+  24.11.2025 für unwirksam erklärt; es gelten die Bundesregeln.
+- **Parks** — liegt der Corner in einem Park mit Öffnungszeiten (OpenStreetMap `opening_hours`), zeigt die App sie mit
+  „jetzt offen/zu".
+
+Fehlt eine Schule oder ein Spielplatz, kann man ihn direkt in OpenStreetMap eintragen — die App sieht ihn dann auch.
+
+## ✨ Updates & Links
+
+- **Neue Version:** Beim Deploy schreibt der Workflow die Build-Nummer (Commit + Lauf) in die Seite. Kommt man in die
+  App zurück, vergleicht sie diese mit dem Server und lädt neu, wenn gerade nichts offen ist — sonst erscheint
+  „🔄 Neue Version da — tippen". Der Service Worker holt die Seite immer am Browser-Cache vorbei und enthält auch den
+  Push-Teil (`firebase-messaging-sw.js`), damit sich beide nicht mehr gegenseitig ersetzen.
+- **Links:** `?corner=<id>&come=1` (WhatsApp „Kommt vorbei"), `?corner=<id>&cd=<cornerdate-id>` (Cornerdate-Zusage),
+  `?corner=<id>&checkin=1` (QR-Sticker: sofort einchecken). Auf neuen Geräten laufen sie nach „Wer bist du?" weiter.
+- **Cornerdate-Punkte:** Zusagen +5 Aura (einmal pro Date), wirklich kommen (Check-in während des Dates) +10 Aura,
+  Planen +5 Aura; wer plant, bekommt +3 Karma pro Zusage und +5 pro Gast, der kommt.
 
 ## 🏙️ Stadtbezirke: woher kommen die Grenzen?
 

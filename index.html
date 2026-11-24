@@ -4,6 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0d0d0d" />
+<!-- Replaced by the deploy workflow with the commit; the app compares it to spot updates. -->
+<meta name="cg-build" content="dev" />
 <title>Minga Corner Guide · vom gossips Stammtisch 🍻</title>
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
@@ -872,6 +874,26 @@ input, textarea { cursor: text; }
 .coord-row .field { flex: 1; margin-bottom: 0; }
 .coord-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+#app-dialog-text { white-space: pre-line; }
+/* Opened from a WhatsApp link: check-in and route first */
+.come-bar { border: 1px solid var(--amber); background: rgba(232,169,64,0.08); border-radius: 14px; padding: 12px; margin: 0 0 14px; }
+.come-title { font-size: 14px; margin-bottom: 10px; }
+.come-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.come-actions .action-btn { flex: 1; justify-content: center; min-width: 140px; }
+.come-hint { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fg-dim); margin-top: 8px; }
+.come-hint:empty { display: none; }
+/* "Wer bist du?": new name and existing profiles, equally easy */
+.claim-card { max-width: 440px; max-height: 86vh; overflow-y: auto; text-align: left; }
+.claim-choice { border: 1px solid var(--line); border-radius: 14px; padding: 12px; margin: 12px 0; background: var(--bg-3); }
+.claim-choice-title { font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--amber); margin-bottom: 10px; }
+#claim-overlay [hidden] { display: none !important; }
+.claim-new-row { display: flex; flex-direction: column; gap: 8px; }
+.claim-new-row input { width: 100%; margin: 0; box-sizing: border-box; }
+.claim-new-row .action-btn { width: 100%; justify-content: center; }
+#claim-overlay.welcome #claim-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+#claim-overlay.welcome .claim-row { margin: 0; padding: 10px 12px; }
+#claim-overlay.welcome .claim-row-cta { display: none; }
+#claim-overlay.welcome .claim-search { grid-column: 1 / -1; }
 .modal-actions .action-btn { flex: 1; justify-content: center; }
 
 /* ====================== TOAST ====================== */
@@ -2630,6 +2652,28 @@ a.action-btn { text-decoration: none; }
 .spot-pin-info { font-size: 12px; color: var(--fg-dim); margin-top: 6px; line-height: 1.45; min-height: 18px; }
 .spot-pin-info strong { color: var(--amber); }
 .spot-pin-warn { color: var(--pink); }
+/* Tap-only new spot: name ideas, emoji toggles, rules */
+.spot-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.spot-chips:empty { display: none; }
+.spot-chip { border: 1px solid var(--line); background: var(--bg-3); color: var(--fg); border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+.spot-chip.on { border-color: var(--amber); color: var(--amber); }
+.spot-amenities { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.spot-amen { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg-3); color: var(--fg-dim); cursor: pointer; font-size: 12px; }
+.spot-amen .spot-amen-emoji { font-size: 22px; filter: grayscale(1); opacity: 0.55; }
+.spot-amen.on { border-color: var(--green); color: var(--fg); background: rgba(125,222,125,0.08); }
+.spot-amen.on .spot-amen-emoji { filter: none; opacity: 1; }
+.spot-amen-auto { position: absolute; top: 4px; right: 6px; font-family: "JetBrains Mono", monospace; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; color: var(--green); }
+.spot-rules { margin-top: 10px; }
+.spot-rule { font-size: 12.5px; line-height: 1.45; margin: 4px 0; }
+.spot-rule a { color: var(--blue); }
+.spot-rule.dim { color: var(--fg-dim); }
+.spot-rule.tiny { color: var(--fg-dim); font-size: 10.5px; margin-top: 8px; }
+.spot-more { margin-top: 6px; }
+.spot-more summary { cursor: pointer; font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--fg-dim); letter-spacing: 1px; text-transform: uppercase; padding: 6px 0; }
+.spot-detail-amen { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.spot-pill { border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 12px; background: var(--bg-3); }
+.spot-pill.ok { border-color: var(--green); }
+.spot-pill.no { border-color: var(--pink); }
 .spot-pin { font-size: 32px; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); cursor: grab; }
 
 /* ====================== PUBLIC PROFILES ====================== */
@@ -2893,42 +2937,51 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
   <div class="modal" role="dialog" aria-labelledby="modal-title">
     <div class="modal-handle"></div>
     <h2 id="modal-title">Neuer Spot</h2>
-    <p class="sub">Trag ihn ein — alle sehen ihn sofort auf Karte und Liste.</p>
+    <p class="sub">Tippen genügt: Standort, Stadtteil und was es dort gibt, erkennt die App selbst — alle sehen ihn sofort auf Karte und Liste.</p>
 
     <div class="field">
-      <label>Name <span class="req">*</span></label>
-      <input type="text" id="f-name" maxlength="80" placeholder="z.B. Au-Brücke" />
-    </div>
-    <div class="field">
-      <label>Stadtteil</label>
-      <input type="text" id="f-area" maxlength="60" placeholder="z.B. Au-Haidhausen" />
-    </div>
-    <div class="field">
-      <label>Beschreibung <span class="req">*</span></label>
-      <textarea id="f-desc" maxlength="500" placeholder="Wie ist der Spot? Was macht ihn aus?"></textarea>
-    </div>
-    <div class="field">
-      <label>Tags (Komma-getrennt)</label>
-      <input type="text" id="f-tags" maxlength="120" placeholder="Kiosk, Sunset, ruhig" />
-    </div>
-    <div class="field">
-      <label>Ort <span class="req">*</span></label>
+      <label>Ort</label>
       <div id="spot-pin-map" class="spot-pin-map"></div>
       <div id="spot-pin-info" class="spot-pin-info"></div>
     </div>
-    <div class="coord-row">
+    <div class="field">
+      <label>Name <span class="req">*</span></label>
+      <input type="text" id="f-name" maxlength="80" placeholder="z.B. Au-Brücke" />
+      <div id="spot-name-chips" class="spot-chips"></div>
+    </div>
+    <div class="field">
+      <label>Was gibt's hier?</label>
+      <div id="spot-amenities" class="spot-amenities"></div>
+      <div id="spot-rules" class="spot-rules"></div>
+    </div>
+    <details class="spot-more">
+      <summary>Mehr: Beschreibung, Stadtteil, Tags, Koordinaten</summary>
       <div class="field">
-        <label>Latitude <span class="req">*</span></label>
-        <input type="number" id="f-lat" step="any" placeholder="48.1351" />
+        <label>Beschreibung</label>
+        <textarea id="f-desc" maxlength="500" placeholder="Wie ist der Spot? Was macht ihn aus? (optional)"></textarea>
       </div>
       <div class="field">
-        <label>Longitude <span class="req">*</span></label>
-        <input type="number" id="f-lng" step="any" placeholder="11.5820" />
+        <label>Stadtteil</label>
+        <input type="text" id="f-area" maxlength="60" placeholder="z.B. Au-Haidhausen" />
       </div>
-    </div>
-    <div class="coord-actions">
-      <button class="action-btn" id="use-location">📍 Aktuellen Standort verwenden</button>
-    </div>
+      <div class="field">
+        <label>Tags (Komma-getrennt)</label>
+        <input type="text" id="f-tags" maxlength="120" placeholder="Sunset, ruhig" />
+      </div>
+      <div class="coord-row">
+        <div class="field">
+          <label>Latitude</label>
+          <input type="number" id="f-lat" step="any" placeholder="48.1351" />
+        </div>
+        <div class="field">
+          <label>Longitude</label>
+          <input type="number" id="f-lng" step="any" placeholder="11.5820" />
+        </div>
+      </div>
+      <div class="coord-actions">
+        <button class="action-btn" id="use-location">📍 Aktuellen Standort verwenden</button>
+      </div>
+    </details>
 
     <div class="modal-actions">
       <button class="action-btn" id="modal-cancel">Abbrechen</button>
@@ -3097,10 +3150,20 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
 
 <!-- Claim an existing (old) profile: pick yourself from the list of past users -->
 <div id="claim-overlay" class="access-prompt" style="display:none;">
-  <div class="prompt-card" style="max-width:440px;max-height:82vh;overflow-y:auto;text-align:left;">
+  <div class="prompt-card claim-card">
     <h2 id="claim-title">👥 Profil wählen</h2>
     <p id="claim-intro" style="font-size:13px;color:var(--fg-dim);">Tipp auf deinen Namen — Punkte, Level, Team und Corners sind sofort wieder da.</p>
-    <div id="claim-list" style="margin:14px 0;"></div>
+    <div id="claim-new" class="claim-choice" hidden>
+      <div class="claim-choice-title">✨ Neu hier?</div>
+      <div class="claim-new-row">
+        <input type="text" id="claim-new-name" placeholder="Dein Name" maxlength="20" autocomplete="nickname" />
+        <button id="claim-new-go" class="action-btn primary">Los geht's 🍻</button>
+      </div>
+    </div>
+    <div id="claim-old" class="claim-choice">
+      <div class="claim-choice-title" id="claim-old-title" hidden>👋 Schon dabei? Tipp auf deinen Namen</div>
+      <div id="claim-list"></div>
+    </div>
     <button id="claim-close" class="action-btn">Schließen</button>
   </div>
 </div>
@@ -3364,7 +3427,11 @@ const AMENITY_ICONS = {
   schatten: { emoji: "🌳", label: "Schatten" },
   sonne: { emoji: "☀️", label: "Sonne" },
   ruhig: { emoji: "🤫", label: "Ruhig" },
-  nachbarn: { emoji: "👀", label: "Nachbarn" }
+  nachbarn: { emoji: "👀", label: "Nachbarn" },
+  wasser: { emoji: "💧", label: "Wasser" },
+  dach: { emoji: "☂️", label: "Dach" },
+  sport: { emoji: "⚽", label: "Sport" },
+  kiffen: { emoji: "🌿", label: "Kiffen ok" }
 };
 
 /* ====================== TEAMS & LEVELS ====================== */
@@ -3601,6 +3668,8 @@ function maybeShowNicknamePrompt() {
   if (window.FB?.firebaseReady && localStorage.getItem("cg.accessGranted") !== "1") return;
   if ($("#claim-overlay")?.style.display === "flex") return;
   if ($("#access-prompt")?.style.display === "flex") return;
+  // Online: one screen for both — tap your name, or type a new one.
+  if (window.FB?.firebaseReady) { openClaimOverlay({ welcome: true }); return; }
   $("#nickname-prompt").style.display = "flex";
   setTimeout(() => $("#nickname-input")?.focus(), 100);
 }
@@ -3724,7 +3793,7 @@ async function verifyAccessGrant(opts = {}) {
     _accessVerified[uid] = true;
     localStorage.setItem("cg.accessGranted", "1");
     localStorage.setItem("cg.accessCode", String(val));
-    setTimeout(consolidateMyKeys, 1500);
+    setTimeout(linkMyEarlierLogins, 1500);
     return true;
   }
   const known = localStorage.getItem("cg.accessCode");
@@ -3735,7 +3804,7 @@ async function verifyAccessGrant(opts = {}) {
       localStorage.setItem("cg.accessGranted", "1");
       reattachSharedListenersAfterGrant();
       console.log("Zugang für diesen Login automatisch wiederhergestellt.");
-      setTimeout(consolidateMyKeys, 1500);
+      setTimeout(linkMyEarlierLogins, 1500);
       return true;
     } catch (err) { console.warn("stored access code no longer valid:", err); }
   }
@@ -3778,11 +3847,12 @@ async function submitAccessCode() {
     _accessVerified[uid] = true;
     $("#access-prompt").style.display = "none";
     reattachSharedListenersAfterGrant();
-    setTimeout(consolidateMyKeys, 1500);
+    setTimeout(linkMyEarlierLogins, 1500);
     if (STATE.nickname) {
       // Someone who already has a profile here only re-confirmed access.
       toast(`✅ Zugang bestätigt — weiter geht's, ${escapeHtml(STATE.nickname)}!`);
       broadcastPresence();
+      runPendingLinkActions();
     } else {
       toast("✅ Zugang gewährt – willkommen!");
       // Returning friends pick themselves right away instead of starting fresh.
@@ -5218,14 +5288,23 @@ function mountPinPicker() {
     drawPinDistricts();
   }
   if (_pinMarker) { _pinMap.removeLayer(_pinMarker); _pinMarker = null; }
-  // With GPS on you are probably standing at the spot: start with the pin there.
+  // You are probably standing at the spot: the pin starts where you are.
   if (STATE.geoActive && STATE.userPos) {
     _pinMap.setView([STATE.userPos.lat, STATE.userPos.lng], 17);
     setSpotPin(STATE.userPos.lat, STATE.userPos.lng);
   } else {
     const c = STATE.mainMap ? STATE.mainMap.getCenter() : { lat: MUNICH_CENTER[0], lng: MUNICH_CENTER[1] };
     _pinMap.setView([c.lat, c.lng], STATE.mainMap ? Math.max(14, STATE.mainMap.getZoom()) : 13);
-    $("#spot-pin-info").innerHTML = `👆 ${T("Tipp auf die Karte, wo der Spot ist — den Pin kannst du danach noch verschieben.", "Tap the map where the spot is — you can drag the pin afterwards.")}`;
+    $("#spot-pin-info").innerHTML = `📍 ${T("Suche deinen Standort …", "Finding your location …")}`;
+    currentPositionOnce(30000).then((pos) => {
+      if (!$("#modal-backdrop").classList.contains("open") || _pinMarker) return;   // closed, or already tapped
+      if (pos) {
+        _pinMap.setView([pos.lat, pos.lng], 17);
+        setSpotPin(pos.lat, pos.lng);
+      } else {
+        $("#spot-pin-info").innerHTML = `👆 ${T("Tipp auf die Karte, wo der Spot ist — den Pin kannst du danach noch verschieben.", "Tap the map where the spot is — you can drag the pin afterwards.")}`;
+      }
+    });
   }
   setTimeout(() => { try { _pinMap.invalidateSize(); } catch (e) {} }, 250);
 }
@@ -5242,6 +5321,7 @@ function setSpotPin(lat, lng, opts = {}) {
     $("#f-lng").value = lng.toFixed(6);
   }
   updateSpotPinInfo(lat, lng);
+  scheduleSpotCheck(lat, lng);   // amenities, name ideas and rules for this spot
 }
 function updateSpotPinInfo(lat, lng) {
   const info = $("#spot-pin-info");
@@ -5369,14 +5449,16 @@ function bindModal() {
     if (!isNaN(lat) && !isNaN(lng) && _pinMap) { setSpotPin(lat, lng, { keepFields: true }); _pinMap.setView([lat, lng], Math.max(_pinMap.getZoom(), 16)); }
   }));
   $("#f-area").addEventListener("input", () => { $("#f-area").dataset.auto = "0"; });
+  // A typed name is yours: a new pin no longer replaces it with an idea.
+  $("#f-name").addEventListener("input", () => { SPOT_DRAFT.nameAuto = false; $$("#spot-name-chips .spot-chip").forEach((x) => x.classList.remove("on")); });
 }
 
 function openModal() {
   ["f-name", "f-area", "f-desc", "f-tags", "f-lat", "f-lng"].forEach((id) => { $("#" + id).value = ""; });
   $("#f-area").dataset.auto = "";
+  resetSpotDraft();
   $("#modal-backdrop").classList.add("open");
   mountPinPicker();
-  setTimeout(() => $("#f-name").focus(), 100);
 }
 function closeModal() { $("#modal-backdrop").classList.remove("open"); }
 
@@ -5673,6 +5755,8 @@ const MAX_INVITE_NAME_LENGTH = 40;
 const SHARE_CORNER_PARAM = "corner";
 const INVITE_PARAM = "invite";
 const CHECKIN_PARAM = "checkin";
+const COME_PARAM = "come";   // WhatsApp "kommt vorbei": check-in + route on top
+const DATE_PARAM = "cd";     // a cornerdate invitation: one tap "bin dabei"
 const AUTO_CHECKIN_DELAY_MS = 400; // Allow the detail overlay animation to settle before triggering check-in
 let FCM_VAPID_PUBLIC_KEY = ""; // Loaded at runtime from Firebase /config/vapidKey
 let detailXpCornerId = null;
@@ -5695,6 +5779,8 @@ STATE.lastDirectMessageAt = parseInt(localStorage.getItem("cg.lastDirectMessageA
 STATE.pendingShareCornerId = null;
 STATE.pendingInviteName = "";
 STATE.pendingAutoCheckinCornerId = null;
+STATE.pendingCome = null;
+STATE.pendingDateRsvp = null;
 const _savedNotifSettings = loadNotifSettings();
 STATE.notifSettings = {
   blockedTeams: Array.isArray(_savedNotifSettings.blockedTeams) ? _savedNotifSettings.blockedTeams : [],
@@ -5733,7 +5819,16 @@ function rememberMyKey(key) {
   localStorage.setItem("cg.myKeys", JSON.stringify(keys.slice(-6)));
 }
 function isMyKey(key) {
-  return !!key && myKeys().includes(key);
+  if (!key) return false;
+  if (myKeys().includes(key)) return true;
+  // Another login of my profile (installed app, browser, other phone).
+  return profileRoot(key) === myRootKey();
+}
+function forgetMyKey(key) {
+  if (!key) return;
+  let keys = [];
+  try { keys = JSON.parse(localStorage.getItem("cg.myKeys") || "[]"); } catch (e) { keys = []; }
+  localStorage.setItem("cg.myKeys", JSON.stringify(keys.filter((k) => k !== key)));
 }
 
 // Move anything still addressed to an old key over to the current one.
@@ -5863,8 +5958,12 @@ function sanitizeInviteName(value) {
     .trim();
 }
 
-function buildShareUrl(cornerId, inviteName, autoCheckin = false) {
+function buildShareUrl(cornerId, inviteName, autoCheckin = false, extra = {}) {
   const url = new URL(window.location.href);
+  // Never pass on what this page was opened with.
+  [COME_PARAM, DATE_PARAM, "date", "gossip", "join", "here", "n", "profile", "chat", "chatName", "feedback"].forEach((k) => url.searchParams.delete(k));
+  url.hash = "";
+  Object.entries(extra || {}).forEach(([k, v]) => { if (v) url.searchParams.set(k, String(v)); });
   if (cornerId) url.searchParams.set(SHARE_CORNER_PARAM, cornerId);
   else url.searchParams.delete(SHARE_CORNER_PARAM);
   if (inviteName) url.searchParams.set(INVITE_PARAM, inviteName);
@@ -5924,6 +6023,9 @@ function applyIncomingLinks() {
   if (inviteName) STATE.pendingInviteName = inviteName.slice(0, MAX_INVITE_NAME_LENGTH);
   // When autoCheckin=true, store the target corner for later (resolved after nickname is confirmed)
   if (autoCheckin && cornerId) STATE.pendingAutoCheckinCornerId = cornerId;
+  if (cornerId && params.get(COME_PARAM) === "1") STATE.pendingCome = cornerId;
+  const dateId = (params.get(DATE_PARAM) || "").trim();
+  if (dateId && /^[A-Za-z0-9_-]{1,64}$/.test(dateId)) STATE.pendingDateRsvp = dateId;
   // QR referral: remember who generated the scanned code (rewarded on check-in).
   const refId = (params.get("ref") || "").trim();
   if (refId && autoCheckin) STATE.pendingReferrerId = refId;
@@ -5965,13 +6067,137 @@ function openPendingSharedCorner() {
   }
   if (STATE.pendingAutoCheckinCornerId === cornerId) {
     clearHandledQueryParam(CHECKIN_PARAM);
-    if (STATE.nickname) {
+    if (linkActionsReady()) {
       STATE.pendingAutoCheckinCornerId = null;
       scheduleAutoCheckin(cornerId);
     }
-    // else: leave pendingAutoCheckinCornerId set; saveNickname() will pick it up
+    // else: stays pending until you said who you are (runPendingLinkActions)
   }
+  if (STATE.pendingCome === cornerId) clearHandledQueryParam(COME_PARAM);
+  if (STATE.pendingDateRsvp) clearHandledQueryParam(DATE_PARAM);
+  runPendingLinkActions();
   return true;
+}
+
+/* ====================== LINKS THAT GO STRAIGHT THERE ======================
+   "Die Links sollen dich gleich zu den Seiten auf der App bringen (direkter
+   Corner-Check-in, Cornerdate-Zusage)." A WhatsApp corner link opens the
+   corner with check-in and route on top — and checks you in at once when
+   you are already there. A cornerdate link opens the invitation with one
+   "bin dabei" button. On a new phone or browser the link waits until you
+   said who you are, then carries on by itself.                          */
+function linkActionsReady() {
+  return !!STATE.nickname && (!window.FB?.firebaseReady || localStorage.getItem("cg.accessGranted") === "1");
+}
+function runPendingLinkActions() {
+  if (!linkActionsReady()) return;
+  if (STATE.pendingAutoCheckinCornerId) {
+    const id = STATE.pendingAutoCheckinCornerId;
+    STATE.pendingAutoCheckinCornerId = null;
+    if (getAllCorners().some((c) => c.id === id)) {
+      if (!($("#detail-overlay")?.classList.contains("open") && STATE.detailCornerId === id)) openDetail(id);
+      scheduleAutoCheckin(id);
+    }
+  }
+  if (STATE.pendingCome) {
+    const id = STATE.pendingCome;
+    STATE.pendingCome = null;
+    if (getAllCorners().some((c) => c.id === id)) showComeBar(id);
+  }
+  if (STATE.pendingDateRsvp) {
+    const dateId = STATE.pendingDateRsvp;
+    STATE.pendingDateRsvp = null;
+    openDateInvite(dateId);
+  }
+}
+
+// Where am I right now? The running GPS fix, else one quick fix (≤ 6 s).
+function currentPositionOnce(maxAgeMs = 120000) {
+  if (STATE.userPos && STATE.geoActive) return Promise.resolve(STATE.userPos);
+  if (!navigator.geolocation) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (v) => { if (!done) { done = true; resolve(v); } };
+    setTimeout(() => finish(null), 6500);
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => finish({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }),
+        () => finish(null),
+        { enableHighAccuracy: true, timeout: 6000, maximumAge: maxAgeMs }
+      );
+    } catch (e) { finish(null); }
+  });
+}
+
+const COME_AUTO_CHECKIN_M = 150;
+async function showComeBar(cornerId) {
+  const corner = getAllCorners().find((c) => c.id === cornerId);
+  if (!corner) return;
+  if (!($("#detail-overlay")?.classList.contains("open") && STATE.detailCornerId === cornerId)) openDetail(cornerId);
+  const content = $("#detail-content");
+  if (!content) return;
+  content.querySelector(".come-bar")?.remove();
+  const here = freshFriends().filter((f) => f.atCorner === cornerId).map((f) => f.nickname || f.name).filter(Boolean);
+  const checkedIn = STATE.manualCheckinId === cornerId;
+  const bar = document.createElement("div");
+  bar.className = "come-bar";
+  bar.innerHTML = `<div class="come-title">🍻 ${here.length ? `${T("Schon da", "Already there")}: <strong>${here.map(escapeHtml).join(", ")}</strong>` : T("Komm vorbei!", "Come over!")}</div>
+    <div class="come-actions">
+      <button class="action-btn primary" data-come-checkin ${checkedIn ? "disabled" : ""}>${checkedIn ? "✓ " + T("Eingecheckt", "Checked in") : "📍 " + T("Ich bin da — einchecken", "I'm here — check in")}</button>
+      <a class="action-btn" data-come-route href="${escapeHtml(walkingRouteUrl(corner.lat, corner.lng))}" target="_blank" rel="noopener">🧭 ${T("Route", "Route")}</a>
+    </div>
+    <div class="come-hint" data-come-hint></div>`;
+  content.prepend(bar);
+  const btn = bar.querySelector("[data-come-checkin]");
+  btn.addEventListener("click", () => {
+    if (STATE.manualCheckinId !== cornerId) manualCheckin(cornerId);
+    btn.disabled = true;
+    btn.textContent = "✓ " + T("Eingecheckt", "Checked in");
+  });
+  if (checkedIn) return;
+  // Already there? Then check in right away (the toast offers undo).
+  const pos = await currentPositionOnce();
+  const hint = bar.querySelector("[data-come-hint]");
+  if (!pos || !bar.isConnected) return;
+  const d = haversine(pos.lat, pos.lng, corner.lat, corner.lng);
+  if (d <= COME_AUTO_CHECKIN_M && STATE.manualCheckinId !== cornerId) {
+    manualCheckin(cornerId);
+    btn.disabled = true;
+    btn.textContent = "✓ " + T("Eingecheckt", "Checked in");
+  } else if (hint) {
+    hint.textContent = `📏 ${T("Noch", "Still")} ${formatDistance(d)} — ${T("etwa", "about")} ${Math.max(1, Math.round(d / 80))} ${T("Min. zu Fuß", "min walk")}`;
+  }
+}
+
+// Cornerdate invitation: one tap "bin dabei". Waits briefly for the dates to load.
+async function openDateInvite(dateId, attempt = 0) {
+  const raw = STATE.cornerDates?.[dateId];
+  if (!raw) {
+    if (attempt < 20) setTimeout(() => openDateInvite(dateId, attempt + 1), 750);
+    else toast(T("Dieses Cornerdate gibt es nicht mehr.", "This cornerdate no longer exists."));
+    return;
+  }
+  const d = { ...raw, id: dateId };
+  if (Number(d.end) < Date.now()) { toast(T("Dieses Cornerdate ist schon vorbei.", "This cornerdate is already over.")); return; }
+  const corner = getAllCorners().find((c) => c.id === d.cornerId);
+  if (corner) focusDetailSection(d.cornerId, ".cornerdate-section");
+  const going = cornerDateGoing(d);
+  const iGo = Object.keys(d.going || {}).some((id) => isMyKey(id));
+  const mine = isMyKey(d.byId);
+  const where = corner ? corner.name : (d.cornerName || "Corner");
+  const text = `${formatDateRange(d.start, d.end)} ${T("am", "at")} ${where}${d.note ? ` — „${d.note}“` : ""}
+${T("von", "by")} ${mine ? T("dir", "you") : (d.byName || "?")} · ${going.length} ${T("dabei", "going")}${going.length ? ": " + going.map((g) => g.name).join(", ") : ""}`;
+  if (mine || iGo) {
+    toast(`📅 <strong>${escapeHtml(where)}</strong>, ${escapeHtml(formatDateRange(d.start, d.end))} — ${mine ? T("dein Cornerdate", "your cornerdate") : T("du bist dabei ✓", "you're in ✓")}`);
+    return;
+  }
+  const ok = await showDialog({
+    title: `📅 ${T("Cornerdate", "Cornerdate")}`,
+    text,
+    okLabel: `✋ ${T("Bin dabei", "I'm in")} (+${CORNERDATE_JOIN_AURA} Aura)`,
+    cancelLabel: T("Später", "Later")
+  });
+  if (ok === true) await toggleCornerDateGoing(dateId);
 }
 
 async function shareCornerLink(cornerId) {
@@ -6018,13 +6244,68 @@ async function inviteFriends() {
 }
 
 async function setupServiceWorker() {
-  if (!("serviceWorker" in navigator)) return;
+  if (!("serviceWorker" in navigator)) return null;
   try {
-    await navigator.serviceWorker.register("./service-worker.js");
+    // One worker for caching AND push (it loads firebase-messaging-sw.js).
+    return await navigator.serviceWorker.register("./service-worker.js", { scope: "./" });
   } catch (err) {
     console.warn("Service worker registration failed:", err);
+    return null;
   }
 }
+
+/* "Dann versuch nochmal zu deployen": the new version was online, but an
+   installed app (iPhone home screen above all) is only resumed, not
+   reloaded, so it kept running the old code. On coming back to the app the
+   build number is compared with the server; a new one is loaded right away
+   when nothing is open, otherwise a tap on the notice does it.            */
+const APP_BUILD = document.querySelector('meta[name="cg-build"]')?.content || "dev";
+var _appHiddenAt = 0;
+var _appUpdate = { checking: false, lastCheck: 0, newBuild: "" };
+function appLooksIdle() {
+  const active = document.activeElement;
+  if (active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return false;
+  // Overlays are position:fixed (offsetParent is always null there): ask the layout.
+  const shown = (el) => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== "hidden";
+  return !Array.from(document.querySelectorAll(".open, [style*='display: flex'], [style*='display:flex']"))
+    .some((el) => el.id !== "nickname-bar" && !el.classList.contains("toast") && shown(el));
+}
+async function checkForAppUpdate(force = false) {
+  if (APP_BUILD === "dev" || _appUpdate.checking || (typeof navigator !== "undefined" && navigator.onLine === false)) return;
+  if (!force && Date.now() - _appUpdate.lastCheck < 60000) return;
+  _appUpdate.checking = true;
+  _appUpdate.lastCheck = Date.now();
+  try {
+    const res = await fetch("./index.html?build-check=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) return;
+    const m = (await res.text()).match(/<meta name="cg-build" content="([^"]+)"/);
+    const latest = m && m[1];
+    if (!latest || latest === "dev" || latest === APP_BUILD) return;
+    _appUpdate.newBuild = latest;
+    // Never loop: one automatic reload per new version and session.
+    let tried = "";
+    try { tried = sessionStorage.getItem("cg.reloadedFor") || ""; } catch (e) { /* private mode */ }
+    if (tried !== latest && appLooksIdle()) { reloadForUpdate(latest); return; }
+    toast(`🔄 <strong>${T("Neue Version da", "New version available")}</strong><br><span style="font-size:11px;opacity:0.8;">${T("Tippen zum Laden", "Tap to load it")}</span>`, "", () => reloadForUpdate(latest));
+  } catch (err) { /* offline: try again later */ }
+  finally { _appUpdate.checking = false; }
+}
+function reloadForUpdate(build) {
+  try { sessionStorage.setItem("cg.reloadedFor", build); sessionStorage.setItem("cg.justUpdated", "1"); } catch (e) { /* private mode */ }
+  window.location.reload();
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { _appHiddenAt = Date.now(); return; }
+  // Back in the app after a while (or a new version is already known).
+  if (_appUpdate.newBuild || Date.now() - _appHiddenAt > 60000) checkForAppUpdate(true);
+});
+setInterval(() => { if (!document.hidden) checkForAppUpdate(); }, 30 * 60 * 1000);
+document.addEventListener("DOMContentLoaded", () => {
+  let updated = false;
+  try { updated = sessionStorage.getItem("cg.justUpdated") === "1"; sessionStorage.removeItem("cg.justUpdated"); } catch (e) { /* private mode */ }
+  if (updated) setTimeout(() => toast(`✨ ${T("App aktualisiert", "App updated")}`), 1200);
+  setTimeout(() => checkForAppUpdate(true), 8000);
+});
 
 async function enableFirebasePush() {
   if (!window.FB?.firebaseReady) {
@@ -6040,15 +6321,9 @@ async function enableFirebasePush() {
     return;
   }
   try {
-    await setupServiceWorker();
-    // FCM requires the firebase-messaging service worker, not the cache-only one
-    let fmswReg;
-    try {
-      fmswReg = await navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "./" });
-    } catch (err) {
-      console.warn("firebase-messaging-sw.js registration failed, falling back to default service worker:", err);
-      fmswReg = await navigator.serviceWorker.getRegistration("./");
-    }
+    // The app's worker also carries the push part (firebase-messaging-sw.js).
+    let fmswReg = await setupServiceWorker();
+    if (!fmswReg) fmswReg = await navigator.serviceWorker.getRegistration("./");
     if (!fmswReg) {
       toast("Service Worker nicht bereit.");
       return;
@@ -6222,9 +6497,9 @@ function checkLevelMilestones() {
 }
 
 function currentUserKey() { return STATE.userId || STATE.nickname; }
+// Everything a person has, over all their logins (see "one profile, several logins").
 function getRewardTotal(kind, userKey) {
-  const key = userKey || currentUserKey();
-  return rewardStore(kind)?.[key]?.total || 0;
+  return userKey ? identityRewardTotal(kind, userKey) : identityRewardTotal(kind, myRootKey(), true);
 }
 function getCurrentAura() { return getRewardTotal("aura"); }
 function getCurrentKarma() { return getRewardTotal("karma"); }
@@ -6328,7 +6603,7 @@ function buildRewardGuideHtml() {
       ${row("🤝", "Mit jemandem am Corner getroffen (pro Person)", "Met someone at a corner (per person)", "+8")}
       ${row("⚔️", "Corner eingenommen (3 aus deinem Team vor Ort)", "Corner captured (3 of your team there)", "+25")}
       ${row("🗣️", "Gossip erzählt / bewertet", "Told / rated gossip", "+5 / +2")}
-      ${row("📅", "Cornerdate geplant (bis 3× am Tag) · zugesagt", "Planned a cornerdate (up to 3× a day) · joined one", "+5 · +2")}
+      ${row("📅", "Cornerdate geplant (bis 3× am Tag) · zugesagt · wirklich gekommen", "Planned a cornerdate (up to 3× a day) · said yes · really came", `+${CORNERDATE_PLAN_AURA} · +${CORNERDATE_JOIN_AURA} · +${CORNERDATE_SHOWUP_AURA}`)}
       ${row("☂️", "Corner als überdacht / nass eingeschätzt", "Rated a corner as covered / wet", "+2")}
       ${row("➕", "Neuen Spot eingetragen", "Added a new spot", "+50")}
       ${row("📸", "Foto hochgeladen", "Uploaded a photo", "+10")}
@@ -6501,11 +6776,17 @@ function normalizeName(n) {
 function findProfileTwin(name) {
   const want = normalizeName(name);
   if (!want || want === "anonym") return null;
+  const myRoot = myRootKey();
   let best = null;
-  Object.entries(STATE.points || {}).forEach(([key, p]) => {
-    if (!p || key === currentUserKey()) return;
-    if (normalizeName(p.nickname) !== want || Number(p.total || 0) < 10) return;
-    if (!best || Number(p.total) > best.total) best = { key, nickname: p.nickname, total: Number(p.total) };
+  const seen = new Set();
+  Object.keys(STATE.points || {}).forEach((key) => {
+    const root = profileRoot(key);
+    if (seen.has(root) || root === myRoot || key === currentUserKey()) return;
+    seen.add(root);
+    const nickname = identityNickname(root);
+    const total = identityRewardTotal("aura", root);
+    if (normalizeName(nickname) !== want || total < 10) return;
+    if (!best || total > best.total) best = { key: root, nickname, total };
   });
   return best;
 }
@@ -6513,16 +6794,16 @@ function findProfileTwin(name) {
 async function offerProfileTwin(twin) {
   const ok = await showDialog({
     title: T(`„${twin.nickname}“ gibt es schon`, `“${twin.nickname}” already exists`),
-    text: T(`Ein Profil mit diesem Namen hat ${twin.total} Aura. Bist du das (neues Handy, Browser gelöscht)? Dann hol es dir zurück, statt bei null anzufangen.`, `A profile with this name has ${twin.total} aura. Is that you (new phone, cleared browser)? Take it back instead of starting from zero.`),
+    text: T(`Ein Profil mit diesem Namen hat ${twin.total} Aura. Bist du das (neues Handy, Browser gelöscht)? Dann mach einfach damit weiter, statt bei null anzufangen.`, `A profile with this name has ${twin.total} aura. Is that you (new phone, cleared browser)? Just carry on with it instead of starting from zero.`),
     okLabel: T("Ja, das bin ich", "Yes, that's me"),
     cancelLabel: T("Nein, ich bin neu", "No, I'm new")
   });
   if (ok !== true || !window.FB?.firebaseReady) return;
-  await claimExistingProfile(twin.key);
+  await linkToProfile(twin.key, { welcome: true });
 }
 
-function saveNickname() {
-  const name = $("#nickname-input").value.trim();
+function saveNickname(nameArg) {
+  const name = String(typeof nameArg === "string" ? nameArg : ($("#nickname-input").value || "")).trim().slice(0, 20);
   if (!name) { toast("Bitte gib einen Namen ein."); return; }
   const twin = window.FB?.firebaseReady ? findProfileTwin(name) : null;
   if (twin) setTimeout(() => offerProfileTwin(twin), 600);
@@ -6530,12 +6811,14 @@ function saveNickname() {
   localStorage.setItem("cg.nickname", name);
   ensurePointIdentity();
   $("#nickname-prompt").style.display = "none";
+  if ($("#claim-overlay")) $("#claim-overlay").style.display = "none";
   toast(`Willkommen, <strong>${escapeHtml(name)}</strong>! 🍻`);
   syncIdentity();
   updateNicknameBar();
   unlockAchievement("first-login", "Willkommen", "👋", 10);
   ensureOwnProfileLock();
   maybeShowRewardTip(6500);
+  if (!twin) runPendingLinkActions();
 }
 
 function bindNicknameBar() {
@@ -6556,6 +6839,7 @@ function bindNicknameBar() {
     STATE.nickname = newName.trim();
     localStorage.setItem("cg.nickname", STATE.nickname);
     ensurePointIdentity();
+    propagateNickname(STATE.nickname);
     toast(`Nickname geändert: <strong>${escapeHtml(STATE.nickname)}</strong>`);
     syncIdentity();
     updateNicknameBar();
@@ -6863,9 +7147,9 @@ function _activateAuthDependentFeatures(uid, status) {
   } catch (err) { console.warn("admin flag check failed:", err); }
   // localStorage saying "access granted" is no proof for THIS login — check.
   verifyAccessGrant();
-  if (!_consolidateVisibilityBound) {
-    _consolidateVisibilityBound = true;
-    document.addEventListener("visibilitychange", () => { if (!document.hidden && _accessVerified[window.FB?.getAuthUid?.() || ""]) consolidateMyKeys(); });
+  if (!_linkVisibilityBound) {
+    _linkVisibilityBound = true;
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && _accessVerified[window.FB?.getAuthUid?.() || ""]) linkMyEarlierLogins(); });
   }
 }
 
@@ -7018,22 +7302,22 @@ async function claimRecoveryCode(rawCode) {
         reattachSharedListenersAfterGrant();
       } catch (err) { console.warn("recovery access grant failed:", err); }
     }
-    // The code proves ownership: move the LIVE profile (points earned since the
-    // code was made included) instead of restoring the old snapshot.
-    let moved = false;
+    // The code proves ownership: this login joins the LIVE profile (points
+    // earned since the code was made included); the old device stays signed in.
+    let linked = false;
     const oldKey = remote.createdBy;
     if (oldKey && uid && oldKey !== uid) {
-      try { moved = await claimExistingProfile(oldKey, { quiet: true }); }
-      catch (err) { console.warn("recovery live transfer failed:", err); }
+      try { linked = await linkToProfile(oldKey, { welcome: true }); }
+      catch (err) { console.warn("recovery link failed:", err); }
     }
-    if (!moved) {
+    if (!linked) {
       applyProfileSnapshot(remote, { silent: true });   // move the profile onto this device's uid
       syncProfileToCloud();                             // persist under the new uid as well
     }
     // Point the same code at this login, so it keeps working for the next switch.
     localStorage.setItem("cg.recoveryCode", code);
     createRecoveryCode().catch(() => {});
-    toast(T(`✅ Profil „${escapeHtml(STATE.nickname || remote.nickname || "")}“ übernommen — willkommen zurück!`, `✅ Profile “${escapeHtml(STATE.nickname || remote.nickname || "")}” restored — welcome back!`));
+    if (!linked) toast(T(`✅ Profil „${escapeHtml(STATE.nickname || remote.nickname || "")}“ übernommen — willkommen zurück!`, `✅ Profile “${escapeHtml(STATE.nickname || remote.nickname || "")}” restored — welcome back!`));
     if (STATE.view === "profile") renderProfile();
   } catch (err) {
     console.warn("claimRecoveryCode failed:", err);
@@ -7718,49 +8002,79 @@ async function adminUids() {
   } catch (err) { return []; }
 }
 
-/* ---- "Wer bist du?": pick your profile from the list ---- */
+/* ---- "Wer bist du?": tap your name, or type a new one — both one step ----
+   "Es muss so einfach wie möglich sein, sein altes Profil aufzurufen,
+   genauso wie neu anzufangen." Welcome mode shows both side by side. A tap
+   on a name links this login to that profile (see linkToProfile): nothing
+   moves, the other devices stay signed in, the next start goes straight in. */
 async function openClaimOverlay(opts = {}) {
   const overlay = $("#claim-overlay");
   const list = $("#claim-list");
   if (!overlay || !list) return;
-  // Welcome mode: shown right after entering the invite code, so returning
-  // friends grab their old profile before anything else.
-  $("#claim-title").textContent = opts.welcome ? T("👋 Wer bist du?", "👋 Who are you?") : T("👥 Profil wählen", "👥 Pick your profile");
-  $("#claim-intro").textContent = opts.welcome
-    ? T("Warst du schon mal dabei? Tipp auf deinen Namen — Punkte, Level, Team und Corners sind sofort wieder da.", "Been here before? Tap your name — points, level, team and corners are back right away.")
-    : T("Tipp auf deinen Namen — dein Profil wechselt auf dieses Gerät. Was du hier schon gesammelt hast, wird dazugezählt.", "Tap your name — your profile moves to this device. What you collected here is added.");
-  $("#claim-close").textContent = opts.welcome ? T("Ich bin neu hier", "I'm new here") : T("Schließen", "Close");
+  const welcome = !!opts.welcome;
+  overlay.classList.toggle("welcome", welcome);
+  $("#claim-title").textContent = welcome ? T("👋 Wer bist du?", "👋 Who are you?") : T("👥 Profil wählen", "👥 Pick your profile");
+  $("#claim-intro").textContent = welcome
+    ? T("Einmal auswählen — beim nächsten Öffnen geht's direkt weiter. Auf deinen anderen Geräten bleibst du angemeldet.", "Pick once — next time the app opens straight away. You stay signed in on your other devices.")
+    : T("Tipp auf deinen Namen — dieses Gerät gehört dann zu deinem Profil. Was du hier gesammelt hast, wird dazugezählt.", "Tap your name — this device then belongs to your profile. What you collected here is added.");
+  const newBox = $("#claim-new");
+  if (newBox) newBox.hidden = !welcome;
+  const oldTitle = $("#claim-old-title");
+  if (oldTitle) oldTitle.hidden = !welcome;
+  const closeBtn = $("#claim-close");
+  closeBtn.hidden = welcome;
+  closeBtn.textContent = T("Schließen", "Close");
   overlay.style.display = "flex";
-  const closeAndContinue = () => { overlay.style.display = "none"; maybeShowNicknamePrompt(); };
-  $("#claim-close").onclick = closeAndContinue;
-  overlay.onclick = (e) => { if (e.target === overlay) closeAndContinue(); };
-  if (!window.FB?.firebaseReady) { list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">${T("Nur online verfügbar.", "Only available online.")}</p>`; return; }
-  list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">${T("Lade Profile…", "Loading profiles…")}</p>`;
+  const close = () => { overlay.style.display = "none"; };
+  closeBtn.onclick = close;
+  overlay.onclick = (e) => { if (e.target === overlay && !welcome) close(); };
+  if (welcome) {
+    const input = $("#claim-new-name");
+    const go = () => {
+      const name = String(input?.value || "").trim();
+      if (!name) { input?.focus(); toast(T("Bitte gib einen Namen ein.", "Please enter a name.")); return; }
+      saveNickname(name);
+    };
+    $("#claim-new-go").onclick = go;
+    if (input) input.onkeydown = (e) => { if (e.key === "Enter") go(); };
+  }
+  if (!window.FB?.firebaseReady) { list.innerHTML = `<p class="claim-empty" style="color:var(--fg-dim);font-size:13px;">${T("Nur online verfügbar.", "Only available online.")}</p>`; return; }
+  list.innerHTML = `<p class="claim-empty" style="color:var(--fg-dim);font-size:13px;">${T("Lade Profile…", "Loading profiles…")}</p>`;
   try {
-    const snap = await window.FB.get(window.FB.ref(window.FB.db, "points"));
-    const data = snap.val() || {};
-    const mine = currentUserKey();
-    const rows = Object.entries(data)
-      .map(([key, p]) => ({ key, nickname: (p && p.nickname) || "", total: Number((p && p.total) || 0), last: lastRewardTime(p) }))
-      .filter((r) => r.key !== mine && r.nickname && r.nickname.toLowerCase() !== "anonym" && r.total > 0)
+    const data = (await readOnce("points", 10000)) || {};
+    STATE.points = { ...(STATE.points || {}), ...data };
+    const myRoot = myRootKey();
+    const roots = new Set(Object.keys(data).map((k) => profileRoot(k)));
+    const rows = [...roots]
+      .filter((root) => root && root !== myRoot && !isMyKey(root))
+      .map((root) => {
+        const keys = [...identityKeysOf(root)];
+        return {
+          key: root,
+          nickname: identityNickname(root) || "",
+          total: identityRewardTotal("aura", root),
+          last: Math.max(0, ...keys.map((k) => lastRewardTime(STATE.points?.[k])))
+        };
+      })
+      .filter((r) => r.nickname && r.nickname.toLowerCase() !== "anonym" && r.total > 0)
       .sort((a, b) => a.nickname.localeCompare(b.nickname, "de", { sensitivity: "base" }));
     if (!rows.length) {
-      list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">${T("Keine anderen Profile gefunden.", "No other profiles found.")}</p>`;
+      list.innerHTML = `<p class="claim-empty" style="color:var(--fg-dim);font-size:13px;">${welcome ? T("Noch keine Profile — du bist die/der Erste! Einfach oben deinen Namen eingeben.", "No profiles yet — you're the first! Just type your name above.") : T("Keine anderen Profile gefunden.", "No other profiles found.")}</p>`;
       return;
     }
     list.innerHTML = `
-      ${rows.length > 6 ? `<input type="search" id="claim-search" class="claim-search" placeholder="${T("Namen suchen…", "Search name…")}" autocomplete="off" />` : ""}
-      <div id="claim-rows">${rows.map((r) => {
+      ${rows.length > 8 ? `<input type="search" id="claim-search" class="claim-search" placeholder="${T("Namen suchen…", "Search name…")}" autocomplete="off" />` : ""}
+      ${rows.map((r) => {
         const { level } = getLevel(r.total);
         const tier = getLevelTier(level);
         return `<button class="claim-row" data-claim-key="${escapeHtml(r.key)}" data-claim-name="${escapeHtml(r.nickname.toLowerCase())}">
           <span class="claim-row-main">
             <span class="claim-row-name">${escapeHtml(r.nickname)}</span>
-            <span class="claim-row-meta">${tier.emoji} Lv.${level} · ${r.total} Aura${r.last ? " · " + sinceLabel(r.last) : ""}</span>
+            <span class="claim-row-meta">${tier.emoji} Lv.${level}${welcome ? "" : ` · ${r.total} Aura${r.last ? " · " + sinceLabel(r.last) : ""}`}</span>
           </span>
           <span class="claim-row-cta">${T("Das bin ich", "That's me")} →</span>
         </button>`;
-      }).join("")}</div>`;
+      }).join("")}`;
     $("#claim-search")?.addEventListener("input", (e) => {
       const q = String(e.target.value || "").trim().toLowerCase();
       list.querySelectorAll(".claim-row").forEach((row) => { row.style.display = !q || row.dataset.claimName.includes(q) ? "" : "none"; });
@@ -7769,22 +8083,26 @@ async function openClaimOverlay(opts = {}) {
       btn.addEventListener("click", async () => {
         const row = rows.find((x) => x.key === btn.dataset.claimKey);
         if (!row) return;
-        // Only warn when that profile is in use on another phone right now.
-        const p = STATE.friends?.[row.key];
-        const activeElsewhere = p && presenceIsVisible(p) && Date.now() - Number(p.lastSeen || 0) < 2 * 3600000;
-        const ok = await showDialog({
-          title: T(`Du bist „${row.nickname}“?`, `You are “${row.nickname}”?`),
-          text: activeElsewhere
-            ? T(`„${row.nickname}“ ist gerade auf einem anderen Handy online. Wenn du das bist (neues Handy), tipp auf „Ja“ — das andere Gerät fragt dann neu, wer es ist.`, `“${row.nickname}” is online on another phone right now. If that's you (new phone), tap “Yes” — the other device will then ask who it is.`)
-            : T("Punkte, Level, Achievements, Team und deine Corners kommen auf dieses Gerät.", "Points, level, achievements, team and your corners move to this device."),
-          okLabel: T("Ja, das bin ich", "Yes, that's me")
-        });
-        if (ok === true) claimExistingProfile(row.key);
+        if (!welcome) {
+          // This device is already someone: say plainly what happens.
+          const here = getCurrentAura();
+          const ok = await showDialog({
+            title: T(`Du bist „${row.nickname}“?`, `You are “${row.nickname}”?`),
+            text: here > 50
+              ? T(`„${STATE.nickname || "Anonym"}“ (${here} Aura) und „${row.nickname}“ werden zu einem Profil — nur wenn beides du bist.`, `“${STATE.nickname || "Anonym"}” (${here} aura) and “${row.nickname}” become one profile — only if both are you.`)
+              : T("Dieses Gerät gehört dann zu deinem Profil. Deine anderen Geräte bleiben angemeldet.", "This device then belongs to your profile. Your other devices stay signed in."),
+            okLabel: T("Ja, das bin ich", "Yes, that's me")
+          });
+          if (ok !== true) return;
+        }
+        btn.disabled = true;
+        const ok = await linkToProfile(row.key, { welcome });
+        if (!ok) btn.disabled = false;
       });
     });
   } catch (err) {
     console.warn("openClaimOverlay failed:", err);
-    list.innerHTML = `<p style="color:var(--fg-dim);font-size:13px;">${T("Konnte Profile nicht laden.", "Could not load profiles.")}</p>`;
+    list.innerHTML = `<p class="claim-empty" style="color:var(--fg-dim);font-size:13px;">${T("Konnte Profile nicht laden.", "Could not load profiles.")}</p>`;
   }
 }
 
@@ -7795,9 +8113,22 @@ function watchOwnProfileLock() {
   const uid = window.FB?.getAuthUid?.() || "";
   if (!uid || !window.FB?.firebaseReady || _ownLockUnsub) return;
   const { db, ref, onValue } = window.FB;
-  _ownLockUnsub = onValue(ref(db, "profileLocks/" + uid), (snap) => {
+  _ownLockUnsub = onValue(ref(db, "profileLocks/" + uid), async (snap) => {
     const lock = snap.val();
     if (!lock || !lock.by || lock.by === uid || !STATE.nickname) return;
+    // An older app version moved my profile to another login. If that login
+    // carries my name now, it is me on another device: join it, no question.
+    let other = null;
+    try { other = await readOnce("points/" + lock.by, 6000); } catch (e) { /* offline */ }
+    if (other && normalizeName(other.nickname) === normalizeName(STATE.nickname)) {
+      if (await setProfileAlias(uid, other.aliasOf || lock.by)) {
+        localStorage.setItem("cg.profileRoot", other.aliasOf || lock.by);
+        rememberMyKey(lock.by);
+        updateNicknameBar();
+        if (STATE.view === "profile") renderProfile();
+        return;
+      }
+    }
     const name = STATE.nickname;
     try { _ownLockUnsub(); } catch (e) {}
     _ownLockUnsub = null;
@@ -7816,12 +8147,6 @@ function watchOwnProfileLock() {
   }, () => { _ownLockUnsub = null; });
 }
 
-/* "Im Ranking Lv. 17, im Profil Lv. 2": the ranking counts every earlier
-   login of this device (cg.myKeys) as "me", the profile only the current one.
-   Moving the points to the new login used to run BEFORE the access grant
-   was confirmed, failed with permission_denied and was never retried — so
-   the points stayed behind under the old login. Now, once access is
-   confirmed, every earlier login with points is merged into the current one. */
 /* One-shot read that cannot hang forever. A plain get() was seen to stall
    right after listeners had been refused (no access yet) and re-attached;
    a one-shot listener is raced against it, with a time limit on top.   */
@@ -7841,30 +8166,235 @@ function withTimeout(promise, ms, label) {
   return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error("timeout: " + label)), ms))]);
 }
 
-var _consolidating = false;
-var _consolidateRetries = 0;
-var _consolidateVisibilityBound = false;
-async function consolidateMyKeys() {
-  const uid = window.FB?.getAuthUid?.() || "";
-  if (!uid || _consolidating || !window.FB?.firebaseReady) return;
-  _consolidating = true;
-  let merged = 0, failed = false;
+/* ====================== ONE PROFILE, SEVERAL LOGINS ======================
+   "Wenn wir die App wieder öffnen, sollte es gleich direkt weitergehen."
+   Every browser has its own anonymous login: the installed app, the browser
+   a WhatsApp link opens in (on the iPhone that is never the installed app),
+   a new phone. Picking your profile used to MOVE it to the new login and
+   throw the other device out ("Wer bist du hier?") — and the next pick moved
+   it back. Now a login simply joins the profile: its points entry carries
+   `aliasOf: <profile key>`. Profile and ranking add up all logins of one
+   person, nothing is moved and every device stays signed in.            */
+function profileRoot(key, store) {
+  const src = store || STATE.points || {};
+  let k = key;
+  const seen = new Set();
+  while (k && !seen.has(k)) {
+    seen.add(k);
+    const next = src[k] && src[k].aliasOf;
+    if (!next || typeof next !== "string" || next === k || seen.has(next)) break;
+    k = next;
+  }
+  return k;
+}
+function myRootKey() {
+  const cur = currentUserKey();
+  const viaPoints = profileRoot(cur);
+  if (viaPoints && viaPoints !== cur) return viaPoints;
+  // Known on this device even before the points have loaded.
+  const stored = localStorage.getItem("cg.profileRoot") || "";
+  return stored && stored !== cur ? profileRoot(stored) : cur;
+}
+function identityKeysOf(root, store) {
+  const src = store || STATE.points || {};
+  const keys = new Set([root]);
+  Object.keys(src).forEach((k) => { if (profileRoot(k, src) === root) keys.add(k); });
+  return keys;
+}
+// Every key that is me: this login, my profile, its other logins and the
+// earlier logins of this device.
+function myIdentityKeys() {
+  const keys = identityKeysOf(myRootKey());
+  keys.add(currentUserKey());
+  myKeys().forEach((k) => keys.add(k));
+  return [...keys].filter(Boolean);
+}
+// A leftover copy of an old merge must not be counted twice.
+function rewardLooksCopied(entry, other) {
+  const a = rewardHistoryList(entry), b = rewardHistoryList(other);
+  if (!a.length || !b.length) return false;
+  const seen = new Set(b.map((h) => `${h && h.time}|${h && h.pts}`));
+  const last = a[a.length - 1];
+  const shared = a.filter((h) => seen.has(`${h && h.time}|${h && h.pts}`)).length;
+  return !!((last && seen.has(`${last.time}|${last.pts}`)) || shared >= a.length / 2);
+}
+function identityRewardTotal(kind, key, includeDeviceKeys = false) {
+  const store = rewardStore(kind) || {};
+  const root = profileRoot(key);
+  const keys = identityKeysOf(root);
+  if (includeDeviceKeys || root === myRootKey()) myIdentityKeys().forEach((k) => keys.add(k));
+  const entries = [...keys].map((k) => store[k]).filter((e) => e && Number(e.total || 0) > 0)
+    .sort((a, b) => Number(b.total || 0) - Number(a.total || 0));
+  const counted = [];
+  let total = 0;
+  entries.forEach((e) => {
+    if (counted.some((c) => rewardLooksCopied(e, c))) return;
+    counted.push(e);
+    total += Number(e.total || 0);
+  });
+  return total;
+}
+function identityNickname(key, store) {
+  const src = store || STATE.points || {};
+  const root = profileRoot(key, src);
+  const good = (n) => !!n && !!String(n).trim() && String(n).trim().toLowerCase() !== "anonym";
+  if (good(src[root]?.nickname)) return src[root].nickname;
+  let best = "", bestAt = -1;
+  identityKeysOf(root, src).forEach((k) => {
+    const p = src[k];
+    if (p && good(p.nickname) && lastRewardTime(p) > bestAt) { best = p.nickname; bestAt = lastRewardTime(p); }
+  });
+  return best || (src[root] && src[root].nickname) || "";
+}
+
+// Mark `key` as a login of profile `root` (only the link; points stay put).
+async function setProfileAlias(key, root) {
+  if (!key || !root || key === root || profileRoot(root) === key) return false;
+  if (!STATE.points || typeof STATE.points !== "object") STATE.points = {};
+  STATE.points[key] = { ...(STATE.points[key] || { total: 0, history: [] }), aliasOf: root };
+  savePoints();
+  if (!window.FB?.firebaseReady) return true;
+  const { db, ref, runTransaction } = window.FB;
   try {
-    for (const key of myKeys()) {
-      if (!key || key === uid || /[.#$\[\]\/]/.test(key)) continue;
-      let p = null, k = null;
-      try { [p, k] = await Promise.all([readOnce("points/" + key), readOnce("karmaPoints/" + key).catch(() => null)]); }
-      catch (err) { failed = true; continue; }
-      if (!p && !k) continue;
-      const ok = await withTimeout(claimExistingProfile(key, { quiet: true, consolidate: true }), 25000, "merge").catch(() => false);
-      if (ok) merged++; else failed = true;
+    await withTimeout(runTransaction(ref(db, "points/" + key), (cur) => {
+      const base = cur && typeof cur === "object" ? cur : { total: 0 };
+      return { ...base, aliasOf: root };
+    }), 15000, "alias");
+    return true;
+  } catch (err) {
+    console.warn("profile link failed:", err);
+    return false;
+  }
+}
+
+// A new name shows on every login of my profile (the ranking uses the profile's).
+function propagateNickname(name) {
+  if (!name || !window.FB?.firebaseReady) return;
+  const { db, ref, set } = window.FB;
+  identityKeysOf(myRootKey()).forEach((k) => {
+    if (STATE.points?.[k]) STATE.points[k].nickname = name;
+    if (k !== currentUserKey()) set(ref(db, `points/${k}/nickname`), name).catch(() => {});
+  });
+  savePoints();
+}
+
+/* "Wer bist du?" → tap your name: this login joins that profile. One write,
+   nothing moves, the other device keeps working. A tap on the welcome toast
+   undoes it (wrong name tapped). */
+async function linkToProfile(targetKey, opts = {}) {
+  if (!targetKey || !window.FB?.firebaseReady) return false;
+  const me = currentUserKey();
+  const uid = window.FB.getAuthUid?.() || "";
+  if (!me || !uid) { toast(T("Bitte zuerst Zugang oder Login.", "Please get access or log in first.")); return false; }
+  let all = STATE.points || {};
+  try { all = (await readOnce("points", 8000)) || all; } catch (e) { /* use what we have */ }
+  STATE.points = { ...(STATE.points || {}), ...all };
+  const root = profileRoot(targetKey, STATE.points);
+  if (!root) return false;
+  if (root === me || profileRoot(me) === root) {
+    $("#claim-overlay").style.display = "none";
+    return true;
+  }
+  const nickname = identityNickname(root) || STATE.nickname || "";
+  if (!(await setProfileAlias(me, root))) {
+    toast(T("Hat nicht geklappt — Verbindung prüfen und nochmal tippen.", "Didn't work — check your connection and tap again."));
+    return false;
+  }
+  const previousName = STATE.nickname;
+  localStorage.setItem("cg.profileRoot", root);
+  rememberMyKey(root);
+  STATE.nickname = nickname;
+  localStorage.setItem("cg.nickname", nickname);
+  ensurePointIdentity();
+  if (window.FB?.set) window.FB.set(window.FB.ref(window.FB.db, `points/${me}/nickname`), nickname).catch(() => {});
+  const { db, ref, set } = window.FB;
+  // The profile's team, achievements and visited corners show here too.
+  try {
+    const t = await readOnce("teams/" + root, 6000).catch(() => null);
+    if (t && t.team) {
+      STATE.team = t.team;
+      localStorage.setItem(TEAM_STORAGE_KEY, t.team);
+      ensureTeamHistoryEntry(t.team);
+      set(ref(db, "teams/" + me), t).catch(() => {});
     }
-  } finally { _consolidating = false; }
-  // Something stalled: try again a little later (and on the next app start).
-  if (failed && _consolidateRetries++ < 4) setTimeout(consolidateMyKeys, 10000 * _consolidateRetries);
-  if (merged) {
+  } catch (e) { /* team is optional */ }
+  try {
+    const a = (await readOnce("achievements/" + root, 6000).catch(() => null)) || {};
+    const ids = Object.keys(a);
+    if (ids.length) { STATE.achievements = Array.from(new Set([...(STATE.achievements || []), ...ids])); saveAchievements(); }
+  } catch (e) { /* achievements are optional */ }
+  const visited = [...identityKeysOf(root)].flatMap((k) => visitedCornersForKey(k));
+  if (visited.length) { STATE.visitedCorners = Array.from(new Set([...(STATE.visitedCorners || []), ...visited])); saveVisitedCorners(); }
+  $("#claim-overlay").style.display = "none";
+  $("#nickname-prompt").style.display = "none";
+  syncIdentity();
+  updateNicknameBar();
+  renderFriendsBar();
+  if (STATE.view === "profile") renderProfile();
+  if (STATE.view === "leaderboard") renderLeaderboard();
+  const lv = getLevel(getCurrentAura()).level;
+  toast(`👋 ${T("Willkommen zurück", "Welcome back")}, <strong>${escapeHtml(nickname)}</strong> — Lv. ${lv}, ${T("alles da", "all there")}.<br><span style="font-size:11px;opacity:0.75;">${T("Nicht du? Tippen zum Ändern", "Not you? Tap to change")}</span>`,
+    "at-corner", () => unlinkProfile(previousName));
+  runPendingLinkActions();
+  return true;
+}
+
+// Wrong name tapped: this login leaves that profile again.
+async function unlinkProfile(previousName = "") {
+  const me = currentUserKey();
+  const root = localStorage.getItem("cg.profileRoot") || "";
+  localStorage.removeItem("cg.profileRoot");
+  if (root) forgetMyKey(root);
+  if (STATE.points?.[me]) { delete STATE.points[me].aliasOf; savePoints(); }
+  if (window.FB?.firebaseReady) window.FB.set(window.FB.ref(window.FB.db, `points/${me}/aliasOf`), null).catch(() => {});
+  STATE.nickname = previousName || "";
+  if (STATE.nickname) localStorage.setItem("cg.nickname", STATE.nickname);
+  else localStorage.removeItem("cg.nickname");
+  updateNicknameBar();
+  renderFriendsBar();
+  if (STATE.view === "profile") renderProfile();
+  if (!STATE.nickname) openClaimOverlay({ welcome: true });
+}
+
+/* Earlier logins of this phone (login lost, app reinstalled) belong to the
+   same person: link them to the profile once access is confirmed, so the
+   profile, the ranking and everyone else's view show one person.         */
+var _linkingLogins = false;
+var _linkRetries = 0;
+var _linkVisibilityBound = false;
+async function linkMyEarlierLogins() {
+  const uid = window.FB?.getAuthUid?.() || "";
+  if (!uid || _linkingLogins || !window.FB?.firebaseReady) return;
+  _linkingLogins = true;
+  let linked = 0, failed = false;
+  try {
+    const all = await readOnce("points", 8000).catch(() => { failed = true; return null; });
+    const cur = currentUserKey();
+    for (const key of (all ? myKeys() : [])) {
+      if (!key || key === cur || /[.#$\[\]\/]/.test(key)) continue;
+      const p = all[key];
+      if (!p || Number(p.total || 0) <= 0) continue;
+      const myRoot = profileRoot(cur, all);
+      const keyRoot = profileRoot(key, all);
+      if (keyRoot === myRoot) continue;
+      let ok = false;
+      if (myRoot === cur) {
+        ok = await setProfileAlias(cur, keyRoot);        // this login is new: it joins the earlier profile
+        if (ok) { all[cur] = { ...(all[cur] || {}), aliasOf: keyRoot }; localStorage.setItem("cg.profileRoot", keyRoot); }
+      } else {
+        ok = await setProfileAlias(keyRoot, myRoot);     // an older stand-alone login joins my profile
+        if (ok) all[keyRoot] = { ...(all[keyRoot] || {}), aliasOf: myRoot };
+      }
+      if (ok) linked++; else failed = true;
+    }
+  } finally { _linkingLogins = false; }
+  if (failed && _linkRetries++ < 4) setTimeout(linkMyEarlierLogins, 10000 * _linkRetries);
+  if (linked) {
+    updateNicknameBar();
+    if (STATE.view === "profile") renderProfile();
+    if (STATE.view === "leaderboard") renderLeaderboard();
     const lv = getLevel(getCurrentAura()).level;
-    toastWhenFree(`🔗 <strong>${T("Deine früheren Punkte sind zusammengeführt", "Your earlier points are merged")}</strong><br><span style="font-size:11px;opacity:0.8;">${T(`Profil und Ranking zeigen jetzt beide Lv. ${lv}.`, `Profile and ranking now both show Lv. ${lv}.`)}</span>`, "at-corner");
+    toastWhenFree(`🔗 <strong>${T("Deine früheren Logins gehören jetzt zu deinem Profil", "Your earlier logins now belong to your profile")}</strong><br><span style="font-size:11px;opacity:0.8;">${T(`Profil und Ranking zeigen beide Lv. ${lv}.`, `Profile and ranking both show Lv. ${lv}.`)}</span>`, "at-corner");
   }
 }
 
@@ -7875,7 +8405,7 @@ function profileTwinBannerHtml() {
   const twin = findProfileTwin(STATE.nickname);
   if (!twin) return "";
   const lv = getLevel(twin.total).level;
-  return `<div class="backup-banner twin-banner">👀 ${T(`Es gibt noch ein Profil <strong>„${escapeHtml(twin.nickname)}“</strong> (Lv. ${lv}, ${twin.total} Aura). Bist du das? Dann leg beide zusammen — die Punkte werden addiert.`, `There is another profile <strong>“${escapeHtml(twin.nickname)}”</strong> (Lv. ${lv}, ${twin.total} aura). Is that you? Merge them — the points are added up.`)}
+  return `<div class="backup-banner twin-banner">👀 ${T(`Es gibt noch ein Profil <strong>„${escapeHtml(twin.nickname)}“</strong> (Lv. ${lv}, ${twin.total} Aura). Bist du das? Dann leg beide zusammen — die Punkte werden addiert, beide Geräte bleiben angemeldet.`, `There is another profile <strong>“${escapeHtml(twin.nickname)}”</strong> (Lv. ${lv}, ${twin.total} aura). Is that you? Merge them — the points are added up and both devices stay signed in.`)}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><button class="action-btn primary" data-twin-merge="${escapeHtml(twin.key)}">🔗 ${T("Ja, zusammenführen", "Yes, merge")}</button></div></div>`;
 }
 
@@ -8319,7 +8849,16 @@ function asleepSinceLabel(f) {
 // Returns only presence entries that still count as online / at their corner.
 // Mirrors the filter in renderFriendsBar so all corner-level logic stays consistent.
 function freshFriends() {
-  return Object.values(STATE.friends || {}).filter((f) => presenceIsVisible(f));
+  // One entry per person: someone with the app AND a browser open shows once.
+  const byPerson = {};
+  Object.values(STATE.friends || {}).forEach((f) => {
+    if (!presenceIsVisible(f) || isMyKey(f.id)) return;
+    const root = profileRoot(f.id);
+    const prev = byPerson[root];
+    const score = (x) => (x.atCorner ? 1e15 : 0) + Number(x.lastSeen || 0);
+    if (!prev || score(f) > score(prev)) byPerson[root] = f;
+  });
+  return Object.values(byPerson);
 }
 
 function listenFriendPresence() {
@@ -8330,7 +8869,7 @@ function listenFriendPresence() {
     const oldFriends = { ...STATE.friends };
     STATE.friends = {};
     Object.entries(data).forEach(([id, info]) => {
-      if (id === currentUserKey()) return;
+      if (id === currentUserKey() || isMyKey(id)) return;   // me, also on my other devices
       const friend = { ...info, id, nickname: info.nickname || info.name || id };
       STATE.friends[id] = friend;
       if (friend.atCorner && (!oldFriends[id] || oldFriends[id].atCorner !== friend.atCorner)) {
@@ -8374,7 +8913,7 @@ function renderFriendsBar() {
   bar.classList.add("has-friends");
   list.innerHTML = friends.map((friend) => {
     const corner = friend.atCorner ? getAllCorners().find((c) => c.id === friend.atCorner) : null;
-    const xp = STATE.points[friend.id]?.total || 0;
+    const xp = identityRewardTotal("aura", friend.id);
     const { level } = getLevel(xp);
     const tier = getLevelTier(level);
     const avail = AVAILABILITY[friend.status] || null;
@@ -10522,7 +11061,7 @@ function autoWhatsAppOnCheckin() { return localStorage.getItem("cg.autoWhatsApp"
 function cornerWhatsAppText(cornerId) {
   const corner = getAllCorners().find((c) => c.id === cornerId);
   if (!corner) return "";
-  const link = buildShareUrl(cornerId, STATE.nickname || "");
+  const link = buildShareUrl(cornerId, STATE.nickname || "", false, { [COME_PARAM]: "1" });
   const where = `${corner.name}${corner.area ? ` (${corner.area})` : ""}`;
   if (myPresenceCorner() !== cornerId) return `🍻 Lust auf ${where}? 👉 ${link}`;
   const others = freshFriends().filter((f) => f.atCorner === cornerId && !isMyKey(f.id)).map((f) => f.nickname || f.name).filter(Boolean);
@@ -10535,7 +11074,10 @@ function cornerWhatsAppText(cornerId) {
    iPhone/Outlook/Android, link for Google Calendar) or share it on WhatsApp. */
 const CORNERDATE_KEEP_MS = 24 * 60 * 60 * 1000;   // ended dates are deleted after this
 const CORNERDATE_PLAN_AURA = 5;
-const CORNERDATE_JOIN_AURA = 2;
+// "Bekommt man schon Punkte für Cornerdate-Zusagen?" — yes, and now it shows:
+// a yes is worth 5 Aura, actually showing up during the date another 10.
+const CORNERDATE_JOIN_AURA = 5;
+const CORNERDATE_SHOWUP_AURA = 10;
 // "Wieso bekomme ich keine Aura wenn ich ein Corner Date geplant habe?! Ich
 // bringe auch das Bier mit!" — planning paid out silently. Now it shows, and
 // whoever plans gets karma from the people who say yes and who really come.
@@ -10585,7 +11127,7 @@ function cornerDateParts(d) {
   const corner = getAllCorners().find((c) => c.id === d.cornerId);
   const name = (corner && corner.name) || d.cornerName || "Corner";
   const where = [name, corner && corner.area, "München"].filter(Boolean).join(", ");
-  const link = buildShareUrl(d.cornerId, "");
+  const link = buildShareUrl(d.cornerId, "", false, d.id ? { [DATE_PARAM]: d.id } : {});
   const route = corner ? walkingRouteUrl(corner.lat, corner.lng) : "";
   const details = [d.note || "", `Geplant von ${d.byName || "?"}`, route ? `Route: ${route}` : "", `Im Corner Guide: ${link}`].filter(Boolean).join("\n");
   return { corner, name, where, link, details };
@@ -10652,10 +11194,10 @@ function cornerDateWhatsAppText(d) {
 }
 
 function cornerDateItemHtml(d) {
-  const me = currentUserKey();
   const going = cornerDateGoing(d);
-  const iGo = !!(d.going && d.going[me]);
+  const iGo = Object.keys(d.going || {}).some((id) => isMyKey(id));
   const mine = isMyKey(d.byId);
+  const canCancel = d.byId === (window.FB?.getAuthUid?.() || currentUserKey());
   return `<div class="cd-item" data-cd-id="${escapeHtml(d.id)}">
     <div class="cd-when">📅 ${escapeHtml(formatDateRange(d.start, d.end))}</div>
     <div class="cd-meta">${T("von", "by")} ${escapeHtml(mine ? T("dir", "you") : (d.byName || "?"))} · ${going.length} ${T("dabei", "going")}${going.length ? ": " + going.map((g) => escapeHtml(g.name)).join(", ") : ""}</div>
@@ -10665,7 +11207,7 @@ function cornerDateItemHtml(d) {
       <button class="action-btn" data-cd-ics>📅 ${T("Kalender", "Calendar")}</button>
       <a class="action-btn" href="${escapeHtml(googleCalendarUrl(d))}" target="_blank" rel="noopener">Google</a>
       <button class="action-btn wa" data-cd-wa>📲 WhatsApp</button>
-      ${mine ? `<button class="action-btn danger" data-cd-cancel>✕ ${T("Absagen", "Cancel")}</button>` : ""}
+      ${mine && canCancel ? `<button class="action-btn danger" data-cd-cancel>✕ ${T("Absagen", "Cancel")}</button>` : ""}
     </div>
   </div>`;
 }
@@ -10808,7 +11350,7 @@ async function saveCornerDate() {
         title: "📅 Cornerdate!",
         body: `${STATE.nickname} plant ein Cornerdate: ${formatDateRange(start, end)} am ${corner.name} — bist du dabei?`,
         fromId: me, fromTeam: STATE.team || "",
-        query: `?corner=${encodeURIComponent(cornerId)}&date=1`,
+        query: `?corner=${encodeURIComponent(cornerId)}&date=1&${DATE_PARAM}=${encodeURIComponent(dateRef.key)}`,
         createdAt: Date.now()
       }).catch(() => {});
     } catch (e) { /* push is a bonus */ }
@@ -10833,9 +11375,20 @@ async function saveCornerDate() {
   done.querySelector("[data-cd-close]").addEventListener("click", closeCornerDatePlanner);
 }
 
-// Checked in at a corner while a cornerdate runs there: the planner gets karma.
+// Checked in at a corner while a cornerdate runs there: the planner gets karma,
+// and whoever said yes and really came gets Aura ("Wort gehalten").
 function rewardCornerDateArrival(cornerId) {
   const now = Date.now();
+  Object.entries(STATE.cornerDates || {}).forEach(([id, d]) => {
+    if (!d || d.cornerId !== cornerId || isMyKey(d.byId)) return;
+    if (now < Number(d.start) - 30 * 60000 || now > Number(d.end)) return;
+    if (!Object.keys(d.going || {}).some((k) => isMyKey(k))) return;
+    const paid = gossipLocalLog("cg.cdShowedUp");
+    if (paid[id]) return;
+    gossipLocalMark("cg.cdShowedUp", id);
+    addXp(CORNERDATE_SHOWUP_AURA, "Cornerdate: Wort gehalten");
+    setTimeout(() => toast(`🤝 ${T("Wort gehalten — du bist zum Cornerdate gekommen", "Kept your word — you came to the cornerdate")}: <strong>+${CORNERDATE_SHOWUP_AURA} Aura</strong>`, "at-corner"), 1800);
+  });
   Object.entries(STATE.cornerDates || {}).forEach(([id, d]) => {
     if (!d || d.cornerId !== cornerId || !d.byId || isMyKey(d.byId)) return;
     if (now < Number(d.start) - 30 * 60000 || now > Number(d.end)) return;
@@ -10857,11 +11410,15 @@ function bumpDailyCount(key) {
   return n;
 }
 
+var _cdJoinPaid = false;
 async function toggleCornerDateGoing(dateId) {
   const d = STATE.cornerDates?.[dateId];
   if (!d || !window.FB?.firebaseReady || !STATE.nickname) return;
   const me = currentUserKey();
   const going = !!(d.going && d.going[me]);
+  // Said yes on my other device already: nothing to toggle here.
+  if (!going && Object.keys(d.going || {}).some((id) => isMyKey(id))) { toast(T("✓ Du bist schon dabei (auf deinem anderen Gerät).", "✓ You're already in (on your other device).")); return; }
+  _cdJoinPaid = false;
   const { db, ref, set, remove } = window.FB;
   try {
     if (going) {
@@ -10873,12 +11430,13 @@ async function toggleCornerDateGoing(dateId) {
       if (!joined[dateId]) {
         gossipLocalMark("cg.cdJoined", dateId);
         addXp(CORNERDATE_JOIN_AURA, "Cornerdate zugesagt");
+        _cdJoinPaid = true;
         if (d.byId && !isMyKey(d.byId)) {
           addKarmaPoints(d.byId, CORNERDATE_JOIN_KARMA, `${STATE.nickname} kommt zu deinem Cornerdate`, d.byName);
           sendTargetedPush([d.byId], { type: "cornerdate-yes", title: "📅 Zusage!", body: `${STATE.nickname} ist bei deinem Cornerdate dabei (+${CORNERDATE_JOIN_KARMA} Karma)`, query: `?corner=${encodeURIComponent(d.cornerId)}&date=1` });
         }
       }
-      toast(`✋ ${T("Du bist dabei!", "You're in!")} <span style="font-size:11px;opacity:0.8;">${T("Tipp: „📅 Kalender“ trägt's dir ein.", "Tip: “📅 Calendar” adds it for you.")}</span>`);
+      toast(`✋ ${T("Du bist dabei!", "You're in!")}${_cdJoinPaid ? ` <strong>+${CORNERDATE_JOIN_AURA} Aura</strong>` : ""}<br><span style="font-size:11px;opacity:0.8;">${T(`Kommst du wirklich, gibt's nochmal +${CORNERDATE_SHOWUP_AURA}. „📅 Kalender“ trägt's dir ein.`, `Show up and get another +${CORNERDATE_SHOWUP_AURA}. “📅 Calendar” adds it for you.`)}</span>`);
     }
   } catch (err) {
     console.warn("toggleCornerDateGoing failed:", err);
@@ -11205,6 +11763,353 @@ function osmOpenNow(spec, now = new Date()) {
   return false;
 }
 
+/* ====================== SPOT-CHECK: what's there, what's allowed ======================
+   "Das Hinzufügen eines neuen Corners sollte nur durch Tippen funktionieren:
+   automatische Erkennung des Standorts, welcher Stadtteil und ein paar Emojis
+   für Toilette, Wasser, Dach, Sport, Kiosk, Marijuana erlaubt — am besten
+   automatisch: Schulen in der Nähe, Regeln der Stadt (Parköffnungszeiten,
+   Fußgängerzone …)."
+   One OpenStreetMap (Overpass) query around the pin. Rules as of November
+   2026 (official texts; the app says "ohne Gewähr" and links them):
+   • § 5 KCanG: no consumption within sight of schools, children's and youth
+     facilities, playgrounds and publicly accessible sports facilities —
+     "within sight" ends 100 m from the entrance; in pedestrian zones not
+     from 7 to 20 h; never in front of minors. We measure to the grounds,
+     which is stricter than to the entrance.
+   • Bavaria (Cannabisfolgenbegrenzungsgesetz 2024): no smoking/vaping at
+     Volksfeste, in beer gardens and outdoor areas of restaurants.
+   • Munich: alcohol AND cannabis banned around the clock at the Alter
+     Botanischer Garten / Karl-Stützel-Platz (ACVV, until 14.01.2027);
+     alcohol banned around the clock around the Hauptbahnhof (until
+     01.05.2028).
+   • The 2024 cannabis ban in Englischer Garten, Hofgarten and Finanzgarten
+     was declared void by the BayVGH on 24.11.2025: federal rules apply.  */
+const KCANG_DISTANCE_M = 100;
+const SPOT_RADII = { toilette: 250, wasser: 250, dach: 50, sport: 150, kiosk: 400 };
+const SPOT_AMENITIES = [
+  { key: "toilette", emoji: "🚻", de: "Toilette", en: "Toilet" },
+  { key: "wasser", emoji: "💧", de: "Wasser", en: "Water" },
+  { key: "dach", emoji: "☂️", de: "Dach", en: "Roof" },
+  { key: "sport", emoji: "⚽", de: "Sport", en: "Sports" },
+  { key: "kiosk", emoji: "🏪", de: "Kiosk", en: "Kiosk" },
+  { key: "kiffen", emoji: "🌿", de: "Kiffen ok", en: "Weed ok" }
+];
+const ACVV_UNTIL = new Date(2027, 0, 15).getTime();
+const HBF_ALCOHOL_UNTIL = new Date(2028, 4, 1).getTime();   // "tritt am 01.05.2028 außer Kraft"
+const HBF_CENTER = { lat: 48.1402, lng: 11.5600 };
+const HBF_ZONE_STREETS = ["Bahnhofplatz", "Arnulfstraße", "Bayerstraße", "Schützenstraße", "Prielmayerstraße", "Luitpoldstraße", "Dachauer Straße", "Hirtenstraße", "Elisenstraße", "Pfefferstraße", "Paul-Heyse-Unterführung"];
+const RULE_SOURCES = {
+  kcang: "https://www.gesetze-im-internet.de/kcang/__5.html",
+  acvv: "https://stadt.muenchen.de/rathaus/stadtrecht/vorschrift/331.html",
+  hbf: "https://stadt.muenchen.de/rathaus/stadtrecht/vorschrift/330.html"
+};
+
+function spotCheckQuery(lat, lng) {
+  const a = (r) => `(around:${r},${lat},${lng})`;
+  return `[out:json][timeout:25];(` +
+    `nwr["amenity"~"^(school|kindergarten|childcare)$"]${a(150)};` +
+    `nwr["leisure"="playground"]${a(150)};` +
+    `nwr["community_centre"="youth_centre"]${a(150)};` +
+    `nwr["leisure"~"^(pitch|sports_centre|stadium|track|sports_hall|fitness_station)$"]${a(160)};` +
+    `nwr["highway"="pedestrian"]${a(40)};` +
+    `nwr["amenity"="biergarten"]${a(40)};` +
+    `nwr["name"~"^(Alter Botanischer Garten|Karl-Stützel-Platz)$"]${a(80)};` +
+    `nwr["place"="square"]["name"]${a(60)};` +
+    `nwr["amenity"="toilets"]${a(SPOT_RADII.toilette)};` +
+    `nwr["amenity"="drinking_water"]${a(SPOT_RADII.wasser)};` +
+    `nwr["amenity"="shelter"]${a(SPOT_RADII.dach)};` +
+    `nwr["building"="roof"]${a(SPOT_RADII.dach)};` +
+    `way["highway"]["covered"~"^(yes|arcade)$"]${a(30)};` +
+    `nwr["shop"~"^(kiosk|convenience|beverages|alcohol)$"]${a(SPOT_RADII.kiosk)};` +
+    `nwr["amenity"="fuel"]${a(SPOT_RADII.kiosk)};` +
+    `way["highway"]["name"]${a(70)};` +
+    `);out tags geom;` +
+    `is_in(${lat},${lng})->.a;(area.a["leisure"~"^(park|garden)$"]["name"];area.a["place"="square"]["name"];area.a["landuse"="recreation_ground"]["name"];);out tags;`;
+}
+
+// Distance from the point to a node, a way or a relation (0 when inside an area).
+function osmSegmentDistanceM(lat, lng, p, q) {
+  const kx = Math.cos(lat * Math.PI / 180) * 111320, ky = 110540;
+  const ax = (p.lon - lng) * kx, ay = (p.lat - lat) * ky;
+  const bx = (q.lon - lng) * kx, by = (q.lat - lat) * ky;
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx * dx + dy * dy;
+  const t = len2 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / len2)) : 0;
+  return Math.hypot(ax + t * dx, ay + t * dy);
+}
+function osmPointInRing(lat, lng, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i], b = ring[j];
+    if (((a.lat > lat) !== (b.lat > lat)) && (lng < (b.lon - a.lon) * (lat - a.lat) / (b.lat - a.lat) + a.lon)) inside = !inside;
+  }
+  return inside;
+}
+function osmElementDistanceM(el, lat, lng) {
+  if (typeof el.lat === "number" && typeof el.lon === "number") return haversine(lat, lng, el.lat, el.lon);
+  const lines = [];
+  if (Array.isArray(el.geometry)) lines.push(el.geometry.filter(Boolean));
+  (el.members || []).forEach((m) => {
+    if (Array.isArray(m.geometry)) lines.push(m.geometry.filter(Boolean));
+    else if (typeof m.lat === "number") lines.push([{ lat: m.lat, lon: m.lon }]);
+  });
+  let best = Infinity;
+  lines.forEach((g) => {
+    if (!g.length) return;
+    if (g.length === 1) { best = Math.min(best, haversine(lat, lng, g[0].lat, g[0].lon)); return; }
+    const closed = g.length > 3 && g[0].lat === g[g.length - 1].lat && g[0].lon === g[g.length - 1].lon;
+    if (closed && osmPointInRing(lat, lng, g)) best = 0;
+    for (let i = 0; i < g.length - 1; i++) best = Math.min(best, osmSegmentDistanceM(lat, lng, g[i], g[i + 1]));
+  });
+  return best;
+}
+
+function kcangPlace(t) {
+  if (t.amenity === "school") return T("Schule", "School");
+  if (t.amenity === "kindergarten" || t.amenity === "childcare") return T("Kita", "Daycare");
+  if (t.leisure === "playground") return T("Spielplatz", "Playground");
+  if (t.community_centre === "youth_centre") return T("Jugendtreff", "Youth centre");
+  if (/^(pitch|sports_centre|stadium|track|sports_hall)$/.test(t.leisure || "") && !/^(private|no)$/.test(t.access || "")) return T("Sportplatz", "Sports ground");
+  return "";
+}
+
+// Condense the Overpass answer into what the app needs (cached per spot).
+function analyzeSpot(json, lat, lng) {
+  const res = { lat, lng, has: {}, nearest: {}, kcang: [], pedestrian: false, biergarten: "", acvv: false, hbf: false, parks: [], streets: [], squares: [] };
+  const streetD = {};
+  ((json && json.elements) || []).forEach((el) => {
+    const t = el.tags || {};
+    if (el.type === "area") {
+      if (t.name) res.parks.push({ name: String(t.name).slice(0, 60), hours: String(t.opening_hours || "").slice(0, 120), square: t.place === "square" });
+      if (t.name === "Alter Botanischer Garten") res.acvv = true;
+      return;
+    }
+    const d = Math.round(osmElementDistanceM(el, lat, lng));
+    if (!Number.isFinite(d)) return;
+    const near = (key, r) => { if (d <= r) { res.has[key] = true; if (!(res.nearest[key] <= d)) res.nearest[key] = d; } };
+    const place = kcangPlace(t);
+    if (place && d <= KCANG_DISTANCE_M) res.kcang.push({ place, name: String(t.name || "").slice(0, 60), d });
+    if (t.highway === "pedestrian" && d <= 20) res.pedestrian = true;
+    if (t.amenity === "biergarten" && d <= 30) res.biergarten = String(t.name || T("Biergarten", "Beer garden")).slice(0, 60);
+    if (/^(Alter Botanischer Garten|Karl-Stützel-Platz)$/.test(t.name || "") && d <= 40) res.acvv = true;
+    if (t.place === "square" && t.name && d <= 40) res.squares.push(String(t.name).slice(0, 60));
+    if (t.amenity === "toilets") near("toilette", SPOT_RADII.toilette);
+    if (t.amenity === "drinking_water") near("wasser", SPOT_RADII.wasser);
+    if (t.amenity === "shelter" || t.building === "roof") near("dach", SPOT_RADII.dach);
+    if (t.covered && t.highway) near("dach", 30);
+    if (/^(pitch|sports_centre|stadium|track|sports_hall|fitness_station)$/.test(t.leisure || "") && !/^(private|no)$/.test(t.access || "")) near("sport", SPOT_RADII.sport);
+    if (/^(kiosk|convenience|beverages|alcohol)$/.test(t.shop || "") || t.amenity === "fuel") near("kiosk", SPOT_RADII.kiosk);
+    if (t.highway && t.name && !/^(footway|path|cycleway|steps|service|track|corridor|platform)$/.test(t.highway)) {
+      const n = String(t.name).slice(0, 60);
+      if (!(streetD[n] <= d)) streetD[n] = d;
+    }
+  });
+  res.kcang.sort((a, b) => a.d - b.d);
+  res.kcang = res.kcang.slice(0, 3);
+  res.streets = Object.entries(streetD).sort((a, b) => a[1] - b[1]).map(([n, d]) => ({ name: n, d })).slice(0, 4);
+  const hbfStreet = res.streets.some((s) => s.d <= 30 && HBF_ZONE_STREETS.includes(s.name));
+  res.hbf = hbfStreet && haversine(lat, lng, HBF_CENTER.lat, HBF_CENTER.lng) <= 420;
+  return res;
+}
+
+function fetchSpotCheck(lat, lng) {
+  const q = spotCheckQuery(lat, lng);
+  const tryMirror = (i) => fetchJson(`${OVERPASS_URLS[i]}?data=${encodeURIComponent(q)}`, 25000)
+    .catch((err) => { if (i + 1 < OVERPASS_URLS.length) return tryMirror(i + 1); throw err; });
+  return cachedFetch(`cg.spot1.${lat.toFixed(4)},${lng.toFixed(4)}`, PLACES_TTL_MS, () => tryMirror(0).then((json) => analyzeSpot(json, lat, lng)));
+}
+
+// 🌿 verdict: "no", "night" (pedestrian zone: only 20–7 h) or "ok".
+function weedVerdict(res, now = Date.now()) {
+  if (!res) return { v: "?", why: [] };
+  if (res.acvv && now < ACVV_UNTIL) return { v: "no", why: [T("Verbotszone der Stadt am Alten Botanischen Garten", "City ban zone at the Alter Botanischer Garten")] };
+  if (res.kcang.length) return { v: "no", why: res.kcang.map((k) => `${k.place}${k.name ? ` „${k.name}“` : ""} ${T("in", "at")} ${formatDistance(k.d)}`) };
+  if (res.pedestrian) return { v: "night", why: [T("Fußgängerzone: von 7 bis 20 Uhr verboten", "Pedestrian zone: banned from 7 am to 8 pm")] };
+  return { v: "ok", why: [T("keine Schule, Kita, Spielplatz oder Sportplatz im Umkreis von 100 m", "no school, daycare, playground or sports ground within 100 m")] };
+}
+function weedAllowedNow(verdict, d = new Date()) {
+  if (verdict.v === "ok") return true;
+  if (verdict.v === "night") return d.getHours() >= 20 || d.getHours() < 7;
+  return false;
+}
+
+// Lines for "Regeln hier" (all marked "ohne Gewähr" where shown).
+function spotRuleLines(res) {
+  if (!res) return [];
+  const out = [];
+  const w = weedVerdict(res);
+  const weedText = w.v === "ok" ? T("Kiffen erlaubt", "Weed allowed") : w.v === "night" ? T("Kiffen nur 20–7 Uhr", "Weed only 8 pm–7 am") : T("Kiffen verboten", "No weed");
+  out.push({ emoji: w.v === "ok" ? "🌿" : w.v === "night" ? "🕗" : "🚫", text: `${weedText} — ${w.why.join(", ")}`, src: res.acvv ? RULE_SOURCES.acvv : RULE_SOURCES.kcang });
+  if (res.acvv && Date.now() < ACVV_UNTIL) out.push({ emoji: "🍺", text: T("Alkohol ganztägig verboten (Verordnung der Stadt, Alter Botanischer Garten / Karl-Stützel-Platz, bis 14.01.2027)", "Alcohol banned all day (city ordinance, Alter Botanischer Garten / Karl-Stützel-Platz, until 14 Jan 2027)"), src: RULE_SOURCES.acvv });
+  if (res.hbf && Date.now() < HBF_ALCOHOL_UNTIL) out.push({ emoji: "🍺", text: T("Vermutlich in der Alkoholverbotszone am Hauptbahnhof (ganztägig) — genaue Straßen in der Verordnung", "Probably inside the alcohol ban zone at the Hauptbahnhof (all day) — exact streets in the ordinance"), src: RULE_SOURCES.hbf });
+  if (res.biergarten) out.push({ emoji: "🍺", text: T(`Neben „${res.biergarten}“: im Biergarten selbst ist Kiffen in Bayern verboten`, `Next to “${res.biergarten}”: inside beer gardens weed is banned in Bavaria`) });
+  res.parks.filter((p) => !p.square).forEach((p) => {
+    if (!p.hours) return;
+    const open = osmOpenNow(p.hours);
+    out.push({ emoji: "🌳", text: `${p.name}: ${T("geöffnet", "open")} ${p.hours}${open === true ? ` · ${T("jetzt offen", "open now")}` : open === false ? ` · ${T("jetzt zu", "closed now")}` : ""}` });
+  });
+  return out;
+}
+
+// Name ideas: "Ecke A/B", the square, the park, the street.
+function spotNameSuggestions(res) {
+  if (!res) return [];
+  const short = (n) => n.replace(/straße\b/g, "str.").replace(/Straße\b/g, "Str.");
+  const out = [];
+  const st = res.streets.map((s) => s.name);
+  if (st.length >= 2) out.push(`Ecke ${short(st[0])}/${short(st[1])}`);
+  res.squares.forEach((n) => out.push(n));
+  res.parks.forEach((p) => out.push(p.name));
+  if (st.length) out.push(st[0]);
+  return Array.from(new Set(out.filter(Boolean))).slice(0, 4);
+}
+
+function amenityFromCheck(key, res) {
+  if (!res) return false;
+  if (key === "kiffen") return weedVerdict(res).v === "ok";
+  return !!res.has[key];
+}
+
+/* ---- New spot by tapping: pin from GPS, name ideas, emoji toggles ---- */
+var SPOT_DRAFT = { check: null, amen: {}, manual: {}, key: "", timer: null, nameAuto: true, loading: false, failed: false };
+
+function resetSpotDraft() {
+  clearTimeout(SPOT_DRAFT.timer);
+  SPOT_DRAFT = { check: null, amen: {}, manual: {}, key: "", timer: null, nameAuto: true, loading: false, failed: false };
+  renderSpotAmenities();
+  renderSpotRules();
+  renderSpotNameChips();
+}
+
+function renderSpotAmenities() {
+  const box = $("#spot-amenities");
+  if (!box) return;
+  const w = SPOT_DRAFT.check ? weedVerdict(SPOT_DRAFT.check) : null;
+  box.innerHTML = SPOT_AMENITIES.map((a) => {
+    const on = !!SPOT_DRAFT.amen[a.key];
+    const auto = !!SPOT_DRAFT.check && !SPOT_DRAFT.manual[a.key];
+    let label = T(a.de, a.en);
+    if (a.key === "kiffen" && w && auto) {
+      if (w.v === "night") label = T("erst ab 20 Uhr", "after 8 pm");
+      else if (w.v === "no") label = T("hier nicht", "not here");
+    }
+    return `<button type="button" class="spot-amen ${on ? "on" : ""}" data-amen="${a.key}" aria-pressed="${on}">
+      <span class="spot-amen-emoji">${a.emoji}</span><span class="spot-amen-label">${escapeHtml(label)}</span>${auto && on ? `<span class="spot-amen-auto">auto</span>` : ""}
+    </button>`;
+  }).join("");
+  box.querySelectorAll("[data-amen]").forEach((btn) => btn.addEventListener("click", () => {
+    const k = btn.dataset.amen;
+    SPOT_DRAFT.amen[k] = !SPOT_DRAFT.amen[k];
+    SPOT_DRAFT.manual[k] = true;
+    renderSpotAmenities();
+  }));
+}
+
+function spotRuleLinesHtml(res) {
+  const lines = spotRuleLines(res);
+  const near = [];
+  [["toilette", "🚻"], ["wasser", "💧"], ["kiosk", "🏪"], ["sport", "⚽"]].forEach(([k, e]) => {
+    if (res.nearest && res.nearest[k] != null) near.push(`${e} ${formatDistance(res.nearest[k])}`);
+  });
+  return `${lines.map((l) => `<div class="spot-rule">${l.emoji} ${escapeHtml(l.text)}${l.src ? ` <a href="${escapeHtml(l.src)}" target="_blank" rel="noopener">${T("Quelle", "Source")}</a>` : ""}</div>`).join("")}
+    ${near.length ? `<div class="spot-rule dim">${T("In der Nähe", "Nearby")}: ${near.join(" · ")}</div>` : ""}
+    <div class="spot-rule tiny">${T("Automatisch aus OpenStreetMap, ohne Gewähr. Gemessen bis zum Gelände (strenger als bis zum Eingang). Nie vor Kindern und Jugendlichen.", "Automatic from OpenStreetMap, no guarantee. Measured to the grounds (stricter than to the entrance). Never in front of minors.")}</div>`;
+}
+
+function renderSpotRules() {
+  const box = $("#spot-rules");
+  if (!box) return;
+  if (SPOT_DRAFT.loading) {
+    box.innerHTML = `<div class="spot-rule dim">🔎 ${T("Schaue nach, was es hier gibt und was erlaubt ist …", "Checking what's here and what's allowed …")}</div>`;
+    return;
+  }
+  if (!SPOT_DRAFT.check) {
+    box.innerHTML = SPOT_DRAFT.failed
+      ? `<div class="spot-rule dim">${T("Automatische Erkennung gerade nicht erreichbar — tipp die Emojis einfach selbst an.", "Automatic check not reachable right now — just tap the emojis yourself.")}</div>`
+      : "";
+    return;
+  }
+  box.innerHTML = spotRuleLinesHtml(SPOT_DRAFT.check);
+}
+
+function renderSpotNameChips() {
+  const box = $("#spot-name-chips");
+  if (!box) return;
+  const ideas = spotNameSuggestions(SPOT_DRAFT.check);
+  box.innerHTML = ideas.map((n) => `<button type="button" class="spot-chip" data-name-idea="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join("");
+  box.querySelectorAll("[data-name-idea]").forEach((b) => b.addEventListener("click", () => {
+    $("#f-name").value = b.dataset.nameIdea;
+    SPOT_DRAFT.nameAuto = true;   // still an idea: moving the pin may replace it
+    box.querySelectorAll(".spot-chip").forEach((x) => x.classList.toggle("on", x === b));
+  }));
+  // Pre-fill the first idea as long as nobody typed a name.
+  const input = $("#f-name");
+  if (input && ideas.length && (SPOT_DRAFT.nameAuto || !input.value.trim())) {
+    input.value = ideas[0];
+    SPOT_DRAFT.nameAuto = true;
+    box.querySelector(".spot-chip")?.classList.add("on");
+  }
+}
+
+function scheduleSpotCheck(lat, lng) {
+  clearTimeout(SPOT_DRAFT.timer);
+  SPOT_DRAFT.timer = setTimeout(() => runSpotCheck(lat, lng), 450);
+}
+
+async function runSpotCheck(lat, lng) {
+  const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+  SPOT_DRAFT.key = key;
+  SPOT_DRAFT.loading = true;
+  SPOT_DRAFT.failed = false;
+  renderSpotRules();
+  try {
+    const res = await fetchSpotCheck(lat, lng);
+    if (SPOT_DRAFT.key !== key) return;            // the pin moved meanwhile
+    SPOT_DRAFT.check = res;
+    SPOT_AMENITIES.forEach((a) => { if (!SPOT_DRAFT.manual[a.key]) SPOT_DRAFT.amen[a.key] = amenityFromCheck(a.key, res); });
+  } catch (err) {
+    if (SPOT_DRAFT.key !== key) return;
+    console.warn("spot check failed:", err);
+    SPOT_DRAFT.failed = true;
+  } finally {
+    if (SPOT_DRAFT.key === key) SPOT_DRAFT.loading = false;
+  }
+  if (SPOT_DRAFT.key !== key) return;
+  renderSpotAmenities();
+  renderSpotRules();
+  renderSpotNameChips();
+}
+
+// Compact facts saved with the spot (card emojis, detail, nobody has to re-check).
+function spotCheckSummary() {
+  const res = SPOT_DRAFT.check;
+  if (!res) return null;
+  const w = weedVerdict(res);
+  const park = res.parks.find((p) => !p.square && p.hours) || null;
+  const out = { at: Date.now(), weed: w.v, why: w.why.slice(0, 3), zones: [res.acvv ? "acvv" : "", res.hbf ? "hbf" : ""].filter(Boolean) };
+  if (park) out.park = { name: park.name, hours: park.hours };
+  return out;
+}
+
+// "Regeln & Ausstattung" in the corner detail — for every corner, old or new.
+async function renderSpotCheckBlock(corner, box) {
+  if (!box || !corner || typeof corner.lat !== "number") return;
+  try {
+    // One request at a time: the public Overpass server limits parallel queries.
+    await getNearbyPlaces(corner).catch(() => null);
+    const res = await fetchSpotCheck(corner.lat, corner.lng);
+    if (!box.isConnected) return;
+    const have = SPOT_AMENITIES.filter((a) => a.key !== "kiffen" && amenityFromCheck(a.key, res));
+    const w = weedVerdict(res);
+    const weedNow = weedAllowedNow(w);
+    box.innerHTML = `<div class="spot-detail-amen">${have.map((a) => `<span class="spot-pill">${a.emoji} ${escapeHtml(T(a.de, a.en))}</span>`).join("")}
+        <span class="spot-pill ${weedNow ? "ok" : "no"}">${w.v === "ok" ? "🌿" : w.v === "night" ? "🕗" : "🚫"} ${w.v === "ok" ? T("Kiffen ok", "Weed ok") : w.v === "night" ? T("Kiffen 20–7 Uhr", "Weed 8 pm–7 am") : T("Kein Kiffen", "No weed")}</span></div>
+      ${spotRuleLinesHtml(res)}`;
+  } catch (err) {
+    if (box.isConnected) box.innerHTML = `<div class="ci-small">${T("Regeln gerade nicht abrufbar (OpenStreetMap).", "Rules not available right now (OpenStreetMap).")}</div>`;
+  }
+}
+
 function getNearbyPlaces(corner) {
   const { lat, lng } = corner;
   const q = `[out:json][timeout:25];(` +
@@ -11426,6 +12331,9 @@ function renderCornerInfoSection(cornerId, container) {
   const corner = getAllCorners().find((c) => c.id === cornerId);
   if (!container || !corner || typeof corner.lat !== "number") return;
   container.innerHTML = `<h3>🌤️ ${T("Corner-Check", "Corner check")}</h3>
+    <div class="ci-block"><div class="ci-h">📋 ${T("Regeln & Ausstattung", "Rules & amenities")}</div>
+      <div class="ci-spotcheck"><div class="ci-small">${T("Prüfe Schulen, Spielplätze, Fußgängerzone, Parks …", "Checking schools, playgrounds, pedestrian zones, parks …")}</div></div>
+    </div>
     <div class="ci-block"><div class="ci-h">☀️ ${T("Sonne & Wetter heute", "Sun & weather today")}</div>
       <div class="ci-wx"><div class="ci-small">${T("Wetter wird geladen …", "Loading weather …")}</div></div>
       <div class="ci-sun">${sunBlockHtml(corner)}</div>
@@ -11448,6 +12356,7 @@ function renderCornerInfoSection(cornerId, container) {
     <div class="ci-attr">${T("Wetter", "Weather")}: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> · ${T("Orte & Karte", "Places & map")}: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a></div>`;
   bindRainVotes(container.querySelector(".ci-rain-vote"), corner.id);
   bindPlaceVotes(container, corner);
+  renderSpotCheckBlock(corner, container.querySelector(".ci-spotcheck"));
   container.querySelectorAll("[data-open-corner]").forEach((b) => b.addEventListener("click", () => focusDetailSection(b.dataset.openCorner, ".corner-info-section")));
   container.querySelectorAll("[data-ci-group]").forEach((b) => b.addEventListener("click", () => {
     const g = CI_MAP_GROUPS.find((x) => x.id === b.dataset.ciGroup);
@@ -11576,7 +12485,7 @@ function openDetail(cornerId) {
     ${peopleMessageTargets.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">${peopleMessageTargets.map((friend) => `<button class="action-btn" data-dm-user="${friend.id}">💬 ${escapeHtml(friend.nickname || friend.name || friend.id)}</button>`).join("")}</div>` : ""}
     <div class="gossip-section" data-corner-id="${c.id}"></div>
     <div class="detail-quick-actions">
-      <button class="detail-quick-btn" data-scroll-target=".corner-info-section">🌤️ ${T("Sonne · Kiosk · Regen", "Sun · Kiosk · Rain")}</button>
+      <button class="detail-quick-btn" data-scroll-target=".corner-info-section">🌤️ ${T("Regeln · Sonne · Kiosk", "Rules · Sun · Kiosk")}</button>
       <button class="detail-quick-btn" data-scroll-target=".ci-mapblock">🗺️ ${T("Kiosk · Klo · Wasser", "Kiosk · Loo · Water")}</button>
       ${_backendFeatures.ok && _cornerDates.primed ? `<button class="detail-quick-btn" data-scroll-target=".cornerdate-section">📅 Cornerdate</button>` : ""}
       <button class="detail-quick-btn" data-scroll-target=".corner-chat-section">💬 ${T("Chat", "Chat")}</button>
@@ -11794,12 +12703,13 @@ async function saveNewSpot() {
   const desc = $("#f-desc").value.trim();
   const lat = parseFloat($("#f-lat").value);
   const lng = parseFloat($("#f-lng").value);
-  if (!name) { toast("Name fehlt."); return; }
-  if (!desc) { toast("Beschreibung fehlt."); return; }
-  if (isNaN(lat) || isNaN(lng)) { toast("Koordinaten fehlen."); return; }
+  if (!name) { toast("Name fehlt."); $("#f-name").focus(); return; }
+  if (isNaN(lat) || isNaN(lng)) { toast(T("Tipp auf die Karte, wo der Spot ist.", "Tap the map where the spot is.")); return; }
   const tooClose = getAllCorners().find((corner) => haversine(lat, lng, corner.lat, corner.lng) < MIN_CORNER_DISTANCE_METERS);
   if (tooClose) { toast(`Zu nah an <strong>${escapeHtml(tooClose.name)}</strong> — bitte mindestens ${MIN_CORNER_DISTANCE_METERS}m Abstand.`); return; }
-  const spot = { id: "custom-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7), name, area: $("#f-area").value.trim() || "Eigener Spot", lat, lng, description: desc, tags: $("#f-tags").value.split(",").map((s) => s.trim()).filter(Boolean), amenities: [], isCustom: true, createdBy: STATE.nickname || "Anonym", createdById: currentUserKey(), createdAt: Date.now() };
+  const spot = { id: "custom-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7), name, area: $("#f-area").value.trim() || "Eigener Spot", lat, lng, description: desc, tags: $("#f-tags").value.split(",").map((s) => s.trim()).filter(Boolean), amenities: SPOT_AMENITIES.filter((a) => SPOT_DRAFT.amen[a.key]).map((a) => a.key), isCustom: true, createdBy: STATE.nickname || "Anonym", createdById: currentUserKey(), createdAt: Date.now() };
+  const facts = spotCheckSummary();
+  if (facts) spot.check = facts;
   if (window.FB?.firebaseReady) {
     try {
       const { db, ref, set } = window.FB;
@@ -11844,16 +12754,20 @@ function listenKarmaPoints(attempt = 0) {
     () => retryListenerAfterAuth(listenKarmaPoints, attempt));
 }
 
+// One row per person: all logins of a profile are added up.
 function getRewardLeaders(kind, limit = 10) {
-  const byPerson = {};
-  Object.entries(rewardStore(kind) || {}).forEach(([user, data]) => {
-    const key = isMyKey(user) ? currentUserKey() : user;
-    const total = (data && data.total) || 0;
-    const nickname = (isMyKey(user) ? (STATE.nickname || (data && data.nickname)) : (data && data.nickname)) || key;
-    const prev = byPerson[key];
-    if (!prev || total > prev.total) byPerson[key] = { user: key, total, nickname };
-  });
-  return Object.values(byPerson).filter((x) => x.total > 0).sort((a, b) => b.total - a.total).slice(0, limit);
+  const me = currentUserKey();
+  const myRoot = myRootKey();
+  const roots = new Set();
+  Object.keys(rewardStore(kind) || {}).forEach((k) => roots.add(isMyKey(k) ? myRoot : profileRoot(k)));
+  return [...roots].map((root) => {
+    const mine = root === myRoot;
+    return {
+      user: mine ? me : root,
+      total: identityRewardTotal(kind, root, mine),
+      nickname: (mine ? STATE.nickname : identityNickname(root)) || root
+    };
+  }).filter((x) => x.total > 0).sort((a, b) => b.total - a.total).slice(0, limit);
 }
 
 function renderRewardLeaderboard(container, {
@@ -12348,11 +13262,11 @@ function personInfo(key) {
   const p = STATE.points?.[key] || {};
   const k = STATE.karmaPoints?.[key] || {};
   const presence = STATE.friends?.[key] || null;
-  const nickname = (p.nickname && p.nickname !== "Anonym" ? p.nickname : "") || k.nickname || presence?.nickname || presence?.name || T("Unbekannt", "Unknown");
+  const nickname = identityNickname(key) || (p.nickname && p.nickname !== "Anonym" ? p.nickname : "") || k.nickname || presence?.nickname || presence?.name || T("Unbekannt", "Unknown");
   const teamId = STATE.teams?.[key]?.team || presence?.team || "";
   return {
     key, nickname, teamId,
-    aura: Number(p.total || 0), karma: Number(k.total || 0), presence,
+    aura: identityRewardTotal("aura", key), karma: identityRewardTotal("karma", key), presence,
     visible: !!(presence && presenceIsVisible(presence)),
     lastActive: Math.max(lastRewardTime(p), lastRewardTime(k), Number(presence?.lastSeen || 0))
   };
@@ -12734,7 +13648,7 @@ function renderProfile() {
   $("#feedback-btn")?.addEventListener("click", sendAppFeedback);
   $$("#profile-content [data-twin-merge]").forEach((btn) => btn.addEventListener("click", async () => {
     btn.disabled = true;
-    const ok = await claimExistingProfile(btn.dataset.twinMerge);
+    const ok = await linkToProfile(btn.dataset.twinMerge);
     if (!ok) btn.disabled = false;
   }));
   $$("#profile-content [data-gossip-corner]").forEach((btn) => btn.addEventListener("click", () => openDetail(btn.dataset.gossipCorner)));
