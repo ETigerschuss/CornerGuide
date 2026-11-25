@@ -42,6 +42,7 @@ https://ETigerschuss.github.io/CornerGuide/
 - 🏙️ **Stadtbezirke** — die 25 Münchner Stadtbezirke mit Nummer (01 Altstadt-Lehel … 25 Laim): Grenzen auf der Karte (Namen ab Zoomstufe 13, ein-/ausblendbar), Bezirksnummer an jedem Corner, Filter in der Liste, Bezirk in der Detailansicht mit „Grenzen zeigen"
 - 📍 **Neuer Spot nur durch Tippen** — der Pin steht gleich da, wo man ist (oder: auf die Karte tippen/Pin ziehen); Bezirk, Stadtteil und ein Name („Ecke A/B", Platz, Park) kommen automatisch. Emojis 🚻 Toilette, 💧 Wasser, ☂️ Dach, ⚽ Sport, 🏪 Kiosk und 🌿 Kiffen ok sind aus OpenStreetMap vorausgefüllt und mit einem Tipp umschaltbar; Beschreibung ist optional. Warnung, wenn der Pin zu nah an einem bestehenden Corner liegt
 - 🌿 **Regeln am Spot** — bei jedem Corner (Detail → Corner-Check) und beim Eintragen: Schule/Kita/Spielplatz/Sportplatz im 100-m-Umkreis, Fußgängerzone, Parköffnungszeiten, Verbotszonen der Stadt (siehe unten)
+- 🔎 **Emojis & Filter für alle Corners** — auch die bisherigen Corners zeigen 🚻 💧 ☂️ ⚽ 🏪 🌿 direkt auf der Karte in der Liste; Filter-Chips über der Liste zeigen z. B. nur Corners mit Toilette, wo Kiffen erlaubt ist (🌿 zählt auch „nur 20–7 Uhr“)
 - 💡 **Feedback an die Macher** — Profil → „Idee oder Problem?"; Admins sehen es im Admin-Panel
 
 ## 🌤️ Corner-Check: woher kommen die Daten?
@@ -258,6 +259,12 @@ Stand der Regeln: November 2026.
   „jetzt offen/zu".
 
 Fehlt eine Schule oder ein Spielplatz, kann man ihn direkt in OpenStreetMap eintragen — die App sieht ihn dann auch.
+
+**Bisherige Corners:** Jeder Corner wird einmal geprüft — beim ersten Öffnen der Detailansicht oder nach und nach im
+Hintergrund (ein Corner alle paar Sekunden, höchstens ein Dutzend pro Sitzung). Das Ergebnis liegt für alle unter
+`cornerFacts/<corner-id>` und wird nach 30 Tagen erneuert, damit nicht jedes Handy OpenStreetMap neu fragen muss. Die
+handverlesenen Emojis der ursprünglichen Liste (Kiosk, Toilette) bleiben dabei; bei neuen Spots zählt, was beim
+Eintragen ausgewählt wurde.
 
 ## ✨ Updates & Links
 

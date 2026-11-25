@@ -188,6 +188,14 @@
       }
     },
 
+    "cornerFacts": {
+      ".read": "auth != null",
+      "$cornerId": {
+        ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)",
+        ".validate": "$cornerId.length <= 120 && newData.hasChildren(['at', 'weed']) && newData.child('at').isNumber() && newData.child('weed').isString() && newData.child('weed').val().matches(/^(ok|night|no|unknown)$/)"
+      }
+    },
+
     "notifyTargeted": {
       ".read": false,
       "$eventId": {
