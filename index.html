@@ -2674,6 +2674,16 @@ a.action-btn { text-decoration: none; }
 .spot-pill { border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 12px; background: var(--bg-3); }
 .spot-pill.ok { border-color: var(--green); }
 .spot-pill.no { border-color: var(--pink); }
+/* Emojis on every card + list filter */
+.card-amens { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 6px; }
+.card-amens:empty { display: none; }
+.card-amen { font-size: 15px; line-height: 1; padding: 3px 6px; border-radius: 999px; background: var(--bg-3); border: 1px solid var(--line); }
+.card-amen small { font-family: "JetBrains Mono", monospace; font-size: 9px; margin-left: 3px; color: var(--fg-dim); }
+.card-amen.no { opacity: 0.75; }
+.amen-filter { display: flex; gap: 6px; overflow-x: auto; padding: 2px 16px 10px; scrollbar-width: none; }
+.amen-filter::-webkit-scrollbar { display: none; }
+.amen-chip { flex: 0 0 auto; border: 1px solid var(--line); background: var(--bg-3); color: var(--fg-dim); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.amen-chip.on { border-color: var(--green); color: var(--fg); background: rgba(125,222,125,0.1); }
 .spot-pin { font-size: 32px; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); cursor: grab; }
 
 /* ====================== PUBLIC PROFILES ====================== */
@@ -2871,6 +2881,7 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
       <button id="list-locate-btn" class="geo-btn" style="padding:6px 12px;font-size:12px;">📍 Standort an</button>
       <span id="me-position-meta">Standort aus</span>
     </div>
+    <div id="amen-filter" class="amen-filter" aria-label="Filter"></div>
     <div class="cards" id="cards"></div>
   </section>
 
@@ -3684,7 +3695,7 @@ function reattachSharedListenersAfterGrant() {
   _sharedListenersReattached = true;
   [listenSharedCorners, listenComments, listenBarometer, listenVisits, listenEmojiVotes,
    listenPhotos, listenPoints, listenKarmaPoints, listenTeams, listenCornerStatuses, listenCaptured,
-   listenCornerVotes, listenFriendPresence, listenDirectMessages, listenCustomTeams, listenSupplyRuns, listenGossip, listenCornerDates]
+   listenCornerVotes, listenFriendPresence, listenDirectMessages, listenCustomTeams, listenSupplyRuns, listenGossip, listenCornerDates, listenCornerFacts]
     .forEach((fn) => { try { if (typeof fn === "function") fn(); } catch (err) { console.warn("reattach failed:", err); } });
   checkBackendFeatures(true);
 }
@@ -4665,7 +4676,7 @@ function refreshAllEmojiVotes() {
 function renderEmojiVotes(cornerId, container) {
   const corner = getAllCorners().find((c) => c.id === cornerId);
   if (!corner) return;
-  const amenities = corner.amenities || [];
+  const amenities = Array.from(new Set([...(corner.amenities || []), ...cornerAmenityKeys(corner), ...(cornerWeed(corner) === "ok" ? ["kiffen"] : [])]));
   if (amenities.length === 0) { container.innerHTML = ""; return; }
 
   const chips = amenities.map((a) => {
@@ -7128,6 +7139,7 @@ function _activateAuthDependentFeatures(uid, status) {
   listenGossipLog();
   listenSupplyRuns();
   listenCornerDates();
+  listenCornerFacts();
   checkBackendFeatures();
   syncIdentity();
   startPresenceHeartbeat();
@@ -7147,9 +7159,10 @@ function _activateAuthDependentFeatures(uid, status) {
   } catch (err) { console.warn("admin flag check failed:", err); }
   // localStorage saying "access granted" is no proof for THIS login — check.
   verifyAccessGrant();
+  setTimeout(backfillCornerFacts, 30000);   // corners nobody has checked yet
   if (!_linkVisibilityBound) {
     _linkVisibilityBound = true;
-    document.addEventListener("visibilitychange", () => { if (!document.hidden && _accessVerified[window.FB?.getAuthUid?.() || ""]) linkMyEarlierLogins(); });
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && _accessVerified[window.FB?.getAuthUid?.() || ""]) { linkMyEarlierLogins(); backfillCornerFacts(); } });
   }
 }
 
@@ -8659,6 +8672,7 @@ async function initFirebase() {
     listenSupplyRuns();
     listenGossip();
     listenCornerDates();
+    listenCornerFacts();
     openPendingSharedCorner();
     // This onAuthChange handler covers the case where auth was initially absent.
     // It activates write-gated features once auth eventually succeeds.
@@ -8716,6 +8730,7 @@ async function initFirebase() {
   listenSupplyRuns();
   listenGossip();
   listenCornerDates();
+  listenCornerFacts();
 }
 
 // The corner I count as being at. An explicit check-in wins over GPS proximity.
@@ -11824,7 +11839,7 @@ function spotCheckQuery(lat, lng) {
     `nwr["amenity"="fuel"]${a(SPOT_RADII.kiosk)};` +
     `way["highway"]["name"]${a(70)};` +
     `);out tags geom;` +
-    `is_in(${lat},${lng})->.a;(area.a["leisure"~"^(park|garden)$"]["name"];area.a["place"="square"]["name"];area.a["landuse"="recreation_ground"]["name"];);out tags;`;
+    `is_in(${lat},${lng})->.a;(area.a["leisure"~"^(park|garden)$"]["name"];area.a["place"="square"]["name"];area.a["landuse"="recreation_ground"]["name"];area.a["admin_level"="2"]["ISO3166-1"];);out tags;`;
 }
 
 // Distance from the point to a node, a way or a relation (0 when inside an area).
@@ -11875,12 +11890,13 @@ function kcangPlace(t) {
 
 // Condense the Overpass answer into what the app needs (cached per spot).
 function analyzeSpot(json, lat, lng) {
-  const res = { lat, lng, has: {}, nearest: {}, kcang: [], pedestrian: false, biergarten: "", acvv: false, hbf: false, parks: [], streets: [], squares: [] };
+  const res = { lat, lng, country: "", has: {}, nearest: {}, kcang: [], pedestrian: false, biergarten: "", acvv: false, hbf: false, parks: [], streets: [], squares: [] };
   const streetD = {};
   ((json && json.elements) || []).forEach((el) => {
     const t = el.tags || {};
     if (el.type === "area") {
-      if (t.name) res.parks.push({ name: String(t.name).slice(0, 60), hours: String(t.opening_hours || "").slice(0, 120), square: t.place === "square" });
+      if (t["ISO3166-1"]) { res.country = String(t["ISO3166-1"]).toUpperCase(); return; }
+      if (t.name && (t.leisure || t.place === "square" || t.landuse)) res.parks.push({ name: String(t.name).slice(0, 60), hours: String(t.opening_hours || "").slice(0, 120), square: t.place === "square" });
       if (t.name === "Alter Botanischer Garten") res.acvv = true;
       return;
     }
@@ -11916,12 +11932,14 @@ function fetchSpotCheck(lat, lng) {
   const q = spotCheckQuery(lat, lng);
   const tryMirror = (i) => fetchJson(`${OVERPASS_URLS[i]}?data=${encodeURIComponent(q)}`, 25000)
     .catch((err) => { if (i + 1 < OVERPASS_URLS.length) return tryMirror(i + 1); throw err; });
-  return cachedFetch(`cg.spot1.${lat.toFixed(4)},${lng.toFixed(4)}`, PLACES_TTL_MS, () => tryMirror(0).then((json) => analyzeSpot(json, lat, lng)));
+  return cachedFetch(`cg.spot2.${lat.toFixed(4)},${lng.toFixed(4)}`, PLACES_TTL_MS, () => tryMirror(0).then((json) => analyzeSpot(json, lat, lng)));
 }
 
 // 🌿 verdict: "no", "night" (pedestrian zone: only 20–7 h) or "ok".
 function weedVerdict(res, now = Date.now()) {
   if (!res) return { v: "?", why: [] };
+  // German law only applies in Germany (one of the corners is at Lake Garda).
+  if (res.country && res.country !== "DE") return { v: "?", why: [T("außerhalb Deutschlands — dort gelten andere Regeln", "outside Germany — other rules apply there")] };
   if (res.acvv && now < ACVV_UNTIL) return { v: "no", why: [T("Verbotszone der Stadt am Alten Botanischen Garten", "City ban zone at the Alter Botanischer Garten")] };
   if (res.kcang.length) return { v: "no", why: res.kcang.map((k) => `${k.place}${k.name ? ` „${k.name}“` : ""} ${T("in", "at")} ${formatDistance(k.d)}`) };
   if (res.pedestrian) return { v: "night", why: [T("Fußgängerzone: von 7 bis 20 Uhr verboten", "Pedestrian zone: banned from 7 am to 8 pm")] };
@@ -11938,8 +11956,8 @@ function spotRuleLines(res) {
   if (!res) return [];
   const out = [];
   const w = weedVerdict(res);
-  const weedText = w.v === "ok" ? T("Kiffen erlaubt", "Weed allowed") : w.v === "night" ? T("Kiffen nur 20–7 Uhr", "Weed only 8 pm–7 am") : T("Kiffen verboten", "No weed");
-  out.push({ emoji: w.v === "ok" ? "🌿" : w.v === "night" ? "🕗" : "🚫", text: `${weedText} — ${w.why.join(", ")}`, src: res.acvv ? RULE_SOURCES.acvv : RULE_SOURCES.kcang });
+  const weedText = w.v === "ok" ? T("Kiffen erlaubt", "Weed allowed") : w.v === "night" ? T("Kiffen nur 20–7 Uhr", "Weed only 8 pm–7 am") : w.v === "?" ? T("Kiffen", "Weed") : T("Kiffen verboten", "No weed");
+  out.push({ emoji: w.v === "ok" ? "🌿" : w.v === "night" ? "🕗" : w.v === "?" ? "❔" : "🚫", text: `${weedText} — ${w.why.join(", ")}`, src: w.v === "?" ? "" : (res.acvv ? RULE_SOURCES.acvv : RULE_SOURCES.kcang) });
   if (res.acvv && Date.now() < ACVV_UNTIL) out.push({ emoji: "🍺", text: T("Alkohol ganztägig verboten (Verordnung der Stadt, Alter Botanischer Garten / Karl-Stützel-Platz, bis 14.01.2027)", "Alcohol banned all day (city ordinance, Alter Botanischer Garten / Karl-Stützel-Platz, until 14 Jan 2027)"), src: RULE_SOURCES.acvv });
   if (res.hbf && Date.now() < HBF_ALCOHOL_UNTIL) out.push({ emoji: "🍺", text: T("Vermutlich in der Alkoholverbotszone am Hauptbahnhof (ganztägig) — genaue Straßen in der Verordnung", "Probably inside the alcohol ban zone at the Hauptbahnhof (all day) — exact streets in the ordinance"), src: RULE_SOURCES.hbf });
   if (res.biergarten) out.push({ emoji: "🍺", text: T(`Neben „${res.biergarten}“: im Biergarten selbst ist Kiffen in Bayern verboten`, `Next to “${res.biergarten}”: inside beer gardens weed is banned in Bavaria`) });
@@ -11992,6 +12010,7 @@ function renderSpotAmenities() {
     if (a.key === "kiffen" && w && auto) {
       if (w.v === "night") label = T("erst ab 20 Uhr", "after 8 pm");
       else if (w.v === "no") label = T("hier nicht", "not here");
+      else if (w.v === "?") label = T("andere Regeln", "other rules");
     }
     return `<button type="button" class="spot-amen ${on ? "on" : ""}" data-amen="${a.key}" aria-pressed="${on}">
       <span class="spot-amen-emoji">${a.emoji}</span><span class="spot-amen-label">${escapeHtml(label)}</span>${auto && on ? `<span class="spot-amen-auto">auto</span>` : ""}
@@ -12098,17 +12117,146 @@ async function renderSpotCheckBlock(corner, box) {
     // One request at a time: the public Overpass server limits parallel queries.
     await getNearbyPlaces(corner).catch(() => null);
     const res = await fetchSpotCheck(corner.lat, corner.lng);
+    if (!factsFresh(STATE.cornerFacts?.[corner.id])) storeCornerFacts(corner.id, res);
     if (!box.isConnected) return;
     const have = SPOT_AMENITIES.filter((a) => a.key !== "kiffen" && amenityFromCheck(a.key, res));
     const w = weedVerdict(res);
     const weedNow = weedAllowedNow(w);
     box.innerHTML = `<div class="spot-detail-amen">${have.map((a) => `<span class="spot-pill">${a.emoji} ${escapeHtml(T(a.de, a.en))}</span>`).join("")}
-        <span class="spot-pill ${weedNow ? "ok" : "no"}">${w.v === "ok" ? "🌿" : w.v === "night" ? "🕗" : "🚫"} ${w.v === "ok" ? T("Kiffen ok", "Weed ok") : w.v === "night" ? T("Kiffen 20–7 Uhr", "Weed 8 pm–7 am") : T("Kein Kiffen", "No weed")}</span></div>
+        ${w.v === "?" ? "" : `<span class="spot-pill ${weedNow ? "ok" : "no"}">${w.v === "ok" ? "🌿" : w.v === "night" ? "🕗" : "🚫"} ${w.v === "ok" ? T("Kiffen ok", "Weed ok") : w.v === "night" ? T("Kiffen 20–7 Uhr", "Weed 8 pm–7 am") : T("Kein Kiffen", "No weed")}</span>`}</div>
       ${spotRuleLinesHtml(res)}`;
   } catch (err) {
     if (box.isConnected) box.innerHTML = `<div class="ci-small">${T("Regeln gerade nicht abrufbar (OpenStreetMap).", "Rules not available right now (OpenStreetMap).")}</div>`;
   }
 }
+
+/* ---- Existing corners: checked once, shared with everyone ----
+   "Wie ist's bei den bisherigen Cornern?" — every corner gets the same
+   automatic check as a new one. The first phone that checks a corner stores
+   the result in cornerFacts/<id> (refreshed after 30 days), so the list can
+   show 🚻 💧 ☂️ ⚽ 🏪 🌿 on every card and filter by it, without every phone
+   asking OpenStreetMap again. Phones fill in missing corners slowly in the
+   background (one every few seconds, a dozen per session at most). */
+const CORNER_FACTS_VERSION = 1;
+const CORNER_FACTS_MAX_AGE_MS = 30 * 86400000;
+const CORNER_FACT_KEYS = ["toilette", "wasser", "dach", "sport", "kiosk"];
+STATE.cornerFacts = {};
+var _factsListening = false;
+var _factsBackfill = { running: false, lastRun: 0 };
+
+function listenCornerFacts(attempt = 0) {
+  if (!window.FB?.firebaseReady || _factsListening) return;
+  _factsListening = true;
+  const { db, ref, onValue } = window.FB;
+  onValue(ref(db, "cornerFacts"), (snap) => {
+    STATE.cornerFacts = snap.val() || {};
+    refreshCardAmenities();
+  }, () => { _factsListening = false; retryListenerAfterAuth(listenCornerFacts, attempt); });
+}
+
+function factsFromCheck(res) {
+  const w = weedVerdict(res);
+  const has = {}, near = {};
+  CORNER_FACT_KEYS.forEach((k) => {
+    if (!res.has[k]) return;
+    has[k] = true;
+    if (res.nearest[k] != null) near[k] = res.nearest[k];
+  });
+  const out = { v: CORNER_FACTS_VERSION, at: Date.now(), weed: w.v === "?" ? "unknown" : w.v, why: w.why.slice(0, 3).map((x) => String(x).slice(0, 120)), has, near };
+  const zones = [res.acvv ? "acvv" : "", res.hbf ? "hbf" : "", res.pedestrian ? "fz" : ""].filter(Boolean);
+  if (zones.length) out.zones = zones;
+  const park = res.parks.find((p) => !p.square && p.hours);
+  if (park) out.park = { name: park.name, hours: park.hours };
+  return out;
+}
+function factsFresh(f) { return !!f && f.v === CORNER_FACTS_VERSION && Date.now() - Number(f.at || 0) < CORNER_FACTS_MAX_AGE_MS; }
+function storeCornerFacts(cornerId, res) {
+  if (!cornerId || !res || /[.#$\[\]\/]/.test(cornerId)) return;
+  const f = factsFromCheck(res);
+  STATE.cornerFacts = { ...(STATE.cornerFacts || {}), [cornerId]: f };
+  refreshCardAmenities();
+  if (window.FB?.firebaseReady) window.FB.set(window.FB.ref(window.FB.db, "cornerFacts/" + cornerId), f).catch(() => {});
+}
+
+// Fill in corners nobody has checked yet — slowly, one at a time.
+async function backfillCornerFacts() {
+  const uid = window.FB?.getAuthUid?.() || "";
+  if (_factsBackfill.running || !window.FB?.firebaseReady || !uid || !_accessVerified[uid] || document.hidden) return;
+  if (Date.now() - _factsBackfill.lastRun < 10 * 60000) return;
+  _factsBackfill.running = true;
+  _factsBackfill.lastRun = Date.now();
+  try {
+    const todo = getAllCorners().filter((c) => typeof c.lat === "number" && typeof c.lng === "number" && !factsFresh(STATE.cornerFacts?.[c.id]));
+    todo.sort(() => Math.random() - 0.5);   // several phones at once rarely pick the same corner
+    for (const c of todo.slice(0, 12)) {
+      if (document.hidden) break;
+      if (factsFresh(STATE.cornerFacts?.[c.id])) continue;
+      try { storeCornerFacts(c.id, await fetchSpotCheck(c.lat, c.lng)); }
+      catch (err) { break; }   // OpenStreetMap busy or offline: next time
+      await new Promise((r) => setTimeout(r, 4000));
+    }
+  } finally { _factsBackfill.running = false; }
+}
+
+// What a card shows: for spots made with the new dialog, what their maker
+// chose; for older ones, the stored facts plus the curated toilet/kiosk.
+function cornerAmenityKeys(c) {
+  const mine = c.amenities || [];
+  if (c.check) return CORNER_FACT_KEYS.filter((k) => mine.includes(k));
+  const f = STATE.cornerFacts?.[c.id];
+  return CORNER_FACT_KEYS.filter((k) => mine.includes(k) || !!(f && f.has && f.has[k]));
+}
+function cornerWeed(c) {
+  if (c.check) return (c.amenities || []).includes("kiffen") ? "ok" : (c.check.weed === "night" ? "night" : "no");
+  const f = STATE.cornerFacts?.[c.id];
+  return f && /^(ok|night|no)$/.test(f.weed || "") ? f.weed : null;
+}
+function cornerEmojiRowHtml(c) {
+  const items = cornerAmenityKeys(c).map((k) => {
+    const a = SPOT_AMENITIES.find((x) => x.key === k);
+    return `<span class="card-amen" title="${escapeHtml(T(a.de, a.en))}">${a.emoji}</span>`;
+  });
+  const weed = cornerWeed(c);
+  if (weed === "ok") items.push(`<span class="card-amen" title="${T("Kiffen erlaubt", "Weed allowed")}">🌿</span>`);
+  else if (weed === "night") items.push(`<span class="card-amen" title="${T("Kiffen nur 20–7 Uhr", "Weed only 8 pm–7 am")}">🌿<small>20–7</small></span>`);
+  else if (weed === "no") items.push(`<span class="card-amen no" title="${T("Kiffen hier verboten", "No weed here")}">🚫🌿</span>`);
+  return items.join("");
+}
+function refreshCardAmenities() {
+  if ((STATE.amenFilter || []).length) { scheduleCardsRerender(); return; }   // filter result may change
+  getAllCorners().forEach((c) => {
+    const slot = document.querySelector(`#card-${CSS.escape(c.id)} .card-amens`);
+    if (slot) slot.innerHTML = cornerEmojiRowHtml(c);
+  });
+}
+var _cardsRerenderTimer = null;
+function scheduleCardsRerender() {
+  clearTimeout(_cardsRerenderTimer);
+  _cardsRerenderTimer = setTimeout(() => { renderCards(); updateCounts(); }, 400);
+}
+
+// List filter: tap 🚻 / 🌿 … to see only corners that have it.
+STATE.amenFilter = (() => { try { const v = JSON.parse(localStorage.getItem("cg.amenFilter") || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } })();
+function cornerMatchesAmenFilter(c) {
+  const want = STATE.amenFilter || [];
+  if (!want.length) return true;
+  const have = cornerAmenityKeys(c);
+  return want.every((k) => k === "kiffen" ? /^(ok|night)$/.test(cornerWeed(c) || "") : have.includes(k));
+}
+function renderAmenFilter() {
+  const box = $("#amen-filter");
+  if (!box) return;
+  const on = STATE.amenFilter || [];
+  box.innerHTML = SPOT_AMENITIES.map((a) => `<button type="button" class="amen-chip ${on.includes(a.key) ? "on" : ""}" data-amen-filter="${a.key}" aria-pressed="${on.includes(a.key)}">${a.emoji} ${escapeHtml(T(a.de, a.en))}</button>`).join("");
+  box.querySelectorAll("[data-amen-filter]").forEach((b) => b.addEventListener("click", () => {
+    const k = b.dataset.amenFilter;
+    STATE.amenFilter = on.includes(k) ? on.filter((x) => x !== k) : [...on, k];
+    try { localStorage.setItem("cg.amenFilter", JSON.stringify(STATE.amenFilter)); } catch (e) { /* private mode */ }
+    renderAmenFilter();
+    renderCards();
+  }));
+}
+document.addEventListener("DOMContentLoaded", renderAmenFilter);
 
 function getNearbyPlaces(corner) {
   const { lat, lng } = corner;
@@ -12556,9 +12704,11 @@ function closeDetail() { detailXpCornerId = null; $("#detail-overlay").classList
 function renderCards() {
   const root = $("#cards");
   root.innerHTML = "";
-  const all = getSortedCorners().filter(cornerMatchesDistrictFilter);
+  const all = getSortedCorners().filter(cornerMatchesDistrictFilter).filter(cornerMatchesAmenFilter);
   if (!all.length && STATE.districtFilter) {
     root.innerHTML = `<p class="district-empty">${T("Keine Corners in diesem Stadtbezirk — noch nicht! Tipp auf ➕, um den ersten einzutragen.", "No corners in this district — yet! Tap ➕ to add the first.")}</p>`;
+  } else if (!all.length && (STATE.amenFilter || []).length) {
+    root.innerHTML = `<p class="district-empty">${T("Kein Corner passt zu allen gewählten Emojis — oben eins abwählen. Noch nicht geprüfte Corners füllt die App nach und nach auf.", "No corner matches all chosen emojis — untick one above. Corners not checked yet are filled in bit by bit.")}</p>`;
   }
   all.forEach((c, i) => {
     const photoSrc = getCornerCoverPhoto(c.id);
@@ -12582,6 +12732,7 @@ function renderCards() {
       <div class="card-body">
         <p class="card-area">${districtBadgeHtml(c)}${escapeHtml(c.area || "—")} ${c.isCustom && c.createdBy ? `<span class="creator-label"> · von ${escapeHtml(c.createdBy)}</span>` : ""}</p>
         <h2 class="card-name">${escapeHtml(c.name)}</h2>
+        <div class="card-amens">${cornerEmojiRowHtml(c)}</div>
         ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("hier", "here")}: ${peopleHere.map((n) => escapeHtml(n)).join(", ")}</div>` : ""}
         ${gossipOpenRoundAt(c.id) ? `<button class="card-gossip-live" data-gossip-card="${c.id}">🗣️ ${T("Gossip-Runde läuft", "Gossip round live")} →</button>` : ""}
         ${getDescription(c) ? `<p class="card-desc short-desc">${escapeHtml(getDescription(c))}</p>` : ""}
@@ -12714,6 +12865,7 @@ async function saveNewSpot() {
     try {
       const { db, ref, set } = window.FB;
       await set(ref(db, "corners/" + spot.id), spot);
+      if (SPOT_DRAFT.check) storeCornerFacts(spot.id, SPOT_DRAFT.check);
     } catch (err) {
       if (/permission/i.test(String(err?.code || "") + String(err?.message || ""))) {
         // Usually a missing access grant for this login — repair or ask for the code.
