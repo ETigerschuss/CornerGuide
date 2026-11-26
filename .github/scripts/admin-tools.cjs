@@ -72,6 +72,34 @@ async function dataSizes() {
   console.log(`photos: ${photoCount} Fotos, davon ${inlinePhotos} direkt in der Datenbank (${kb(inlineBytes).trim()})`);
   console.log(`comments: ${deep(root.comments)} Kommentare an ${Object.keys(root.comments || {}).length} Corners`);
   console.log(`presence: ${Object.keys(root.presence || {}).length} Einträge, davon ${Object.values(root.presence || {}).filter((p) => p && Date.now() - Number(p.lastSeen || 0) < 86400000).length} in den letzten 24 h aktiv`);
+  // Profiles with several logins, and leftover copies of old merges (the app
+  // needs the history only to spot those) — counts only.
+  const pts = root.points || {};
+  const rootOf = (key) => { let k = key; const seen = new Set(); while (k && !seen.has(k)) { seen.add(k); const next = pts[k] && pts[k].aliasOf; if (!next || typeof next !== "string" || next === k || seen.has(next)) break; k = next; } return k; };
+  const hist = (e) => { const h = e && e.history; return Array.isArray(h) ? h : (h && typeof h === "object" ? Object.values(h) : []); };
+  const looksCopied = (e, o) => {
+    const a = hist(e), b = hist(o);
+    if (!a.length || !b.length) return false;
+    const seen = new Set(b.map((h) => `${h && h.time}|${h && h.pts}`));
+    const last = a[a.length - 1];
+    const shared = a.filter((h) => seen.has(`${h && h.time}|${h && h.pts}`)).length;
+    return !!((last && seen.has(`${last.time}|${last.pts}`)) || shared >= a.length / 2);
+  };
+  const groups = {};
+  Object.keys(pts).forEach((k) => { (groups[rootOf(k)] = groups[rootOf(k)] || []).push(k); });
+  let multi = 0, copies = 0;
+  for (const store of [root.points || {}, root.karmaPoints || {}]) {
+    Object.values(groups).forEach((keys) => {
+      if (store === root.points && keys.length > 1) multi++;
+      const entries = keys.map((k) => store[k]).filter((e) => e && Number(e.total || 0) > 0).sort((a, b) => Number(b.total || 0) - Number(a.total || 0));
+      const counted = [];
+      entries.forEach((e) => { if (counted.some((c) => looksCopied(e, c))) copies++; else counted.push(e); });
+    });
+  }
+  console.log(`Profile: ${Object.keys(groups).length}, davon ${multi} mit mehreren Logins; ${copies} Einträge sehen nach alter Kopie aus`);
+  let noUserId = 0;
+  Object.values(root.visits || {}).forEach((list) => Object.values(list || {}).forEach((v) => { if (!v || !v.userId) noUserId++; }));
+  console.log(`visits ohne userId (nur Name): ${noUserId}`);
   // Photos only end up in the database when the Storage upload fails — is
   // there a bucket at all? (yes/no and file counts only)
   if (!process.env.FIREBASE_DATABASE_EMULATOR_HOST) {
