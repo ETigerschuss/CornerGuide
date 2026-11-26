@@ -162,11 +162,26 @@ Die App funktioniert auch ohne Firebase — dann werden Kommentare und Spots lok
 
 ## 🛠 Entwicklung
 
-Das Projekt ist eine einzelne `index.html` — kein Build-Tool nötig. Einfach öffnen oder mit einem lokalen Server starten:
+Ausgeliefert wird weiterhin **eine** `index.html` (GitHub Pages, ein Request, offline-fähig). Bearbeitet wird aber der
+Quellcode in `src/`, nach Bereichen aufgeteilt — `index.html` wird daraus gebaut:
+
+| Pfad | Inhalt |
+|---|---|
+| `src/head.html` | `<head>` bis zu den Bibliotheken |
+| `src/firebase.js` | Firebase-Modul (`window.FB`) |
+| `src/css/NN-*.css` | Styles, in dieser Reihenfolge |
+| `src/body.html` | das komplette Markup |
+| `src/js/NN-*.js` | App-Code nach Bereichen (z. B. `21-identity.js`, `26-circles.js`, `27-cornerdate.js`), ein gemeinsamer Script-Scope wie bisher |
 
 ```bash
-npx serve .
+node tools/build.mjs        # index.html aus src/ bauen (ohne Abhängigkeiten)
+node tools/check.mjs        # passt index.html zu src/? Syntax ok? Regeln gültiges JSON?
+npx serve .                 # lokal ansehen
 ```
+
+Die Prüfung läuft auch in GitHub (Workflow „Checks“) und vor jedem Deploy — eine `index.html`, die nicht aus `src/`
+gebaut ist, wird nicht ausgeliefert. Die Aufteilung hat am Verhalten nichts geändert: Beim Umbau war die gebaute Datei
+Byte für Byte identisch mit der vorherigen. Wie es Richtung tausende Nutzer weitergeht: [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md).
 
 ## 🔔 Push-Nachrichten (komplett aktivieren)
 

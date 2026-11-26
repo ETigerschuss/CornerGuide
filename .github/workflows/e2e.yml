@@ -1,0 +1,46 @@
+name: E2E-Tests
+
+# All end-to-end test suites (tests/e2e) against the Firebase emulators.
+# Started by hand (Actions → E2E-Tests → Run workflow); a full run takes ~15 minutes.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: tests/e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install test tools
+        run: npm install
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start the Firebase emulators
+        run: |
+          nohup npx firebase emulators:start --project cornerguide --only auth,database,storage > emulators.log 2>&1 &
+          for i in $(seq 1 120); do grep -q "All emulators ready" emulators.log && break; sleep 2; done
+          grep "All emulators ready" emulators.log
+      - name: Run all suites
+        run: node run-all.mjs
+      - name: Keep screenshots and emulator log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            tests/e2e/shots
+            tests/e2e/emulators.log
+          if-no-files-found: ignore

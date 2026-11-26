@@ -1,0 +1,15 @@
+{
+  "name": "cornerguide-e2e",
+  "private": true,
+  "description": "End-to-end tests: the real app in Chromium against the Firebase emulators",
+  "scripts": {
+    "emulators": "firebase emulators:start --project cornerguide --only auth,database,storage",
+    "test": "node run-all.mjs"
+  },
+  "devDependencies": {
+    "firebase": "10.12.2",
+    "firebase-tools": "^13.35.1",
+    "leaflet": "1.9.4",
+    "playwright": "1.63.0"
+  }
+}

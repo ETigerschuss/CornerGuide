@@ -1,0 +1,343 @@
+/* ====================== COMMENTS ====================== */
+.comments-section {
+  padding: 0 18px 18px;
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+}
+.comments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 8px;
+}
+.comments-header h3 {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin: 0;
+}
+.comments-header .comment-count {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--amber);
+  background: rgba(232,169,62,0.12);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.comment-list { list-style: none; padding: 0; margin: 0 0 10px; }
+.comment-item {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  position: relative;
+}
+.comment-item.mine { border-color: rgba(0,158,224,0.3); }
+.comment-item .comment-author {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--amber);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.comment-item .comment-time {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  color: var(--fg-dim);
+  margin-left: 8px;
+}
+.comment-item .comment-text {
+  font-size: 14px;
+  color: var(--fg);
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+.comment-item .comment-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.comment-item .comment-actions button {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--fg-dim);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.comment-item .comment-actions button:hover { border-color: var(--amber); color: var(--amber); }
+.comment-item .comment-actions button.delete-btn:hover { border-color: var(--pink); color: var(--pink); }
+.comment-edit-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--amber);
+  color: var(--fg);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 6px;
+  resize: none;
+  min-height: 36px;
+}
+.comment-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.comment-form input[type="text"] {
+  flex: 1;
+  min-width: 120px;
+  max-width: 120px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.comment-form input[type="text"]:focus { outline: none; border-color: var(--amber); }
+.comment-form textarea {
+  flex: 2;
+  min-width: 150px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  resize: none;
+  min-height: 38px;
+  max-height: 80px;
+}
+.comment-form textarea:focus { outline: none; border-color: var(--amber); }
+.comment-form button {
+  background: var(--amber);
+  color: #111;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: "JetBrains Mono", monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.comment-form button:hover { background: var(--pink); color: #fff; }
+
+/* ====================== BAROMETER ====================== */
+.barometer-section {
+  padding: 10px 18px 14px;
+  border-top: 1px solid var(--line);
+}
+.barometer-header {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin: 0 0 8px;
+}
+.barometer-stars {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.barometer-stars button {
+  background: transparent;
+  border: none;
+  font-size: 26px;
+  padding: 2px;
+  cursor: pointer;
+  filter: grayscale(1) opacity(0.4);
+  transition: filter 0.15s, transform 0.15s;
+}
+.barometer-stars button.active { filter: none; transform: scale(1.15); }
+.barometer-stars button:hover { filter: none; transform: scale(1.2); }
+.barometer-stars button.voted { cursor: default; }
+.barometer-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--fg-dim);
+}
+.barometer-result .avg-score {
+  color: var(--amber);
+  font-weight: 700;
+  font-size: 14px;
+}
+.barometer-result .vote-count { font-size: 10px; }
+
+/* ====================== SPOT AMENITY ICONS ====================== */
+.spot-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.spot-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.spot-icon .icon-emoji { font-size: 14px; }
+.spot-icon .icon-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+/* ====================== MANUAL PRESENCE BUTTON ====================== */
+.checkin-btn {
+  background: var(--bg-3);
+  border: 1.5px solid var(--green);
+  color: var(--green);
+  padding: 9px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.checkin-btn:hover { background: rgba(184,255,58,0.1); }
+.checkin-btn.checked-in {
+  background: var(--green);
+  color: #111;
+  border-color: var(--green);
+  animation: pulse-badge 2s infinite;
+}
+.checkin-btn.checked-in:hover { background: #9de030; }
+.checkin-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--fg-dim);
+  color: var(--fg-dim);
+}
+.checkin-btn.disabled:hover { background: transparent; }
+.checkin-distance {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--fg-dim);
+  margin-left: 4px;
+}
+
+/* ====================== EMOJI VOTING ====================== */
+.emoji-votes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.emoji-vote-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-3);
+  border: 1.5px solid var(--line);
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.emoji-vote-chip:hover { border-color: var(--amber); transform: scale(1.05); }
+.emoji-vote-chip.voted { border-color: var(--amber); background: rgba(232,169,62,0.12); }
+.emoji-vote-chip .vote-count {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--amber);
+  font-weight: 700;
+  min-width: 14px;
+  text-align: center;
+}
+.emoji-vote-chip .vote-emoji { font-size: 16px; }
+@keyframes emoji-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+.emoji-vote-chip.just-voted { animation: emoji-pop 0.3s ease; }
+
+/* ====================== COMMENT REPLIES ====================== */
+.comment-replies {
+  margin: 8px 0 0 16px;
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
+}
+.comment-replies .comment-item {
+  background: var(--bg);
+  border-color: var(--line);
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+.reply-form {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  margin-left: 16px;
+}
+.reply-form textarea {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  resize: none;
+  min-height: 32px;
+}
+.reply-form textarea:focus { outline: none; border-color: var(--amber); }
+.reply-form button {
+  background: var(--amber);
+  color: #111;
+  border: none;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: "JetBrains Mono", monospace;
+  letter-spacing: 1px;
+}
+.reply-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--fg-dim);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.reply-btn:hover { border-color: var(--blue); color: var(--blue); }
+

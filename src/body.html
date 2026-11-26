@@ -1,0 +1,536 @@
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="stamps">
+      <svg class="stamp-logo left" viewBox="0 0 512 512" role="img" aria-label="Corner Guide Logo">
+        <defs>
+          <linearGradient id="hg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#e8a93e"/>
+            <stop offset="100%" stop-color="#ff2e6c"/>
+          </linearGradient>
+        </defs>
+        <rect width="512" height="512" rx="112" fill="#0d0d0d"/>
+        <circle cx="256" cy="256" r="182" fill="none" stroke="url(#hg)" stroke-width="26"/>
+        <path d="M150 232 L256 372 L362 232" fill="none" stroke="#8f8574" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="256" cy="212" r="62" fill="#f4e9d1"/>
+        <polygon points="206,244 306,244 256,344" fill="#f4e9d1"/>
+        <circle cx="256" cy="212" r="26" fill="#0d0d0d"/>
+      </svg>
+      <span class="stamp-incl right" title="Alle willkommen – offen für alle">🏳️‍🌈</span>
+    </div>
+    <div class="title-block">
+      <h1 class="title-mingas">Minga</h1>
+      <span class="title-corner"><em>Corner</em> Guide</span>
+    </div>
+    <p class="title-intl">Monaco di Baviera · Munich · München</p>
+    <p class="subtitle">vom <span class="gossips">gossips</span> Stammtisch</p>
+    <div class="meta-line">
+      <span><strong id="header-count">12</strong> Spots</span>
+    </div>
+  </div>
+</header>
+
+<!-- Sticky navigation: lives outside the hero so it stays pinned while scrolling -->
+<div class="tabs-bar">
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-view="map">Karte</button>
+    <button class="tab" data-view="list">Liste</button>
+    <button class="tab" data-view="leaderboard">🏆 Ranking</button>
+    <button class="tab" data-view="profile">👤 Profil</button>
+  </nav>
+</div>
+
+<!-- ============ VIEWS ============ -->
+<main>
+  <!-- Firebase connection status -->
+  <div id="fb-status" class="firebase-status" style="display:none;"></div>
+
+  <!-- Nickname bar with change option -->
+  <div id="nickname-bar" class="nickname-bar" style="display:none;">
+    <span class="nick-label">👤</span>
+    <span class="nick-name" id="nick-display"></span>
+    <span class="nick-pts" id="nick-pts"></span><span class="level-bar" id="nick-level-bar"><span class="level-badge" id="nick-level-badge"></span><span class="level-progress"><span class="level-progress-fill" id="nick-level-fill"></span></span></span>
+    <button class="nick-change" id="availability-btn" aria-label="Verfügbarkeit ändern"></button>
+    <button class="nick-change" id="supply-btn" aria-label="Nachschub-Ruf an alle">🆘 Nachschub</button>
+    <button class="nick-change" id="invite-btn" aria-label="Freunde einladen">📨 Einladen</button>
+    <button class="nick-change" id="nick-change-btn">✏️ Ändern</button>
+  </div>
+
+  <!-- Friends presence bar -->
+  <div id="friends-bar" class="friends-bar">
+    <div class="friends-bar-inner">
+      <h3 id="friends-bar-title">🍻 Freunde unterwegs</h3>
+      <ul class="friends-list" id="friends-list"></ul>
+    </div>
+  </div>
+
+  <!-- Weather + upcoming cornerdates: shown above the map and the list -->
+  <div id="weather-banner"></div>
+  <div id="cornerdates-strip"></div>
+
+  <section id="view-list" class="view">
+    <div class="list-meta">
+      <span><span class="count-num" id="corner-count">--</span> Spots gesamt</span>
+      <select id="district-filter" class="district-filter" hidden aria-label="Stadtbezirk"></select>
+      <button id="list-locate-btn" class="geo-btn" style="padding:6px 12px;font-size:12px;">📍 Standort an</button>
+      <span id="me-position-meta">Standort aus</span>
+    </div>
+    <div id="amen-filter" class="amen-filter" aria-label="Filter"></div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section id="view-map" class="view active">
+    <div class="map-toolbar">
+      <button id="locate-btn" class="geo-btn">📍 Standort an</button>
+      <button id="district-toggle" class="geo-btn district-toggle">🏙️ Bezirke an</button>
+      <span class="geo-status" id="geo-status">Standort aus</span>
+    </div>
+    <div class="map-shell"><div id="main-map"></div></div>
+  </section>
+
+  <section id="view-leaderboard" class="view">
+    <button class="action-btn primary points-help-btn" id="points-help-btn">📖 So sammelst du Punkte</button>
+    <div id="popular-corner-section"></div>
+    <div id="team-battle-section"></div>
+    <div id="leaderboard-visits"></div>
+    <div id="leaderboard-contributors"></div>
+    <div id="leaderboard-points"></div>
+    <div id="leaderboard-karma"></div>
+    <div id="achievements-section"></div>
+  </section>
+
+  <section id="view-profile" class="view">
+    <div id="profile-content"></div>
+  </section>
+</main>
+
+<footer class="foot">
+  Basiert auf der Maps-Liste <strong>Cornern als Lebensstil 🙌🍻</strong> von Florencia Porta<br>
+  Gegründet vom Gossips Stammtisch: <strong>F · G · A · ÉT</strong><br>
+  Repo: CornerGuide · Alpha v0.7 · Echtzeit-Features powered by Firebase · 🏆 Gamification aktiv
+</footer>
+
+<!-- ============ FABs ============ -->
+<button id="chat-fab" class="fab chat-fab" aria-label="Chats öffnen">
+  💬<span id="chat-badge" class="chat-badge" hidden></span>
+</button>
+<button id="fab" class="fab" aria-label="Spot hinzufügen">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+</button>
+
+<!-- ============ CHAT ============ -->
+<div id="chat-overlay" class="chat-overlay">
+  <div class="chat-panel">
+    <div class="chat-header">
+      <button id="chat-back" class="chat-back" style="display:none;" aria-label="Zurück">←</button>
+      <span id="chat-title" class="chat-title">💬 Chats</span>
+      <button id="chat-close" class="chat-close" aria-label="Schließen">✕</button>
+    </div>
+    <div id="chat-list" class="chat-list"></div>
+    <div id="chat-thread" class="chat-thread" style="display:none;">
+      <div id="chat-messages" class="chat-messages"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Nachricht schreiben…" autocomplete="off" maxlength="500" />
+        <button id="chat-send" class="chat-send" aria-label="Senden">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADD-SPOT MODAL ============ -->
+<div id="modal-backdrop" class="modal-backdrop">
+  <div class="modal" role="dialog" aria-labelledby="modal-title">
+    <div class="modal-handle"></div>
+    <h2 id="modal-title">Neuer Spot</h2>
+    <p class="sub">Tippen genügt: Standort, Stadtteil und was es dort gibt, erkennt die App selbst — alle sehen ihn sofort auf Karte und Liste.</p>
+
+    <div class="field">
+      <label>Ort</label>
+      <div id="spot-pin-map" class="spot-pin-map"></div>
+      <div id="spot-pin-info" class="spot-pin-info"></div>
+    </div>
+    <div class="field">
+      <label>Name <span class="req">*</span></label>
+      <input type="text" id="f-name" maxlength="80" placeholder="z.B. Au-Brücke" />
+      <div id="spot-name-chips" class="spot-chips"></div>
+    </div>
+    <div class="field">
+      <label>Was gibt's hier?</label>
+      <div id="spot-amenities" class="spot-amenities"></div>
+      <div id="spot-rules" class="spot-rules"></div>
+    </div>
+    <div class="field">
+      <label>Wer sieht den Spot?</label>
+      <div id="spot-visibility" class="vis-picker"></div>
+      <div id="spot-visibility-hint" class="vis-hint"></div>
+    </div>
+    <details class="spot-more">
+      <summary>Mehr: Beschreibung, Stadtteil, Tags, Koordinaten</summary>
+      <div class="field">
+        <label>Beschreibung</label>
+        <textarea id="f-desc" maxlength="500" placeholder="Wie ist der Spot? Was macht ihn aus? (optional)"></textarea>
+      </div>
+      <div class="field">
+        <label>Stadtteil</label>
+        <input type="text" id="f-area" maxlength="60" placeholder="z.B. Au-Haidhausen" />
+      </div>
+      <div class="field">
+        <label>Tags (Komma-getrennt)</label>
+        <input type="text" id="f-tags" maxlength="120" placeholder="Sunset, ruhig" />
+      </div>
+      <div class="coord-row">
+        <div class="field">
+          <label>Latitude</label>
+          <input type="number" id="f-lat" step="any" placeholder="48.1351" />
+        </div>
+        <div class="field">
+          <label>Longitude</label>
+          <input type="number" id="f-lng" step="any" placeholder="11.5820" />
+        </div>
+      </div>
+      <div class="coord-actions">
+        <button class="action-btn" id="use-location">📍 Aktuellen Standort verwenden</button>
+      </div>
+    </details>
+
+    <div class="modal-actions">
+      <button class="action-btn" id="modal-cancel">Abbrechen</button>
+      <button class="action-btn primary" id="modal-save">Speichern</button>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<!-- Karma celebration (supply run confirmed / level up) -->
+<div id="celebration" class="celebration" aria-live="polite"></div>
+
+<!-- Gossip round composer: write the story down and/or record it with the mic -->
+<div id="gossip-overlay" class="gossip-overlay" role="dialog" aria-modal="true" aria-labelledby="gossip-title">
+  <div class="gossip-card">
+    <h2 id="gossip-title">🗣️ Gossip-Runde</h2>
+    <p class="gossip-sub" id="gossip-sub"></p>
+    <label class="ce-label" for="gossip-headline" id="gossip-headline-label">Schlagzeile für eure Chronik (optional)</label>
+    <input type="text" id="gossip-headline" class="ce-field" maxlength="60" autocomplete="off" placeholder="z. B. Die Sache mit dem Hausboot" />
+    <label class="ce-label" for="gossip-text" id="gossip-text-label">Deine Story</label>
+    <textarea id="gossip-text" class="ce-field" maxlength="1000" rows="5" placeholder="Was ist passiert? Wer, wo, wann … 👀"></textarea>
+    <div class="gossip-count"><span id="gossip-text-count">0</span>/1000</div>
+    <div class="gossip-rec">
+      <button type="button" class="action-btn" id="gossip-rec-btn">🎙️ Einsprechen</button>
+      <span class="gossip-rec-time" id="gossip-rec-time"></span>
+      <span class="gossip-meter" aria-hidden="true"><span id="gossip-meter-fill"></span></span>
+    </div>
+    <div class="gossip-rec-preview" id="gossip-rec-preview" hidden>
+      <audio id="gossip-rec-audio" controls preload="metadata"></audio>
+      <button type="button" class="action-btn" id="gossip-rec-discard" aria-label="Aufnahme löschen">🗑️</button>
+    </div>
+    <p class="gossip-hint" id="gossip-hint"></p>
+    <p class="gossip-privacy" id="gossip-privacy"></p>
+    <div class="gossip-actions">
+      <button type="button" class="action-btn" id="gossip-cancel">Abbrechen</button>
+      <button type="button" class="action-btn primary" id="gossip-publish">🚀 Raushauen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cornerdate: plan a meetup at a corner, then add it to your calendar / share it -->
+<div id="cornerdate-overlay" class="guide-overlay" role="dialog" aria-modal="true" aria-labelledby="cd-title">
+  <div class="guide-card cd-card">
+    <h2 id="cd-title">📅 Cornerdate</h2>
+    <p class="gossip-sub" id="cd-sub"></p>
+    <div id="cd-form">
+      <div class="cd-row">
+        <label class="cd-field"><span class="ce-label" id="cd-date-label">Tag</span><input type="date" id="cd-date" class="ce-field" /></label>
+        <label class="cd-field"><span class="ce-label" id="cd-time-label">Uhrzeit</span><input type="time" id="cd-time" class="ce-field" step="900" /></label>
+      </div>
+      <label class="cd-field"><span class="ce-label" id="cd-dur-label">Dauer</span>
+        <select id="cd-duration" class="ce-field">
+          <option value="60">1 h</option>
+          <option value="120" selected>2 h</option>
+          <option value="180">3 h</option>
+          <option value="240">4 h</option>
+          <option value="360">6 h</option>
+        </select>
+      </label>
+      <label class="cd-field"><span class="ce-label" id="cd-note-label">Notiz (optional)</span><input type="text" id="cd-note" class="ce-field" maxlength="140" autocomplete="off" /></label>
+      <label class="cd-check"><input type="checkbox" id="cd-secret" /> <span id="cd-secret-label">🤫 Geheim — nur deine engen Freunde sehen es (halbe Punkte)</span></label>
+      <label class="cd-check"><input type="checkbox" id="cd-notify" checked /> <span id="cd-notify-label">Alle in der App benachrichtigen</span></label>
+      <p class="gossip-hint" id="cd-hint"></p>
+      <div class="gossip-actions">
+        <button type="button" class="action-btn" id="cd-cancel">Abbrechen</button>
+        <button type="button" class="action-btn primary" id="cd-save">📅 Planen</button>
+      </div>
+    </div>
+    <div id="cd-done" hidden></div>
+  </div>
+</div>
+
+<!-- How to earn points: reward matrix + every source of aura/karma -->
+<div id="reward-guide-overlay" class="guide-overlay" role="dialog" aria-modal="true" aria-labelledby="reward-guide-title">
+  <div class="guide-card">
+    <h2 id="reward-guide-title">📖 So sammelst du Punkte</h2>
+    <div id="reward-guide-body"></div>
+    <button type="button" class="action-btn primary" id="reward-guide-close">Alles klar</button>
+  </div>
+</div>
+
+<!-- Corner Detail Overlay -->
+<div id="detail-overlay" class="detail-overlay">
+  <div class="detail-header">
+    <button class="detail-back" id="detail-back">←</button>
+    <span class="detail-title" id="detail-title"></span>
+  </div>
+  <div class="detail-content" id="detail-content"></div>
+</div>
+
+<!-- Photo Lightbox -->
+<div id="lightbox" class="lightbox">
+  <button class="lightbox-close" id="lightbox-close">✕</button>
+  <img id="lightbox-img" src="" alt="Foto" />
+  <span class="lightbox-author" id="lightbox-author"></span>
+  <div class="lightbox-controls">
+    <button class="lightbox-btn" id="lightbox-download">⬇️ Herunterladen</button>
+    <button class="lightbox-btn" id="lightbox-close-btn">Schließen</button>
+  </div>
+</div>
+
+<!-- First Check-in Experience Prompt -->
+<div id="checkin-prompt" class="checkin-prompt">
+  <div class="checkin-prompt-card">
+    <h2>🎉 Erster Besuch!</h2>
+    <p>Wie war deine Erfahrung? Bewerte den Corner und beschreib deine Highlights!</p>
+    <div class="checkin-options">
+      <div class="checkin-scale">
+        <div class="scale-label">🏪 Kiosk in der Nähe?</div>
+        <div class="scale-group" data-field="kiosk">
+          <button type="button" class="scale-btn" data-value="ja">Ja</button>
+          <button type="button" class="scale-btn" data-value="nein">Nein</button>
+        </div>
+      </div>
+      <div class="checkin-scale">
+        <div class="scale-label">🚻 Toilette</div>
+        <div class="scale-group" data-field="toilet">
+          <button type="button" class="scale-btn" data-value="direkt">Direkt am Corner</button>
+          <button type="button" class="scale-btn" data-value="nah">In der Nähe</button>
+          <button type="button" class="scale-btn" data-value="weit">Weit weg</button>
+          <button type="button" class="scale-btn" data-value="keine">Keine</button>
+        </div>
+      </div>
+      <div class="checkin-scale">
+        <div class="scale-label">🌿 Grün / Natur?</div>
+        <div class="scale-group" data-field="green">
+          <button type="button" class="scale-btn" data-value="sehr">Sehr grün</button>
+          <button type="button" class="scale-btn" data-value="etwas">Etwas</button>
+          <button type="button" class="scale-btn" data-value="nein">Urban</button>
+        </div>
+      </div>
+      <div class="checkin-scale">
+        <div class="scale-label">🚶 Wie viel los?</div>
+        <div class="scale-group" data-field="busy">
+          <button type="button" class="scale-btn" data-value="ruhig">Ruhig</button>
+          <button type="button" class="scale-btn" data-value="normal">Normal</button>
+          <button type="button" class="scale-btn" data-value="viel">Viel los</button>
+        </div>
+      </div>
+    </div>
+    <textarea id="checkin-highlights" class="checkin-highlights" placeholder="Deine Highlights... Was macht diesen Corner aus?"></textarea>
+    <div class="checkin-prompt-actions">
+      <button class="btn-skip" id="checkin-skip">Überspringen</button>
+      <button class="btn-submit" id="checkin-submit">✓ Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Access code gate (shown on first visit until code is validated) -->
+<div id="access-prompt" class="access-prompt" style="display:none;">
+  <div class="prompt-card">
+    <h2>🔒 Zugang</h2>
+    <p id="access-text">Gib den Einladungscode ein, um Zugang zu erhalten.</p>
+    <input type="text" id="access-code-input" placeholder="CODE" maxlength="30" autocomplete="off" autocapitalize="characters" />
+    <div class="access-error" id="access-error"></div>
+    <button id="access-code-save">Bestätigen</button>
+    <div class="access-restore" style="margin-top:18px;border-top:1px solid var(--line,#2a2a2a);padding-top:14px;">
+      <p style="font-size:13px;color:var(--fg-dim,#9a9285);margin-bottom:10px;">Schon mal dabei gewesen? Übernimm dein Profil ohne neuen Code:</p>
+      <button id="access-recover-code" style="margin-bottom:8px;">📥 Recovery-Code eingeben</button>
+      <button id="access-recover-google">🔗 Mit Google anmelden</button>
+    </div>
+    <p class="access-install-hint" id="access-install-hint" style="margin-top:16px;font-size:12px;color:var(--fg-dim);line-height:1.5;"></p>
+  </div>
+</div>
+
+<!-- Claim an existing (old) profile: pick yourself from the list of past users -->
+<div id="claim-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card claim-card">
+    <h2 id="claim-title">👥 Profil wählen</h2>
+    <p id="claim-intro" style="font-size:13px;color:var(--fg-dim);">Tipp auf deinen Namen — Punkte, Level, Team und Corners sind sofort wieder da.</p>
+    <div id="claim-new" class="claim-choice" hidden>
+      <div class="claim-choice-title">✨ Neu hier?</div>
+      <div class="claim-new-row">
+        <input type="text" id="claim-new-name" placeholder="Dein Name" maxlength="20" autocomplete="nickname" />
+        <button id="claim-new-go" class="action-btn primary">Los geht's 🍻</button>
+      </div>
+    </div>
+    <div id="claim-old" class="claim-choice">
+      <div class="claim-choice-title" id="claim-old-title" hidden>👋 Schon dabei? Tipp auf deinen Namen</div>
+      <div id="claim-list"></div>
+    </div>
+    <button id="claim-close" class="action-btn">Schließen</button>
+  </div>
+</div>
+
+<!-- Someone else's profile (tap a name anywhere) -->
+<div id="user-profile-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card user-profile-card">
+    <button class="up-close" id="up-close" aria-label="Schließen">✕</button>
+    <div id="up-top"></div>
+    <div id="up-map" class="up-map"></div>
+    <div id="up-bottom"></div>
+  </div>
+</div>
+
+<!-- Comments on one photo -->
+<div id="photo-comments-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card user-profile-card">
+    <button class="up-close" id="pc-close" aria-label="Schließen">✕</button>
+    <h2 style="font-size:20px;margin:0 30px 10px 0;text-align:left;">💬 Foto-Kommentare</h2>
+    <div id="pc-body"></div>
+    <div class="pc-input-row">
+      <input type="text" id="pc-input" maxlength="300" autocomplete="off" placeholder="Kommentar schreiben…" />
+      <button class="pc-send" id="pc-send" aria-label="Senden">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR codes: personal + neutral sticker -->
+<div id="qr-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:420px;max-height:88vh;overflow-y:auto;text-align:left;">
+    <h2>🧾 QR-Codes</h2>
+    <p id="qr-title" style="font-size:13px;color:var(--fg-dim);margin:0 0 12px;"></p>
+    <div id="qr-body"></div>
+    <button class="action-btn" id="qr-close" style="margin-top:14px;">Schließen</button>
+  </div>
+</div>
+
+<!-- Team picker shown right after a check-in (skippable) -->
+<div id="checkin-team-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:400px;max-height:86vh;overflow-y:auto;text-align:left;">
+    <h2>🧬 Für welches Team?</h2>
+    <p id="cto-sub" style="font-size:13px;color:var(--fg-dim);margin:0 0 4px;"></p>
+    <p style="font-size:12px;color:var(--fg-dim);margin:0 0 12px;">Dein Team färbt deinen Check-in, die Karte und das Team-Ranking.</p>
+    <div id="cto-teams" class="team-buttons" style="margin-bottom:6px;"></div>
+    <div id="cto-buddy" style="display:none;margin-top:12px;padding:10px 12px;background:var(--bg-3);border:1px solid var(--line);border-radius:10px;">
+      <div style="font-size:12px;color:var(--fg-dim);margin-bottom:8px;">Schon hier — gleiches Team wählen?</div>
+      <div id="cto-buddy-list" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    </div>
+    <button class="whatsapp-btn" id="cto-whatsapp" type="button">📲 WhatsApp-Gruppe Bescheid geben</button>
+    <div style="display:flex;gap:8px;margin-top:18px;align-items:center;">
+      <button class="action-btn" id="cto-skip" style="flex:1;padding:14px;font-size:15px;">Überspringen</button>
+      <button class="action-btn primary" id="cto-done" style="flex:1;padding:14px;font-size:15px;">Fertig</button>
+    </div>
+  </div>
+</div>
+
+<!-- Close friends: who sees private corners and secret cornerdates -->
+<div id="cf-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card claim-card">
+    <h2>👯 Enge Freunde</h2>
+    <p style="font-size:13px;color:var(--fg-dim);">Tipp an, wer deine privaten Corners und geheimen Cornerdates sehen darf. Nur du siehst diese Liste.</p>
+    <input type="search" id="cf-search" class="claim-search" placeholder="Namen suchen…" autocomplete="off" />
+    <div id="cf-list" style="margin:10px 0;"></div>
+    <button id="cf-close" class="action-btn primary">Fertig</button>
+  </div>
+</div>
+
+<!-- Edit a corner you created -->
+<div id="corner-edit-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:400px;max-height:86vh;overflow-y:auto;text-align:left;">
+    <h2>✏️ Spot bearbeiten</h2>
+    <label class="ce-label">Name</label>
+    <input type="text" id="ce-name" class="ce-field" maxlength="80" autocomplete="off" />
+    <label class="ce-label">Stadtteil</label>
+    <input type="text" id="ce-area" class="ce-field" maxlength="60" autocomplete="off" />
+    <label class="ce-label">Beschreibung</label>
+    <textarea id="ce-desc" class="ce-field" maxlength="500" rows="4"></textarea>
+    <label class="ce-label">Tags (Komma-getrennt)</label>
+    <input type="text" id="ce-tags" class="ce-field" maxlength="120" autocomplete="off" placeholder="Kiosk, Sunset, ruhig" />
+    <label class="ce-label">Wer sieht den Spot?</label>
+    <div id="ce-visibility" class="vis-picker"></div>
+    <div id="ce-visibility-hint" class="vis-hint"></div>
+    <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;">
+      <button class="action-btn" id="ce-cancel">Abbrechen</button>
+      <button class="action-btn primary" id="ce-save">Speichern</button>
+      <button class="action-btn" id="ce-delete" style="border-color:var(--pink);color:var(--pink);margin-left:auto;">🗑️ Löschen</button>
+    </div>
+  </div>
+</div>
+
+<!-- App dialog: styled replacement for native prompt()/confirm() -->
+<div id="app-dialog" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:340px;text-align:left;">
+    <h2 id="app-dialog-title" style="font-size:20px;"></h2>
+    <p id="app-dialog-text" style="font-size:13px;color:var(--fg-dim);margin:6px 0 0;"></p>
+    <input type="text" id="app-dialog-input" autocomplete="off" style="display:none;margin-top:12px;" />
+    <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end;">
+      <button class="action-btn" id="app-dialog-cancel">Abbrechen</button>
+      <button class="action-btn primary" id="app-dialog-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin panel (host only) -->
+<div id="admin-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:480px;max-height:85vh;overflow-y:auto;text-align:left;">
+    <h2>🛠 Admin-Panel</h2>
+    <p style="font-size:12px;color:var(--fg-dim);">Host-Werkzeuge. Löschen ist endgültig — Vorsicht.</p>
+    <h3 style="font-size:14px;margin:16px 0 8px;">🔗 Doppelte Profile</h3>
+    <div id="admin-dupes"></div>
+    <h3 style="font-size:14px;margin:16px 0 8px;">👥 Profile</h3>
+    <div id="admin-profiles"></div>
+    <h3 style="font-size:14px;margin:16px 0 8px;">📍 Eigene Spots</h3>
+    <div id="admin-corners"></div>
+    <h3 style="font-size:14px;margin:16px 0 8px;">💡 Feedback</h3>
+    <div id="admin-feedback"></div>
+    <h3 style="font-size:14px;margin:16px 0 8px;">🧹 Aufräumen</h3>
+    <button class="notif-opt" id="admin-dedupe-visits" style="margin-bottom:8px;">Doppelte Check-ins löschen (1 pro Person, Corner &amp; Tag)</button>
+    <button class="notif-opt" id="admin-clean-presence" style="margin-bottom:8px;">Geister-Presence entfernen (&gt;45 min weg bzw. &gt;3 h ohne Lebenszeichen am Corner)</button>
+    <button id="admin-close" class="action-btn" style="margin-top:12px;">Schließen</button>
+  </div>
+</div>
+
+<!-- Availability picker -->
+<div id="availability-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:320px;text-align:left;">
+    <h2>Dein Status</h2>
+    <p style="font-size:13px;color:var(--fg-dim);">Deine Freunde sehen diesen Status in der Freunde-Leiste.</p>
+    <div id="availability-options"></div>
+  </div>
+</div>
+
+<!-- Create a custom team -->
+<div id="team-create-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card" style="max-width:360px;text-align:left;">
+    <h2>➕ Eigenes Team</h2>
+    <input type="text" id="team-create-name" placeholder="Team-Name" maxlength="24" autocomplete="off" />
+    <input type="text" id="team-create-emoji" placeholder="Emoji (z.B. 🦊)" maxlength="4" autocomplete="off" style="margin-top:8px;" />
+    <div style="margin:14px 0 8px;font-size:12px;color:var(--fg-dim);">Farbe wählen</div>
+    <div id="team-create-colors" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+    <div style="display:flex;gap:8px;margin-top:18px;">
+      <button class="action-btn" id="team-create-cancel">Abbrechen</button>
+      <button class="action-btn primary" id="team-create-save">Erstellen</button>
+    </div>
+  </div>
+</div>
+
+<div id="nickname-prompt" class="nickname-prompt" style="display:none;">
+  <div class="prompt-card">
+    <h2>Wer bist du?</h2>
+    <p>Gib deinen Namen ein, damit deine Freunde dich sehen. <strong>Cornern als Lebensstil</strong> heißt: Drinks holen und draußen genießen (explizit nicht in der Bar), mentale Gesundheit stärken und soziale Kontakte pflegen sowie neue Leute kennenlernen.</p>
+    <input type="text" id="nickname-input" placeholder="Dein Name" maxlength="20" />
+    <button id="nickname-save">Los geht's 🍻</button>
+  </div>
+</div>
+
