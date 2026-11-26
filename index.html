@@ -24,7 +24,7 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, set, get, push, update, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getDatabase, ref, set, get, push, update, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, runTransaction, query, orderByChild, startAt, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import { getAuth, signInAnonymously, onAuthStateChanged,
            GoogleAuthProvider, linkWithPopup, signInWithPopup,
            EmailAuthProvider, linkWithCredential,
@@ -96,7 +96,7 @@
 
   // Expose Firebase functions globally for use in the main script
   window.FB = {
-    db, auth, ref, set, get, push, update, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, runTransaction, firebaseReady, authReady,
+    db, auth, ref, set, get, push, update, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, runTransaction, query, orderByChild, startAt, limitToLast, firebaseReady, authReady,
     getAuthUid: () => authUid,
     onAuthChange: (listener) => {
       if (typeof listener !== "function") return () => {};
@@ -2816,6 +2816,51 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
 .acct-uid { margin: 12px 0 0; font-size: 11px; color: var(--fg-dim); line-height: 1.6; word-break: break-all; }
 .acct-uid code { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg); }
 
+/* ====================== COMPLIMENTS ====================== */
+.cmp-card { text-align: left; }
+/* Inside the shared prompt card (.access-prompt h2 / button are big, amber,
+   uppercase): compact, calm chips and a left-aligned title instead. */
+.access-prompt .cmp-title { font-size: 21px; line-height: 1.15; margin: 0 30px 4px 0; text-align: left; }
+.access-prompt .cmp-sub { font-size: 12px; margin: 0 0 10px; text-align: left; }
+.cmp-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.access-prompt .cmp-preset {
+  width: auto; margin: 0; padding: 7px 11px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--fg);
+  border-radius: 999px; font-size: 13px; font-weight: 500; text-align: left; cursor: pointer;
+}
+.access-prompt .cmp-preset:hover { background: rgba(255,255,255,0.08); color: var(--fg); }
+.access-prompt .cmp-preset.active { border-color: var(--amber); background: rgba(232,169,62,0.18); color: var(--fg); }
+#cmp-text {
+  width: 100%; box-sizing: border-box; resize: vertical; min-height: 52px; margin-bottom: 10px;
+  background: var(--bg-3); color: var(--fg); border: 1px solid var(--line); border-radius: 10px;
+  padding: 9px 11px; font-family: "DM Sans", sans-serif; font-size: 15px;
+}
+#cmp-text:focus { outline: none; border-color: var(--amber); }
+#cmp-send:disabled { opacity: 0.45; cursor: default; }
+.cmp-points { font-size: 11px; color: var(--fg-dim); text-align: center; margin: 8px 0 0; }
+.cmp-list { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cmp-item {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center;
+  padding: 9px 11px; border-radius: 12px; background: rgba(232,169,62,0.08); border: 1px solid rgba(232,169,62,0.22);
+}
+.cmp-text { font-size: 14px; grid-column: 1; }
+.cmp-meta { font-size: 11px; color: var(--fg-dim); grid-column: 1; }
+.cmp-thanks, .cmp-thanked { grid-column: 2; grid-row: 1 / span 2; font-size: 12px; white-space: nowrap; }
+.cmp-thanks, .access-prompt .cmp-thanks { width: auto; border: 1px solid var(--line); background: transparent; color: var(--fg); border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 500; cursor: pointer; }
+.cmp-thanked { color: var(--fg-dim); }
+.cmp-empty, .cmp-done, .cmp-hint { font-size: 12px; color: var(--fg-dim); margin: 0 0 8px; }
+.cmp-suggest { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0 8px; font-size: 12px; color: var(--fg-dim); }
+.cmp-suggest > span { width: 100%; }
+.cmp-quick { padding: 6px 10px; }
+.up-section.cmp-section { margin: 4px 0 8px; }
+/* In profile overlays (.access-prompt centres text and turns every button into
+   a big amber one): entries stay left-aligned, names stay small chips. */
+.cmp-item { text-align: left; }
+.access-prompt .cmp-item .people-chip {
+  width: auto; background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: inherit;
+  font: inherit; font-size: 11px; font-weight: 500; padding: 1px 8px; border-radius: 999px; margin: 0;
+}
+.access-prompt .cmp-section h3 { text-align: left; }
 </style>
 </head>
 <body>
@@ -3224,6 +3269,19 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
   </div>
 </div>
 
+<!-- Compliments: say something nice (36-compliments.js) -->
+<div id="compliment-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card user-profile-card cmp-card">
+    <button class="up-close" id="cmp-close" aria-label="Schließen">✕</button>
+    <h2 id="cmp-title" class="cmp-title">💐 Kompliment</h2>
+    <p class="cmp-sub" id="cmp-sub"></p>
+    <div class="cmp-presets" id="cmp-presets"></div>
+    <textarea id="cmp-text" rows="2" maxlength="140"></textarea>
+    <button class="action-btn primary" id="cmp-send" disabled>💐 Senden</button>
+    <p class="cmp-points" id="cmp-points"></p>
+  </div>
+</div>
+
 <!-- QR codes: personal + neutral sticker -->
 <div id="qr-overlay" class="access-prompt" style="display:none;">
   <div class="prompt-card" style="max-width:420px;max-height:88vh;overflow-y:auto;text-align:left;">
@@ -3478,7 +3536,7 @@ const AMENITY_ICONS = {
   wasser: { emoji: "💧", label: "Wasser" },
   dach: { emoji: "☂️", label: "Dach" },
   sport: { emoji: "⚽", label: "Sport" },
-  kiffen: { emoji: "🌿", label: "Kiffen ok" }
+  kiffen: { emoji: "🟢", label: "Grünes Licht" }
 };
 
 /* ====================== TEAMS & LEVELS ====================== */
@@ -3495,7 +3553,7 @@ const CORNER_STATUSES = {
   kiosk: { emoji: "🏪", label: "Kiosk offen" },
   toilet: { emoji: "🚻", label: "Klo in der Nähe" },
   water: { emoji: "🌊", label: "Wasser" },
-  smoke: { emoji: "🌿", label: "Kiffen ok" },
+  smoke: { emoji: "🟢", label: "Grünes Licht" },
   police: { emoji: "🚨", label: "Polizei" }
 };
 
@@ -3930,16 +3988,11 @@ function listenSharedCorners() {
 }
 
 /* ====================== PHOTOS (Firebase) ====================== */
-function listenPhotos() {
+// Only the covers at startup (photoCovers); a corner's photos load with its
+// detail and the full pictures when opened (35-slim-data.js).
+function listenPhotos(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  const photosRef = ref(db, "photos");
-  onValue(photosRef, (snapshot) => {
-    STATE.photos = snapshot.val() || {};
-    refreshAllPhotoGalleries();
-    renderCards();
-    if (_photoCommentsOpen) renderPhotoComments();
-  });
+  listenPhotoCovers(() => retryListenerAfterAuth(listenPhotos, attempt));
 }
 
 function getPhotos(cornerId) {
@@ -3952,6 +4005,7 @@ function getPhotos(cornerId) {
   } catch (e) { return []; }
 }
 
+var _storageUnavailable = false;
 function savePhoto(cornerId, dataUrl, caption) {
   const photo = {
     src: dataUrl,
@@ -3966,16 +4020,28 @@ function savePhoto(cornerId, dataUrl, caption) {
   if (window.FB?.firebaseReady) {
     const { db, ref, push, set } = window.FB;
     const newRef = push(ref(db, "photos/" + cornerId));
-    // Upload the image bytes to Storage and store only the URL in the DB (keeps
-    // the Realtime Database light). Falls back to inline base64 if upload fails.
-    if (window.FB.uploadImage && typeof dataUrl === "string" && dataUrl.startsWith("data:")) {
-      const key = newRef.key || ("p" + Date.now());
-      window.FB.uploadImage(`cornerPhotos/${cornerId}/${key}.jpg`, dataUrl)
-        .then((url) => { photo.src = url; photo.storage = true; set(newRef, photo); })
-        .catch((err) => { console.warn("Storage upload failed, storing inline:", err); set(newRef, photo); });
-    } else {
-      set(newRef, photo);
-    }
+    const key = newRef.key || ("p" + Date.now());
+    // The picture goes to Storage if the project has it, otherwise into its own
+    // node (photoData) — never into the photo list, which every detail loads.
+    // A small thumbnail rides along for the cards and the gallery.
+    return (async () => {
+      const inline = typeof dataUrl === "string" && dataUrl.startsWith("data:");
+      if (inline) {
+        const thumb = await makeThumbDataUrl(dataUrl);
+        if (thumb) photo.thumb = thumb;
+        try {
+          if (!window.FB.uploadImage || _storageUnavailable) throw new Error("storage unavailable");
+          photo.src = await withTimeout(window.FB.uploadImage(`cornerPhotos/${cornerId}/${key}.jpg`, dataUrl), 20000, "photo upload");
+          photo.storage = true;
+        } catch (err) {
+          _storageUnavailable = true;   // no bucket (Storage not activated) — don't wait for it again this session
+          await set(ref(db, `photoData/${cornerId}/${key}`), { src: dataUrl });
+          delete photo.src;
+        }
+      }
+      await set(newRef, photo);
+      return key;
+    })().catch((err) => { console.warn("savePhoto failed:", err); toast(T("Foto konnte nicht gespeichert werden.", "Could not save the photo.")); });
   } else {
     const photos = getPhotos(cornerId);
     photo.id = "photo-" + Date.now();
@@ -4093,7 +4159,7 @@ function renderPhotoGallery(cornerId, container) {
       ).join("");
 
       return `<div class="gallery-item">
-        <img src="${p.src}" alt="Foto" class="gallery-img" data-author="${escapeHtml(p.author)}" style="cursor:pointer;" />
+        <img src="${escapeHtml(p.thumb || p.src || "")}" alt="Foto" class="gallery-img" data-author="${escapeHtml(p.author)}" data-corner="${escapeHtml(cornerId)}" data-photo="${escapeHtml(p.key)}" loading="lazy" style="cursor:pointer;" />
         <div class="gallery-meta">
           <span class="gallery-author">📸 ${escapeHtml(p.author)}</span>
           <span class="gallery-time">${timeAgo(p.time)}</span>
@@ -4157,10 +4223,16 @@ function renderPhotoGallery(cornerId, container) {
     btn.addEventListener("click", () => openPhotoComments(btn.dataset.corner, btn.dataset.photo));
   });
 
-  // Bind lightbox on gallery images
+  // Lightbox: the thumbnail right away, the full picture as soon as it is loaded.
   container.querySelectorAll(".gallery-img").forEach((img) => {
     img.addEventListener("click", () => {
       openLightbox(img.src, img.dataset.author || "");
+      if (!window.FB?.firebaseReady || !img.dataset.photo) return;
+      const shown = img.src;
+      photoFullSrc(img.dataset.corner, img.dataset.photo).then((src) => {
+        const box = $("#lightbox-img");
+        if (src && box && box.src === shown && $("#lightbox")?.classList.contains("open")) box.src = src;
+      });
     });
   });
 }
@@ -4175,7 +4247,7 @@ function renderPhotoComments() {
   if (!p) { body.innerHTML = `<p class="up-empty">${T("Foto nicht mehr da.", "Photo is gone.")}</p>`; return; }
   const list = Object.entries(p.comments || {}).map(([id, c]) => ({ id, ...c })).sort((a, b) => Number(a.at || 0) - Number(b.at || 0));
   body.innerHTML = `
-    <img class="pc-img" src="${escapeHtml(p.src)}" alt="Foto" />
+    <img class="pc-img" src="${escapeHtml(p.thumb || p.src || "")}" alt="Foto" data-pc-full="${escapeHtml(o.cornerId + "/" + o.photoKey)}" />
     <div class="pc-meta">📸 ${p.authorId ? `<button class="people-chip" data-user-profile="${escapeHtml(p.authorId)}">${escapeHtml(p.author || "?")}</button>` : escapeHtml(p.author || "?")} · ${timeAgo(p.time)}${p.caption ? ` · ${escapeHtml(p.caption)}` : ""}</div>
     <div class="pc-list">${list.length ? list.map((c) => `<div class="pc-item">
         <span class="pc-name">${c.by ? `<button class="people-chip" data-user-profile="${escapeHtml(c.by)}">${escapeHtml(c.name || "?")}</button>` : escapeHtml(c.name || "?")}</span>
@@ -4183,6 +4255,8 @@ function renderPhotoComments() {
         <span class="pc-time">${timeAgo(c.at)}</span>
         ${isMyKey(c.by) || STATE.isAdmin ? `<button class="pc-del" data-pc-del="${escapeHtml(c.id)}" title="${T("Löschen", "Delete")}">✕</button>` : ""}
       </div>`).join("") : `<p class="up-empty">${T("Noch keine Kommentare — schreib den ersten!", "No comments yet — write the first!")}</p>`}</div>`;
+  const pcImg = body.querySelector(".pc-img");
+  if (pcImg && !p.src) photoFullSrc(o.cornerId, o.photoKey).then((src) => { if (src && pcImg.isConnected) pcImg.src = src; });
   body.querySelectorAll("[data-pc-del]").forEach((b) => b.addEventListener("click", () => {
     window.FB.remove(window.FB.ref(window.FB.db, `photos/${o.cornerId}/${o.photoKey}/comments/${b.dataset.pcDel}`)).catch(() => toast(T("Löschen ging nicht.", "Could not delete.")));
   }));
@@ -4597,11 +4671,15 @@ function startCooldownDisplay() {
 // "Zähl die check-ins pro Person nur einmal pro Tag" — a second check-in at the
 // same corner on the same day is not stored again.
 function visitedTodayAt(cornerId) {
-  const me = currentUserKey();
   const today = new Date().toDateString();
-  return Object.values(STATE.visits?.[cornerId] || {}).some((v) => v
-    && (v.userId ? (v.userId === me || isMyKey(v.userId)) : v.user === STATE.nickname)
-    && new Date(Number(v.time || 0)).toDateString() === today);
+  if (!window.FB?.firebaseReady) {
+    const me = currentUserKey();
+    return (loadLocalVisits()[cornerId] || []).some((v) => v
+      && (v.userId ? (v.userId === me || isMyKey(v.userId)) : v.user === STATE.nickname)
+      && new Date(Number(v.time || 0)).toDateString() === today);
+  }
+  // My own check-ins (all my logins) — no need for the corner's whole list.
+  return myVisitEntries().some((v) => v.cornerId === cornerId && new Date(v.time).toDateString() === today);
 }
 
 function recordVisit(cornerId) {
@@ -4619,6 +4697,7 @@ function recordVisit(cornerId) {
     const { db, ref, push, set } = window.FB;
     const newRef = push(ref(db, "visits/" + cornerId));
     set(newRef, visit);
+    noteMyVisit(cornerId, newRef.key, visit);   // shows on my profile before the index catches up
     STATE.lastVisitRef = { cornerId, key: newRef.key, at: Date.now() };
     return newRef.key;
   } else {
@@ -4638,14 +4717,11 @@ function loadLocalVisits() {
   } catch (e) { return {}; }
 }
 
-function listenVisits() {
+// Counts per corner at startup (visitStats); a corner's last check-ins load
+// with its detail, my own from my index (35-slim-data.js).
+function listenVisits(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  const visitRef = ref(db, "visits");
-  onValue(visitRef, (snapshot) => {
-    STATE.visits = snapshot.val() || {};
-    refreshAllVisitTrails();
-  });
+  listenVisitStats(() => retryListenerAfterAuth(listenVisits, attempt));
 }
 
 function refreshAllVisitTrails() {
@@ -4661,7 +4737,7 @@ function renderVisitTrail(cornerId, container) {
     : (loadLocalVisits()[cornerId] || []);
 
   const sorted = visits.sort((a, b) => b.time - a.time).slice(0, 8);
-  const totalVisits = visits.length;
+  const totalVisits = Math.max(visits.length, getVisitCount(cornerId));
 
   if (sorted.length === 0) {
     container.innerHTML = `
@@ -4765,7 +4841,7 @@ function bindDetailOverlay() {
 
 function getVisitCount(cornerId) {
   if (window.FB?.firebaseReady) {
-    return Object.keys(STATE.visits?.[cornerId] || {}).length;
+    return Number(STATE.visitStats?.[cornerId]?.n || 0);
   }
   return (loadLocalVisits()[cornerId] || []).length;
 }
@@ -6091,6 +6167,7 @@ function applyIncomingLinks() {
   if (joinId && /^[A-Za-z0-9_-]{1,128}$/.test(joinId)) STATE.pendingJoin = { id: joinId, here: params.get("here") === "1", name: sanitizeInviteName(params.get("n") || "").slice(0, 30) };
   const profileKey = (params.get("profile") || "").trim();
   if (profileKey && /^[A-Za-z0-9_-]{1,128}$/.test(profileKey)) STATE.pendingProfileKey = profileKey;
+  if (profileKey && params.get("focus") === "compliments") STATE.pendingProfileFocus = "compliments";   // push about a compliment
 }
 
 function clearHandledQueryParam(name) {
@@ -6605,7 +6682,7 @@ function matrixNextSteps(aura, karma) {
     const need = Math.max(1, xpForLevel(MATRIX_KARMA_LEVELS[row]) - Number(karma || 0));
     const cell = MATRIX_CELLS[row + 1][col];
     const runs = Math.ceil(need / SUPPLY_KARMA_PER_CONFIRM);
-    steps.push(`↑ ${cell.emoji} <strong>${cell.name}</strong>: ${T("noch", "another")} <strong>${need} Karma</strong> <span class="mx-how">(${T(`z. B. ${runs}× bestätigter Nachschub oder ein paar gut bewertete Gossip-Storys`, `e.g. ${runs}× confirmed supplies or a few well-rated gossip stories`)})</span>`);
+    steps.push(`↑ ${cell.emoji} <strong>${cell.name}</strong>: ${T("noch", "another")} <strong>${need} Karma</strong> <span class="mx-how">(${T(`z. B. ${runs}× bestätigter Nachschub, ein paar gut bewertete Gossip-Storys — oder Komplimente von den anderen`, `e.g. ${runs}× confirmed supplies, a few well-rated gossip stories — or compliments from the others`)})</span>`);
   }
   if (col < 2) {
     const need = Math.max(1, xpForLevel(MATRIX_AURA_LEVELS[col]) - Number(aura || 0));
@@ -6639,10 +6716,11 @@ function buildRewardGuideHtml() {
   return `<div class="rg">
     <div class="rg-streams">
       <div class="rg-stream aura"><div class="rg-k">✨ Aura</div><div class="rg-d">${T("= was <strong>du</strong> tust: da sein, mitmachen. Bestimmt dein Level.", "= what <strong>you</strong> do: show up, join in. Drives your level.")}</div></div>
-      <div class="rg-stream karma"><div class="rg-k">🎁 Karma</div><div class="rg-d">${T("= was <strong>andere</strong> dir geben: bestätigter Nachschub &amp; Gossip-Punkte.", "= what <strong>others</strong> give you: confirmed supplies &amp; gossip points.")}</div></div>
+      <div class="rg-stream karma"><div class="rg-k">🎁 Karma</div><div class="rg-d">${T("= was <strong>andere</strong> dir geben: Komplimente, bestätigter Nachschub &amp; Gossip-Punkte.", "= what <strong>others</strong> give you: compliments, confirmed supplies &amp; gossip points.")}</div></div>
     </div>
     <h4 class="rg-h karma">🎁 ${T("Karma bekommen", "Earning karma")}</h4>
     <table class="rg-table">
+      ${row("💐", "Kompliment bekommen · Danke für dein Kompliment", "Got a compliment · thanks for your compliment", `+${COMPLIMENT_KARMA} · +${COMPLIMENT_THANKS_KARMA}`)}
       ${row("🛒", "Nachschub mitgebracht — pro Person, die es bestätigt", "Brought supplies — per person who confirms", `+${SUPPLY_KARMA_PER_CONFIRM}`)}
       ${row("🗣️", "Gossip-Story erzählt — pro Person am Corner, die bewertet", "Told a gossip story — per person at the corner who rates it", "+2…+20")}
       ${row("📅", "Cornerdate geplant — pro Zusage · pro Gast, der wirklich kommt", "Planned a cornerdate — per yes · per guest who really comes", `+${CORNERDATE_JOIN_KARMA} · +${CORNERDATE_ARRIVE_KARMA}`)}
@@ -6656,6 +6734,7 @@ function buildRewardGuideHtml() {
       ${row("🤝", "Mit jemandem am Corner getroffen (pro Person)", "Met someone at a corner (per person)", "+8")}
       ${row("⚔️", "Corner eingenommen (3 aus deinem Team vor Ort)", "Corner captured (3 of your team there)", "+25")}
       ${row("🗣️", "Gossip erzählt / bewertet", "Told / rated gossip", "+5 / +2")}
+      ${row("💐", `Kompliment gemacht (bis ${COMPLIMENT_AURA_PER_DAY}× am Tag) · Danke gesagt`, `Paid a compliment (up to ${COMPLIMENT_AURA_PER_DAY}× a day) · said thanks`, `+${COMPLIMENT_AURA} · +${COMPLIMENT_THANKS_AURA}`)}
       ${row("📅", "Cornerdate geplant (bis 3× am Tag) · zugesagt · wirklich gekommen", "Planned a cornerdate (up to 3× a day) · said yes · really came", `+${CORNERDATE_PLAN_AURA} · +${CORNERDATE_JOIN_AURA} · +${CORNERDATE_SHOWUP_AURA}`)}
       ${row("☂️", "Corner als überdacht / nass eingeschätzt", "Rated a corner as covered / wet", "+2")}
       ${row("➕", "Neuen Spot eingetragen", "Added a new spot", "+50")}
@@ -6718,7 +6797,7 @@ function undoCheckin(cornerId) {
     if (g.today) {
       try { const log = JSON.parse(localStorage.getItem("cg.checkinDays") || "{}"); delete log[cornerId]; localStorage.setItem("cg.checkinDays", JSON.stringify(log)); } catch (e) {}
     }
-    if (g.visitKey && window.FB?.firebaseReady) window.FB.remove(window.FB.ref(window.FB.db, `visits/${cornerId}/${g.visitKey}`)).catch(() => {});
+    if (g.visitKey && window.FB?.firebaseReady) { forgetMyVisit(g.visitKey); window.FB.remove(window.FB.ref(window.FB.db, `visits/${cornerId}/${g.visitKey}`)).catch(() => {}); }
   }
   STATE.lastCheckinGrant = null;
   STATE.lastVisitRef = null;
@@ -8062,7 +8141,8 @@ async function ensureOwnProfileLock() {
 
 // Last time a profile earned anything — helps to recognise "that was me".
 function lastRewardTime(entry) {
-  return rewardHistoryList(entry).reduce((max, h) => Math.max(max, Number(h && h.time) || 0), 0);
+  // The slim copy carries it as `last`; full entries still have the history.
+  return rewardHistoryList(entry).reduce((max, h) => Math.max(max, Number(h && h.time) || 0), Number(entry && entry.last) || 0);
 }
 function sinceLabel(ms) {
   if (!ms) return "";
@@ -8119,8 +8199,8 @@ async function openClaimOverlay(opts = {}) {
   if (!window.FB?.firebaseReady) { list.innerHTML = `<p class="claim-empty" style="color:var(--fg-dim);font-size:13px;">${T("Nur online verfügbar.", "Only available online.")}</p>`; return; }
   list.innerHTML = `<p class="claim-empty" style="color:var(--fg-dim);font-size:13px;">${T("Lade Profile…", "Loading profiles…")}</p>`;
   try {
-    const data = (await readOnce("points", 10000)) || {};
-    STATE.points = { ...(STATE.points || {}), ...data };
+    const data = await readRewardIndex(10000);
+    mergeRewardIndex(data);
     const myRoot = myRootKey();
     const roots = new Set(Object.keys(data).map((k) => profileRoot(k)));
     const rows = [...roots]
@@ -8225,19 +8305,14 @@ function watchOwnProfileLock() {
   }, () => { _ownLockUnsub = null; });
 }
 
-/* One-shot read that cannot hang forever. A plain get() was seen to stall
-   right after listeners had been refused (no access yet) and re-attached;
-   a one-shot listener is raced against it, with a time limit on top.   */
+/* One-shot read that cannot hang forever: a one-shot listener with a time
+   limit. A plain get() was seen to stall right after listeners had been
+   refused (no access yet) and re-attached. Racing get() against the one-shot
+   listener on the same path (as before) leaves the SDK with an orphaned
+   server listen — any later listener on that path then fails with
+   "listen() called twice" — so it is the listener alone now.            */
 function readOnce(path, ms = 7000) {
-  const { db, ref, get, onValue } = window.FB;
-  return new Promise((resolve, reject) => {
-    let done = false, fails = 0;
-    const ok = (v) => { if (!done) { done = true; clearTimeout(timer); resolve(v); } };
-    const bad = (err) => { if (!done && ++fails >= 2) { done = true; clearTimeout(timer); reject(err); } };
-    const timer = setTimeout(() => { if (!done) { done = true; reject(new Error("read timeout: " + path)); } }, ms);
-    get(ref(db, path)).then((snap) => ok(snap.val()), bad);
-    try { onValue(ref(db, path), (snap) => ok(snap.val()), bad, { onlyOnce: true }); } catch (err) { bad(err); }
-  });
+  return slimGet(path, ms).then((snap) => snap.val());
 }
 // Same for writes: never wait forever on a stalled acknowledgement.
 function withTimeout(promise, ms, label) {
@@ -8301,14 +8376,19 @@ function identityRewardTotal(kind, key, includeDeviceKeys = false) {
   const root = profileRoot(key);
   const keys = identityKeysOf(root);
   if (includeDeviceKeys || root === myRootKey()) myIdentityKeys().forEach((k) => keys.add(k));
-  const entries = [...keys].map((k) => store[k]).filter((e) => e && Number(e.total || 0) > 0)
-    .sort((a, b) => Number(b.total || 0) - Number(a.total || 0));
+  const entries = [...keys].map((k) => ({ k, e: store[k] })).filter((x) => x.e && Number(x.e.total || 0) > 0)
+    .sort((a, b) => Number(b.e.total || 0) - Number(a.e.total || 0));
+  // The copy check compares histories. The slim copy has none, so with more
+  // than one login the full entries are fetched once (35-slim-data.js).
+  if (entries.length > 1) requestFullRewardEntries(kind, entries.filter((x) => !x.e.history).map((x) => x.k));
+  const withHistory = (x) => (x.e.history ? x.e : fullRewardEntry(kind, x.k));
   const counted = [];
   let total = 0;
-  entries.forEach((e) => {
-    if (counted.some((c) => rewardLooksCopied(e, c))) return;
-    counted.push(e);
-    total += Number(e.total || 0);
+  entries.forEach((x) => {
+    const h = withHistory(x);
+    if (h && counted.some((c) => c && rewardLooksCopied(h, c))) return;
+    counted.push(h);
+    total += Number(x.e.total || 0);
   });
   return total;
 }
@@ -8364,9 +8444,7 @@ async function linkToProfile(targetKey, opts = {}) {
   const me = currentUserKey();
   const uid = window.FB.getAuthUid?.() || "";
   if (!me || !uid) { toast(T("Bitte zuerst Zugang oder Login.", "Please get access or log in first.")); return false; }
-  let all = STATE.points || {};
-  try { all = (await readOnce("points", 8000)) || all; } catch (e) { /* use what we have */ }
-  STATE.points = { ...(STATE.points || {}), ...all };
+  try { mergeRewardIndex(await readRewardIndex(8000)); } catch (e) { /* use what we have */ }
   const root = profileRoot(targetKey, STATE.points);
   if (!root) return false;
   if (root === me || profileRoot(me) === root) {
@@ -8401,7 +8479,7 @@ async function linkToProfile(targetKey, opts = {}) {
     const ids = Object.keys(a);
     if (ids.length) { STATE.achievements = Array.from(new Set([...(STATE.achievements || []), ...ids])); saveAchievements(); }
   } catch (e) { /* achievements are optional */ }
-  const visited = [...identityKeysOf(root)].flatMap((k) => visitedCornersForKey(k));
+  const visited = (await Promise.all([...identityKeysOf(root)].map((k) => visitedCornersOf(k, "")))).flat();
   if (visited.length) { STATE.visitedCorners = Array.from(new Set([...(STATE.visitedCorners || []), ...visited])); saveVisitedCorners(); }
   $("#claim-overlay").style.display = "none";
   $("#nickname-prompt").style.display = "none";
@@ -8447,7 +8525,7 @@ async function linkMyEarlierLogins() {
   _linkingLogins = true;
   let linked = 0, failed = false;
   try {
-    const all = await readOnce("points", 8000).catch(() => { failed = true; return null; });
+    const all = await readRewardIndex(8000).catch(() => { failed = true; return null; });   // totals + links are enough
     const cur = currentUserKey();
     for (const key of (all ? myKeys() : [])) {
       if (!key || key === cur || /[.#$\[\]\/]/.test(key)) continue;
@@ -8490,25 +8568,6 @@ function profileTwinBannerHtml() {
 
 function openAdminSection(sel) {
   renderAdminPanel().then(() => setTimeout(() => $(sel)?.scrollIntoView({ behavior: "smooth", block: "start" }), 150));
-}
-
-// Reconstruct which corners a nickname has visited from the shared visits node.
-function visitedCornersForNickname(nickname) {
-  if (!nickname) return [];
-  const result = [];
-  const visits = STATE.visits || {};
-  for (const [cornerId, entries] of Object.entries(visits)) {
-    const list = entries ? Object.values(entries) : [];
-    if (list.some((v) => v && v.user === nickname)) result.push(cornerId);
-  }
-  return result;
-}
-function visitedCornersForKey(key) {
-  const result = [];
-  Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
-    if (Object.values(entries || {}).some((v) => v && v.userId === key)) result.push(cornerId);
-  });
-  return result;
 }
 
 // Two entries of the same person: add them up — unless one is a copy of the
@@ -8592,7 +8651,7 @@ async function claimExistingProfile(oldKey, opts = {}) {
     saveKarmaPoints();
     // Visited corners: from the old key's check-ins (and, for very old
     // check-ins without a user id, from the nickname).
-    const claimedVisited = Array.from(new Set([...visitedCornersForKey(oldKey), ...visitedCornersForNickname(nickname)]));
+    const claimedVisited = await visitedCornersOf(oldKey, nickname);
     if (claimedVisited.length) {
       STATE.visitedCorners = Array.from(new Set([...(STATE.visitedCorners || []), ...claimedVisited]));
       saveVisitedCorners();
@@ -8608,10 +8667,9 @@ async function claimExistingProfile(oldKey, opts = {}) {
     if (team && STATE.team === team) updates[`teams/${newKey}`] = oldTeam;
     // Re-attribute the check-in history (profile map, history playback) and the
     // "met each other" counts to the new login.
-    Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
-      Object.entries(entries || {}).forEach(([vid, v]) => {
-        if (v && v.userId === oldKey) updates[`visits/${cornerId}/${vid}/userId`] = newKey;
-      });
+    // (the Cloud Function then moves them to the new login's index)
+    Object.entries(await visitIdsOfKey(oldKey)).forEach(([vid, cornerId]) => {
+      updates[`visits/${cornerId}/${vid}/userId`] = newKey;
     });
     Object.entries(STATE.encounters || {}).forEach(([pairKey, e]) => {
       const users = (e && e.users) || {};
@@ -8942,10 +9000,19 @@ function freshFriends() {
   return Object.values(byPerson);
 }
 
+// Only who was seen recently (query on lastSeen, indexed in the rules) — not
+// every login that ever opened the app. The window moves on every half hour.
+var _presenceUnsub = null;
+var _presenceRefreshTimer = null;
+const PRESENCE_QUERY_WINDOW_MS = CHECKIN_STICKY_MS + 30 * 60 * 1000;
 function listenFriendPresence() {
   if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "presence"), (snapshot) => {
+  const { db, ref, onValue, query, orderByChild, startAt } = window.FB;
+  if (_presenceUnsub) { try { _presenceUnsub(); } catch (e) { /* already gone */ } }
+  clearTimeout(_presenceRefreshTimer);
+  _presenceRefreshTimer = setTimeout(listenFriendPresence, 30 * 60 * 1000);
+  const recent = query(ref(db, "presence"), orderByChild("lastSeen"), startAt(Date.now() - PRESENCE_QUERY_WINDOW_MS));
+  _presenceUnsub = onValue(recent, (snapshot) => {
     const data = snapshot.val() || {};
     const oldFriends = { ...STATE.friends };
     STATE.friends = {};
@@ -9595,13 +9662,10 @@ function renderCornerVotingSection(cornerId, container) {
 }
 
 function getCornerCoverPhoto(cornerId) {
-  let photos = [];
-  if (window.FB?.firebaseReady) {
-    const raw = STATE.photos?.[cornerId] || {};
-    photos = Object.values(raw);
-  } else {
-    photos = getPhotos(cornerId) || [];
-  }
+  // Online: the cover the Cloud Function picked (small thumbnail or Storage
+  // URL) — the corner's photos themselves are only loaded in its detail.
+  if (window.FB?.firebaseReady) return coverSrcOf(cornerId) || localStorage.getItem("cg.photo." + cornerId);
+  const photos = getPhotos(cornerId) || [];
   if (photos.length) {
     const ranked = photos.map((photo) => {
       const ratings = Object.values(photo.ratings || {});
@@ -12175,7 +12239,7 @@ const SPOT_AMENITIES = [
   { key: "dach", emoji: "☂️", de: "Dach", en: "Roof" },
   { key: "sport", emoji: "⚽", de: "Sport", en: "Sports" },
   { key: "kiosk", emoji: "🏪", de: "Kiosk", en: "Kiosk" },
-  { key: "kiffen", emoji: "🌿", de: "Kiffen ok", en: "Weed ok" }
+  { key: "kiffen", emoji: "🟢", de: "Grünes Licht", en: "Green light" }
 ];
 const ACVV_UNTIL = new Date(2027, 0, 15).getTime();
 const HBF_ALCOHOL_UNTIL = new Date(2028, 4, 1).getTime();   // "tritt am 01.05.2028 außer Kraft"
@@ -12184,8 +12248,8 @@ const HBF_ZONE_STREETS = ["Bahnhofplatz", "Arnulfstraße", "Bayerstraße", "Sch�
 // Outside Germany (as of November 2026): Austria keeps cannabis under the
 // Suchtmittelgesetz; in Italy personal use is not legal either (fines).
 const COUNTRY_WEED_RULES = {
-  AT: { de: "Österreich: Kiffen ist verboten (Suchtmittelgesetz)", en: "Austria: weed is illegal (Narcotics Act)" },
-  IT: { de: "Italien: nicht legal — auch Eigenkonsum wird bestraft (Verwaltungsstrafen)", en: "Italy: not legal — personal use is fined too" }
+  AT: { de: "in Österreich (Gesetz)", en: "in Austria (law)" },
+  IT: { de: "in Italien (auch privat gibt es Strafen)", en: "in Italy (fines even in private)" }
 };
 const RULE_SOURCES = {
   kcang: "https://www.gesetze-im-internet.de/kcang/__5.html",
@@ -12320,8 +12384,11 @@ function weedVerdict(res, now = Date.now()) {
   }
   if (res.acvv && now < ACVV_UNTIL) return { v: "no", why: [T("Verbotszone der Stadt am Alten Botanischen Garten", "City ban zone at the Alter Botanischer Garten")] };
   if (res.kcang.length) return { v: "no", why: res.kcang.map((k) => `${k.place}${k.name ? ` „${k.name}“` : ""} ${T("in", "at")} ${formatDistance(k.d)}`) };
-  if (res.pedestrian) return { v: "night", why: [T("Fußgängerzone: von 7 bis 20 Uhr verboten", "Pedestrian zone: banned from 7 am to 8 pm")] };
+  if (res.pedestrian) return { v: "night", why: [T("Fußgängerzone (tagsüber 7–20 Uhr nicht)", "pedestrian zone (not 7 am–8 pm)")] };
   return { v: "ok", why: [T("keine Schule, Kita, Spielplatz oder Sportplatz im Umkreis von 100 m", "no school, daycare, playground or sports ground within 100 m")] };
+}
+function weedVerdictEmoji(v) {
+  return v === "ok" ? "🟢" : v === "night" ? "🌙" : v === "?" ? "❔" : "🔴";
 }
 function weedAllowedNow(verdict, d = new Date()) {
   if (verdict.v === "ok") return true;
@@ -12334,11 +12401,13 @@ function spotRuleLines(res) {
   if (!res) return [];
   const out = [];
   const w = weedVerdict(res);
-  const weedText = w.v === "ok" ? T("Kiffen erlaubt", "Weed allowed") : w.v === "night" ? T("Kiffen nur 20–7 Uhr", "Weed only 8 pm–7 am") : w.v === "?" ? T("Kiffen", "Weed") : T("Kiffen verboten", "No weed");
-  out.push({ emoji: w.v === "ok" ? "🌿" : w.v === "night" ? "🕗" : w.v === "?" ? "❔" : "🚫", text: `${weedText} — ${w.why.join(", ")}`, src: w.abroad ? "" : (res.acvv ? RULE_SOURCES.acvv : RULE_SOURCES.kcang) });
+  // Said with a code word ("grünes Licht"): it matters at the corner, it
+  // doesn't need to shout.
+  const weedText = w.v === "ok" ? T("Grünes Licht", "Green light") : w.v === "night" ? T("Grünes Licht erst ab 20 Uhr", "Green light only from 8 pm") : w.v === "?" ? T("Grünes Licht: unklar", "Green light: unclear") : T("Kein grünes Licht", "No green light");
+  out.push({ emoji: weedVerdictEmoji(w.v), text: `${weedText} — ${w.why.join(", ")}`, src: w.abroad ? "" : (res.acvv ? RULE_SOURCES.acvv : RULE_SOURCES.kcang) });
   if (res.acvv && Date.now() < ACVV_UNTIL) out.push({ emoji: "🍺", text: T("Alkohol ganztägig verboten (Verordnung der Stadt, Alter Botanischer Garten / Karl-Stützel-Platz, bis 14.01.2027)", "Alcohol banned all day (city ordinance, Alter Botanischer Garten / Karl-Stützel-Platz, until 14 Jan 2027)"), src: RULE_SOURCES.acvv });
   if (res.hbf && Date.now() < HBF_ALCOHOL_UNTIL) out.push({ emoji: "🍺", text: T("Vermutlich in der Alkoholverbotszone am Hauptbahnhof (ganztägig) — genaue Straßen in der Verordnung", "Probably inside the alcohol ban zone at the Hauptbahnhof (all day) — exact streets in the ordinance"), src: RULE_SOURCES.hbf });
-  if (res.biergarten) out.push({ emoji: "🍺", text: T(`Neben „${res.biergarten}“: im Biergarten selbst ist Kiffen in Bayern verboten`, `Next to “${res.biergarten}”: inside beer gardens weed is banned in Bavaria`) });
+  if (res.biergarten) out.push({ emoji: "🍺", text: T(`Neben „${res.biergarten}“: im Biergarten selbst kein grünes Licht (Bayern)`, `Next to “${res.biergarten}”: no green light inside the beer garden (Bavaria)`) });
   res.parks.filter((p) => !p.square).forEach((p) => {
     if (!p.hours) return;
     const open = osmOpenNow(p.hours);
@@ -12502,7 +12571,7 @@ async function renderSpotCheckBlock(corner, box) {
     const w = weedVerdict(res);
     const weedNow = weedAllowedNow(w);
     box.innerHTML = `<div class="spot-detail-amen">${have.map((a) => `<span class="spot-pill">${a.emoji} ${escapeHtml(T(a.de, a.en))}</span>`).join("")}
-        ${w.v === "?" ? "" : `<span class="spot-pill ${weedNow ? "ok" : "no"}">${w.v === "ok" ? "🌿" : w.v === "night" ? "🕗" : "🚫"} ${w.v === "ok" ? T("Kiffen ok", "Weed ok") : w.v === "night" ? T("Kiffen 20–7 Uhr", "Weed 8 pm–7 am") : T("Kein Kiffen", "No weed")}</span>`}</div>
+        ${w.v === "?" ? "" : `<span class="spot-pill ${weedNow ? "ok" : "no"}">${weedVerdictEmoji(w.v)} ${w.v === "ok" ? T("Grünes Licht", "Green light") : w.v === "night" ? T("Grünes Licht ab 20 Uhr", "Green light from 8 pm") : T("Kein grünes Licht", "No green light")}</span>`}</div>
       ${spotRuleLinesHtml(res)}`;
   } catch (err) {
     if (box.isConnected) box.innerHTML = `<div class="ci-small">${T("Regeln gerade nicht abrufbar (OpenStreetMap).", "Rules not available right now (OpenStreetMap).")}</div>`;
@@ -12514,7 +12583,7 @@ async function renderSpotCheckBlock(corner, box) {
    "Wie ist's bei den bisherigen Cornern?" — every corner gets the same
    automatic check as a new one. The first phone that checks a corner stores
    the result in cornerFacts/<id> (refreshed after 30 days), so the list can
-   show 🚻 💧 ☂️ ⚽ 🏪 🌿 on every card and filter by it, without every phone
+   show 🚻 💧 ☂️ ⚽ 🏪 🟢 on every card and filter by it, without every phone
    asking OpenStreetMap again. Phones fill in missing corners slowly in the
    background (one every few seconds, a dozen per session at most). */
 const CORNER_FACTS_VERSION = 1;
@@ -12597,9 +12666,9 @@ function cornerEmojiRowHtml(c) {
     return `<span class="card-amen" title="${escapeHtml(T(a.de, a.en))}">${a.emoji}</span>`;
   });
   const weed = cornerWeed(c);
-  if (weed === "ok") items.push(`<span class="card-amen" title="${T("Kiffen erlaubt", "Weed allowed")}">🌿</span>`);
-  else if (weed === "night") items.push(`<span class="card-amen" title="${T("Kiffen nur 20–7 Uhr", "Weed only 8 pm–7 am")}">🌿<small>20–7</small></span>`);
-  else if (weed === "no") items.push(`<span class="card-amen no" title="${T("Kiffen hier verboten", "No weed here")}">🚫🌿</span>`);
+  // Only the good news on the card ("grünes Licht"); a "no" is in the detail.
+  if (weed === "ok") items.push(`<span class="card-amen" title="${T("Grünes Licht", "Green light")}">🟢</span>`);
+  else if (weed === "night") items.push(`<span class="card-amen" title="${T("Grünes Licht ab 20 Uhr", "Green light from 8 pm")}">🟢<small>20–7</small></span>`);
   return items.join("");
 }
 function refreshCardAmenities() {
@@ -12984,6 +13053,7 @@ function cornerOriginHtml(c) {
 function openDetail(cornerId) {
   const c = getAllCorners().find((x) => x.id === cornerId);
   if (!c) return;
+  ensureCornerDetailData(cornerId);   // photos, last check-ins, full cover — only for this corner
   if (detailXpCornerId !== cornerId) addXp(2, "Spot-Detail angesehen");
   detailXpCornerId = cornerId;
   const overlay = $("#detail-overlay");
@@ -13012,7 +13082,7 @@ function openDetail(cornerId) {
     <div class="detail-origin">${cornerOriginHtml(c)}</div>
     ${capturedHtml}
     ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("gerade hier", "here now")}: ${peopleAtCornerDetailed(c.id).map((p) => p.id ? `<button class="people-chip" data-user-profile="${escapeHtml(p.id)}">${escapeHtml(p.label)}</button>` : escapeHtml(p.label)).join(" ")}</div>` : ""}
-    ${peopleMessageTargets.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">${peopleMessageTargets.map((friend) => `<button class="action-btn" data-dm-user="${friend.id}">💬 ${escapeHtml(friend.nickname || friend.name || friend.id)}</button>`).join("")}</div>` : ""}
+    ${peopleMessageTargets.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">${peopleMessageTargets.map((friend) => `<button class="action-btn" data-dm-user="${friend.id}">💬 ${escapeHtml(friend.nickname || friend.name || friend.id)}</button><button class="action-btn cmp-quick" data-compliment-to="${escapeHtml(friend.id)}" data-compliment-name="${escapeHtml(friend.nickname || friend.name || "")}" title="${T("Kompliment machen", "Pay a compliment")}">💐</button>`).join("")}</div>` : ""}
     <div class="gossip-section" data-corner-id="${c.id}"></div>
     <div class="detail-quick-actions">
       <button class="detail-quick-btn" data-scroll-target=".corner-info-section">🌤️ ${T("Regeln · Sonne · Kiosk", "Rules · Sun · Kiosk")}</button>
@@ -13279,18 +13349,18 @@ async function saveNewSpot() {
 
 function openLightbox(src, author) { $("#lightbox-img").src = src; $("#lightbox-author").textContent = author ? `📸 von ${author}` : ""; $("#lightbox").classList.add("open"); addXp(2, "Lightbox"); }
 
+// Totals and names of everyone from the slim copy, my own logins in full
+// (35-slim-data.js). A listener attached before sign-in is refused; try again
+// once signed in.
 function listenPoints(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  // A listener attached before sign-in is refused; try again once signed in.
-  onValue(ref(db, "points"), (snapshot) => { STATE.points = snapshot.val() || {}; ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); scheduleStartCircles(); },
+  listenRewardStore("aura", () => { ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); scheduleStartCircles(); deferSlim("myVisits", watchMyVisits); deferSlim("myCompliments", watchMyCompliments); },
     () => retryListenerAfterAuth(listenPoints, attempt));
 }
 
 function listenKarmaPoints(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "karmaPoints"), (snapshot) => { STATE.karmaPoints = snapshot.val() || {}; ensurePointIdentity(false); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); },
+  listenRewardStore("karma", () => { ensurePointIdentity(false); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); },
     () => retryListenerAfterAuth(listenKarmaPoints, attempt));
 }
 
@@ -13474,19 +13544,14 @@ var _pmapIndex = null;        // visits shown (null = all)
 // entry per corner and day (repeated check-ins the same day count once), and
 // old check-ins without a team get the team I had back then.
 function myVisitLog() {
-  const me = currentUserKey();
   const byId = {};
   getAllCorners().forEach((c) => { byId[c.id] = c; });
   const raw = [];
-  Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
-    const corner = byId[cornerId];
+  // From my own check-in index (all my logins) — not the whole visits node.
+  myVisitEntries().forEach((v) => {
+    const corner = byId[v.cornerId];
     if (!corner || typeof corner.lat !== "number" || typeof corner.lng !== "number") return;
-    Object.values(entries || {}).forEach((v) => {
-      if (!v) return;
-      const mine = v.userId ? (v.userId === me || isMyKey(v.userId)) : v.user === STATE.nickname;
-      if (!mine) return;
-      raw.push({ cornerId, name: corner.name, area: corner.area || "", lat: corner.lat, lng: corner.lng, team: v.team || teamAtTime(Number(v.time || 0)), time: Number(v.time || 0) });
-    });
+    raw.push({ cornerId: v.cornerId, name: corner.name, area: corner.area || "", lat: corner.lat, lng: corner.lng, team: v.team || teamAtTime(v.time), time: v.time });
   });
   raw.sort((a, b) => a.time - b.time);
   const seen = new Set();
@@ -13779,14 +13844,13 @@ function visitLogFor(key, nickname) {
   const byId = {};
   getAllCorners().forEach((c) => { byId[c.id] = c; });
   const log = [];
-  Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
-    const corner = byId[cornerId];
+  // That person's check-in index, loaded when the profile opens (null = still loading).
+  const entries = personVisitEntries(key, nickname);
+  if (entries === null) return null;
+  entries.forEach((v) => {
+    const corner = byId[v.cornerId];
     if (!corner || typeof corner.lat !== "number" || typeof corner.lng !== "number") return;
-    Object.values(entries || {}).forEach((v) => {
-      if (!v) return;
-      if (!(v.userId ? v.userId === key : (nickname && v.user === nickname))) return;
-      log.push({ cornerId, name: corner.name, area: corner.area || "", lat: corner.lat, lng: corner.lng, team: v.team || "", time: Number(v.time || 0) });
-    });
+    log.push({ cornerId: v.cornerId, name: corner.name, area: corner.area || "", lat: corner.lat, lng: corner.lng, team: v.team || "", time: v.time });
   });
   // one check-in per corner and day, like on my own profile
   const seen = new Set();
@@ -13854,7 +13918,9 @@ function renderUserProfile(key, achievements) {
   const karmaLv = getLevel(info.karma).level;
   const tier = getLevelTier(auraLv);
   const matrix = getMatrixIdentity(info.aura, info.karma);
-  const log = visitLogFor(key, info.nickname);
+  const logRaw = visitLogFor(key, info.nickname);
+  const visitsLoading = logRaw === null;   // their check-ins are still on the way
+  const log = logRaw || [];
   const agg = Object.values(aggregateVisits(log)).sort((a, b) => b.count - a.count || b.last - a.last);
   const corner = info.visible && info.presence?.atCorner ? getAllCorners().find((c) => c.id === info.presence.atCorner) : null;
   const avail = AVAILABILITY[info.presence?.status] || null;
@@ -13892,14 +13958,15 @@ function renderUserProfile(key, achievements) {
     <div class="up-stats">
       <div><strong>${info.aura}</strong><span>✨ Aura · Lv.${auraLv}</span></div>
       <div><strong>${info.karma}</strong><span>🎁 Karma · Lv.${karmaLv}</span></div>
-      <div><strong>${log.length}</strong><span>🍻 Check-ins</span></div>
-      <div><strong>${agg.length}</strong><span>📍 Corners</span></div>
+      <div><strong>${visitsLoading ? "…" : log.length}</strong><span>🍻 Check-ins</span></div>
+      <div><strong>${visitsLoading ? "…" : agg.length}</strong><span>📍 Corners</span></div>
     </div>
     <div class="up-matrix">${matrix.emoji} <strong>${escapeHtml(matrix.name)}</strong> — ${escapeHtml(matrix.desc)}</div>
     ${together.length ? `<div class="up-together">${together.join(" · ")}</div>` : ""}`;
   $("#up-bottom").innerHTML = `
     ${agg.length ? `<h3>⭐ ${T("Lieblings-Corner", "Favourite corners")}</h3>
       <div class="up-favs">${agg.slice(0, 3).map((e) => `<button class="up-fav" data-up-corner="${escapeHtml(e.cornerId)}"><span>${escapeHtml(e.name)}</span><span class="up-fav-n">${e.count}x</span></button>`).join("")}</div>` : `<p class="up-empty">${T("Noch keine Check-ins.", "No check-ins yet.")}</p>`}
+    ${publicComplimentsHtml(key)}
     ${gossips.length ? `<h3>🗣️ ${T("Eure Gossips", "Your gossips")}</h3>${gossips.slice(0, 5).map((g) => gossipLogRowHtml(g)).join("")}` : ""}
     ${ach.length ? `<h3>🏆 Achievements (${ach.length})</h3><div class="up-ach">${ach.slice(0, 24).map(([id, a]) => `<span title="${escapeHtml(a?.name || id)}">${escapeHtml(a?.emoji || "🏆")}</span>`).join("")}</div>` : ""}
     <div class="up-actions">
@@ -13939,6 +14006,9 @@ async function openUserProfile(key) {
   const overlay = $("#user-profile-overlay");
   if (!overlay) return;
   STATE.viewedProfileKey = key;
+  STATE.viewedProfileAchievements = null;
+  forgetPersonVisits(key);
+  forgetPersonCompliments(profileRoot(key));
   $("#up-close").onclick = closeUserProfile;
   overlay.onclick = (e) => { if (e.target === overlay) closeUserProfile(); };
   overlay.style.display = "flex";
@@ -13948,8 +14018,17 @@ async function openUserProfile(key) {
   if (!window.FB?.firebaseReady) return;
   try {
     const snap = await window.FB.get(window.FB.ref(window.FB.db, "achievements/" + key));
-    if (STATE.viewedProfileKey === key && overlay.style.display === "flex") renderUserProfile(key, snap.val() || {});
+    if (STATE.viewedProfileKey === key && overlay.style.display === "flex") {
+      STATE.viewedProfileAchievements = snap.val() || {};
+      renderUserProfile(key, STATE.viewedProfileAchievements);
+    }
   } catch (err) { /* achievements are optional */ }
+}
+
+// Their check-ins arrived (loaded on demand): draw the profile again.
+function refreshOpenPublicProfile() {
+  const overlay = $("#user-profile-overlay");
+  if (overlay && overlay.style.display === "flex" && STATE.viewedProfileKey) renderUserProfile(STATE.viewedProfileKey, STATE.viewedProfileAchievements || null);
 }
 
 function closeUserProfile() {
@@ -13986,7 +14065,11 @@ function openPendingProfile(attempt = 0) {
   }
   STATE.pendingProfileKey = null;
   clearHandledQueryParam("profile");
-  openUserProfile(key);
+  const focus = STATE.pendingProfileFocus;
+  STATE.pendingProfileFocus = null;
+  clearHandledQueryParam("focus");
+  if (focus === "compliments" && (isMyKey(key) || key === myRootKey())) openMyCompliments();
+  else openUserProfile(key);
 }
 
 /* ---- Tappable notifications ----
@@ -14005,6 +14088,7 @@ function deepLinkAction(link) {
     if (p.get("date") === "1") return () => focusDetailSection(corner, ".cornerdate-section");
     return () => openDetail(corner);
   }
+  if (profile && p.get("focus") === "compliments") return () => (isMyKey(profile) || profile === myRootKey() ? openMyCompliments() : openUserProfile(profile));
   if (profile) return () => openUserProfile(profile);
   if (p.get("feedback") === "1" && STATE.isAdmin) return () => openAdminSection("#admin-feedback");
   return null;
@@ -14074,9 +14158,10 @@ function renderProfile() {
       <div class="profile-stat"><div class="stat-icon">⚔️</div><div class="stat-value">${captureCount}</div><div class="stat-label">${T("Captures dabei", "Captures")}</div></div>
       <div class="profile-stat"><div class="stat-icon">💬</div><div class="stat-value">${commentCount}</div><div class="stat-label">${T("Kommentare", "Comments")}</div></div>
     </div>
+    ${complimentsSectionHtml()}
     <div class="team-battle-section" id="reward-matrix-section">
       <h3>🧭 ${T("Reward Matrix", "Reward Matrix")}</h3>
-      <p style="font-size:12px;color:var(--fg-dim);margin:0 0 12px;">${T("✨ Aura = was du tust (da sein, mitmachen). 🎁 Karma = was andere dir geben (bestätigter Nachschub, Gossip-Punkte). Dein Feld ergibt sich aus beiden.", "✨ Aura = what you do (show up, join in). 🎁 Karma = what others give you (confirmed supplies, gossip points). Your cell comes from both.")}</p>
+      <p style="font-size:12px;color:var(--fg-dim);margin:0 0 12px;">${T("✨ Aura = was du tust (da sein, mitmachen). 🎁 Karma = was andere dir geben (Komplimente, bestätigter Nachschub, Gossip-Punkte). Dein Feld ergibt sich aus beiden.", "✨ Aura = what you do (show up, join in). 🎁 Karma = what others give you (compliments, confirmed supplies, gossip points). Your cell comes from both.")}</p>
       ${buildMatrixGridHtml(aura, karma)}
       <button class="action-btn" id="profile-points-help" style="margin-top:12px;">📖 ${T("Alle Wege, Punkte zu sammeln", "All ways to earn points")}</button>
     </div>
@@ -14279,6 +14364,812 @@ function toast(html, variant, onClick) {
     setTimeout(() => (el.hidden = true), 200);
   }, 4500);
 }
+/* ====================== SLIM DATA (Phase 1) ======================
+   The app used to download whole database nodes at every start — the photos
+   alone were 8.6 MB, because Storage was never activated and every picture
+   sat inline in the database. Now it reads small copies that Cloud Functions
+   keep up to date (functions/lite.js) and loads details only where they show:
+     pointsLite / karmaLite     totals and names, no history (my own logins in full)
+     visitStats                 check-ins per corner (cards, ranking, karma)
+     visits/<corner>            the last check-ins — only in the corner's detail
+     visitsByUser / -ByName     one person's check-ins (profile map, public profile)
+     photoCovers                one small cover picture per corner (cards)
+     photos/<corner>            metadata + thumbnails — only in the detail
+     photoData/<corner>/<id>    the full picture — only when it is opened
+   Until a slim copy exists (right after an update, before the one-time
+   backfill) the app falls back to the old full node, so nothing goes missing. */
+
+var _slim = {
+  reward: {
+    aura: { lite: null, own: {}, ownSubs: {}, legacy: null, onData: null },
+    karma: { lite: null, own: {}, ownSubs: {}, legacy: null, onData: null }
+  },
+  fullCache: {},                 // "kind|key" → full entry (copy check for multi-login profiles)
+  fullPending: {},
+  visits: { legacy: null, corners: {}, order: [], mine: {}, mineSubs: {}, person: {} },
+  photos: { legacy: null, corners: {}, order: [], full: {} },
+  rerenderTimer: null
+};
+const SLIM_DETAIL_CORNERS = 4;   // per-corner subscriptions kept open (recently opened details)
+const SLIM_CORNER_VISITS = 30;   // last check-ins shown in a corner's trail
+const PHOTO_THUMB_MAX = 360;     // same as functions/lite.js
+const PHOTO_THUMB_QUALITY = 0.6;
+
+// One-time reads are one-shot listeners: racing get() against a listener on
+// the same path left the SDK with an orphaned server listen, after which any
+// new listener there failed ("listen() called twice for same path/queryId").
+// As a safeguard, reads in flight are registered and a subscription to such a
+// path waits a moment.
+var _slimInflight = {};
+function slimReadStart(path) { _slimInflight[path] = (_slimInflight[path] || 0) + 1; }
+function slimReadEnd(path) { if (!(--_slimInflight[path] > 0)) delete _slimInflight[path]; }
+// One-time read as a one-shot listener (see readOnce), with a time limit.
+function slimGet(path, ms = 15000) {
+  slimReadStart(path);
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const finish = (fn, v) => { if (done) return; done = true; clearTimeout(timer); slimReadEnd(path); fn(v); };
+    const timer = setTimeout(() => finish(reject, new Error("read timeout: " + path)), ms);
+    try {
+      window.FB.onValue(window.FB.ref(window.FB.db, path), (snap) => finish(resolve, snap), (err) => finish(reject, err), { onlyOnce: true });
+    } catch (err) { finish(reject, err); }
+  });
+}
+
+// onValue may answer synchronously from the cache; the placeholder keeps a
+// re-entrant call from subscribing twice.
+function slimSubscribe(registry, id, target, onData, path) {
+  if (registry[id]) return;
+  if (path && _slimInflight[path]) { setTimeout(() => slimSubscribe(registry, id, target, onData, path), 250); return; }
+  const placeholder = () => {};
+  registry[id] = placeholder;
+  const unsub = window.FB.onValue(target, onData, () => { if (registry[id]) delete registry[id]; });
+  if (registry[id] === placeholder) registry[id] = unsub;
+  else unsub();   // dropped while subscribing
+}
+// Subscribing inside a database callback can collide with a listener the SDK
+// is still setting up for the same path (a transaction raises its events
+// synchronously): "listen() called twice". So changes run on the next tick.
+var _slimDeferred = {};
+function deferSlim(name, fn) {
+  if (_slimDeferred[name]) return;
+  _slimDeferred[name] = setTimeout(() => { delete _slimDeferred[name]; fn(); }, 0);
+}
+function slimUnsubscribe(registry, id) {
+  try { registry[id] && registry[id](); } catch (e) { /* already gone */ }
+  delete registry[id];
+}
+
+function scheduleSlimRerender() {
+  if (_slim.rerenderTimer) return;
+  _slim.rerenderTimer = setTimeout(() => {
+    _slim.rerenderTimer = null;
+    try { updateNicknameBar(); renderFriendsBar(); } catch (e) { /* not ready yet */ }
+    if (STATE.view === "leaderboard") renderLeaderboard();
+    if (STATE.view === "profile") renderProfile();
+  }, 60);
+}
+
+/* ---------------- Points (Aura) and Karma ---------------- */
+function rewardPaths(kind) {
+  return kind === "karma" ? { full: "karmaPoints", lite: "karmaLite" } : { full: "points", lite: "pointsLite" };
+}
+
+// Everyone from the slim copy; the old full node only while no copy exists.
+function listenRewardStore(kind, onData, retry) {
+  const { db, ref, onValue } = window.FB;
+  const st = _slim.reward[kind];
+  const paths = rewardPaths(kind);
+  st.onData = onData;
+  const startLegacy = () => {
+    if (!st.legacy) st.legacy = onValue(ref(db, paths.full), (s) => { st.lite = s.val() || {}; applyRewardStore(kind); }, () => { st.legacy = null; });
+  };
+  onValue(ref(db, paths.lite), (snap) => {
+    if (snap.exists()) {
+      if (st.legacy) { st.legacy(); st.legacy = null; }
+      st.lite = snap.val() || {};
+      applyRewardStore(kind);
+    } else startLegacy();
+  }, () => {
+    // Refused (not signed in yet, or the rules for the copy are not deployed
+    // yet right after an update): the full node meanwhile, then try again.
+    startLegacy();
+    if (retry) retry();
+  });
+}
+
+// My own logins stay complete (history included): merging profiles, the copy
+// check and "last active" work exactly as before.
+function applyRewardStore(kind) {
+  const st = _slim.reward[kind];
+  const merged = { ...(st.lite || {}) };
+  Object.entries(st.own).forEach(([k, e]) => { if (e) merged[k] = e; else if (st.ownSubs[k]) delete merged[k]; });
+  if (kind === "karma") STATE.karmaPoints = merged; else STATE.points = merged;
+  deferSlim("ownRewards", watchOwnRewardEntries);
+  if (st.onData) st.onData();
+}
+
+function watchOwnRewardEntries() {
+  if (!window.FB?.firebaseReady || !STATE.points) return;
+  const keys = new Set(myIdentityKeys().filter((k) => k && !/[.#$[\]/]/.test(k)));
+  ["aura", "karma"].forEach((kind) => {
+    const st = _slim.reward[kind];
+    const path = rewardPaths(kind).full;
+    keys.forEach((k) => slimSubscribe(st.ownSubs, k, window.FB.ref(window.FB.db, `${path}/${k}`), (snap) => {
+      st.own[k] = snap.val();
+      applyRewardStore(kind);
+    }, `${path}/${k}`));
+    Object.keys(st.ownSubs).forEach((k) => {
+      if (keys.has(k)) return;
+      slimUnsubscribe(st.ownSubs, k);
+      delete st.own[k];
+    });
+  });
+}
+
+// Someone else's profile with several logins: the copy check compares their
+// histories, which the slim copy leaves out — fetch those entries once.
+function fullRewardEntry(kind, key) {
+  return _slim.fullCache[kind + "|" + key] || null;
+}
+function requestFullRewardEntries(kind, keys) {
+  if (!window.FB?.firebaseReady) return;
+  const path = rewardPaths(kind).full;
+  const mine = new Set(myIdentityKeys());
+  keys.forEach((k) => {
+    const id = kind + "|" + k;
+    if (id in _slim.fullCache || _slim.fullPending[id] || !k || /[.#$[\]/]/.test(k) || mine.has(k)) return;
+    _slim.fullPending[id] = true;
+    slimGet(`${path}/${k}`)
+      .then((snap) => { _slim.fullCache[id] = snap.val() || null; scheduleSlimRerender(); })
+      .catch(() => {})
+      .finally(() => { delete _slim.fullPending[id]; });
+  });
+}
+
+// "Wer bist du?" and linking read the list of profiles once.
+async function readRewardIndex(ms) {
+  let data = null;
+  try { data = await readOnce("pointsLite", ms); } catch (e) { /* fall back below */ }
+  if (!data) data = await readOnce("points", ms);
+  return data || {};
+}
+function mergeRewardIndex(data) {
+  const own = {};
+  Object.entries(_slim.reward.aura.own).forEach(([k, e]) => { if (e) own[k] = e; });
+  STATE.points = { ...(STATE.points || {}), ...(data || {}), ...own };
+}
+
+/* ---------------- Check-ins ---------------- */
+function visitNameKey(name) {   // same as nameKey() in functions/lite.js
+  return String(name || "").trim().slice(0, 60).replace(/[.#$[\]/\u0000-\u001f\u007f]/g, "_") || "_";
+}
+function isLegacyVisits() { return !!_slim.visits.legacy; }
+
+function statsFromVisits(all) {
+  const out = {};
+  Object.entries(all || {}).forEach(([c, list]) => {
+    const vs = Object.values(list || {}).filter(Boolean);
+    if (vs.length) out[c] = { n: vs.length, last: vs.reduce((m, v) => Math.max(m, Number(v.time) || 0), 0) };
+  });
+  return out;
+}
+
+function listenVisitStats(retry) {
+  const { db, ref, onValue } = window.FB;
+  const sv = _slim.visits;
+  const startLegacy = () => {
+    if (sv.legacy) return;
+    sv.legacy = onValue(ref(db, "visits"), (s) => {
+      STATE.visits = s.val() || {};
+      STATE.visitStats = statsFromVisits(STATE.visits);
+      onVisitDataChanged();
+    }, () => { sv.legacy = null; });
+  };
+  onValue(ref(db, "visitStats"), (snap) => {
+    if (snap.exists()) {
+      if (sv.legacy) { sv.legacy(); sv.legacy = null; }
+      // From now on STATE.visits holds only the corners whose detail is open.
+      Object.keys(STATE.visits || {}).forEach((c) => { if (!sv.corners[c]) delete STATE.visits[c]; });
+      STATE.visitStats = snap.val() || {};
+      deferSlim("myVisits", watchMyVisits);
+    } else startLegacy();
+    onVisitDataChanged();
+  }, () => { startLegacy(); if (retry) retry(); });
+}
+
+function onVisitDataChanged() {
+  refreshAllVisitTrails();
+  if (typeof updateCounts === "function") updateCounts();
+  scheduleSlimRerender();
+  if (typeof renderCards === "function" && STATE.view === "list") renderCards();
+}
+
+// The last check-ins of a corner, while its detail is (or was recently) open.
+function ensureCornerVisits(cornerId) {
+  const sv = _slim.visits;
+  if (!window.FB?.firebaseReady || isLegacyVisits() || !cornerId || sv.corners[cornerId]) {
+    if (sv.corners[cornerId]) sv.order = [...sv.order.filter((c) => c !== cornerId), cornerId];
+    return;
+  }
+  const { db, ref, query, limitToLast } = window.FB;
+  sv.order.push(cornerId);
+  slimSubscribe(sv.corners, cornerId, query(ref(db, "visits/" + cornerId), limitToLast(SLIM_CORNER_VISITS)), (snap) => {
+    if (!STATE.visits || typeof STATE.visits !== "object") STATE.visits = {};
+    STATE.visits[cornerId] = snap.val() || {};
+    refreshAllVisitTrails();
+  });
+  while (sv.order.length > SLIM_DETAIL_CORNERS) {
+    const old = sv.order.shift();
+    slimUnsubscribe(sv.corners, old);
+    if (STATE.visits) delete STATE.visits[old];
+  }
+}
+
+// My check-ins: every login of my profile, plus very old ones under my name.
+function watchMyVisits() {
+  const sv = _slim.visits;
+  if (!window.FB?.firebaseReady || isLegacyVisits() || !STATE.visitStats) return;
+  const paths = new Set(myIdentityKeys().filter((k) => k && !/[.#$[\]/]/.test(k)).map((k) => "visitsByUser/" + k));
+  if (STATE.nickname) paths.add("visitsByName/" + visitNameKey(STATE.nickname));
+  paths.forEach((p) => slimSubscribe(sv.mineSubs, p, window.FB.ref(window.FB.db, p), (snap) => {
+    sv.mine[p] = { ...(snap.val() || {}), ...pendingMyVisits(p, snap.val() || {}) };
+    scheduleSlimRerender();
+  }, p));
+  Object.keys(sv.mineSubs).forEach((p) => {
+    if (paths.has(p)) return;
+    slimUnsubscribe(sv.mineSubs, p);
+    delete sv.mine[p];
+  });
+}
+
+// A check-in I just made shows up before the Cloud Function has indexed it
+// (and stays until the index has it, so a snapshot in between can't hide it).
+var _pendingMyVisits = {};   // visitId → { path, entry, at }
+function noteMyVisit(cornerId, visitId, visit) {
+  if (!visitId) return;
+  const p = "visitsByUser/" + currentUserKey();
+  const entry = { c: cornerId, t: Number(visit.time) || Date.now(), ...(visit.team ? { tm: visit.team } : {}) };
+  _pendingMyVisits[visitId] = { path: p, entry, at: Date.now() };
+  _slim.visits.mine[p] = { ...(_slim.visits.mine[p] || {}), [visitId]: entry };
+}
+function pendingMyVisits(path, indexed) {
+  const out = {};
+  Object.entries(_pendingMyVisits).forEach(([vid, x]) => {
+    if (indexed[vid] || Date.now() - x.at > 10 * 60000) { delete _pendingMyVisits[vid]; return; }
+    if (x.path === path) out[vid] = x.entry;
+  });
+  return out;
+}
+function forgetMyVisit(visitId) {
+  delete _pendingMyVisits[visitId];
+  Object.values(_slim.visits.mine).forEach((m) => { if (m && m[visitId]) delete m[visitId]; });
+}
+
+// [{ cornerId, time, team, visitId }] — from the index, or the full node in legacy mode.
+function myVisitEntries() {
+  if (!window.FB?.firebaseReady || isLegacyVisits()) {
+    const me = currentUserKey();
+    const out = [];
+    Object.entries(STATE.visits || {}).forEach(([cornerId, list]) => Object.entries(list || {}).forEach(([vid, v]) => {
+      if (!v) return;
+      const mine = v.userId ? (v.userId === me || isMyKey(v.userId)) : v.user === STATE.nickname;
+      if (mine) out.push({ cornerId, time: Number(v.time || 0), team: v.team || "", visitId: vid });
+    }));
+    return out;
+  }
+  const seen = new Set();
+  const out = [];
+  Object.values(_slim.visits.mine).forEach((m) => Object.entries(m || {}).forEach(([vid, e]) => {
+    if (!e || seen.has(vid)) return;
+    seen.add(vid);
+    out.push({ cornerId: e.c, time: Number(e.t || 0), team: e.tm || "", visitId: vid });
+  }));
+  return out;
+}
+
+// Someone else's check-ins: loaded when their profile opens (null = loading).
+function personVisitEntries(key, nickname) {
+  if (!window.FB?.firebaseReady || isLegacyVisits()) {
+    const out = [];
+    Object.entries(STATE.visits || {}).forEach(([cornerId, list]) => Object.values(list || {}).forEach((v) => {
+      if (!v) return;
+      if (!(v.userId ? v.userId === key : (nickname && v.user === nickname))) return;
+      out.push({ cornerId, time: Number(v.time || 0), team: v.team || "" });
+    }));
+    return out;
+  }
+  const id = key + "|" + (nickname || "");
+  const cached = _slim.visits.person[id];
+  if (cached && cached.data) return cached.data;
+  if (!cached) {
+    _slim.visits.person[id] = { loading: true };
+    const paths = [];
+    if (key && !/[.#$[\]/]/.test(key)) paths.push("visitsByUser/" + key);
+    if (nickname) paths.push("visitsByName/" + visitNameKey(nickname));
+    Promise.all(paths.map((p) => loadVisitIndex(p))).then((lists) => {
+      const out = [];
+      const seen = new Set();
+      lists.forEach((m) => Object.entries(m || {}).forEach(([vid, e]) => {
+        if (!e || seen.has(vid)) return;
+        seen.add(vid);
+        out.push({ cornerId: e.c, time: Number(e.t || 0), team: e.tm || "" });
+      }));
+      _slim.visits.person[id] = { data: out, at: Date.now() };
+      refreshOpenPublicProfile();
+    }).catch(() => { delete _slim.visits.person[id]; });
+  }
+  return null;
+}
+
+// Each time a profile opens, its check-ins are read fresh.
+function forgetPersonVisits(key) {
+  Object.keys(_slim.visits.person).forEach((id) => { if (id.split("|")[0] === key) delete _slim.visits.person[id]; });
+}
+
+async function loadVisitIndex(path) {
+  try { return (await slimGet(path)).val() || {}; }
+  catch (e) { return {}; }
+}
+
+// Corners someone has visited (identity merges): from the index, or the full node.
+async function visitedCornersOf(key, nickname) {
+  if (!window.FB?.firebaseReady || isLegacyVisits()) {
+    const out = new Set();
+    Object.entries(STATE.visits || {}).forEach(([cornerId, list]) => {
+      if (Object.values(list || {}).some((v) => v && (key && v.userId === key || nickname && !v.userId && v.user === nickname))) out.add(cornerId);
+    });
+    return [...out];
+  }
+  const lists = await Promise.all([
+    key ? loadVisitIndex("visitsByUser/" + key) : {},
+    nickname ? loadVisitIndex("visitsByName/" + visitNameKey(nickname)) : {}
+  ]);
+  return [...new Set(lists.flatMap((m) => Object.values(m || {}).map((e) => e && e.c).filter(Boolean)))];
+}
+
+// The check-ins of a login, with their corner: { visitId: cornerId }.
+async function visitIdsOfKey(key) {
+  if (!window.FB?.firebaseReady || isLegacyVisits()) {
+    const out = {};
+    Object.entries(STATE.visits || {}).forEach(([cornerId, list]) => Object.entries(list || {}).forEach(([vid, v]) => { if (v && v.userId === key) out[vid] = cornerId; }));
+    return out;
+  }
+  const m = await loadVisitIndex("visitsByUser/" + key);
+  const out = {};
+  Object.entries(m).forEach(([vid, e]) => { if (e && e.c) out[vid] = e.c; });
+  return out;
+}
+
+/* ---------------- Photos ---------------- */
+function isLegacyPhotos() { return !!_slim.photos.legacy; }
+
+// Same order as functions/lite.js: best rating, most ratings, newest.
+function coversFromPhotos(all) {
+  const out = {};
+  Object.entries(all || {}).forEach(([cornerId, list]) => {
+    const entries = Object.entries(list || {}).filter(([, p]) => p && (p.thumb || p.src));
+    if (!entries.length) return;
+    const ranked = entries.map(([id, p]) => {
+      const r = Object.values(p.ratings || {}).map(Number).filter((x) => x > 0);
+      return { id, p, avg: r.length ? r.reduce((a, b) => a + b, 0) / r.length : 0, votes: r.length };
+    }).sort((a, b) => b.avg - a.avg || b.votes - a.votes || Number(b.p.time || 0) - Number(a.p.time || 0));
+    const { id, p } = ranked[0];
+    out[cornerId] = { id, n: entries.length, t: Number(p.time || 0), ...(p.thumb ? { thumb: p.thumb } : {}), ...(p.src ? { src: p.src } : {}) };
+  });
+  return out;
+}
+
+function listenPhotoCovers(retry) {
+  const { db, ref, onValue } = window.FB;
+  const sp = _slim.photos;
+  const changed = () => {
+    renderCards();
+    refreshAllPhotoGalleries();
+    if (_photoCommentsOpen) renderPhotoComments();
+  };
+  const startLegacy = () => {
+    if (sp.legacy) return;
+    sp.legacy = onValue(ref(db, "photos"), (s) => {
+      STATE.photos = s.val() || {};
+      STATE.photoCovers = coversFromPhotos(STATE.photos);
+      changed();
+    }, () => { sp.legacy = null; });
+  };
+  onValue(ref(db, "photoCovers"), (snap) => {
+    if (snap.exists()) {
+      if (sp.legacy) { sp.legacy(); sp.legacy = null; }
+      Object.keys(STATE.photos || {}).forEach((c) => { if (!sp.corners[c]) delete STATE.photos[c]; });
+      STATE.photoCovers = snap.val() || {};
+      changed();
+    } else startLegacy();
+  }, () => { startLegacy(); if (retry) retry(); });
+}
+
+// The cover for a card: a Storage URL, or the small thumbnail.
+function coverSrcOf(cornerId) {
+  const c = STATE.photoCovers?.[cornerId];
+  return c ? (c.src || c.thumb || "") : "";
+}
+
+// Metadata + thumbnails of a corner's photos, while its detail is open.
+function ensureCornerPhotos(cornerId) {
+  const sp = _slim.photos;
+  if (!window.FB?.firebaseReady || isLegacyPhotos() || !cornerId || sp.corners[cornerId]) {
+    if (sp.corners[cornerId]) sp.order = [...sp.order.filter((c) => c !== cornerId), cornerId];
+    return;
+  }
+  const { db, ref } = window.FB;
+  sp.order.push(cornerId);
+  slimSubscribe(sp.corners, cornerId, ref(db, "photos/" + cornerId), (snap) => {
+    if (!STATE.photos || typeof STATE.photos !== "object") STATE.photos = {};
+    STATE.photos[cornerId] = snap.val() || {};
+    refreshAllPhotoGalleries();
+    if (_photoCommentsOpen && _photoCommentsOpen.cornerId === cornerId) renderPhotoComments();
+  });
+  while (sp.order.length > SLIM_DETAIL_CORNERS) {
+    const old = sp.order.shift();
+    slimUnsubscribe(sp.corners, old);
+    if (STATE.photos) delete STATE.photos[old];
+  }
+}
+
+// The full picture: in the metadata (Storage URL, old inline photo) or in photoData.
+async function photoFullSrc(cornerId, photoId) {
+  const p = STATE.photos?.[cornerId]?.[photoId];
+  if (p && p.src) return p.src;
+  const cover = STATE.photoCovers?.[cornerId];
+  if (cover && cover.id === photoId && cover.src) return cover.src;
+  const id = cornerId + "/" + photoId;
+  if (_slim.photos.full[id]) return _slim.photos.full[id];
+  if (!window.FB?.firebaseReady) return (p && p.thumb) || "";
+  try {
+    const src = (await slimGet(`photoData/${cornerId}/${photoId}/src`)).val() || "";
+    if (src) {
+      _slim.photos.full[id] = src;
+      const keys = Object.keys(_slim.photos.full);
+      if (keys.length > 12) delete _slim.photos.full[keys[0]];   // a few full pictures in memory are enough
+    }
+    return src || (p && p.thumb) || "";
+  } catch (e) {
+    return (p && p.thumb) || "";
+  }
+}
+
+// Small JPEG for cards and the gallery (same size as the Cloud Function makes).
+function makeThumbDataUrl(dataUrl, maxSide = PHOTO_THUMB_MAX, quality = PHOTO_THUMB_QUALITY) {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, maxSide / Math.max(img.naturalWidth || 1, img.naturalHeight || 1));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round((img.naturalWidth || 1) * scale));
+          canvas.height = Math.max(1, Math.round((img.naturalHeight || 1) * scale));
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        } catch (e) { resolve(""); }
+      };
+      img.onerror = () => resolve("");
+      img.src = dataUrl;
+    } catch (e) { resolve(""); }
+  });
+}
+
+// Opening a corner: its photos, its last check-ins and the full cover picture.
+function ensureCornerDetailData(cornerId) {
+  deferSlim("cornerPhotos:" + cornerId, () => ensureCornerPhotos(cornerId));
+  deferSlim("cornerVisits:" + cornerId, () => ensureCornerVisits(cornerId));
+  const cover = STATE.photoCovers?.[cornerId];
+  if (cover && cover.id && !cover.src) {
+    photoFullSrc(cornerId, cover.id).then((src) => {
+      const img = $("#detail-overlay .detail-hero-photo img");
+      if (src && img && STATE.detailCornerId === cornerId) img.src = src;
+    });
+  }
+}
+/* ====================== COMPLIMENTS ======================
+   "Positive vibes": tell someone something nice. They get Karma (what others
+   give you), you get Aura (what you do) — and their 💛 thank-you sends a
+   little Karma back. One compliment per person and day.
+   Stored per receiving profile — compliments/<profile>/<fromProfile>_<day> —
+   and loaded only for your own profile and the one you open (Phase 1).   */
+const COMPLIMENT_KARMA = 20;            // for the person who gets it
+const COMPLIMENT_AURA = 5;              // for you, the first few per day
+const COMPLIMENT_AURA_PER_DAY = 5;
+const COMPLIMENT_THANKS_KARMA = 5;      // back to the sender when thanked
+const COMPLIMENT_THANKS_AURA = 2;
+const COMPLIMENT_MAX_LEN = 140;
+const COMPLIMENT_PRESETS = [
+  { id: "vibes", emoji: "☀️", de: "Du bringst immer gute Laune mit", en: "You always bring good vibes" },
+  { id: "better", emoji: "🙌", de: "Mit dir wird jeder Corner besser", en: "Every corner gets better with you" },
+  { id: "laugh", emoji: "😂", de: "Mit dir lache ich am meisten", en: "Nobody makes me laugh like you" },
+  { id: "listen", emoji: "👂", de: "Du hörst richtig gut zu", en: "You are a great listener" },
+  { id: "energy", emoji: "✨", de: "Deine Energie ist ansteckend", en: "Your energy is contagious" },
+  { id: "music", emoji: "🎶", de: "Bester Musikgeschmack am Corner", en: "Best taste in music at the corner" },
+  { id: "trust", emoji: "🤝", de: "Auf dich ist immer Verlass", en: "You are always there for people" },
+  { id: "spots", emoji: "🗺️", de: "Du kennst die besten Spots", en: "You know the best spots" },
+  { id: "evening", emoji: "🍻", de: "Danke für den schönen Abend", en: "Thanks for the great evening" },
+  { id: "glad", emoji: "💛", de: "Schön, dass es dich gibt", en: "Glad you exist" }
+];
+
+var _cmp = { mine: {}, mineRoot: "", mineUnsub: null, person: {}, toasted: {}, compose: null };
+
+function complimentDay(t = Date.now()) {
+  const d = new Date(t);
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+}
+function complimentPreset(id) { return COMPLIMENT_PRESETS.find((p) => p.id === id) || null; }
+function complimentText(c) {
+  const p = c && c.preset ? complimentPreset(c.preset) : null;
+  // A preset is shown in the reader's language; own words as written.
+  return p && (!c.text || c.text === p.de || c.text === p.en) ? `${p.emoji} ${T(p.de, p.en)}` : String((c && c.text) || "");
+}
+function complimentList(map) {
+  return Object.entries(map || {}).map(([id, c]) => ({ id, ...c })).filter((c) => c && c.text).sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
+}
+
+// Sent today (this device) — the database rules stop a second one per day anyway.
+function complimentedToday(toRoot) {
+  try { return (JSON.parse(localStorage.getItem("cg.complimentsSent") || "{}"))[toRoot] === complimentDay(); } catch (e) { return false; }
+}
+function markComplimented(toRoot) {
+  try {
+    const m = JSON.parse(localStorage.getItem("cg.complimentsSent") || "{}");
+    const today = complimentDay();
+    Object.keys(m).forEach((k) => { if (m[k] !== today) delete m[k]; });
+    m[toRoot] = today;
+    localStorage.setItem("cg.complimentsSent", JSON.stringify(m));
+  } catch (e) { /* storage full or blocked */ }
+}
+function complimentAuraToday() {
+  return localStorage.getItem("cg.complimentAuraDay") === complimentDay() ? Number(localStorage.getItem("cg.complimentAuraN") || 0) : 0;
+}
+
+/* ---- My compliments: listen, toast the new ones ---- */
+function watchMyCompliments() {
+  if (!window.FB?.firebaseReady || !STATE.nickname) return;
+  const root = myRootKey();
+  if (!root || /[.#$[\]/]/.test(root) || root === _cmp.mineRoot) return;
+  if (_cmp.mineUnsub) { try { _cmp.mineUnsub(); } catch (e) {} }
+  _cmp.mineRoot = root;
+  _cmp.mineUnsub = window.FB.onValue(window.FB.ref(window.FB.db, "compliments/" + root), (snap) => {
+    _cmp.mine = snap.val() || {};
+    announceNewCompliments();
+    if (STATE.view === "profile") renderProfile();
+  }, () => { _cmp.mineRoot = ""; _cmp.mineUnsub = null; });
+}
+
+function announceNewCompliments() {
+  // A new device announces only the last few days, not everything ever.
+  if (!localStorage.getItem("cg.complimentsSeenAt")) localStorage.setItem("cg.complimentsSeenAt", String(Date.now() - 3 * 86400000));
+  const seenAt = Number(localStorage.getItem("cg.complimentsSeenAt") || 0);
+  const fresh = complimentList(_cmp.mine).filter((c) => Number(c.at || 0) > seenAt && !_cmp.toasted[c.id]);
+  if (!fresh.length) return;
+  fresh.forEach((c) => { _cmp.toasted[c.id] = true; });
+  const open = () => openMyCompliments();
+  if (fresh.length === 1) {
+    const c = fresh[0];
+    toastWhenFree(`💐 <strong>${escapeHtml(c.fromName || T("Jemand", "Someone"))}</strong>: ${escapeHtml(complimentText(c))}<br><span style="font-size:11px;opacity:0.8;">+${COMPLIMENT_KARMA} Karma · ${T("Tippen zum Ansehen", "Tap to view")}</span>`, "at-corner", open);
+  } else {
+    toastWhenFree(`💐 <strong>${fresh.length} ${T("neue Komplimente", "new compliments")}</strong> — ${T("Tippen zum Ansehen", "tap to view")}`, "at-corner", open);
+  }
+}
+
+function openMyCompliments() {
+  $(`.tab[data-view="profile"]`)?.click();
+  setTimeout(() => $("#my-compliments")?.scrollIntoView({ behavior: "smooth", block: "start" }), 350);
+}
+
+// Seen once the section is on screen.
+function markComplimentsSeen() {
+  const newest = complimentList(_cmp.mine)[0];
+  if (newest) localStorage.setItem("cg.complimentsSeenAt", String(Math.max(Number(newest.at || 0), Number(localStorage.getItem("cg.complimentsSeenAt") || 0))));
+}
+
+/* ---- Someone else's compliments: loaded with their profile ---- */
+function personCompliments(root) {
+  const c = _cmp.person[root];
+  if (c && c.data) return c.data;
+  if (!c && window.FB?.firebaseReady && root && !/[.#$[\]/]/.test(root)) {
+    _cmp.person[root] = { loading: true };
+    slimGet("compliments/" + root)
+      .then((snap) => { _cmp.person[root] = { data: snap.val() || {} }; refreshOpenPublicProfile(); })
+      .catch(() => { delete _cmp.person[root]; });
+  }
+  return null;
+}
+function forgetPersonCompliments(root) { delete _cmp.person[root]; }
+
+/* ---- Sending ---- */
+function openComplimentComposer(toKey, toName) {
+  if (!toKey) return;
+  if (!STATE.nickname) { toast(T("Bitte gib zuerst einen Namen ein.", "Please pick a name first.")); return; }
+  if (!window.FB?.firebaseReady) { toast(T("Komplimente gehen nur online.", "Compliments need a connection.")); return; }
+  const toRoot = profileRoot(toKey);
+  if (!toRoot || toRoot === myRootKey() || isMyKey(toRoot)) { toast(T("Dir selbst? 😄 Such dir jemand anderen aus.", "Yourself? 😄 Pick someone else.")); return; }
+  const name = toName || identityNickname(toRoot) || T("diese Person", "this person");
+  if (complimentedToday(toRoot)) { toast(`💐 ${T(`${escapeHtml(name)} hat heute schon ein Kompliment von dir — morgen wieder!`, `You already complimented ${escapeHtml(name)} today — again tomorrow!`)}`); return; }
+  const overlay = $("#compliment-overlay");
+  if (!overlay) return;
+  _cmp.compose = { toRoot, name, preset: "" };
+  $("#cmp-title").textContent = `💐 ${T("Kompliment an", "Compliment for")} ${name}`;
+  $("#cmp-sub").textContent = T("Tipp eins an oder schreib was Eigenes.", "Tap one or write your own.");
+  $("#cmp-presets").innerHTML = COMPLIMENT_PRESETS.map((p) => `<button type="button" class="cmp-preset" data-cmp-preset="${p.id}">${p.emoji} ${escapeHtml(T(p.de, p.en))}</button>`).join("");
+  const text = $("#cmp-text");
+  text.value = "";
+  text.placeholder = T("…oder in deinen Worten", "…or in your own words");
+  text.maxLength = COMPLIMENT_MAX_LEN;
+  const auraLeft = complimentAuraToday() < COMPLIMENT_AURA_PER_DAY;
+  $("#cmp-points").textContent = `+${COMPLIMENT_KARMA} Karma ${T("für", "for")} ${name}${auraLeft ? ` · +${COMPLIMENT_AURA} Aura ${T("für dich", "for you")}` : ""}`;
+  const send = $("#cmp-send");
+  send.textContent = `💐 ${T("Senden", "Send")}`;
+  send.disabled = true;
+  const update = () => { send.disabled = !(text.value.trim() || _cmp.compose?.preset); };
+  $("#cmp-presets").querySelectorAll("[data-cmp-preset]").forEach((b) => b.addEventListener("click", () => {
+    const p = complimentPreset(b.dataset.cmpPreset);
+    if (!p || !_cmp.compose) return;
+    _cmp.compose.preset = p.id;
+    text.value = T(p.de, p.en);
+    $("#cmp-presets").querySelectorAll(".cmp-preset").forEach((x) => x.classList.toggle("active", x === b));
+    update();
+  }));
+  text.oninput = () => {
+    const p = complimentPreset(_cmp.compose?.preset);
+    if (p && text.value.trim() !== T(p.de, p.en)) {   // edited: own words now
+      _cmp.compose.preset = "";
+      $("#cmp-presets").querySelectorAll(".cmp-preset").forEach((x) => x.classList.remove("active"));
+    }
+    update();
+  };
+  send.onclick = () => sendCompliment();
+  const close = () => { overlay.style.display = "none"; _cmp.compose = null; };
+  $("#cmp-close").onclick = close;
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+  overlay.style.display = "flex";
+}
+
+async function sendCompliment() {
+  const c = _cmp.compose;
+  if (!c) return;
+  const text = String($("#cmp-text")?.value || "").trim().slice(0, COMPLIMENT_MAX_LEN);
+  if (!text) return;
+  const fromRoot = myRootKey();
+  const id = `${fromRoot}_${complimentDay()}`;
+  const entry = { from: fromRoot, fromName: String(STATE.nickname || "").slice(0, 40), text, at: Date.now() };
+  if (c.preset) entry.preset = c.preset;
+  const send = $("#cmp-send");
+  if (send) send.disabled = true;
+  const { db, ref, set } = window.FB;
+  try {
+    await withTimeout(set(ref(db, `compliments/${c.toRoot}/${id}`), entry), 15000, "compliment");
+  } catch (err) {
+    console.warn("compliment failed:", err);
+    if (send) send.disabled = false;
+    // The rules allow one per person and day.
+    toast(T(`💐 ${escapeHtml(c.name)} hat heute schon ein Kompliment von dir — oder die Verbindung hakt.`, `💐 You already complimented ${escapeHtml(c.name)} today — or the connection is shaky.`));
+    return;
+  }
+  markComplimented(c.toRoot);
+  addKarmaPoints(c.toRoot, COMPLIMENT_KARMA, `💐 Kompliment von ${STATE.nickname}`, c.name);
+  const auraN = complimentAuraToday();
+  if (auraN < COMPLIMENT_AURA_PER_DAY) {
+    addXp(COMPLIMENT_AURA, `💐 Kompliment an ${c.name}`);
+    localStorage.setItem("cg.complimentAuraDay", complimentDay());
+    localStorage.setItem("cg.complimentAuraN", String(auraN + 1));
+  }
+  sendTargetedPush([...identityKeysOf(c.toRoot)], {
+    type: "compliment",
+    title: `💐 ${String(STATE.nickname).slice(0, 40)} ${T("hat dir ein Kompliment gemacht", "paid you a compliment")}`,
+    body: text,
+    query: `?profile=${encodeURIComponent(c.toRoot)}&focus=compliments`
+  });
+  unlockAchievement("first-compliment", "Charmeur", "💐", 15);
+  const sentCount = Number(localStorage.getItem("cg.complimentsSentTotal") || 0) + 1;
+  localStorage.setItem("cg.complimentsSentTotal", String(sentCount));
+  if (sentCount >= 10) unlockAchievement("compliment-10", "Good Vibes", "🌈", 40);
+  if (_cmp.person[c.toRoot]?.data) _cmp.person[c.toRoot].data[id] = entry;
+  $("#compliment-overlay").style.display = "none";
+  _cmp.compose = null;
+  toast(`💐 ${T("Kompliment an", "Compliment sent to")} <strong>${escapeHtml(c.name)}</strong>${T(" geschickt", "")} — +${COMPLIMENT_KARMA} Karma ${T("für", "for")} ${escapeHtml(c.name)}`, "at-corner");
+  refreshOpenPublicProfile();
+  if (STATE.view === "profile") renderProfile();
+}
+
+/* ---- Thank you ---- */
+async function thankCompliment(id) {
+  const c = _cmp.mine[id];
+  const root = _cmp.mineRoot;
+  if (!c || c.thanked || !root || !window.FB?.firebaseReady) return;
+  try {
+    await withTimeout(window.FB.set(window.FB.ref(window.FB.db, `compliments/${root}/${id}/thanked`), true), 15000, "thanks");
+  } catch (err) {
+    console.warn("thanks failed:", err);
+    toast(T("Danke ging gerade nicht — Verbindung prüfen.", "Could not say thanks — check the connection."));
+    return;
+  }
+  c.thanked = true;
+  if (c.from && !isMyKey(c.from)) {
+    addKarmaPoints(c.from, COMPLIMENT_THANKS_KARMA, `💛 ${STATE.nickname} sagt Danke für dein Kompliment`, c.fromName);
+    sendTargetedPush([...identityKeysOf(profileRoot(c.from))], {
+      type: "compliment-thanks",
+      title: `💛 ${String(STATE.nickname).slice(0, 40)} ${T("sagt Danke", "says thanks")}`,
+      body: `${T("für dein Kompliment", "for your compliment")}: „${String(c.text || "").slice(0, 100)}“`,
+      query: `?profile=${encodeURIComponent(root)}`
+    });
+  }
+  addXp(COMPLIMENT_THANKS_AURA, "💛 Danke gesagt");
+  toast(`💛 ${T("Danke an", "Thanks sent to")} <strong>${escapeHtml(c.fromName || "")}</strong> — +${COMPLIMENT_THANKS_KARMA} Karma ${T("zurück", "back")}`);
+  if (STATE.view === "profile") renderProfile();
+}
+
+/* ---- Sections ---- */
+// People worth a compliment right now: who is around, then who you meet most.
+function complimentSuggestions(limit = 4) {
+  const myRoot = myRootKey();
+  const out = [];
+  const add = (key, name) => {
+    const root = profileRoot(key);
+    if (!root || root === myRoot || isMyKey(root) || out.some((x) => x.root === root) || complimentedToday(root)) return;
+    const n = identityNickname(root) || name;
+    if (!n || String(n).toLowerCase() === "anonym") return;
+    out.push({ root, name: n });
+  };
+  freshFriends().forEach((f) => add(f.id, f.nickname || f.name));
+  Object.values(STATE.encounters || {})
+    .filter((e) => e && e.users && Object.keys(e.users).some((k) => isMyKey(k) || k === currentUserKey()))
+    .sort((a, b) => Number(b.count || 0) - Number(a.count || 0))
+    .forEach((e) => Object.entries(e.users).forEach(([k, v]) => { if (!isMyKey(k) && k !== currentUserKey()) add(k, typeof v === "string" ? v : ""); }));
+  return out.slice(0, limit);
+}
+
+function complimentItemHtml(c, opts = {}) {
+  const from = c.from ? `<button class="people-chip" data-user-profile="${escapeHtml(c.from)}">${escapeHtml(c.fromName || "?")}</button>` : escapeHtml(c.fromName || "?");
+  const thanks = opts.mine
+    ? (c.thanked ? `<span class="cmp-thanked">💛 ${T("bedankt", "thanked")}</span>` : `<button class="cmp-thanks" data-compliment-thanks="${escapeHtml(c.id)}">💛 ${T("Danke", "Thanks")}</button>`)
+    : (c.thanked ? `<span class="cmp-thanked" title="${T("hat sich bedankt", "said thanks")}">💛</span>` : "");
+  return `<li class="cmp-item"><span class="cmp-text">${escapeHtml(complimentText(c))}</span><span class="cmp-meta">${T("von", "from")} ${from} · ${timeAgo(Number(c.at || 0))}</span>${thanks}</li>`;
+}
+
+// My profile: what others said, a thank-you each, and whom to make happy next.
+function complimentsSectionHtml() {
+  deferSlim("myCompliments", watchMyCompliments);
+  const list = complimentList(_cmp.mine);
+  const suggestions = complimentSuggestions();
+  setTimeout(markComplimentsSeen, 1500);
+  return `<div class="team-battle-section cmp-section" id="my-compliments">
+    <h3>💐 ${T("Komplimente", "Compliments")}${list.length ? ` <span class="comment-count">${list.length}</span>` : ""}</h3>
+    ${list.length
+      ? `<ul class="cmp-list">${list.slice(0, 10).map((c) => complimentItemHtml(c, { mine: true })).join("")}</ul>`
+      : `<p class="cmp-empty">${T("Noch keine — die ersten kommen bestimmt. Fang doch selbst an:", "None yet — they will come. Why not start yourself:")}</p>`}
+    ${suggestions.length ? `<div class="cmp-suggest"><span>${T("Mach jemandem eine Freude", "Make someone's day")}:</span>${suggestions.map((s) => `<button class="action-btn cmp-quick" data-compliment-to="${escapeHtml(s.root)}" data-compliment-name="${escapeHtml(s.name)}">💐 ${escapeHtml(s.name)}</button>`).join("")}</div>` : ""}
+    <p class="cmp-hint">+${COMPLIMENT_KARMA} Karma ${T("für die Person", "for them")} · +${COMPLIMENT_AURA} Aura ${T("für dich", "for you")} · ${T("ein Kompliment pro Person und Tag", "one compliment per person and day")}</p>
+  </div>`;
+}
+
+// Someone's public profile: what others said about them, and the button.
+function publicComplimentsHtml(key) {
+  const root = profileRoot(key);
+  const data = personCompliments(root);
+  const list = data ? complimentList(data) : [];
+  const done = complimentedToday(root);
+  const name = identityNickname(root) || "";
+  return `<div class="up-section cmp-section">
+    <h3>💐 ${T("Komplimente", "Compliments")}${data ? ` <span class="comment-count">${list.length}</span>` : ""}</h3>
+    ${data === null ? `<p class="cmp-empty">…</p>` : list.length ? `<ul class="cmp-list">${list.slice(0, 3).map((c) => complimentItemHtml(c)).join("")}</ul>` : `<p class="cmp-empty">${T("Noch keine — mach das erste!", "None yet — be the first!")}</p>`}
+    ${done
+      ? `<p class="cmp-done">✓ ${T("Heute schon ein Kompliment von dir", "You complimented them today")}</p>`
+      : `<button class="action-btn primary cmp-open" data-compliment-to="${escapeHtml(root)}" data-compliment-name="${escapeHtml(name)}">💐 ${T("Kompliment machen", "Pay a compliment")}</button>`}
+  </div>`;
+}
+
+document.addEventListener("click", (e) => {
+  const to = e.target.closest?.("[data-compliment-to]");
+  if (to) { e.preventDefault(); e.stopPropagation(); openComplimentComposer(to.dataset.complimentTo, to.dataset.complimentName || ""); return; }
+  const thanks = e.target.closest?.("[data-compliment-thanks]");
+  if (thanks) { e.preventDefault(); thankCompliment(thanks.dataset.complimentThanks); }
+});
 </script>
 </body>
 </html>

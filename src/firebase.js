@@ -1,5 +1,5 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, set, get, push, update, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getDatabase, ref, set, get, push, update, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, runTransaction, query, orderByChild, startAt, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import { getAuth, signInAnonymously, onAuthStateChanged,
            GoogleAuthProvider, linkWithPopup, signInWithPopup,
            EmailAuthProvider, linkWithCredential,
@@ -71,7 +71,7 @@
 
   // Expose Firebase functions globally for use in the main script
   window.FB = {
-    db, auth, ref, set, get, push, update, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, runTransaction, firebaseReady, authReady,
+    db, auth, ref, set, get, push, update, onValue, onChildAdded, onDisconnect, serverTimestamp, remove, runTransaction, query, orderByChild, startAt, limitToLast, firebaseReady, authReady,
     getAuthUid: () => authUid,
     onAuthChange: (listener) => {
       if (typeof listener !== "function") return () => {};

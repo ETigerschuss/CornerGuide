@@ -134,7 +134,7 @@ async function renderSpotCheckBlock(corner, box) {
     const w = weedVerdict(res);
     const weedNow = weedAllowedNow(w);
     box.innerHTML = `<div class="spot-detail-amen">${have.map((a) => `<span class="spot-pill">${a.emoji} ${escapeHtml(T(a.de, a.en))}</span>`).join("")}
-        ${w.v === "?" ? "" : `<span class="spot-pill ${weedNow ? "ok" : "no"}">${w.v === "ok" ? "🌿" : w.v === "night" ? "🕗" : "🚫"} ${w.v === "ok" ? T("Kiffen ok", "Weed ok") : w.v === "night" ? T("Kiffen 20–7 Uhr", "Weed 8 pm–7 am") : T("Kein Kiffen", "No weed")}</span>`}</div>
+        ${w.v === "?" ? "" : `<span class="spot-pill ${weedNow ? "ok" : "no"}">${weedVerdictEmoji(w.v)} ${w.v === "ok" ? T("Grünes Licht", "Green light") : w.v === "night" ? T("Grünes Licht ab 20 Uhr", "Green light from 8 pm") : T("Kein grünes Licht", "No green light")}</span>`}</div>
       ${spotRuleLinesHtml(res)}`;
   } catch (err) {
     if (box.isConnected) box.innerHTML = `<div class="ci-small">${T("Regeln gerade nicht abrufbar (OpenStreetMap).", "Rules not available right now (OpenStreetMap).")}</div>`;

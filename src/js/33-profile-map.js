@@ -13,19 +13,14 @@ var _pmapIndex = null;        // visits shown (null = all)
 // entry per corner and day (repeated check-ins the same day count once), and
 // old check-ins without a team get the team I had back then.
 function myVisitLog() {
-  const me = currentUserKey();
   const byId = {};
   getAllCorners().forEach((c) => { byId[c.id] = c; });
   const raw = [];
-  Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
-    const corner = byId[cornerId];
+  // From my own check-in index (all my logins) — not the whole visits node.
+  myVisitEntries().forEach((v) => {
+    const corner = byId[v.cornerId];
     if (!corner || typeof corner.lat !== "number" || typeof corner.lng !== "number") return;
-    Object.values(entries || {}).forEach((v) => {
-      if (!v) return;
-      const mine = v.userId ? (v.userId === me || isMyKey(v.userId)) : v.user === STATE.nickname;
-      if (!mine) return;
-      raw.push({ cornerId, name: corner.name, area: corner.area || "", lat: corner.lat, lng: corner.lng, team: v.team || teamAtTime(Number(v.time || 0)), time: Number(v.time || 0) });
-    });
+    raw.push({ cornerId: v.cornerId, name: corner.name, area: corner.area || "", lat: corner.lat, lng: corner.lng, team: v.team || teamAtTime(v.time), time: v.time });
   });
   raw.sort((a, b) => a.time - b.time);
   const seen = new Set();

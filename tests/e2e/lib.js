@@ -97,11 +97,16 @@ async function newUser(browser, name, opts = {}) {
     timezoneId: "Europe/Berlin"
   });
   await routeContext(context);
+  if (process.env.E2E_STACKS) await context.addInitScript(() => { Error.stackTraceLimit = 60; });
   if (opts.beforeGoto) await opts.beforeGoto(context);
   const page = await context.newPage();
   page._logs = [];
-  page.on("console", (m) => { const t = m.text(); page._logs.push(`[${m.type()}] ${t}`); if (opts.echo && m.type() !== "debug") console.log(`  {${name}} ${m.type()}: ${t}`); });
-  page.on("pageerror", (e) => { page._logs.push(`[pageerror] ${e.message}`); console.log(`  {${name}} PAGEERROR: ${e.message}`); });
+  page.on("console", (m) => { const t = m.text(); page._logs.push(`[${m.type()}] ${t}`); if ((opts.echo || (process.env.E2E_ECHO && t.includes(process.env.E2E_ECHO))) && m.type() !== "debug") console.log(`  {${name}} ${m.type()}: ${t}`); });
+  page.on("pageerror", (e) => {
+    page._logs.push(`[pageerror] ${e.message}`);
+    console.log(`  {${name}} PAGEERROR: ${e.message}`);
+    if (process.env.E2E_STACKS) console.log(String(e.stack || "").split("\n").slice(1, 60).join("\n"));
+  });
   await page.goto(`http://127.0.0.1:${PORT}/index.html${opts.query || ""}`);
   return { name, context, page };
 }

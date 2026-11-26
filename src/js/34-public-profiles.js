@@ -8,14 +8,13 @@ function visitLogFor(key, nickname) {
   const byId = {};
   getAllCorners().forEach((c) => { byId[c.id] = c; });
   const log = [];
-  Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
-    const corner = byId[cornerId];
+  // That person's check-in index, loaded when the profile opens (null = still loading).
+  const entries = personVisitEntries(key, nickname);
+  if (entries === null) return null;
+  entries.forEach((v) => {
+    const corner = byId[v.cornerId];
     if (!corner || typeof corner.lat !== "number" || typeof corner.lng !== "number") return;
-    Object.values(entries || {}).forEach((v) => {
-      if (!v) return;
-      if (!(v.userId ? v.userId === key : (nickname && v.user === nickname))) return;
-      log.push({ cornerId, name: corner.name, area: corner.area || "", lat: corner.lat, lng: corner.lng, team: v.team || "", time: Number(v.time || 0) });
-    });
+    log.push({ cornerId: v.cornerId, name: corner.name, area: corner.area || "", lat: corner.lat, lng: corner.lng, team: v.team || "", time: v.time });
   });
   // one check-in per corner and day, like on my own profile
   const seen = new Set();
@@ -83,7 +82,9 @@ function renderUserProfile(key, achievements) {
   const karmaLv = getLevel(info.karma).level;
   const tier = getLevelTier(auraLv);
   const matrix = getMatrixIdentity(info.aura, info.karma);
-  const log = visitLogFor(key, info.nickname);
+  const logRaw = visitLogFor(key, info.nickname);
+  const visitsLoading = logRaw === null;   // their check-ins are still on the way
+  const log = logRaw || [];
   const agg = Object.values(aggregateVisits(log)).sort((a, b) => b.count - a.count || b.last - a.last);
   const corner = info.visible && info.presence?.atCorner ? getAllCorners().find((c) => c.id === info.presence.atCorner) : null;
   const avail = AVAILABILITY[info.presence?.status] || null;
@@ -121,14 +122,15 @@ function renderUserProfile(key, achievements) {
     <div class="up-stats">
       <div><strong>${info.aura}</strong><span>✨ Aura · Lv.${auraLv}</span></div>
       <div><strong>${info.karma}</strong><span>🎁 Karma · Lv.${karmaLv}</span></div>
-      <div><strong>${log.length}</strong><span>🍻 Check-ins</span></div>
-      <div><strong>${agg.length}</strong><span>📍 Corners</span></div>
+      <div><strong>${visitsLoading ? "…" : log.length}</strong><span>🍻 Check-ins</span></div>
+      <div><strong>${visitsLoading ? "…" : agg.length}</strong><span>📍 Corners</span></div>
     </div>
     <div class="up-matrix">${matrix.emoji} <strong>${escapeHtml(matrix.name)}</strong> — ${escapeHtml(matrix.desc)}</div>
     ${together.length ? `<div class="up-together">${together.join(" · ")}</div>` : ""}`;
   $("#up-bottom").innerHTML = `
     ${agg.length ? `<h3>⭐ ${T("Lieblings-Corner", "Favourite corners")}</h3>
       <div class="up-favs">${agg.slice(0, 3).map((e) => `<button class="up-fav" data-up-corner="${escapeHtml(e.cornerId)}"><span>${escapeHtml(e.name)}</span><span class="up-fav-n">${e.count}x</span></button>`).join("")}</div>` : `<p class="up-empty">${T("Noch keine Check-ins.", "No check-ins yet.")}</p>`}
+    ${publicComplimentsHtml(key)}
     ${gossips.length ? `<h3>🗣️ ${T("Eure Gossips", "Your gossips")}</h3>${gossips.slice(0, 5).map((g) => gossipLogRowHtml(g)).join("")}` : ""}
     ${ach.length ? `<h3>🏆 Achievements (${ach.length})</h3><div class="up-ach">${ach.slice(0, 24).map(([id, a]) => `<span title="${escapeHtml(a?.name || id)}">${escapeHtml(a?.emoji || "🏆")}</span>`).join("")}</div>` : ""}
     <div class="up-actions">
@@ -168,6 +170,9 @@ async function openUserProfile(key) {
   const overlay = $("#user-profile-overlay");
   if (!overlay) return;
   STATE.viewedProfileKey = key;
+  STATE.viewedProfileAchievements = null;
+  forgetPersonVisits(key);
+  forgetPersonCompliments(profileRoot(key));
   $("#up-close").onclick = closeUserProfile;
   overlay.onclick = (e) => { if (e.target === overlay) closeUserProfile(); };
   overlay.style.display = "flex";
@@ -177,8 +182,17 @@ async function openUserProfile(key) {
   if (!window.FB?.firebaseReady) return;
   try {
     const snap = await window.FB.get(window.FB.ref(window.FB.db, "achievements/" + key));
-    if (STATE.viewedProfileKey === key && overlay.style.display === "flex") renderUserProfile(key, snap.val() || {});
+    if (STATE.viewedProfileKey === key && overlay.style.display === "flex") {
+      STATE.viewedProfileAchievements = snap.val() || {};
+      renderUserProfile(key, STATE.viewedProfileAchievements);
+    }
   } catch (err) { /* achievements are optional */ }
+}
+
+// Their check-ins arrived (loaded on demand): draw the profile again.
+function refreshOpenPublicProfile() {
+  const overlay = $("#user-profile-overlay");
+  if (overlay && overlay.style.display === "flex" && STATE.viewedProfileKey) renderUserProfile(STATE.viewedProfileKey, STATE.viewedProfileAchievements || null);
 }
 
 function closeUserProfile() {
@@ -215,7 +229,11 @@ function openPendingProfile(attempt = 0) {
   }
   STATE.pendingProfileKey = null;
   clearHandledQueryParam("profile");
-  openUserProfile(key);
+  const focus = STATE.pendingProfileFocus;
+  STATE.pendingProfileFocus = null;
+  clearHandledQueryParam("focus");
+  if (focus === "compliments" && (isMyKey(key) || key === myRootKey())) openMyCompliments();
+  else openUserProfile(key);
 }
 
 /* ---- Tappable notifications ----
@@ -234,6 +252,7 @@ function deepLinkAction(link) {
     if (p.get("date") === "1") return () => focusDetailSection(corner, ".cornerdate-section");
     return () => openDetail(corner);
   }
+  if (profile && p.get("focus") === "compliments") return () => (isMyKey(profile) || profile === myRootKey() ? openMyCompliments() : openUserProfile(profile));
   if (profile) return () => openUserProfile(profile);
   if (p.get("feedback") === "1" && STATE.isAdmin) return () => openAdminSection("#admin-feedback");
   return null;
@@ -303,9 +322,10 @@ function renderProfile() {
       <div class="profile-stat"><div class="stat-icon">⚔️</div><div class="stat-value">${captureCount}</div><div class="stat-label">${T("Captures dabei", "Captures")}</div></div>
       <div class="profile-stat"><div class="stat-icon">💬</div><div class="stat-value">${commentCount}</div><div class="stat-label">${T("Kommentare", "Comments")}</div></div>
     </div>
+    ${complimentsSectionHtml()}
     <div class="team-battle-section" id="reward-matrix-section">
       <h3>🧭 ${T("Reward Matrix", "Reward Matrix")}</h3>
-      <p style="font-size:12px;color:var(--fg-dim);margin:0 0 12px;">${T("✨ Aura = was du tust (da sein, mitmachen). 🎁 Karma = was andere dir geben (bestätigter Nachschub, Gossip-Punkte). Dein Feld ergibt sich aus beiden.", "✨ Aura = what you do (show up, join in). 🎁 Karma = what others give you (confirmed supplies, gossip points). Your cell comes from both.")}</p>
+      <p style="font-size:12px;color:var(--fg-dim);margin:0 0 12px;">${T("✨ Aura = was du tust (da sein, mitmachen). 🎁 Karma = was andere dir geben (Komplimente, bestätigter Nachschub, Gossip-Punkte). Dein Feld ergibt sich aus beiden.", "✨ Aura = what you do (show up, join in). 🎁 Karma = what others give you (compliments, confirmed supplies, gossip points). Your cell comes from both.")}</p>
       ${buildMatrixGridHtml(aura, karma)}
       <button class="action-btn" id="profile-points-help" style="margin-top:12px;">📖 ${T("Alle Wege, Punkte zu sammeln", "All ways to earn points")}</button>
     </div>

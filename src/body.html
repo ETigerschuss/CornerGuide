@@ -405,6 +405,19 @@
   </div>
 </div>
 
+<!-- Compliments: say something nice (36-compliments.js) -->
+<div id="compliment-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card user-profile-card cmp-card">
+    <button class="up-close" id="cmp-close" aria-label="Schließen">✕</button>
+    <h2 id="cmp-title" class="cmp-title">💐 Kompliment</h2>
+    <p class="cmp-sub" id="cmp-sub"></p>
+    <div class="cmp-presets" id="cmp-presets"></div>
+    <textarea id="cmp-text" rows="2" maxlength="140"></textarea>
+    <button class="action-btn primary" id="cmp-send" disabled>💐 Senden</button>
+    <p class="cmp-points" id="cmp-points"></p>
+  </div>
+</div>
+
 <!-- QR codes: personal + neutral sticker -->
 <div id="qr-overlay" class="access-prompt" style="display:none;">
   <div class="prompt-card" style="max-width:420px;max-height:88vh;overflow-y:auto;text-align:left;">

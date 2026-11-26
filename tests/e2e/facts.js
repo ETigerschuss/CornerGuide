@@ -11,7 +11,7 @@ const dLat = (m) => m / 110540;
 const dLng = (m, lat) => m / (111320 * Math.cos(lat * Math.PI / 180));
 
 // Overpass answer relative to the queried point: a toilet 90 m away and a
-// playground 50 m away (so: 🚻 yes, 🌿 no).
+// playground 50 m away (so: 🚻 yes, 🟢 no).
 async function mockOverpass(page) {
   page._overpass = 0;
   await page.route(/overpass/, (route) => {
@@ -45,13 +45,13 @@ const visibleCards = (page) => page.evaluate(() => Array.from(document.querySele
     await mockOverpass(a.page);
     await onboard(a);
     await a.page.evaluate(() => document.querySelector('.tab[data-view="list"]').click());
-    await a.page.waitForFunction(() => /🌿/.test(document.querySelector("#card-the-cage .card-amens")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
+    await a.page.waitForFunction(() => /🟢/.test(document.querySelector("#card-the-cage .card-amens")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
     const t = {
       cage: await cardText(a.page, "the-cage"), ohm: await cardText(a.page, "ohm-grab"),
       schnecke: await cardText(a.page, "schnecke"), kapu: await cardText(a.page, "kapuzinerdreieck")
     };
-    check("existing corners show their emojis on the card", /🚻/.test(t.cage) && /⚽/.test(t.cage) && /🌿/.test(t.cage) && !/🚫/.test(t.cage), JSON.stringify(t));
-    check("…including 'no weed' and 'only 20–7'", /💧/.test(t.ohm) && /🚫🌿/.test(t.ohm) && /20–7/.test(t.schnecke), JSON.stringify([t.ohm, t.schnecke]));
+    check("existing corners show their emojis on the card (🟢 = grünes Licht)", /🚻/.test(t.cage) && /⚽/.test(t.cage) && /🟢/.test(t.cage) && !/🌿|🚫/.test(t.cage), JSON.stringify(t));
+    check("…a 'no' stays off the card (subtle), 'from 8 pm' shows 20–7", /💧/.test(t.ohm) && !/🟢|🔴|🚫|🌿/.test(t.ohm) && /🟢/.test(t.schnecke) && /20–7/.test(t.schnecke), JSON.stringify([t.ohm, t.schnecke]));
     check("…and the curated toilet/kiosk of the original list", /🚻/.test(t.kapu) && /🏪/.test(t.kapu), t.kapu);
     await a.page.evaluate(() => document.querySelector("#card-the-cage").scrollIntoView({ block: "center" }));
     await a.page.screenshot({ path: path.join(SHOTS, "facts-cards.png") });
@@ -64,12 +64,12 @@ const visibleCards = (page) => page.evaluate(() => Array.from(document.querySele
     await a.page.click('[data-amen-filter="kiffen"]');
     await sleep(300);
     shown = await visibleCards(a.page);
-    check("filter 🚻 + 🌿: both must match", JSON.stringify(shown) === JSON.stringify(["the-cage"]), JSON.stringify(shown));
+    check("filter 🚻 + 🟢: both must match", JSON.stringify(shown) === JSON.stringify(["the-cage"]), JSON.stringify(shown));
     await a.page.screenshot({ path: path.join(SHOTS, "facts-filter.png") });
     await a.page.click('[data-amen-filter="toilette"]');
     await sleep(300);
     shown = await visibleCards(a.page);
-    check("filter 🌿 alone: allowed or allowed at night", shown.includes("the-cage") && shown.includes("schnecke") && !shown.includes("ohm-grab"), JSON.stringify(shown));
+    check("filter 🟢 alone: green light now or from 8 pm", shown.includes("the-cage") && shown.includes("schnecke") && !shown.includes("ohm-grab"), JSON.stringify(shown));
     await a.page.reload();
     await a.page.waitForFunction(() => typeof STATE !== "undefined" && document.querySelectorAll("#cards .card").length > 0, null, { timeout: 15000 });
     await a.page.evaluate(() => document.querySelector('.tab[data-view="list"]').click());

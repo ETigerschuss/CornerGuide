@@ -9,7 +9,8 @@
 
 // Last time a profile earned anything — helps to recognise "that was me".
 function lastRewardTime(entry) {
-  return rewardHistoryList(entry).reduce((max, h) => Math.max(max, Number(h && h.time) || 0), 0);
+  // The slim copy carries it as `last`; full entries still have the history.
+  return rewardHistoryList(entry).reduce((max, h) => Math.max(max, Number(h && h.time) || 0), Number(entry && entry.last) || 0);
 }
 function sinceLabel(ms) {
   if (!ms) return "";
@@ -66,8 +67,8 @@ async function openClaimOverlay(opts = {}) {
   if (!window.FB?.firebaseReady) { list.innerHTML = `<p class="claim-empty" style="color:var(--fg-dim);font-size:13px;">${T("Nur online verfügbar.", "Only available online.")}</p>`; return; }
   list.innerHTML = `<p class="claim-empty" style="color:var(--fg-dim);font-size:13px;">${T("Lade Profile…", "Loading profiles…")}</p>`;
   try {
-    const data = (await readOnce("points", 10000)) || {};
-    STATE.points = { ...(STATE.points || {}), ...data };
+    const data = await readRewardIndex(10000);
+    mergeRewardIndex(data);
     const myRoot = myRootKey();
     const roots = new Set(Object.keys(data).map((k) => profileRoot(k)));
     const rows = [...roots]
@@ -172,19 +173,14 @@ function watchOwnProfileLock() {
   }, () => { _ownLockUnsub = null; });
 }
 
-/* One-shot read that cannot hang forever. A plain get() was seen to stall
-   right after listeners had been refused (no access yet) and re-attached;
-   a one-shot listener is raced against it, with a time limit on top.   */
+/* One-shot read that cannot hang forever: a one-shot listener with a time
+   limit. A plain get() was seen to stall right after listeners had been
+   refused (no access yet) and re-attached. Racing get() against the one-shot
+   listener on the same path (as before) leaves the SDK with an orphaned
+   server listen — any later listener on that path then fails with
+   "listen() called twice" — so it is the listener alone now.            */
 function readOnce(path, ms = 7000) {
-  const { db, ref, get, onValue } = window.FB;
-  return new Promise((resolve, reject) => {
-    let done = false, fails = 0;
-    const ok = (v) => { if (!done) { done = true; clearTimeout(timer); resolve(v); } };
-    const bad = (err) => { if (!done && ++fails >= 2) { done = true; clearTimeout(timer); reject(err); } };
-    const timer = setTimeout(() => { if (!done) { done = true; reject(new Error("read timeout: " + path)); } }, ms);
-    get(ref(db, path)).then((snap) => ok(snap.val()), bad);
-    try { onValue(ref(db, path), (snap) => ok(snap.val()), bad, { onlyOnce: true }); } catch (err) { bad(err); }
-  });
+  return slimGet(path, ms).then((snap) => snap.val());
 }
 // Same for writes: never wait forever on a stalled acknowledgement.
 function withTimeout(promise, ms, label) {

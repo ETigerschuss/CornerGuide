@@ -3,7 +3,7 @@
    "Wie ist's bei den bisherigen Cornern?" — every corner gets the same
    automatic check as a new one. The first phone that checks a corner stores
    the result in cornerFacts/<id> (refreshed after 30 days), so the list can
-   show 🚻 💧 ☂️ ⚽ 🏪 🌿 on every card and filter by it, without every phone
+   show 🚻 💧 ☂️ ⚽ 🏪 🟢 on every card and filter by it, without every phone
    asking OpenStreetMap again. Phones fill in missing corners slowly in the
    background (one every few seconds, a dozen per session at most). */
 const CORNER_FACTS_VERSION = 1;
@@ -86,9 +86,9 @@ function cornerEmojiRowHtml(c) {
     return `<span class="card-amen" title="${escapeHtml(T(a.de, a.en))}">${a.emoji}</span>`;
   });
   const weed = cornerWeed(c);
-  if (weed === "ok") items.push(`<span class="card-amen" title="${T("Kiffen erlaubt", "Weed allowed")}">🌿</span>`);
-  else if (weed === "night") items.push(`<span class="card-amen" title="${T("Kiffen nur 20–7 Uhr", "Weed only 8 pm–7 am")}">🌿<small>20–7</small></span>`);
-  else if (weed === "no") items.push(`<span class="card-amen no" title="${T("Kiffen hier verboten", "No weed here")}">🚫🌿</span>`);
+  // Only the good news on the card ("grünes Licht"); a "no" is in the detail.
+  if (weed === "ok") items.push(`<span class="card-amen" title="${T("Grünes Licht", "Green light")}">🟢</span>`);
+  else if (weed === "night") items.push(`<span class="card-amen" title="${T("Grünes Licht ab 20 Uhr", "Green light from 8 pm")}">🟢<small>20–7</small></span>`);
   return items.join("");
 }
 function refreshCardAmenities() {

@@ -1,0 +1,45 @@
+/* ====================== COMPLIMENTS ====================== */
+.cmp-card { text-align: left; }
+/* Inside the shared prompt card (.access-prompt h2 / button are big, amber,
+   uppercase): compact, calm chips and a left-aligned title instead. */
+.access-prompt .cmp-title { font-size: 21px; line-height: 1.15; margin: 0 30px 4px 0; text-align: left; }
+.access-prompt .cmp-sub { font-size: 12px; margin: 0 0 10px; text-align: left; }
+.cmp-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.access-prompt .cmp-preset {
+  width: auto; margin: 0; padding: 7px 11px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--fg);
+  border-radius: 999px; font-size: 13px; font-weight: 500; text-align: left; cursor: pointer;
+}
+.access-prompt .cmp-preset:hover { background: rgba(255,255,255,0.08); color: var(--fg); }
+.access-prompt .cmp-preset.active { border-color: var(--amber); background: rgba(232,169,62,0.18); color: var(--fg); }
+#cmp-text {
+  width: 100%; box-sizing: border-box; resize: vertical; min-height: 52px; margin-bottom: 10px;
+  background: var(--bg-3); color: var(--fg); border: 1px solid var(--line); border-radius: 10px;
+  padding: 9px 11px; font-family: "DM Sans", sans-serif; font-size: 15px;
+}
+#cmp-text:focus { outline: none; border-color: var(--amber); }
+#cmp-send:disabled { opacity: 0.45; cursor: default; }
+.cmp-points { font-size: 11px; color: var(--fg-dim); text-align: center; margin: 8px 0 0; }
+.cmp-list { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cmp-item {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center;
+  padding: 9px 11px; border-radius: 12px; background: rgba(232,169,62,0.08); border: 1px solid rgba(232,169,62,0.22);
+}
+.cmp-text { font-size: 14px; grid-column: 1; }
+.cmp-meta { font-size: 11px; color: var(--fg-dim); grid-column: 1; }
+.cmp-thanks, .cmp-thanked { grid-column: 2; grid-row: 1 / span 2; font-size: 12px; white-space: nowrap; }
+.cmp-thanks, .access-prompt .cmp-thanks { width: auto; border: 1px solid var(--line); background: transparent; color: var(--fg); border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 500; cursor: pointer; }
+.cmp-thanked { color: var(--fg-dim); }
+.cmp-empty, .cmp-done, .cmp-hint { font-size: 12px; color: var(--fg-dim); margin: 0 0 8px; }
+.cmp-suggest { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0 8px; font-size: 12px; color: var(--fg-dim); }
+.cmp-suggest > span { width: 100%; }
+.cmp-quick { padding: 6px 10px; }
+.up-section.cmp-section { margin: 4px 0 8px; }
+/* In profile overlays (.access-prompt centres text and turns every button into
+   a big amber one): entries stay left-aligned, names stay small chips. */
+.cmp-item { text-align: left; }
+.access-prompt .cmp-item .people-chip {
+  width: auto; background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: inherit;
+  font: inherit; font-size: 11px; font-weight: 500; padding: 1px 8px; border-radius: 999px; margin: 0;
+}
+.access-prompt .cmp-section h3 { text-align: left; }

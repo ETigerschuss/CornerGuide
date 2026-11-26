@@ -1,7 +1,7 @@
 name: E2E-Tests
 
 # All end-to-end test suites (tests/e2e) against the Firebase emulators.
-# Started by hand (Actions → E2E-Tests → Run workflow); a full run takes ~15 minutes.
+# Started by hand (Actions → E2E-Tests → Run workflow); a full run takes ~10 minutes.
 on:
   workflow_dispatch:
 
@@ -26,6 +26,10 @@ jobs:
           java-version: 21
       - name: Install test tools
         run: npm install
+      # The Cloud Functions run in the emulator too (they keep the slim copies
+      # the app reads at startup).
+      - name: Install the Cloud Functions' packages
+        run: npm ci --prefix ../../functions
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Start the Firebase emulators

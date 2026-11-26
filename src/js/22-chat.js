@@ -389,13 +389,10 @@ function renderCornerVotingSection(cornerId, container) {
 }
 
 function getCornerCoverPhoto(cornerId) {
-  let photos = [];
-  if (window.FB?.firebaseReady) {
-    const raw = STATE.photos?.[cornerId] || {};
-    photos = Object.values(raw);
-  } else {
-    photos = getPhotos(cornerId) || [];
-  }
+  // Online: the cover the Cloud Function picked (small thumbnail or Storage
+  // URL) — the corner's photos themselves are only loaded in its detail.
+  if (window.FB?.firebaseReady) return coverSrcOf(cornerId) || localStorage.getItem("cg.photo." + cornerId);
+  const photos = getPhotos(cornerId) || [];
   if (photos.length) {
     const ranked = photos.map((photo) => {
       const ratings = Object.values(photo.ratings || {});

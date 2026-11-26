@@ -15,16 +15,11 @@ function listenSharedCorners() {
 }
 
 /* ====================== PHOTOS (Firebase) ====================== */
-function listenPhotos() {
+// Only the covers at startup (photoCovers); a corner's photos load with its
+// detail and the full pictures when opened (35-slim-data.js).
+function listenPhotos(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  const photosRef = ref(db, "photos");
-  onValue(photosRef, (snapshot) => {
-    STATE.photos = snapshot.val() || {};
-    refreshAllPhotoGalleries();
-    renderCards();
-    if (_photoCommentsOpen) renderPhotoComments();
-  });
+  listenPhotoCovers(() => retryListenerAfterAuth(listenPhotos, attempt));
 }
 
 function getPhotos(cornerId) {
@@ -37,6 +32,7 @@ function getPhotos(cornerId) {
   } catch (e) { return []; }
 }
 
+var _storageUnavailable = false;
 function savePhoto(cornerId, dataUrl, caption) {
   const photo = {
     src: dataUrl,
@@ -51,16 +47,28 @@ function savePhoto(cornerId, dataUrl, caption) {
   if (window.FB?.firebaseReady) {
     const { db, ref, push, set } = window.FB;
     const newRef = push(ref(db, "photos/" + cornerId));
-    // Upload the image bytes to Storage and store only the URL in the DB (keeps
-    // the Realtime Database light). Falls back to inline base64 if upload fails.
-    if (window.FB.uploadImage && typeof dataUrl === "string" && dataUrl.startsWith("data:")) {
-      const key = newRef.key || ("p" + Date.now());
-      window.FB.uploadImage(`cornerPhotos/${cornerId}/${key}.jpg`, dataUrl)
-        .then((url) => { photo.src = url; photo.storage = true; set(newRef, photo); })
-        .catch((err) => { console.warn("Storage upload failed, storing inline:", err); set(newRef, photo); });
-    } else {
-      set(newRef, photo);
-    }
+    const key = newRef.key || ("p" + Date.now());
+    // The picture goes to Storage if the project has it, otherwise into its own
+    // node (photoData) — never into the photo list, which every detail loads.
+    // A small thumbnail rides along for the cards and the gallery.
+    return (async () => {
+      const inline = typeof dataUrl === "string" && dataUrl.startsWith("data:");
+      if (inline) {
+        const thumb = await makeThumbDataUrl(dataUrl);
+        if (thumb) photo.thumb = thumb;
+        try {
+          if (!window.FB.uploadImage || _storageUnavailable) throw new Error("storage unavailable");
+          photo.src = await withTimeout(window.FB.uploadImage(`cornerPhotos/${cornerId}/${key}.jpg`, dataUrl), 20000, "photo upload");
+          photo.storage = true;
+        } catch (err) {
+          _storageUnavailable = true;   // no bucket (Storage not activated) — don't wait for it again this session
+          await set(ref(db, `photoData/${cornerId}/${key}`), { src: dataUrl });
+          delete photo.src;
+        }
+      }
+      await set(newRef, photo);
+      return key;
+    })().catch((err) => { console.warn("savePhoto failed:", err); toast(T("Foto konnte nicht gespeichert werden.", "Could not save the photo.")); });
   } else {
     const photos = getPhotos(cornerId);
     photo.id = "photo-" + Date.now();

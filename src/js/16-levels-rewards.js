@@ -134,7 +134,7 @@ function matrixNextSteps(aura, karma) {
     const need = Math.max(1, xpForLevel(MATRIX_KARMA_LEVELS[row]) - Number(karma || 0));
     const cell = MATRIX_CELLS[row + 1][col];
     const runs = Math.ceil(need / SUPPLY_KARMA_PER_CONFIRM);
-    steps.push(`↑ ${cell.emoji} <strong>${cell.name}</strong>: ${T("noch", "another")} <strong>${need} Karma</strong> <span class="mx-how">(${T(`z. B. ${runs}× bestätigter Nachschub oder ein paar gut bewertete Gossip-Storys`, `e.g. ${runs}× confirmed supplies or a few well-rated gossip stories`)})</span>`);
+    steps.push(`↑ ${cell.emoji} <strong>${cell.name}</strong>: ${T("noch", "another")} <strong>${need} Karma</strong> <span class="mx-how">(${T(`z. B. ${runs}× bestätigter Nachschub, ein paar gut bewertete Gossip-Storys — oder Komplimente von den anderen`, `e.g. ${runs}× confirmed supplies, a few well-rated gossip stories — or compliments from the others`)})</span>`);
   }
   if (col < 2) {
     const need = Math.max(1, xpForLevel(MATRIX_AURA_LEVELS[col]) - Number(aura || 0));
@@ -168,10 +168,11 @@ function buildRewardGuideHtml() {
   return `<div class="rg">
     <div class="rg-streams">
       <div class="rg-stream aura"><div class="rg-k">✨ Aura</div><div class="rg-d">${T("= was <strong>du</strong> tust: da sein, mitmachen. Bestimmt dein Level.", "= what <strong>you</strong> do: show up, join in. Drives your level.")}</div></div>
-      <div class="rg-stream karma"><div class="rg-k">🎁 Karma</div><div class="rg-d">${T("= was <strong>andere</strong> dir geben: bestätigter Nachschub &amp; Gossip-Punkte.", "= what <strong>others</strong> give you: confirmed supplies &amp; gossip points.")}</div></div>
+      <div class="rg-stream karma"><div class="rg-k">🎁 Karma</div><div class="rg-d">${T("= was <strong>andere</strong> dir geben: Komplimente, bestätigter Nachschub &amp; Gossip-Punkte.", "= what <strong>others</strong> give you: compliments, confirmed supplies &amp; gossip points.")}</div></div>
     </div>
     <h4 class="rg-h karma">🎁 ${T("Karma bekommen", "Earning karma")}</h4>
     <table class="rg-table">
+      ${row("💐", "Kompliment bekommen · Danke für dein Kompliment", "Got a compliment · thanks for your compliment", `+${COMPLIMENT_KARMA} · +${COMPLIMENT_THANKS_KARMA}`)}
       ${row("🛒", "Nachschub mitgebracht — pro Person, die es bestätigt", "Brought supplies — per person who confirms", `+${SUPPLY_KARMA_PER_CONFIRM}`)}
       ${row("🗣️", "Gossip-Story erzählt — pro Person am Corner, die bewertet", "Told a gossip story — per person at the corner who rates it", "+2…+20")}
       ${row("📅", "Cornerdate geplant — pro Zusage · pro Gast, der wirklich kommt", "Planned a cornerdate — per yes · per guest who really comes", `+${CORNERDATE_JOIN_KARMA} · +${CORNERDATE_ARRIVE_KARMA}`)}
@@ -185,6 +186,7 @@ function buildRewardGuideHtml() {
       ${row("🤝", "Mit jemandem am Corner getroffen (pro Person)", "Met someone at a corner (per person)", "+8")}
       ${row("⚔️", "Corner eingenommen (3 aus deinem Team vor Ort)", "Corner captured (3 of your team there)", "+25")}
       ${row("🗣️", "Gossip erzählt / bewertet", "Told / rated gossip", "+5 / +2")}
+      ${row("💐", `Kompliment gemacht (bis ${COMPLIMENT_AURA_PER_DAY}× am Tag) · Danke gesagt`, `Paid a compliment (up to ${COMPLIMENT_AURA_PER_DAY}× a day) · said thanks`, `+${COMPLIMENT_AURA} · +${COMPLIMENT_THANKS_AURA}`)}
       ${row("📅", "Cornerdate geplant (bis 3× am Tag) · zugesagt · wirklich gekommen", "Planned a cornerdate (up to 3× a day) · said yes · really came", `+${CORNERDATE_PLAN_AURA} · +${CORNERDATE_JOIN_AURA} · +${CORNERDATE_SHOWUP_AURA}`)}
       ${row("☂️", "Corner als überdacht / nass eingeschätzt", "Rated a corner as covered / wet", "+2")}
       ${row("➕", "Neuen Spot eingetragen", "Added a new spot", "+50")}
@@ -247,7 +249,7 @@ function undoCheckin(cornerId) {
     if (g.today) {
       try { const log = JSON.parse(localStorage.getItem("cg.checkinDays") || "{}"); delete log[cornerId]; localStorage.setItem("cg.checkinDays", JSON.stringify(log)); } catch (e) {}
     }
-    if (g.visitKey && window.FB?.firebaseReady) window.FB.remove(window.FB.ref(window.FB.db, `visits/${cornerId}/${g.visitKey}`)).catch(() => {});
+    if (g.visitKey && window.FB?.firebaseReady) { forgetMyVisit(g.visitKey); window.FB.remove(window.FB.ref(window.FB.db, `visits/${cornerId}/${g.visitKey}`)).catch(() => {}); }
   }
   STATE.lastCheckinGrant = null;
   STATE.lastVisitRef = null;
