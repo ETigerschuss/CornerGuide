@@ -2684,6 +2684,21 @@ a.action-btn { text-decoration: none; }
 .amen-filter::-webkit-scrollbar { display: none; }
 .amen-chip { flex: 0 0 auto; border: 1px solid var(--line); background: var(--bg-3); color: var(--fg-dim); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; white-space: nowrap; }
 .amen-chip.on { border-color: var(--green); color: var(--fg); background: rgba(125,222,125,0.1); }
+/* Visibility: everyone / close friends / only me */
+.vis-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+.vis-opt { flex: 1 1 0; min-width: 96px; border: 1px solid var(--line); background: var(--bg-3); color: var(--fg-dim); border-radius: 12px; padding: 9px 6px; font-size: 13px; cursor: pointer; }
+.vis-opt.on { border-color: var(--amber); color: var(--fg); background: rgba(232,169,64,0.1); }
+.vis-hint { font-size: 11.5px; color: var(--fg-dim); margin-top: 6px; line-height: 1.4; }
+.vis-badge { display: inline-block; font-size: 11px; border: 1px solid var(--amber); color: var(--amber); border-radius: 999px; padding: 1px 8px; margin-right: 6px; vertical-align: middle; }
+.vis-badge.vis-me { border-color: var(--pink); color: var(--pink); }
+.corner-marker .lock-badge { position: absolute; top: -8px; left: -8px; font-size: 12px; }
+.share-section .share-row { font-size: 13px; line-height: 1.5; margin: 10px 0; }
+.share-dim { color: var(--fg-dim); }
+.cf-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+.cf-chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 13px; background: var(--bg-3); }
+.cf-chip button { border: 0; background: transparent; color: var(--fg-dim); cursor: pointer; font-size: 12px; padding: 2px 6px; }
+.cf-row.on { border-color: var(--amber); }
+.cd-secret-badge { font-size: 11px; color: var(--amber); margin-left: 6px; }
 .spot-pin { font-size: 32px; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); cursor: grab; }
 
 /* ====================== PUBLIC PROFILES ====================== */
@@ -2965,6 +2980,11 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
       <div id="spot-amenities" class="spot-amenities"></div>
       <div id="spot-rules" class="spot-rules"></div>
     </div>
+    <div class="field">
+      <label>Wer sieht den Spot?</label>
+      <div id="spot-visibility" class="vis-picker"></div>
+      <div id="spot-visibility-hint" class="vis-hint"></div>
+    </div>
     <details class="spot-more">
       <summary>Mehr: Beschreibung, Stadtteil, Tags, Koordinaten</summary>
       <div class="field">
@@ -3055,6 +3075,7 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
         </select>
       </label>
       <label class="cd-field"><span class="ce-label" id="cd-note-label">Notiz (optional)</span><input type="text" id="cd-note" class="ce-field" maxlength="140" autocomplete="off" /></label>
+      <label class="cd-check"><input type="checkbox" id="cd-secret" /> <span id="cd-secret-label">🤫 Geheim — nur deine engen Freunde sehen es (halbe Punkte)</span></label>
       <label class="cd-check"><input type="checkbox" id="cd-notify" checked /> <span id="cd-notify-label">Alle in der App benachrichtigen</span></label>
       <p class="gossip-hint" id="cd-hint"></p>
       <div class="gossip-actions">
@@ -3231,6 +3252,17 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
   </div>
 </div>
 
+<!-- Close friends: who sees private corners and secret cornerdates -->
+<div id="cf-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card claim-card">
+    <h2>👯 Enge Freunde</h2>
+    <p style="font-size:13px;color:var(--fg-dim);">Tipp an, wer deine privaten Corners und geheimen Cornerdates sehen darf. Nur du siehst diese Liste.</p>
+    <input type="search" id="cf-search" class="claim-search" placeholder="Namen suchen…" autocomplete="off" />
+    <div id="cf-list" style="margin:10px 0;"></div>
+    <button id="cf-close" class="action-btn primary">Fertig</button>
+  </div>
+</div>
+
 <!-- Edit a corner you created -->
 <div id="corner-edit-overlay" class="access-prompt" style="display:none;">
   <div class="prompt-card" style="max-width:400px;max-height:86vh;overflow-y:auto;text-align:left;">
@@ -3243,6 +3275,9 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
     <textarea id="ce-desc" class="ce-field" maxlength="500" rows="4"></textarea>
     <label class="ce-label">Tags (Komma-getrennt)</label>
     <input type="text" id="ce-tags" class="ce-field" maxlength="120" autocomplete="off" placeholder="Kiosk, Sunset, ruhig" />
+    <label class="ce-label">Wer sieht den Spot?</label>
+    <div id="ce-visibility" class="vis-picker"></div>
+    <div id="ce-visibility-hint" class="vis-hint"></div>
     <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;">
       <button class="action-btn" id="ce-cancel">Abbrechen</button>
       <button class="action-btn primary" id="ce-save">Speichern</button>
@@ -3553,7 +3588,7 @@ function setLang(lang) {
 
 
 function getAllCorners() {
-  return [...CORNERS_OG, ...STATE.customSpots];
+  return [...CORNERS_OG, ...STATE.customSpots, ...Object.values(STATE.privateCorners || {})];
 }
 
 function getDescription(c) {
@@ -5468,6 +5503,12 @@ function openModal() {
   ["f-name", "f-area", "f-desc", "f-tags", "f-lat", "f-lng"].forEach((id) => { $("#" + id).value = ""; });
   $("#f-area").dataset.auto = "";
   resetSpotDraft();
+  const vbox = $("#spot-visibility");
+  if (vbox) {
+    vbox.innerHTML = visibilityPickerHtml("all");
+    $("#spot-visibility-hint").textContent = visibilityHint("all");
+    bindVisibilityPicker(vbox, (v) => { SPOT_DRAFT.visibility = v; $("#spot-visibility-hint").textContent = visibilityHint(v); });
+  }
   $("#modal-backdrop").classList.add("open");
   mountPinPicker();
 }
@@ -6182,7 +6223,7 @@ async function showComeBar(cornerId) {
 
 // Cornerdate invitation: one tap "bin dabei". Waits briefly for the dates to load.
 async function openDateInvite(dateId, attempt = 0) {
-  const raw = STATE.cornerDates?.[dateId];
+  const raw = allCornerDates()[dateId];
   if (!raw) {
     if (attempt < 20) setTimeout(() => openDateInvite(dateId, attempt + 1), 750);
     else toast(T("Dieses Cornerdate gibt es nicht mehr.", "This cornerdate no longer exists."));
@@ -6203,9 +6244,9 @@ ${T("von", "by")} ${mine ? T("dir", "you") : (d.byName || "?")} · ${going.lengt
     return;
   }
   const ok = await showDialog({
-    title: `📅 ${T("Cornerdate", "Cornerdate")}`,
+    title: `${d.secret ? "🤫" : "📅"} ${d.secret ? T("Geheimes Cornerdate", "Secret cornerdate") : T("Cornerdate", "Cornerdate")}`,
     text,
-    okLabel: `✋ ${T("Bin dabei", "I'm in")} (+${CORNERDATE_JOIN_AURA} Aura)`,
+    okLabel: `✋ ${T("Bin dabei", "I'm in")} (+${d.secret ? PRIVATE_POINTS(CORNERDATE_JOIN_AURA) : CORNERDATE_JOIN_AURA} Aura)`,
     cancelLabel: T("Später", "Later")
   });
   if (ok === true) await toggleCornerDateGoing(dateId);
@@ -6829,6 +6870,7 @@ function saveNickname(nameArg) {
   unlockAchievement("first-login", "Willkommen", "👋", 10);
   ensureOwnProfileLock();
   maybeShowRewardTip(6500);
+  scheduleStartCircles();
   if (!twin) runPendingLinkActions();
 }
 
@@ -7160,6 +7202,7 @@ function _activateAuthDependentFeatures(uid, status) {
   // localStorage saying "access granted" is no proof for THIS login — check.
   verifyAccessGrant();
   setTimeout(backfillCornerFacts, 30000);   // corners nobody has checked yet
+  setTimeout(startCircles, 2000);            // close friends, private corners, secret dates
   if (!_linkVisibilityBound) {
     _linkVisibilityBound = true;
     document.addEventListener("visibilitychange", () => { if (!document.hidden && _accessVerified[window.FB?.getAuthUid?.() || ""]) { linkMyEarlierLogins(); backfillCornerFacts(); } });
@@ -7597,10 +7640,12 @@ function openCheckinTeamPicker(cornerId) {
 // Only the creator (or the host) may edit a user-created spot.
 function canEditCorner(c) {
   if (!c || !c.isCustom) return false;
+  if (c.ownerKey) return isMyKey(c.ownerKey);   // private corners: only the owner
   if (STATE.isAdmin) return true;
   if (!STATE.nickname) return false;
-  return c.createdById ? c.createdById === currentUserKey() : c.createdBy === STATE.nickname;
+  return c.createdById ? isMyKey(c.createdById) : c.createdBy === STATE.nickname;
 }
+var CE_VISIBILITY = "all";
 
 function openCornerEditor(cornerId) {
   const c = getAllCorners().find((x) => x.id === cornerId);
@@ -7611,6 +7656,13 @@ function openCornerEditor(cornerId) {
   $("#ce-area").value = c.area || "";
   $("#ce-desc").value = getDescription(c) || "";
   $("#ce-tags").value = Array.isArray(c.tags) ? c.tags.join(", ") : "";
+  CE_VISIBILITY = cornerVisibility(c);
+  const vbox = $("#ce-visibility");
+  if (vbox) {
+    vbox.innerHTML = visibilityPickerHtml(CE_VISIBILITY);
+    $("#ce-visibility-hint").textContent = visibilityHint(CE_VISIBILITY);
+    bindVisibilityPicker(vbox, (v) => { CE_VISIBILITY = v; $("#ce-visibility-hint").textContent = visibilityHint(v); });
+  }
   const close = () => { overlay.style.display = "none"; };
   $("#ce-cancel").onclick = close;
   overlay.onclick = (e) => { if (e.target === overlay) close(); };
@@ -7631,7 +7683,6 @@ async function saveCornerEdit(cornerId) {
   const name = $("#ce-name").value.trim();
   const desc = $("#ce-desc").value.trim();
   if (!name) { toast("Bitte einen Namen eingeben."); return; }
-  if (!desc) { toast("Bitte eine Beschreibung eingeben."); return; }
   const updated = {
     ...c,
     name: name.slice(0, 80),
@@ -7640,14 +7691,26 @@ async function saveCornerEdit(cornerId) {
     tags: $("#ce-tags").value.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 8),
     editedAt: Date.now()
   };
+  // Who sees it may change too: then the spot moves to the other place.
+  const fromPath = cornerDbPath(c);
+  const target = { ...cleanCornerData(updated) };
+  delete target.visibility; delete target.ownerKey;
+  if (CE_VISIBILITY !== "all") { target.visibility = CE_VISIBILITY; target.ownerKey = c.ownerKey || myRootKey(); }
+  const toPath = cornerDbPath(target);
   const idx = STATE.customSpots.findIndex((s) => s.id === cornerId);
-  if (idx >= 0) STATE.customSpots[idx] = updated;
+  if (CE_VISIBILITY === "all" && idx >= 0) STATE.customSpots[idx] = target;
   saveCustomSpots();
   // A local per-device description override would mask the new shared text.
   localStorage.removeItem("cg.desc." + cornerId);
   if (window.FB?.firebaseReady) {
     try {
-      await window.FB.set(window.FB.ref(window.FB.db, "corners/" + cornerId), updated);
+      const updates = { [toPath]: target };
+      if (fromPath !== toPath) {
+        updates[fromPath] = null;
+        if (CE_VISIBILITY !== "all") updates[`cornerFacts/${cornerId}`] = null;   // nothing about it stays public
+      }
+      await window.FB.update(window.FB.ref(window.FB.db), updates);
+      if (fromPath !== toPath && CE_VISIBILITY !== "all") STATE.customSpots = STATE.customSpots.filter((s) => s.id !== cornerId);
     } catch (err) {
       console.warn("saveCornerEdit failed:", err);
       toast("⚠️ Änderung konnte nicht gespeichert werden.");
@@ -7664,9 +7727,10 @@ async function deleteOwnCorner(cornerId) {
   const c = getAllCorners().find((x) => x.id === cornerId);
   if (!c || !canEditCorner(c)) return;
   if (window.FB?.firebaseReady) {
-    try { await window.FB.remove(window.FB.ref(window.FB.db, "corners/" + cornerId)); }
+    try { await window.FB.remove(window.FB.ref(window.FB.db, cornerDbPath(c))); }
     catch (err) { console.warn("deleteOwnCorner failed:", err); toast("⚠️ Löschen fehlgeschlagen."); return; }
   }
+  if (STATE.privateCorners?.[cornerId]) delete STATE.privateCorners[cornerId];
   STATE.customSpots = STATE.customSpots.filter((s) => s.id !== cornerId);
   saveCustomSpots();
   closeDetail();
@@ -8346,6 +8410,7 @@ async function linkToProfile(targetKey, opts = {}) {
   if (STATE.view === "profile") renderProfile();
   if (STATE.view === "leaderboard") renderLeaderboard();
   const lv = getLevel(getCurrentAura()).level;
+  scheduleStartCircles();
   toast(`👋 ${T("Willkommen zurück", "Welcome back")}, <strong>${escapeHtml(nickname)}</strong> — Lv. ${lv}, ${T("alles da", "all there")}.<br><span style="font-size:11px;opacity:0.75;">${T("Nicht du? Tippen zum Ändern", "Not you? Tap to change")}</span>`,
     "at-corner", () => unlinkProfile(previousName));
   runPendingLinkActions();
@@ -8932,7 +8997,7 @@ function renderFriendsBar() {
     const { level } = getLevel(xp);
     const tier = getLevelTier(level);
     const avail = AVAILABILITY[friend.status] || null;
-    const statusLabel = corner ? "@ " + escapeHtml(corner.name) : escapeHtml(avail?.label || T("online", "online"));
+    const statusLabel = corner ? "@ " + escapeHtml(corner.name) : friend.atCorner ? "🔒 " + T("privat", "private") : escapeHtml(avail?.label || T("online", "online"));
     const asleep = presenceIsAsleep(friend);
     return `<li class="friend-chip ${corner ? "" : "away"} ${asleep ? "asleep" : ""}" style="border-color:${TEAMS[friend.team]?.color || 'var(--line)'};">
       <span class="friend-dot" title="${escapeHtml(avail?.label || "")}" style="background:${avail?.color || TEAMS[friend.team]?.color || 'var(--fg-dim)'};"></span>
@@ -9729,7 +9794,7 @@ function getPeopleAtCorner(cornerId) {
 }
 
 function checkCaptureCondition(cornerId) {
-  if (!STATE.team) return;
+  if (!STATE.team || isPrivateCorner(cornerId)) return;   // private corners are not in the team battles
   const occupants = [];
   if (STATE.manualCheckinId === cornerId || STATE.atCornerId === cornerId) occupants.push({ id: currentUserKey(), team: STATE.team });
   freshFriends().forEach((friend) => { if (friend.atCorner === cornerId && friend.team) occupants.push({ id: friend.id, team: friend.team }); });
@@ -9824,6 +9889,7 @@ function manualCheckin(cornerId) {
     } else {
       markCheckedInToday(cornerId);
       const k = checkinKarma(cornerId);
+      if (isPrivateCorner(corner)) { k.total = PRIVATE_POINTS(k.total); k.social = 0; k.popular = 0; }
       addXp(k.total, `Check-in: ${corner.name}`);
       grant.aura += k.total;
       grant.today = true;
@@ -9903,6 +9969,11 @@ function manualCheckin(cornerId) {
 // everyone's push token (so friends get pinged even with the app closed).
 function broadcastCheckinPush(corner) {
   if (!window.FB?.firebaseReady || !STATE.nickname || !corner) return;
+  // Private corner: only close friends hear about it (nobody for "only me").
+  if (isPrivateCorner(corner)) {
+    if (cornerVisibility(corner) === "friends") sendTargetedPush(closeFriendKeys(), { type: "checkin", title: "🍻 Minga Corner Guide", body: `${STATE.nickname} ist gerade am ${corner.name} 👯`, query: `?corner=${encodeURIComponent(corner.id)}` });
+    return;
+  }
   try {
     const { db, ref, push, set } = window.FB;
     set(push(ref(db, "notify")), {
@@ -11083,6 +11154,280 @@ function cornerWhatsAppText(cornerId) {
   return `🍻 Bin gerade am ${where}!${others.length ? ` Schon da: ${others.join(", ")}.` : ""} Kommt vorbei 👉 ${link}`;
 }
 
+/* ====================== CLOSE FRIENDS, PRIVATE CORNERS, SECRET DATES ======================
+   "Bestimmte Corners sollen nur von dir und deinen engen Freunden gesehen
+   werden." Everyone with the invitation stays connected and sees check-ins
+   as before; each person picks their own close friends — a one-way list only
+   they see. A corner can be for everyone, for close friends or only for
+   yourself; a cornerdate can be secret (only close friends see it). Private
+   things live in database nodes the server only hands to the owner and their
+   close friends, so they never reach other phones. They give fewer points
+   ("man bekommt dann halt nicht so viele Punkte").
+   Known gap, agreed for now: "Wer bist du?" needs no proof, so whoever picks
+   your name also sees your private things.                              */
+const PRIVATE_POINTS = (n) => Math.max(1, Math.round(n / 2));
+const PRIVATE_SPOT_AURA = 10;                 // a corner for everyone gives 50
+const VISIBILITY = {
+  all: { emoji: "🌍", de: "Alle", en: "Everyone" },
+  friends: { emoji: "👯", de: "Enge Freunde", en: "Close friends" },
+  me: { emoji: "🔒", de: "Nur ich", en: "Only me" }
+};
+STATE.closeFriends = {};       // my list, every login of each friend: key -> true
+STATE.privateCorners = {};     // id -> corner (+ visibility, ownerKey)
+STATE.secretDates = {};        // id -> date (+ secret, ownerKey)
+var _circles = { root: "", subs: {}, ownersByKey: {}, cornerBuckets: {}, dateBuckets: {}, primed: {}, renderTimer: null, startTimer: null };
+
+function circleSub(path, onData) {
+  if (_circles.subs[path] || !window.FB?.firebaseReady) return;
+  const { db, ref, onValue } = window.FB;
+  try {
+    _circles.subs[path] = onValue(ref(db, path), (snap) => onData(snap.val() || {}), () => { delete _circles.subs[path]; });
+  } catch (err) { console.warn("circle listener skipped:", path, err); }
+}
+function circleUnsub(path) {
+  const off = _circles.subs[path];
+  if (typeof off === "function") { try { off(); } catch (e) { /* already gone */ } }
+  delete _circles.subs[path];
+}
+
+// Everything that depends on who I am; safe to call again and again.
+function startCircles() {
+  const uid = window.FB?.getAuthUid?.() || "";
+  if (!window.FB?.firebaseReady || !uid || !STATE.nickname) return;
+  const root = myRootKey();
+  if (_circles.root && _circles.root !== root) {
+    Object.keys(_circles.subs).forEach(circleUnsub);
+    Object.assign(_circles, { ownersByKey: {}, cornerBuckets: {}, dateBuckets: {}, primed: {} });
+    STATE.closeFriends = {};
+    mergeCircleData();
+  }
+  _circles.root = root;
+  circleSub(`closeFriends/${root}`, (v) => { STATE.closeFriends = v; syncCloseFriendKeys(); scheduleCircleRender(); });
+  syncCloseFriendKeys();   // a close friend may have a new login since the list was loaded
+  myIdentityKeys().filter((k) => k && !/[.#$\[\]\/]/.test(k)).forEach((k) => circleSub(`closeFriendOf/${k}`, (v) => { _circles.ownersByKey[k] = Object.keys(v); updatePrivateOwners(); }));
+  watchCircleOwner(root, true);
+}
+function scheduleStartCircles() {
+  clearTimeout(_circles.startTimer);
+  _circles.startTimer = setTimeout(startCircles, 800);
+}
+function updatePrivateOwners() {
+  const owners = new Set([].concat(...Object.values(_circles.ownersByKey)));
+  owners.delete(_circles.root);
+  owners.forEach((o) => watchCircleOwner(o, false));
+  // Someone took me off their list: stop reading (the server refuses anyway).
+  Object.keys(_circles.subs).forEach((path) => {
+    const m = path.match(/^(privateCorners|secretDates)\/([^/]+)/);
+    if (!m || m[2] === _circles.root || owners.has(m[2])) return;
+    circleUnsub(path);
+    delete _circles.cornerBuckets[`${m[2]}/friends`];
+    delete _circles.dateBuckets[m[2]];
+  });
+  mergeCircleData();
+}
+function watchCircleOwner(owner, mine) {
+  circleSub(`privateCorners/${owner}/friends`, (v) => { _circles.cornerBuckets[`${owner}/friends`] = v; mergeCircleData(); });
+  if (mine) circleSub(`privateCorners/${owner}/me`, (v) => { _circles.cornerBuckets[`${owner}/me`] = v; mergeCircleData(); });
+  circleSub(`secretDates/${owner}`, (v) => {
+    const before = _circles.dateBuckets[owner] || {};
+    _circles.dateBuckets[owner] = v;
+    if (_circles.primed[owner] && !mine) announceSecretDates(owner, before, v);
+    _circles.primed[owner] = true;
+    mergeCircleData();
+  });
+}
+function mergeCircleData() {
+  const corners = {};
+  Object.entries(_circles.cornerBuckets).forEach(([bucket, items]) => {
+    const [owner, vis] = bucket.split("/");
+    Object.entries(items || {}).forEach(([id, c]) => {
+      if (c && typeof c.lat === "number" && typeof c.lng === "number") corners[id] = { ...c, id, isCustom: true, visibility: vis, ownerKey: owner };
+    });
+  });
+  const dates = {};
+  Object.entries(_circles.dateBuckets).forEach(([owner, items]) => {
+    Object.entries(items || {}).forEach(([id, d]) => { if (d && d.cornerId) dates[id] = { ...d, secret: true, ownerKey: owner }; });
+  });
+  STATE.privateCorners = corners;
+  STATE.secretDates = dates;
+  scheduleCircleRender();
+}
+function scheduleCircleRender() {
+  clearTimeout(_circles.renderTimer);
+  _circles.renderTimer = setTimeout(() => {
+    renderCards();
+    updateCounts();
+    rebuildMainMarkers();
+    renderCornerDatesStrip();
+    refreshCornerDateSection();
+    if (STATE.view === "profile") renderProfile();
+    openPendingSharedCorner();
+  }, 300);
+}
+function announceSecretDates(owner, before, after) {
+  Object.entries(after || {}).forEach(([id, d]) => {
+    if (before[id] || !d || Number(d.end) < Date.now()) return;
+    toast(`🤫 <strong>${escapeHtml(d.byName || "?")}</strong> ${T("lädt dich zu einem geheimen Cornerdate ein", "invites you to a secret cornerdate")}: ${escapeHtml(formatDateRange(d.start, d.end))} ${T("am", "at")} ${escapeHtml(d.cornerName || "?")}<br><span style="font-size:11px;opacity:0.8;">${T("Tippen zum Ansehen →", "Tap to see →")}</span>`, null, () => openDateInvite(id));
+  });
+}
+
+/* ---- close friends ---- */
+function closeFriendRoots() { return new Set(Object.keys(STATE.closeFriends || {}).map((k) => profileRoot(k))); }
+function isCloseFriend(key) { return !!key && closeFriendRoots().has(profileRoot(key)); }
+function closeFriendKeys() { return Object.keys(STATE.closeFriends || {}).filter((k) => !isMyKey(k)); }
+async function setCloseFriend(key, on) {
+  if (!window.FB?.firebaseReady || !key) return false;
+  const me = myRootKey();
+  const root = profileRoot(key);
+  if (!root || root === me || isMyKey(root)) return false;
+  const updates = {};
+  const keys = new Set(identityKeysOf(root));
+  Object.keys(STATE.closeFriends || {}).forEach((k) => { if (profileRoot(k) === root) keys.add(k); });
+  keys.forEach((k) => {
+    if (isMyKey(k) || /[.#$\[\]\/]/.test(k)) return;
+    updates[`closeFriends/${me}/${k}`] = on ? true : null;
+    updates[`closeFriendOf/${k}/${me}`] = on ? true : null;
+  });
+  if (!Object.keys(updates).length) return false;
+  try { await window.FB.update(window.FB.ref(window.FB.db), updates); }
+  catch (err) { console.warn("setCloseFriend failed:", err); toast(T("Ging nicht — Verbindung prüfen.", "Didn't work — check your connection.")); return false; }
+  keys.forEach((k) => { if (on) STATE.closeFriends[k] = true; else delete STATE.closeFriends[k]; });
+  scheduleCircleRender();
+  return true;
+}
+// A close friend got a new phone or opened a link in the browser: add that login too.
+var _cfSyncTimer = null;
+function syncCloseFriendKeys() {
+  clearTimeout(_cfSyncTimer);
+  _cfSyncTimer = setTimeout(() => {
+    if (!window.FB?.firebaseReady) return;
+    const me = myRootKey();
+    const updates = {};
+    closeFriendRoots().forEach((root) => identityKeysOf(root).forEach((k) => {
+      if (STATE.closeFriends[k] || isMyKey(k) || /[.#$\[\]\/]/.test(k)) return;
+      updates[`closeFriends/${me}/${k}`] = true;
+      updates[`closeFriendOf/${k}/${me}`] = true;
+    }));
+    if (Object.keys(updates).length) window.FB.update(window.FB.ref(window.FB.db), updates).catch(() => {});
+  }, 1500);
+}
+
+function openCloseFriendPicker() {
+  const overlay = $("#cf-overlay");
+  if (!overlay) return;
+  const render = () => {
+    const q = String($("#cf-search").value || "").trim().toLowerCase();
+    const me = myRootKey();
+    const people = new Map();
+    Object.keys(STATE.points || {}).forEach((k) => {
+      const root = profileRoot(k);
+      if (!root || root === me || isMyKey(root) || people.has(root)) return;
+      const name = identityNickname(root);
+      if (!name || name.toLowerCase() === "anonym") return;
+      people.set(root, name);
+    });
+    const rows = [...people.entries()].sort((a, b) => a[1].localeCompare(b[1], "de", { sensitivity: "base" }))
+      .filter(([, n]) => !q || n.toLowerCase().includes(q));
+    $("#cf-list").innerHTML = rows.length ? rows.map(([root, name]) => {
+      const on = isCloseFriend(root);
+      return `<button class="claim-row cf-row ${on ? "on" : ""}" data-cf-toggle="${escapeHtml(root)}"><span class="claim-row-main"><span class="claim-row-name">${escapeHtml(name)}</span></span><span class="claim-row-cta">${on ? "✓ 👯" : "＋"}</span></button>`;
+    }).join("") : `<p style="color:var(--fg-dim);font-size:13px;">${T("Niemand gefunden.", "Nobody found.")}</p>`;
+    $$("#cf-list [data-cf-toggle]").forEach((b) => b.addEventListener("click", async () => {
+      b.disabled = true;
+      await setCloseFriend(b.dataset.cfToggle, !isCloseFriend(b.dataset.cfToggle));
+      render();
+    }));
+  };
+  $("#cf-search").value = "";
+  $("#cf-search").oninput = render;
+  $("#cf-close").onclick = () => { overlay.style.display = "none"; if (STATE.view === "profile") renderProfile(); };
+  overlay.onclick = (e) => { if (e.target === overlay) $("#cf-close").click(); };
+  overlay.style.display = "flex";
+  render();
+}
+
+/* ---- corner visibility ---- */
+function cornerVisibility(c) { return c && VISIBILITY[c.visibility] ? c.visibility : "all"; }
+function isPrivateCorner(cOrId) {
+  const c = typeof cOrId === "string" ? getAllCorners().find((x) => x.id === cOrId) : cOrId;
+  return !!c && cornerVisibility(c) !== "all";
+}
+function cornerDbPath(c) {
+  return isPrivateCorner(c) ? `privateCorners/${c.ownerKey}/${cornerVisibility(c)}/${c.id}` : `corners/${c.id}`;
+}
+function cleanCornerData(c) {
+  const out = {};
+  Object.entries(c || {}).forEach(([k, v]) => { if (!k.startsWith("_") && v !== undefined) out[k] = v; });
+  return out;
+}
+function visibilityBadgeHtml(c) {
+  const v = cornerVisibility(c);
+  if (v === "all") return "";
+  const info = VISIBILITY[v];
+  const byOther = c.ownerKey && !isMyKey(c.ownerKey) && c.createdBy;
+  return `<span class="vis-badge vis-${v}">${info.emoji} ${escapeHtml(T(info.de, info.en))}${byOther ? ` · ${T("von", "by")} ${escapeHtml(c.createdBy)}` : ""}</span>`;
+}
+function visibilityPickerHtml(current) {
+  return Object.entries(VISIBILITY).map(([k, info]) => `<button type="button" class="vis-opt ${current === k ? "on" : ""}" data-vis="${k}" aria-pressed="${current === k}">${info.emoji} ${escapeHtml(T(info.de, info.en))}</button>`).join("");
+}
+function bindVisibilityPicker(box, onPick) {
+  box.querySelectorAll("[data-vis]").forEach((b) => b.addEventListener("click", () => {
+    box.querySelectorAll("[data-vis]").forEach((x) => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", String(x === b)); });
+    onPick(b.dataset.vis);
+  }));
+}
+function visibilityHint(v) {
+  if (v === "friends") return closeFriendRoots().size
+    ? T(`Nur du und deine ${closeFriendRoots().size} engen Freunde sehen ihn. Halbe Punkte.`, `Only you and your ${closeFriendRoots().size} close friends see it. Half the points.`)
+    : T("Du hast noch keine engen Freunde — im Profil unter „Teilen & enge Freunde“ hinzufügen. Halbe Punkte.", "No close friends yet — add them in your profile. Half the points.");
+  if (v === "me") return T("Nur du siehst ihn. Halbe Punkte.", "Only you see it. Half the points.");
+  return T("Alle in der App sehen ihn auf Karte und Liste.", "Everyone in the app sees it on the map and list.");
+}
+
+/* ---- secret cornerdates: public and secret ones in one place ---- */
+function allCornerDates() {
+  return { ...(STATE.cornerDates || {}), ...(STATE.secretDates || {}) };
+}
+function cornerDatePath(id) {
+  const d = allCornerDates()[id];
+  return d && d.secret ? `secretDates/${d.ownerKey}/${id}` : `cornerDates/${id}`;
+}
+function cleanupOwnSecretDates() {
+  if (!window.FB?.firebaseReady) return;
+  const { db, ref, remove } = window.FB;
+  Object.entries(STATE.secretDates || {}).forEach(([id, d]) => {
+    if (d && isMyKey(d.ownerKey) && Number(d.end) < Date.now() - CORNERDATE_KEEP_MS) remove(ref(db, `secretDates/${d.ownerKey}/${id}`)).catch(() => {});
+  });
+}
+
+/* ---- "Was teile ich mit wem?" in the profile ---- */
+function sharingSectionHtml() {
+  if (!window.FB?.firebaseReady || !STATE.nickname) return "";
+  const mine = getAllCorners().filter((c) => c.isCustom && (c.ownerKey ? isMyKey(c.ownerKey) : !!c.createdById && isMyKey(c.createdById)));
+  const counts = { all: 0, friends: 0, me: 0 };
+  mine.forEach((c) => { counts[cornerVisibility(c)]++; });
+  const friends = [...closeFriendRoots()].map((root) => ({ root, name: identityNickname(root) || "?" }))
+    .sort((a, b) => a.name.localeCompare(b.name, "de", { sensitivity: "base" }));
+  return `<div class="leaderboard-section share-section" id="share-section">
+    <h3>🔐 ${T("Teilen & enge Freunde", "Sharing & close friends")}</h3>
+    <div class="share-row"><strong>👯 ${T("Deine engen Freunde", "Your close friends")} (${friends.length})</strong> <span class="share-dim">— ${T("nur du siehst diese Liste", "only you see this list")}</span>
+      <div class="cf-chips">${friends.map((f) => `<span class="cf-chip">${escapeHtml(f.name)}<button data-cf-remove="${escapeHtml(f.root)}" aria-label="${T("entfernen", "remove")}">✕</button></span>`).join("")}
+        <button class="action-btn" id="cf-add">＋ ${T("Hinzufügen", "Add")}</button></div></div>
+    <div class="share-row">📍 <strong>${T("Wo du gerade bist", "Where you are")}</strong>: ${T("sehen alle in der App, und alle mit Push bekommen eine Mitteilung. An einem privaten Corner sehen nur deine engen Freunde, welcher es ist.", "everyone in the app sees it, and everyone with push gets a notification. At a private corner only your close friends see which one.")}</div>
+    <div class="share-row">🗺️ <strong>${T("Deine Corners", "Your corners")}</strong>: 🌍 ${counts.all} · 👯 ${counts.friends} · 🔒 ${counts.me} <span class="share-dim">— ${T("beim Eintragen oder unter „Spot bearbeiten“ wählbar; private geben halbe Punkte", "chosen when adding or under “edit spot”; private ones give half the points")}</span></div>
+    <div class="share-row">📅 <strong>Cornerdates</strong>: ${T("für alle oder 🤫 geheim — dann sehen es nur deine engen Freunde (halbe Punkte)", "for everyone or 🤫 secret — then only your close friends see it (half the points)")}</div>
+    <div class="share-row share-dim">⚠️ ${T("Noch ohne Nachweis: Wer bei „Wer bist du?“ deinen Namen antippt, sieht auch deine privaten Sachen. Bevor Fremde dazukommen, sichern wir das ab.", "No proof yet: whoever taps your name under “Who are you?” also sees your private things. We'll secure that before strangers join.")}</div>
+  </div>`;
+}
+function bindSharingSection() {
+  $("#cf-add")?.addEventListener("click", openCloseFriendPicker);
+  $$("#share-section [data-cf-remove]").forEach((b) => b.addEventListener("click", async () => {
+    b.disabled = true;
+    if (await setCloseFriend(b.dataset.cfRemove, false)) renderProfile();
+    else b.disabled = false;
+  }));
+}
+
 /* ====================== CORNERDATE ======================
    Plan a meetup at a corner: date + time → everyone in the app gets a push
    and can say "bin dabei"; anyone can put it in their calendar (.ics for
@@ -11119,7 +11464,7 @@ function listenCornerDates(attempt = 0) {
 
 function upcomingCornerDates(cornerId) {
   const now = Date.now();
-  return Object.entries(STATE.cornerDates || {})
+  return Object.entries(allCornerDates())
     .map(([id, d]) => ({ ...d, id }))
     .filter((d) => d && d.cornerId && Number(d.end) > now && (!cornerId || d.cornerId === cornerId))
     .sort((a, b) => Number(a.start) - Number(b.start));
@@ -11212,9 +11557,9 @@ function cornerDateItemHtml(d) {
   const going = cornerDateGoing(d);
   const iGo = Object.keys(d.going || {}).some((id) => isMyKey(id));
   const mine = isMyKey(d.byId);
-  const canCancel = d.byId === (window.FB?.getAuthUid?.() || currentUserKey());
+  const canCancel = d.secret ? isMyKey(d.ownerKey) : d.byId === (window.FB?.getAuthUid?.() || currentUserKey());
   return `<div class="cd-item" data-cd-id="${escapeHtml(d.id)}">
-    <div class="cd-when">📅 ${escapeHtml(formatDateRange(d.start, d.end))}</div>
+    <div class="cd-when">📅 ${escapeHtml(formatDateRange(d.start, d.end))}${d.secret ? `<span class="cd-secret-badge">🤫 ${T("geheim", "secret")}</span>` : ""}</div>
     <div class="cd-meta">${T("von", "by")} ${escapeHtml(mine ? T("dir", "you") : (d.byName || "?"))} · ${going.length} ${T("dabei", "going")}${going.length ? ": " + going.map((g) => escapeHtml(g.name)).join(", ") : ""}</div>
     ${d.note ? `<div class="cd-note">„${escapeHtml(d.note)}“</div>` : ""}
     <div class="cd-btns">
@@ -11229,7 +11574,7 @@ function cornerDateItemHtml(d) {
 function bindCornerDateItems(root) {
   root.querySelectorAll(".cd-item").forEach((item) => {
     const id = item.dataset.cdId;
-    const d = () => { const raw = STATE.cornerDates?.[id]; return raw ? { ...raw, id } : null; };
+    const d = () => { const raw = allCornerDates()[id]; return raw ? { ...raw, id } : null; };
     item.querySelector("[data-cd-going]")?.addEventListener("click", () => toggleCornerDateGoing(id));
     item.querySelector("[data-cd-ics]")?.addEventListener("click", () => { const x = d(); if (x) downloadCornerDateIcs(x); });
     item.querySelector("[data-cd-wa]")?.addEventListener("click", () => { const x = d(); if (x) openWhatsApp(cornerDateWhatsAppText(x)); });
@@ -11263,7 +11608,7 @@ function renderCornerDatesStrip() {
   box.innerHTML = `<div class="cd-strip"><div class="cd-strip-title">📅 ${T("Geplante Cornerdates", "Planned cornerdates")}</div>${dates.map((d) => {
     const corner = getAllCorners().find((c) => c.id === d.cornerId);
     const going = cornerDateGoing(d).length;
-    return `<button class="cd-strip-item" data-cd-open="${escapeHtml(d.cornerId)}"><span class="cd-s-when">${escapeHtml(formatDateRange(d.start, d.end))}</span><span class="cd-s-what">${escapeHtml((corner && corner.name) || d.cornerName || "?")} · ${going} ${T("dabei", "going")}${d.going && d.going[me] ? " · ✓ " + T("du", "you") : ""}</span><span>→</span></button>`;
+    return `<button class="cd-strip-item" data-cd-open="${escapeHtml(d.cornerId)}"><span class="cd-s-when">${d.secret ? "🤫 " : ""}${escapeHtml(formatDateRange(d.start, d.end))}</span><span class="cd-s-what">${escapeHtml((corner && corner.name) || d.cornerName || "?")} · ${going} ${T("dabei", "going")}${d.going && d.going[me] ? " · ✓ " + T("du", "you") : ""}</span><span>→</span></button>`;
   }).join("")}</div>`;
   box.querySelectorAll("[data-cd-open]").forEach((b) => b.addEventListener("click", () => focusDetailSection(b.dataset.cdOpen, ".cornerdate-section")));
 }
@@ -11308,7 +11653,16 @@ function openCornerDatePlanner(cornerId) {
   $("#cd-time-label").textContent = T("Uhrzeit", "Time");
   $("#cd-dur-label").textContent = T("Dauer", "Duration");
   $("#cd-note-label").textContent = T("Notiz (optional)", "Note (optional)");
-  $("#cd-notify-label").textContent = T("Alle in der App benachrichtigen", "Notify everyone in the app");
+  const privateSpot = isPrivateCorner(corner);
+  const secretBox = $("#cd-secret");
+  secretBox.checked = privateSpot;
+  secretBox.disabled = privateSpot;
+  $("#cd-secret-label").textContent = privateSpot
+    ? T("🤫 Geheim — der Corner ist privat, also sehen es nur deine engen Freunde (halbe Punkte)", "🤫 Secret — the corner is private, so only your close friends see it (half the points)")
+    : T("🤫 Geheim — nur deine engen Freunde sehen es (halbe Punkte)", "🤫 Secret — only your close friends see it (half the points)");
+  const notifyLabel = () => { $("#cd-notify-label").textContent = secretBox.checked ? T("Deine engen Freunde benachrichtigen", "Notify your close friends") : T("Alle in der App benachrichtigen", "Notify everyone in the app"); };
+  secretBox.onchange = notifyLabel;
+  notifyLabel();
   $("#cd-cancel").textContent = T("Abbrechen", "Cancel");
   $("#cd-save").textContent = "📅 " + T("Planen", "Plan it");
   $("#cd-hint").textContent = "";
@@ -11329,18 +11683,23 @@ async function saveCornerDate() {
   const end = start + (parseInt($("#cd-duration").value, 10) || 120) * 60000;
   if (start < Date.now() - 15 * 60000) { $("#cd-hint").textContent = T("Das liegt in der Vergangenheit 😉", "That's in the past 😉"); return; }
   if (start > Date.now() + 60 * 86400000) { $("#cd-hint").textContent = T("Bitte höchstens 60 Tage im Voraus.", "At most 60 days ahead, please."); return; }
+  const secret = $("#cd-secret").checked || isPrivateCorner(corner);
+  if (secret && !closeFriendKeys().length) { $("#cd-hint").textContent = T("Für ein geheimes Date brauchst du enge Freunde — im Profil unter „Teilen & enge Freunde“ hinzufügen.", "A secret date needs close friends — add them in your profile."); return; }
   CD_DRAFT.saving = true;
   $("#cd-save").disabled = true;
   const me = currentUserKey();
   const note = String($("#cd-note").value || "").trim().slice(0, 140);
   const { db, ref, push, set } = window.FB;
-  const dateRef = push(ref(db, "cornerDates"));
+  const owner = myRootKey();
+  const dateRef = push(ref(db, secret ? `secretDates/${owner}` : "cornerDates"));
   const d = {
     cornerId, cornerName: corner.name, start, end,
     byId: me, byName: String(STATE.nickname).slice(0, 40), byTeam: STATE.team || "",
     createdAt: Date.now(),
     going: { [me]: { name: String(STATE.nickname).slice(0, 40), at: Date.now() } }
   };
+  // Invited close friends may not see a private corner: the date brings the spot along.
+  if (secret) { d.lat = corner.lat; d.lng = corner.lng; }
   if (note) d.note = note;
   try {
     await set(dateRef, d);
@@ -11353,12 +11712,15 @@ async function saveCornerDate() {
       : T("Konnte nicht gespeichert werden — Verbindung prüfen.", "Couldn't save — check your connection.");
     return;
   }
-  const saved = { ...d, id: dateRef.key };
+  const saved = { ...d, id: dateRef.key, ...(secret ? { secret: true, ownerKey: owner } : {}) };
+  if (secret) STATE.secretDates = { ...(STATE.secretDates || {}), [dateRef.key]: saved };
   CD_DRAFT.saved = saved;
   CD_DRAFT.saving = false;
   $("#cd-save").disabled = false;
   const notifyAll = $("#cd-notify").checked;
-  if (notifyAll) {
+  if (notifyAll && secret) {
+    sendTargetedPush(closeFriendKeys(), { type: "cornerdate", title: "🤫 Geheimes Cornerdate!", body: `${STATE.nickname} lädt dich ein: ${formatDateRange(start, end)} am ${corner.name}`, query: `?corner=${encodeURIComponent(cornerId)}&date=1&${DATE_PARAM}=${encodeURIComponent(dateRef.key)}` });
+  } else if (notifyAll) {
     try {
       set(push(ref(db, "notify")), {
         type: "cornerdate",
@@ -11371,13 +11733,14 @@ async function saveCornerDate() {
     } catch (e) { /* push is a bonus */ }
   }
   const planAura = bumpDailyCount("cg.cdPlanned") <= 3;   // max 3 per day
-  if (planAura) addXp(CORNERDATE_PLAN_AURA, "Cornerdate geplant");
+  const planPts = secret ? PRIVATE_POINTS(CORNERDATE_PLAN_AURA) : CORNERDATE_PLAN_AURA;
+  if (planAura) addXp(planPts, "Cornerdate geplant");
   unlockAchievement("first-cornerdate", "Date-Planer", "📅", 15);
   $("#cd-form").hidden = true;
   const done = $("#cd-done");
   done.innerHTML = `<div class="cd-done-title">✅ ${T("Geplant!", "Planned!")}</div>
     <p class="gossip-sub">${escapeHtml(formatDateRange(start, end))} ${T("am", "at")} <strong>${escapeHtml(corner.name)}</strong>${notifyAll ? ` · ${T("alle wurden benachrichtigt", "everyone was notified")}` : ""}</p>
-    <p class="cd-reward">${planAura ? `✨ <strong>+${CORNERDATE_PLAN_AURA} Aura</strong> ${T("fürs Planen", "for planning")} · ` : ""}🎁 ${T(`+${CORNERDATE_JOIN_KARMA} Karma pro Zusage, +${CORNERDATE_ARRIVE_KARMA} pro Gast, der wirklich kommt`, `+${CORNERDATE_JOIN_KARMA} karma per yes, +${CORNERDATE_ARRIVE_KARMA} per guest who really shows up`)}</p>
+    <p class="cd-reward">${secret ? `🤫 ${T("Geheim: nur deine engen Freunde sehen es", "Secret: only your close friends see it")} · ` : ""}${planAura ? `✨ <strong>+${planPts} Aura</strong> ${T("fürs Planen", "for planning")} · ` : ""}🎁 ${T(`+${CORNERDATE_JOIN_KARMA} Karma pro Zusage, +${CORNERDATE_ARRIVE_KARMA} pro Gast, der wirklich kommt`, `+${CORNERDATE_JOIN_KARMA} karma per yes, +${CORNERDATE_ARRIVE_KARMA} per guest who really shows up`)}</p>
     <div class="cd-actions">
       <button class="action-btn primary" data-cd-ics>📅 ${T("In meinen Kalender (iPhone, Android, Outlook)", "Add to my calendar (iPhone, Android, Outlook)")}</button>
       <a class="action-btn" href="${escapeHtml(googleCalendarUrl(saved))}" target="_blank" rel="noopener">🗓️ Google ${T("Kalender", "Calendar")}</a>
@@ -11394,23 +11757,24 @@ async function saveCornerDate() {
 // and whoever said yes and really came gets Aura ("Wort gehalten").
 function rewardCornerDateArrival(cornerId) {
   const now = Date.now();
-  Object.entries(STATE.cornerDates || {}).forEach(([id, d]) => {
+  Object.entries(allCornerDates()).forEach(([id, d]) => {
     if (!d || d.cornerId !== cornerId || isMyKey(d.byId)) return;
     if (now < Number(d.start) - 30 * 60000 || now > Number(d.end)) return;
     if (!Object.keys(d.going || {}).some((k) => isMyKey(k))) return;
     const paid = gossipLocalLog("cg.cdShowedUp");
     if (paid[id]) return;
     gossipLocalMark("cg.cdShowedUp", id);
-    addXp(CORNERDATE_SHOWUP_AURA, "Cornerdate: Wort gehalten");
-    setTimeout(() => toast(`🤝 ${T("Wort gehalten — du bist zum Cornerdate gekommen", "Kept your word — you came to the cornerdate")}: <strong>+${CORNERDATE_SHOWUP_AURA} Aura</strong>`, "at-corner"), 1800);
+    const showAura = d.secret ? PRIVATE_POINTS(CORNERDATE_SHOWUP_AURA) : CORNERDATE_SHOWUP_AURA;
+    addXp(showAura, "Cornerdate: Wort gehalten");
+    setTimeout(() => toast(`🤝 ${T("Wort gehalten — du bist zum Cornerdate gekommen", "Kept your word — you came to the cornerdate")}: <strong>+${showAura} Aura</strong>`, "at-corner"), 1800);
   });
-  Object.entries(STATE.cornerDates || {}).forEach(([id, d]) => {
+  Object.entries(allCornerDates()).forEach(([id, d]) => {
     if (!d || d.cornerId !== cornerId || !d.byId || isMyKey(d.byId)) return;
     if (now < Number(d.start) - 30 * 60000 || now > Number(d.end)) return;
     const seen = gossipLocalLog("cg.cdArrived");
     if (seen[id]) return;
     gossipLocalMark("cg.cdArrived", id);
-    addKarmaPoints(d.byId, CORNERDATE_ARRIVE_KARMA, `${STATE.nickname} ist zu deinem Cornerdate gekommen`, d.byName);
+    addKarmaPoints(d.byId, d.secret ? PRIVATE_POINTS(CORNERDATE_ARRIVE_KARMA) : CORNERDATE_ARRIVE_KARMA, `${STATE.nickname} ist zu deinem Cornerdate gekommen`, d.byName);
     sendTargetedPush([d.byId], { type: "cornerdate-here", title: "📅 Dein Cornerdate läuft!", body: `${STATE.nickname} ist da (+${CORNERDATE_ARRIVE_KARMA} Karma)`, query: `?corner=${encodeURIComponent(cornerId)}&date=1` });
     toast(`📅 ${T("Pünktlich zum Cornerdate von", "Right on time for")} <strong>${escapeHtml(d.byName || "?")}</strong> — ${T(`+${CORNERDATE_ARRIVE_KARMA} Karma für die Planung`, `+${CORNERDATE_ARRIVE_KARMA} karma for planning it`)} 🎁`);
   });
@@ -11427,7 +11791,7 @@ function bumpDailyCount(key) {
 
 var _cdJoinPaid = false;
 async function toggleCornerDateGoing(dateId) {
-  const d = STATE.cornerDates?.[dateId];
+  const d = allCornerDates()[dateId];
   if (!d || !window.FB?.firebaseReady || !STATE.nickname) return;
   const me = currentUserKey();
   const going = !!(d.going && d.going[me]);
@@ -11437,21 +11801,23 @@ async function toggleCornerDateGoing(dateId) {
   const { db, ref, set, remove } = window.FB;
   try {
     if (going) {
-      await remove(ref(db, `cornerDates/${dateId}/going/${me}`));
+      await remove(ref(db, `${cornerDatePath(dateId)}/going/${me}`));
       toast(T("Abgesagt 👋", "You're out 👋"));
     } else {
-      await set(ref(db, `cornerDates/${dateId}/going/${me}`), { name: String(STATE.nickname).slice(0, 40), at: Date.now() });
+      await set(ref(db, `${cornerDatePath(dateId)}/going/${me}`), { name: String(STATE.nickname).slice(0, 40), at: Date.now() });
       const joined = gossipLocalLog("cg.cdJoined");
       if (!joined[dateId]) {
         gossipLocalMark("cg.cdJoined", dateId);
-        addXp(CORNERDATE_JOIN_AURA, "Cornerdate zugesagt");
+        addXp(d.secret ? PRIVATE_POINTS(CORNERDATE_JOIN_AURA) : CORNERDATE_JOIN_AURA, "Cornerdate zugesagt");
         _cdJoinPaid = true;
         if (d.byId && !isMyKey(d.byId)) {
-          addKarmaPoints(d.byId, CORNERDATE_JOIN_KARMA, `${STATE.nickname} kommt zu deinem Cornerdate`, d.byName);
+          addKarmaPoints(d.byId, d.secret ? PRIVATE_POINTS(CORNERDATE_JOIN_KARMA) : CORNERDATE_JOIN_KARMA, `${STATE.nickname} kommt zu deinem Cornerdate`, d.byName);
           sendTargetedPush([d.byId], { type: "cornerdate-yes", title: "📅 Zusage!", body: `${STATE.nickname} ist bei deinem Cornerdate dabei (+${CORNERDATE_JOIN_KARMA} Karma)`, query: `?corner=${encodeURIComponent(d.cornerId)}&date=1` });
         }
       }
-      toast(`✋ ${T("Du bist dabei!", "You're in!")}${_cdJoinPaid ? ` <strong>+${CORNERDATE_JOIN_AURA} Aura</strong>` : ""}<br><span style="font-size:11px;opacity:0.8;">${T(`Kommst du wirklich, gibt's nochmal +${CORNERDATE_SHOWUP_AURA}. „📅 Kalender“ trägt's dir ein.`, `Show up and get another +${CORNERDATE_SHOWUP_AURA}. “📅 Calendar” adds it for you.`)}</span>`);
+      const joinAura = d.secret ? PRIVATE_POINTS(CORNERDATE_JOIN_AURA) : CORNERDATE_JOIN_AURA;
+      const showAura = d.secret ? PRIVATE_POINTS(CORNERDATE_SHOWUP_AURA) : CORNERDATE_SHOWUP_AURA;
+      toast(`✋ ${T("Du bist dabei!", "You're in!")}${_cdJoinPaid ? ` <strong>+${joinAura} Aura</strong>` : ""}<br><span style="font-size:11px;opacity:0.8;">${T(`Kommst du wirklich, gibt's nochmal +${showAura}. „📅 Kalender“ trägt's dir ein.`, `Show up and get another +${showAura}. “📅 Calendar” adds it for you.`)}</span>`);
     }
   } catch (err) {
     console.warn("toggleCornerDateGoing failed:", err);
@@ -11460,11 +11826,11 @@ async function toggleCornerDateGoing(dateId) {
 }
 
 async function cancelCornerDate(dateId) {
-  const d = STATE.cornerDates?.[dateId];
+  const d = allCornerDates()[dateId];
   if (!d || !isMyKey(d.byId)) return;
   if (!(await appConfirm(T("Cornerdate absagen?", "Cancel this cornerdate?"), T("Es verschwindet für alle.", "It disappears for everyone."), T("Absagen", "Cancel it")))) return;
   try {
-    await window.FB.remove(window.FB.ref(window.FB.db, "cornerDates/" + dateId));
+    await window.FB.remove(window.FB.ref(window.FB.db, cornerDatePath(dateId)));
     toast(T("Cornerdate abgesagt.", "Cornerdate cancelled."));
   } catch (err) { toast(T("Absagen hat nicht geklappt.", "Couldn't cancel.")); }
 }
@@ -11476,6 +11842,7 @@ function cleanupOldCornerDates() {
   Object.entries(STATE.cornerDates || {}).forEach(([id, d]) => {
     if (d && Number(d.end) < Date.now() - CORNERDATE_KEEP_MS) remove(ref(db, "cornerDates/" + id)).catch(() => {});
   });
+  cleanupOwnSecretDates();
 }
 
 function bindCornerDatePlanner() {
@@ -11813,6 +12180,12 @@ const ACVV_UNTIL = new Date(2027, 0, 15).getTime();
 const HBF_ALCOHOL_UNTIL = new Date(2028, 4, 1).getTime();   // "tritt am 01.05.2028 außer Kraft"
 const HBF_CENTER = { lat: 48.1402, lng: 11.5600 };
 const HBF_ZONE_STREETS = ["Bahnhofplatz", "Arnulfstraße", "Bayerstraße", "Schützenstraße", "Prielmayerstraße", "Luitpoldstraße", "Dachauer Straße", "Hirtenstraße", "Elisenstraße", "Pfefferstraße", "Paul-Heyse-Unterführung"];
+// Outside Germany (as of November 2026): Austria keeps cannabis under the
+// Suchtmittelgesetz; in Italy personal use is not legal either (fines).
+const COUNTRY_WEED_RULES = {
+  AT: { de: "Österreich: Kiffen ist verboten (Suchtmittelgesetz)", en: "Austria: weed is illegal (Narcotics Act)" },
+  IT: { de: "Italien: nicht legal — auch Eigenkonsum wird bestraft (Verwaltungsstrafen)", en: "Italy: not legal — personal use is fined too" }
+};
 const RULE_SOURCES = {
   kcang: "https://www.gesetze-im-internet.de/kcang/__5.html",
   acvv: "https://stadt.muenchen.de/rathaus/stadtrecht/vorschrift/331.html",
@@ -11938,8 +12311,12 @@ function fetchSpotCheck(lat, lng) {
 // 🌿 verdict: "no", "night" (pedestrian zone: only 20–7 h) or "ok".
 function weedVerdict(res, now = Date.now()) {
   if (!res) return { v: "?", why: [] };
-  // German law only applies in Germany (one of the corners is at Lake Garda).
-  if (res.country && res.country !== "DE") return { v: "?", why: [T("außerhalb Deutschlands — dort gelten andere Regeln", "outside Germany — other rules apply there")] };
+  // German law only applies in Germany. Corners in Austria and at Lake Garda
+  // get what is known there; anywhere else the app does not guess.
+  if (res.country && res.country !== "DE") {
+    const known = COUNTRY_WEED_RULES[res.country];
+    return known ? { v: "no", why: [T(known.de, known.en)], abroad: true } : { v: "?", why: [T("außerhalb Deutschlands — dort gelten andere Regeln", "outside Germany — other rules apply there")], abroad: true };
+  }
   if (res.acvv && now < ACVV_UNTIL) return { v: "no", why: [T("Verbotszone der Stadt am Alten Botanischen Garten", "City ban zone at the Alter Botanischer Garten")] };
   if (res.kcang.length) return { v: "no", why: res.kcang.map((k) => `${k.place}${k.name ? ` „${k.name}“` : ""} ${T("in", "at")} ${formatDistance(k.d)}`) };
   if (res.pedestrian) return { v: "night", why: [T("Fußgängerzone: von 7 bis 20 Uhr verboten", "Pedestrian zone: banned from 7 am to 8 pm")] };
@@ -11957,7 +12334,7 @@ function spotRuleLines(res) {
   const out = [];
   const w = weedVerdict(res);
   const weedText = w.v === "ok" ? T("Kiffen erlaubt", "Weed allowed") : w.v === "night" ? T("Kiffen nur 20–7 Uhr", "Weed only 8 pm–7 am") : w.v === "?" ? T("Kiffen", "Weed") : T("Kiffen verboten", "No weed");
-  out.push({ emoji: w.v === "ok" ? "🌿" : w.v === "night" ? "🕗" : w.v === "?" ? "❔" : "🚫", text: `${weedText} — ${w.why.join(", ")}`, src: w.v === "?" ? "" : (res.acvv ? RULE_SOURCES.acvv : RULE_SOURCES.kcang) });
+  out.push({ emoji: w.v === "ok" ? "🌿" : w.v === "night" ? "🕗" : w.v === "?" ? "❔" : "🚫", text: `${weedText} — ${w.why.join(", ")}`, src: w.abroad ? "" : (res.acvv ? RULE_SOURCES.acvv : RULE_SOURCES.kcang) });
   if (res.acvv && Date.now() < ACVV_UNTIL) out.push({ emoji: "🍺", text: T("Alkohol ganztägig verboten (Verordnung der Stadt, Alter Botanischer Garten / Karl-Stützel-Platz, bis 14.01.2027)", "Alcohol banned all day (city ordinance, Alter Botanischer Garten / Karl-Stützel-Platz, until 14 Jan 2027)"), src: RULE_SOURCES.acvv });
   if (res.hbf && Date.now() < HBF_ALCOHOL_UNTIL) out.push({ emoji: "🍺", text: T("Vermutlich in der Alkoholverbotszone am Hauptbahnhof (ganztägig) — genaue Straßen in der Verordnung", "Probably inside the alcohol ban zone at the Hauptbahnhof (all day) — exact streets in the ordinance"), src: RULE_SOURCES.hbf });
   if (res.biergarten) out.push({ emoji: "🍺", text: T(`Neben „${res.biergarten}“: im Biergarten selbst ist Kiffen in Bayern verboten`, `Next to “${res.biergarten}”: inside beer gardens weed is banned in Bavaria`) });
@@ -11988,7 +12365,8 @@ function amenityFromCheck(key, res) {
   return !!res.has[key];
 }
 
-/* ---- New spot by tapping: pin from GPS, name ideas, emoji toggles ---- */
+/* ====================== NEW SPOT BY TAPPING ======================
+   Pin from GPS, name ideas, emoji toggles (uses the spot check above). */
 var SPOT_DRAFT = { check: null, amen: {}, manual: {}, key: "", timer: null, nameAuto: true, loading: false, failed: false };
 
 function resetSpotDraft() {
@@ -12117,7 +12495,7 @@ async function renderSpotCheckBlock(corner, box) {
     // One request at a time: the public Overpass server limits parallel queries.
     await getNearbyPlaces(corner).catch(() => null);
     const res = await fetchSpotCheck(corner.lat, corner.lng);
-    if (!factsFresh(STATE.cornerFacts?.[corner.id])) storeCornerFacts(corner.id, res);
+    if (!isPrivateCorner(corner) && !factsFresh(STATE.cornerFacts?.[corner.id])) storeCornerFacts(corner.id, res);
     if (!box.isConnected) return;
     const have = SPOT_AMENITIES.filter((a) => a.key !== "kiffen" && amenityFromCheck(a.key, res));
     const w = weedVerdict(res);
@@ -12130,7 +12508,8 @@ async function renderSpotCheckBlock(corner, box) {
   }
 }
 
-/* ---- Existing corners: checked once, shared with everyone ----
+/* ====================== CORNER FACTS ======================
+   Existing corners: checked once, shared with everyone.
    "Wie ist's bei den bisherigen Cornern?" — every corner gets the same
    automatic check as a new one. The first phone that checks a corner stores
    the result in cornerFacts/<id> (refreshed after 30 days), so the list can
@@ -12186,7 +12565,7 @@ async function backfillCornerFacts() {
   _factsBackfill.running = true;
   _factsBackfill.lastRun = Date.now();
   try {
-    const todo = getAllCorners().filter((c) => typeof c.lat === "number" && typeof c.lng === "number" && !factsFresh(STATE.cornerFacts?.[c.id]));
+    const todo = getAllCorners().filter((c) => !isPrivateCorner(c) && typeof c.lat === "number" && typeof c.lng === "number" && !factsFresh(STATE.cornerFacts?.[c.id]));
     todo.sort(() => Math.random() - 0.5);   // several phones at once rarely pick the same corner
     for (const c of todo.slice(0, 12)) {
       if (document.hidden) break;
@@ -12258,6 +12637,7 @@ function renderAmenFilter() {
 }
 document.addEventListener("DOMContentLoaded", renderAmenFilter);
 
+/* ====================== CORNER-INFO: PLACES, WEATHER, MAP ====================== */
 function getNearbyPlaces(corner) {
   const { lat, lng } = corner;
   const q = `[out:json][timeout:25];(` +
@@ -12626,6 +13006,7 @@ function openDetail(cornerId) {
       <div class="detail-stat"><span class="stat-num">${distanceLabel(c)}</span><span class="stat-label">${T("Entfernung", "Distance")}</span></div>
     </div>
     <div class="detail-where">📍 ${escapeHtml(c.area || "München")}${typeof c.lat === "number" ? ` · <span class="dw-coords">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span>` : ""}</div>
+    ${isPrivateCorner(c) ? `<div class="detail-visibility">${visibilityBadgeHtml(c)} <span class="share-dim">${cornerVisibility(c) === "friends" ? T("Nur für die engen Freunde von", "Only for the close friends of") + " " + escapeHtml(isMyKey(c.ownerKey) ? T("dir", "you") : (c.createdBy || "?")) : T("Nur für dich", "Only for you")}</span></div>` : ""}
     <div class="detail-district">${detailDistrictHtml(c)}</div>
     <div class="detail-origin">${cornerOriginHtml(c)}</div>
     ${capturedHtml}
@@ -12730,7 +13111,7 @@ function renderCards() {
         <button class="photo-btn" data-id="${c.id}">📷 ${photoSrc ? T("Ändern", "Change") : T("Hinzufügen", "Add")}</button>
       </div>
       <div class="card-body">
-        <p class="card-area">${districtBadgeHtml(c)}${escapeHtml(c.area || "—")} ${c.isCustom && c.createdBy ? `<span class="creator-label"> · von ${escapeHtml(c.createdBy)}</span>` : ""}</p>
+        <p class="card-area">${visibilityBadgeHtml(c)}${districtBadgeHtml(c)}${escapeHtml(c.area || "—")} ${c.isCustom && c.createdBy ? `<span class="creator-label"> · von ${escapeHtml(c.createdBy)}</span>` : ""}</p>
         <h2 class="card-name">${escapeHtml(c.name)}</h2>
         <div class="card-amens">${cornerEmojiRowHtml(c)}</div>
         ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("hier", "here")}: ${peopleHere.map((n) => escapeHtml(n)).join(", ")}</div>` : ""}
@@ -12773,7 +13154,7 @@ function rebuildMainMarkers() {
   STATE.mainMarkers = {};
   getSortedCorners().forEach((c, i) => {
     const capture = STATE.captured[c.id];
-    const icon = L.divIcon({ className: "", html: `<div class="corner-marker ${c.isCustom ? "custom" : ""}" data-id="${c.id}"><span class="num">${cornerNumber(c.id)}</span>${capture ? `<span class="team-badge">${TEAMS[capture.team]?.emoji || "🏳️"}</span>` : ""}</div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
+    const icon = L.divIcon({ className: "", html: `<div class="corner-marker ${c.isCustom ? "custom" : ""}" data-id="${c.id}">${isPrivateCorner(c) ? `<span class="lock-badge">${VISIBILITY[cornerVisibility(c)].emoji}</span>` : ""}<span class="num">${cornerNumber(c.id)}</span>${capture ? `<span class="team-badge">${TEAMS[capture.team]?.emoji || "🏳️"}</span>` : ""}</div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
     const marker = L.marker([c.lat, c.lng], { icon }).addTo(STATE.mainMap);
     marker.bindPopup(`<strong>${escapeHtml(c.name)}</strong><br><small>${escapeHtml(c.area || "")}</small>${capture ? `<br><small>${TEAMS[capture.team]?.emoji || ''} ${TEAMS[capture.team]?.name || ''}</small>` : ""}`);
     // The map is the landing page now: a tap opens the corner right away.
@@ -12856,16 +13237,19 @@ async function saveNewSpot() {
   const lng = parseFloat($("#f-lng").value);
   if (!name) { toast("Name fehlt."); $("#f-name").focus(); return; }
   if (isNaN(lat) || isNaN(lng)) { toast(T("Tipp auf die Karte, wo der Spot ist.", "Tap the map where the spot is.")); return; }
-  const tooClose = getAllCorners().find((corner) => haversine(lat, lng, corner.lat, corner.lng) < MIN_CORNER_DISTANCE_METERS);
+  const tooClose = getAllCorners().find((corner) => !isPrivateCorner(corner) && haversine(lat, lng, corner.lat, corner.lng) < MIN_CORNER_DISTANCE_METERS);
   if (tooClose) { toast(`Zu nah an <strong>${escapeHtml(tooClose.name)}</strong> — bitte mindestens ${MIN_CORNER_DISTANCE_METERS}m Abstand.`); return; }
-  const spot = { id: "custom-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7), name, area: $("#f-area").value.trim() || "Eigener Spot", lat, lng, description: desc, tags: $("#f-tags").value.split(",").map((s) => s.trim()).filter(Boolean), amenities: SPOT_AMENITIES.filter((a) => SPOT_DRAFT.amen[a.key]).map((a) => a.key), isCustom: true, createdBy: STATE.nickname || "Anonym", createdById: currentUserKey(), createdAt: Date.now() };
+  const vis = window.FB?.firebaseReady && VISIBILITY[SPOT_DRAFT.visibility] ? SPOT_DRAFT.visibility : "all";
+  const spot = { id: (vis === "all" ? "custom-" : "private-") + Date.now() + "-" + Math.random().toString(36).slice(2, 7), name, area: $("#f-area").value.trim() || "Eigener Spot", lat, lng, description: desc, tags: $("#f-tags").value.split(",").map((s) => s.trim()).filter(Boolean), amenities: SPOT_AMENITIES.filter((a) => SPOT_DRAFT.amen[a.key]).map((a) => a.key), isCustom: true, createdBy: STATE.nickname || "Anonym", createdById: currentUserKey(), createdAt: Date.now() };
   const facts = spotCheckSummary();
   if (facts) spot.check = facts;
+  if (vis !== "all") { spot.visibility = vis; spot.ownerKey = myRootKey(); }
   if (window.FB?.firebaseReady) {
     try {
       const { db, ref, set } = window.FB;
-      await set(ref(db, "corners/" + spot.id), spot);
-      if (SPOT_DRAFT.check) storeCornerFacts(spot.id, SPOT_DRAFT.check);
+      await set(ref(db, cornerDbPath(spot)), spot);
+      if (vis === "all" && SPOT_DRAFT.check) storeCornerFacts(spot.id, SPOT_DRAFT.check);
+      if (vis !== "all") STATE.privateCorners = { ...(STATE.privateCorners || {}), [spot.id]: spot };
     } catch (err) {
       if (/permission/i.test(String(err?.code || "") + String(err?.message || ""))) {
         // Usually a missing access grant for this login — repair or ask for the code.
@@ -12884,9 +13268,12 @@ async function saveNewSpot() {
     saveCustomSpots();
     toast(`💾 Spot <strong>${escapeHtml(name)}</strong> lokal gespeichert (nur auf diesem Gerät)`);
   }
-  closeModal(); renderCards(); updateCounts(); rebuildMainMarkers(); unlockAchievement("first-corner", "Entdecker", "🗺️", 30); addXp(50, `Corner hinzugefügt: ${name}`); if (STATE.customSpots.filter((s) => (s.createdById || s.createdBy) === currentUserKey()).length >= 3) unlockAchievement("three-corners", "Kartograph", "🧭", 50);
+  const spotAura = vis === "all" ? 50 : PRIVATE_SPOT_AURA;
+  closeModal(); renderCards(); updateCounts(); rebuildMainMarkers(); unlockAchievement("first-corner", "Entdecker", "🗺️", 30); addXp(spotAura, `Corner hinzugefügt: ${name}`); if (STATE.customSpots.filter((s) => (s.createdById || s.createdBy) === currentUserKey()).length >= 3) unlockAchievement("three-corners", "Kartograph", "🧭", 50);
   // Last, so the achievement toast does not replace it.
-  if (window.FB?.firebaseReady) toast(`✅ <strong>${escapeHtml(name)}</strong> ist eingetragen — alle sehen den Spot sofort auf Karte und Liste. +50 Aura 🍻`, "at-corner", () => openDetail(spot.id));
+  if (window.FB?.firebaseReady) toast(vis === "all"
+    ? `✅ <strong>${escapeHtml(name)}</strong> ist eingetragen — alle sehen den Spot sofort auf Karte und Liste. +50 Aura 🍻`
+    : `${VISIBILITY[vis].emoji} <strong>${escapeHtml(name)}</strong> ist eingetragen — ${vis === "friends" ? T("nur du und deine engen Freunde sehen ihn", "only you and your close friends see it") : T("nur du siehst ihn", "only you see it")}. +${PRIVATE_SPOT_AURA} Aura`, "at-corner", () => openDetail(spot.id));
 }
 
 function openLightbox(src, author) { $("#lightbox-img").src = src; $("#lightbox-author").textContent = author ? `📸 von ${author}` : ""; $("#lightbox").classList.add("open"); addXp(2, "Lightbox"); }
@@ -12895,7 +13282,7 @@ function listenPoints(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
   const { db, ref, onValue } = window.FB;
   // A listener attached before sign-in is refused; try again once signed in.
-  onValue(ref(db, "points"), (snapshot) => { STATE.points = snapshot.val() || {}; ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); },
+  onValue(ref(db, "points"), (snapshot) => { STATE.points = snapshot.val() || {}; ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); scheduleStartCircles(); },
     () => retryListenerAfterAuth(listenPoints, attempt));
 }
 
@@ -13478,6 +13865,8 @@ function renderUserProfile(key, achievements) {
         <button class="action-btn primary" data-up-corner="${escapeHtml(corner.id)}">📍 ${T("Zum Corner", "Open corner")}</button>
         <button class="action-btn" data-up-route="${escapeHtml(corner.id)}">🧭 ${T("Hingehen", "Go there")}</button>
       </div></div>`;
+  } else if (info.visible && info.presence?.atCorner) {
+    status = `<div class="up-status live">🟢 ${T("Gerade an einem privaten Corner", "At a private corner right now")} 🔒</div>`;
   } else if (info.visible) {
     status = `<div class="up-status">🟢 ${T("Online", "Online")}${avail ? ` · ${escapeHtml(avail.label)}` : ""}</div>`;
   } else {
@@ -13514,6 +13903,7 @@ function renderUserProfile(key, achievements) {
     ${ach.length ? `<h3>🏆 Achievements (${ach.length})</h3><div class="up-ach">${ach.slice(0, 24).map(([id, a]) => `<span title="${escapeHtml(a?.name || id)}">${escapeHtml(a?.emoji || "🏆")}</span>`).join("")}</div>` : ""}
     <div class="up-actions">
       <button class="action-btn primary" id="up-dm">💬 ${T("Nachricht", "Message")}</button>
+      ${window.FB?.firebaseReady ? `<button class="action-btn" id="up-cf">${isCloseFriend(key) ? "✓ 👯 " + T("Enge Freunde", "Close friends") : "👯 " + T("Zu engen Freunden", "Add to close friends")}</button>` : ""}
       <button class="action-btn" id="up-close-2">${T("Schließen", "Close")}</button>
     </div>`;
   const body = $("#user-profile-overlay");
@@ -13523,6 +13913,16 @@ function renderUserProfile(key, achievements) {
     if (c) window.open(walkingRouteUrl(c.lat, c.lng), "_blank");
   }));
   $("#up-dm")?.addEventListener("click", () => { closeUserProfile(); openChatThread(key, info.nickname); });
+  $("#up-cf")?.addEventListener("click", async () => {
+    const btn = $("#up-cf");
+    btn.disabled = true;
+    const on = !isCloseFriend(key);
+    if (await setCloseFriend(key, on)) {
+      btn.textContent = on ? "✓ 👯 " + T("Enge Freunde", "Close friends") : "👯 " + T("Zu engen Freunden", "Add to close friends");
+      toast(on ? `👯 <strong>${escapeHtml(info.nickname)}</strong> ${T("sieht jetzt deine privaten Corners und geheimen Dates", "now sees your private corners and secret dates")}` : `${escapeHtml(info.nickname)} ${T("ist nicht mehr bei deinen engen Freunden", "is no longer a close friend")}`);
+    }
+    btn.disabled = false;
+  });
   $("#up-close-2")?.addEventListener("click", closeUserProfile);
   body.querySelectorAll("[data-gossip-corner]").forEach((b) => b.addEventListener("click", () => { closeUserProfile(); openDetail(b.dataset.gossipCorner); }));
   drawUserProfileMap(log);
@@ -13649,6 +14049,7 @@ function renderProfile() {
     </div>
     ${profileTwinBannerHtml()}
     ${buildBackupBannerHtml()}
+    ${sharingSectionHtml()}
     <div class="stream-grid">
       <div class="stream-card">
         <div class="stream-kicker">✨ ${T("Aura Stream", "Aura stream")}</div>
@@ -13798,6 +14199,7 @@ function renderProfile() {
   $("#acct-claim-btn")?.addEventListener("click", openClaimOverlay);
   $("#admin-open-btn")?.addEventListener("click", renderAdminPanel);
   $("#feedback-btn")?.addEventListener("click", sendAppFeedback);
+  bindSharingSection();
   $$("#profile-content [data-twin-merge]").forEach((btn) => btn.addEventListener("click", async () => {
     btn.disabled = true;
     const ok = await linkToProfile(btn.dataset.twinMerge);
