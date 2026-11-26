@@ -3,7 +3,7 @@
   "private": true,
   "description": "End-to-end tests: the real app in Chromium against the Firebase emulators",
   "scripts": {
-    "emulators": "firebase emulators:start --project cornerguide --only auth,database,storage",
+    "emulators": "node emulators.mjs",
     "test": "node run-all.mjs"
   },
   "devDependencies": {

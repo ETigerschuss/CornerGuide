@@ -24,6 +24,10 @@ npm test                   # alle Testreihen nacheinander (~15 Minuten)
 node run-all.mjs circles   # nur eine Testreihe
 ```
 
+`npm run emulators` kopiert vorher die aktuellen Regeln (`firebase.database.rules.json`, `storage.rules`) aus dem
+Hauptordner hierher — die Firebase-CLI liest nur Dateien im eigenen Ordner. Nach einer Regeländerung die Emulatoren
+neu starten.
+
 Screenshots landen in `shots/`.
 
 In GitHub laufen dieselben Tests unter **Actions → E2E-Tests → Run workflow** (Screenshots und Emulator-Log als
