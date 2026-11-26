@@ -21,7 +21,7 @@ var _slim = {
   fullCache: {},                 // "kind|key" → full entry (copy check for multi-login profiles)
   fullPending: {},
   visits: { legacy: null, corners: {}, order: [], mine: {}, mineSubs: {}, person: {} },
-  photos: { legacy: null, corners: {}, order: [], full: {} },
+  photos: { legacy: null, corners: {}, order: [], full: {}, wanted: false, retry: null },
   rerenderTimer: null
 };
 const SLIM_DETAIL_CORNERS = 4;   // per-corner subscriptions kept open (recently opened details)
@@ -420,6 +420,14 @@ function listenPhotoCovers(retry) {
   }, () => { startLegacy(); if (retry) retry(); });
 }
 
+// First time the list or a corner is opened: start loading the covers.
+function wantPhotoCovers() {
+  const sp = _slim.photos;
+  if (sp.wanted) return;
+  sp.wanted = true;
+  if (window.FB?.firebaseReady) listenPhotoCovers(sp.retry);
+}
+
 // The cover for a card: a Storage URL, or the small thumbnail.
 function coverSrcOf(cornerId) {
   const c = STATE.photoCovers?.[cornerId];
@@ -438,6 +446,7 @@ function ensureCornerPhotos(cornerId) {
   slimSubscribe(sp.corners, cornerId, ref(db, "photos/" + cornerId), (snap) => {
     if (!STATE.photos || typeof STATE.photos !== "object") STATE.photos = {};
     STATE.photos[cornerId] = snap.val() || {};
+    updateDetailHero(cornerId);
     refreshAllPhotoGalleries();
     if (_photoCommentsOpen && _photoCommentsOpen.cornerId === cornerId) renderPhotoComments();
   });
@@ -493,13 +502,36 @@ function makeThumbDataUrl(dataUrl, maxSide = PHOTO_THUMB_MAX, quality = PHOTO_TH
 
 // Opening a corner: its photos, its last check-ins and the full cover picture.
 function ensureCornerDetailData(cornerId) {
+  wantPhotoCovers();
   deferSlim("cornerPhotos:" + cornerId, () => ensureCornerPhotos(cornerId));
   deferSlim("cornerVisits:" + cornerId, () => ensureCornerVisits(cornerId));
   const cover = STATE.photoCovers?.[cornerId];
-  if (cover && cover.id && !cover.src) {
-    photoFullSrc(cornerId, cover.id).then((src) => {
-      const img = $("#detail-overlay .detail-hero-photo img");
-      if (src && img && STATE.detailCornerId === cornerId) img.src = src;
-    });
+  if (cover && cover.id && !cover.src) photoFullSrc(cornerId, cover.id).then((src) => setDetailHero(cornerId, src));
+  delete _heroShown[cornerId];
+  setTimeout(() => updateDetailHero(cornerId), 0);   // photos already here (reopened corner, or full node)
+}
+
+// The big picture at the top of an open corner: from its own photos once
+// they are loaded (the covers may not be there yet), thumbnail first.
+var _heroShown = {};
+function updateDetailHero(cornerId) {
+  if (STATE.detailCornerId !== cornerId || !$("#detail-overlay")?.classList.contains("open")) return;
+  const cover = coversFromPhotos({ [cornerId]: STATE.photos?.[cornerId] || {} })[cornerId];
+  if (!cover || _heroShown[cornerId] === cover.id) return;
+  _heroShown[cornerId] = cover.id;
+  if (cover.thumb || cover.src) setDetailHero(cornerId, cover.src || cover.thumb, true);
+  if (!cover.src) photoFullSrc(cornerId, cover.id).then((src) => setDetailHero(cornerId, src));
+}
+function setDetailHero(cornerId, src, onlyIfEmpty) {
+  const hero = $("#detail-overlay .detail-hero-photo");
+  if (!src || !hero || STATE.detailCornerId !== cornerId) return;
+  let img = hero.querySelector("img");
+  if (img && onlyIfEmpty) return;
+  if (!img) {
+    img = document.createElement("img");
+    img.alt = getAllCorners().find((c) => c.id === cornerId)?.name || "";
+    hero.innerHTML = "";
+    hero.appendChild(img);
   }
+  img.src = src;
 }

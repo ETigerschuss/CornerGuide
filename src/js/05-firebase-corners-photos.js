@@ -15,11 +15,13 @@ function listenSharedCorners() {
 }
 
 /* ====================== PHOTOS (Firebase) ====================== */
-// Only the covers at startup (photoCovers); a corner's photos load with its
-// detail and the full pictures when opened (35-slim-data.js).
+// The covers (photoCovers) load when the list or a corner is first opened —
+// the app starts on the map, which doesn't show them. A corner's photos load
+// with its detail, the full pictures when tapped (35-slim-data.js).
 function listenPhotos(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
-  listenPhotoCovers(() => retryListenerAfterAuth(listenPhotos, attempt));
+  _slim.photos.retry = () => retryListenerAfterAuth(listenPhotos, attempt);
+  if (_slim.photos.wanted) listenPhotoCovers(_slim.photos.retry);
 }
 
 function getPhotos(cornerId) {

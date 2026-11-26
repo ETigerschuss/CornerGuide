@@ -30,6 +30,11 @@ jedes Handy bei jedem Start komplett lud:
 
 35 Profile, keines mit mehreren Logins, keine alten Kopien.
 
+**Nach Phase 1** (gemessen nach `phase1-backfill`): Die App startet auf der Karte mit **unter 0,1 MB** (schlanke Punkte,
+Besuchszahlen, wer gerade da ist, Corners, Kommentare & Co.). Die Titelbilder (448 KB für 21 Corners) kommen erst beim
+ersten Öffnen der Liste oder eines Corners; die Fotos eines Corners (Vorschaubilder, im Schnitt ~20 KB pro Foto) beim
+Öffnen des Corners; ein volles Bild (im Schnitt ~270 KB) erst beim Antippen.
+
 ## Was bei tausenden Nutzern bricht
 
 1. **Jedes Handy lädt ganze Datenbank-Knoten.** *(Phase 1: für Fotos, Punkte, Check-ins und Presence gelöst, siehe unten.)* `points` (mit bis zu 200 Verlaufseinträgen pro Person), `presence`,
@@ -66,7 +71,7 @@ liest die App den alten Knoten — es fehlt nie etwas.
 
 | Beim Start | Statt | Details erst … |
 |---|---|---|
-| `photoCovers/<corner>` — ein kleines Titelbild (360 px) + Anzahl | `photos` (8,6 MB) | `photos/<corner>` (Vorschaubilder) beim Öffnen des Corners, `photoData/<corner>/<id>` (volles Bild) beim Antippen |
+| — (die Karte zeigt keine Fotos) | `photos` (8,6 MB) | `photoCovers/<corner>` (kleines Titelbild + Anzahl) beim ersten Öffnen der Liste oder eines Corners, `photos/<corner>` (Vorschaubilder) beim Öffnen des Corners, `photoData/<corner>/<id>` (volles Bild) beim Antippen |
 | `pointsLite`, `karmaLite` — Summe, Name, Profil-Verknüpfung, „zuletzt aktiv“ | `points`, `karmaPoints` mit Verlauf | eigene Logins vollständig; Verlauf anderer nur, wenn ein Profil mehrere Logins hat (Kopie-Prüfung) |
 | `visitStats/<corner>` — Anzahl + letzter Check-in | `visits` (alle Check-ins aller Zeiten) | `visits/<corner>` (die letzten 30) im Corner; `visitsByUser/<login>` / `visitsByName/<name>` für Profilkarte und öffentliches Profil |
 | `presence` per Abfrage: nur, wer in den letzten 3½ h da war | alle Logins, die je die App geöffnet haben | — |

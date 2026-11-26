@@ -73,28 +73,38 @@ function backfill() {
     check("check-ins get a per-person index (by login, old ones by name)", !!(await dbGet(`visitsByUser/${ana.uid}/v1`)) && !!(await dbGet("visitsByName/Ana/v2")) && !!(await dbGet("visitsByUser/benKey/v3")));
     check("the slim points copy has no history", !("history" in ((await dbGet("pointsLite/benKey")) || { history: 1 })));
 
-    // ---------- a fresh start reads only the slim copies ----------
+    // ---------- a fresh start (on the map) reads only the slim copies ----------
     await ana.page.goto(`http://127.0.0.1:${PORT}/index.html`);
-    await ana.page.waitForFunction(() => window.FB && window.FB.getAuthUid && window.FB.getAuthUid() && STATE.photoCovers && STATE.visitStats, null, { timeout: 20000 });
+    await ana.page.waitForFunction(() => window.FB && window.FB.getAuthUid && window.FB.getAuthUid() && STATE.visitStats, null, { timeout: 20000 });
     await sleep(1500);
     const start = await ana.page.evaluate((c) => ({
+      view: STATE.view,
       photos: Object.keys(STATE.photos || {}).length,
       visits: Object.keys(STATE.visits || {}).length,
-      cover: (STATE.photoCovers[c] || {}).thumb ? STATE.photoCovers[c].thumb.length : 0,
+      covers: STATE.photoCovers ? Object.keys(STATE.photoCovers).length : 0,
       count: getVisitCount(c),
       benHistory: !!(STATE.points.benKey && STATE.points.benKey.history),
       ownHistory: !!(STATE.points[currentUserKey()] && STATE.points[currentUserKey()].history),
       legacy: isLegacyPhotos() || isLegacyVisits(),
       friends: Object.keys(STATE.friends || {})
     }), C);
-    check("startup: no photo lists, no check-in lists, slim mode", start.photos === 0 && start.visits === 0 && !start.legacy, JSON.stringify(start));
-    check("cards get the small cover and the count", start.cover > 0 && start.cover < 60000 && start.count === 3);
+    check("startup on the map: no photos at all (not even covers), no check-in lists", start.view === "map" && start.photos === 0 && start.visits === 0 && start.covers === 0 && !start.legacy, JSON.stringify(start));
+    check("…but the counts for ranking and karma are there", start.count === 3);
     check("others' points without history, mine in full", !start.benHistory && start.ownHistory);
     check("presence: only who was seen recently", start.friends.includes("benKey") && !start.friends.includes("ghostKey"), start.friends.join(","));
     await ana.page.evaluate(() => document.querySelector('.tab[data-view="list"]').click());
-    await sleep(600);
+    const coversIn = await waitFor(() => ana.page.evaluate((c) => !!(STATE.photoCovers && STATE.photoCovers[c] && STATE.photoCovers[c].thumb), C));
+    check("opening the list loads the small covers", coversIn);
+    await sleep(400);
     const cardImg = await ana.page.evaluate((c) => document.querySelector(`#card-${CSS.escape(c)} .card-photo img`)?.getAttribute("src") || "", C);
     check("the card shows the thumbnail", cardImg.startsWith("data:image/jpeg") && cardImg.length < 60000, `${Math.round(cardImg.length / 1024)} KB`);
+    // A corner opened straight from the map (deep link, pin) gets its big picture without the covers.
+    await ana.page.goto(`http://127.0.0.1:${PORT}/index.html`);
+    await ana.page.waitForFunction(() => window.FB && window.FB.getAuthUid && window.FB.getAuthUid() && STATE.visitStats, null, { timeout: 20000 });
+    await ana.page.evaluate((c) => openDetail(c), C);
+    const heroFromMap = await waitFor(() => ana.page.evaluate((len) => (document.querySelector("#detail-overlay .detail-hero-photo img")?.getAttribute("src") || "").length === len, big.length));
+    check("a corner opened from the map shows its picture in full", heroFromMap);
+    await ana.page.evaluate(() => closeDetail());
 
     // ---------- the detail loads that corner's photos and check-ins ----------
     await ana.page.evaluate((c) => openDetail(c), C);
@@ -124,7 +134,7 @@ function backfill() {
     await ana.context.unroute("http://127.0.0.1:9199/**");
     // With Storage (once activated): only the URL is stored.
     await ana.page.goto(`http://127.0.0.1:${PORT}/index.html`);
-    await ana.page.waitForFunction(() => window.FB && window.FB.getAuthUid && window.FB.getAuthUid() && STATE.photoCovers, null, { timeout: 20000 });
+    await ana.page.waitForFunction(() => window.FB && window.FB.getAuthUid && window.FB.getAuthUid() && STATE.visitStats, null, { timeout: 20000 });
     await ana.page.evaluate(([c, src]) => savePhoto(c, src, ""), [C, jpegDataUrl(800, 600, 160)]);
     const upStorage = await waitFor(async () => Object.values((await dbGet(`photos/${C}`)) || {}).some((p) => p.storage === true && /^http/.test(p.src || "") && p.thumb));
     check("upload with Storage: just the URL (+ thumbnail)", upStorage);
@@ -142,6 +152,7 @@ function backfill() {
     // ---------- without the slim copies: the old full nodes ----------
     for (const p of ["photoCovers", "visitStats", "pointsLite"]) await dbDel(p);
     await ana.page.goto(`http://127.0.0.1:${PORT}/index.html`);
+    await ana.page.evaluate(() => document.querySelector('.tab[data-view="list"]').click()).catch(() => {});
     await ana.page.waitForFunction(() => window.FB && window.FB.getAuthUid && window.FB.getAuthUid() && STATE.photoCovers && STATE.visitStats, null, { timeout: 20000 });
     await sleep(1500);
     const legacy = await ana.page.evaluate((c) => ({ legacy: isLegacyPhotos() && isLegacyVisits(), cover: !!coverSrcOf(c), count: getVisitCount(c), ben: (STATE.points.benKey || {}).total || 0 }), C);
@@ -159,6 +170,7 @@ function backfill() {
     for (const k of ["pointsLite", "karmaLite", "visitStats", "visitsByUser", "visitsByName", "photoCovers", "photoData", "compliments"]) delete oldRules.rules[k];
     await putRules(JSON.stringify(oldRules));
     await ana.page.goto(`http://127.0.0.1:${PORT}/index.html`);
+    await ana.page.evaluate(() => document.querySelector('.tab[data-view="list"]').click()).catch(() => {});
     await ana.page.waitForFunction(() => window.FB && window.FB.getAuthUid && window.FB.getAuthUid() && STATE.photoCovers && STATE.visitStats, null, { timeout: 20000 }).catch(() => {});
     await sleep(2000);
     const refused = await ana.page.evaluate((c) => ({ legacy: isLegacyPhotos() && isLegacyVisits(), cover: !!coverSrcOf(c), count: getVisitCount(c), ben: (STATE.points.benKey || {}).total || 0 }), C);
