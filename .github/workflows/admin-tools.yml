@@ -5,6 +5,7 @@ name: Admin-Werkzeuge
 #   export-feedback  – export comments + check-in feedback, encrypted with the given
 #                      public key, to the branch "admin-export" (repo and logs are public!)
 #   cleanup-export   – delete the "admin-export" branch again
+#   data-sizes       – size and number of entries per database node (no content)
 
 on:
   workflow_dispatch:
@@ -12,7 +13,7 @@ on:
       action:
         description: "Aktion"
         type: choice
-        options: ["add-admin", "export-feedback", "cleanup-export"]
+        options: ["add-admin", "export-feedback", "cleanup-export", "data-sizes"]
         required: true
       uid:
         description: "Firebase-Nutzer-ID (für add-admin, steht im Profil unter „Konto & Profil sichern“)"

@@ -41,6 +41,38 @@ async function exportFeedback(pubB64) {
   console.log(`✔ Export verschlüsselt (${payload.length} Bytes komprimiert, ${blob.length} Zeichen Base64).`);
 }
 
+// How much does each part of the database weigh? Prints only sizes and counts
+// (never content), so it is safe for the public log. Helps decide what the app
+// should stop loading at startup.
+async function dataSizes() {
+  const root = (await admin.database().ref().get()).val() || {};
+  const bytes = (v) => Buffer.byteLength(JSON.stringify(v === undefined ? null : v));
+  const kb = (n) => (n / 1024).toFixed(1).padStart(9) + " KB";
+  const rows = Object.entries(root).map(([key, val]) => ({
+    key, size: bytes(val), children: val && typeof val === "object" ? Object.keys(val).length : 0
+  })).sort((a, b) => b.size - a.size);
+  const total = rows.reduce((s, r) => s + r.size, 0);
+  console.log(`Gesamt: ${kb(total)} in ${rows.length} Knoten\n`);
+  console.log("Knoten                    Größe        Einträge");
+  rows.forEach((r) => console.log(`${r.key.padEnd(22)} ${kb(r.size)}   ${String(r.children).padStart(7)}`));
+  // A few details that decide the design (counts only).
+  const deep = (node) => Object.values(node || {}).reduce((n, v) => n + (v && typeof v === "object" ? Object.keys(v).length : 0), 0);
+  const historyItems = (store) => Object.values(store || {}).reduce((n, e) => n + (e && e.history ? Object.keys(e.history).length : 0), 0);
+  const historyBytes = (store) => Object.values(store || {}).reduce((n, e) => n + (e && e.history ? bytes(e.history) : 0), 0);
+  let inlinePhotos = 0, inlineBytes = 0, photoCount = 0;
+  Object.values(root.photos || {}).forEach((list) => Object.values(list || {}).forEach((p) => {
+    photoCount++;
+    if (p && typeof p.src === "string" && p.src.startsWith("data:")) { inlinePhotos++; inlineBytes += p.src.length; }
+  }));
+  console.log("\nDetails");
+  console.log(`points: ${historyItems(root.points)} Verlaufseinträge, davon ${kb(historyBytes(root.points)).trim()} Verlauf`);
+  console.log(`karmaPoints: ${historyItems(root.karmaPoints)} Verlaufseinträge, davon ${kb(historyBytes(root.karmaPoints)).trim()} Verlauf`);
+  console.log(`visits: ${deep(root.visits)} Check-ins an ${Object.keys(root.visits || {}).length} Corners`);
+  console.log(`photos: ${photoCount} Fotos, davon ${inlinePhotos} direkt in der Datenbank (${kb(inlineBytes).trim()})`);
+  console.log(`comments: ${deep(root.comments)} Kommentare an ${Object.keys(root.comments || {}).length} Corners`);
+  console.log(`presence: ${Object.keys(root.presence || {}).length} Einträge, davon ${Object.values(root.presence || {}).filter((p) => p && Date.now() - Number(p.lastSeen || 0) < 86400000).length} in den letzten 24 h aktiv`);
+}
+
 (async () => {
   // Local tests against the database emulator accept the "owner" token.
   const credential = process.env.FIREBASE_DATABASE_EMULATOR_HOST
@@ -50,6 +82,7 @@ async function exportFeedback(pubB64) {
   const action = process.env.ACTION;
   if (action === "add-admin") await addAdmin(String(process.env.UID_INPUT || "").trim());
   else if (action === "export-feedback") await exportFeedback(process.env.PUBKEY_B64);
+  else if (action === "data-sizes") await dataSizes();
   else throw new Error(`Unbekannte Aktion: ${action}`);
   process.exit(0);
 })().catch((err) => { console.error(`✖ ${err && err.message ? err.message : err}`); process.exit(1); });
