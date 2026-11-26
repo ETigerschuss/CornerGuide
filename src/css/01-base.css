@@ -1,0 +1,30 @@
+:root {
+  --bg: #0d0d0d;
+  --bg-2: #161616;
+  --bg-3: #1f1f1f;
+  --line: #2a2a2a;
+  --fg: #f4e9d1;
+  --fg-dim: #9a9285;
+  --amber: #e8a93e;
+  --amber-hot: #ffae00;
+  --pink: #ff2e6c;
+  --green: #b8ff3a;
+  --blue: #6cb6ff;
+  --bayern: #009ee0;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); min-height: 100%; }
+body {
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 16px; line-height: 1.5;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(232,169,62,0.08), transparent 45%),
+    radial-gradient(circle at 85% 30%, rgba(0,158,224,0.05), transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(255,46,108,0.04), transparent 55%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.92 0 0 0 0 0.82 0 0 0 0.04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+button, input, textarea { font-family: inherit; cursor: pointer; }
+input, textarea { cursor: text; }
+

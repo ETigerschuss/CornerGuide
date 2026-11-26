@@ -196,6 +196,58 @@
       }
     },
 
+    "closeFriends": {
+      "$owner": {
+        ".read": "auth != null && (auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner)",
+        ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true) && (auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner)",
+        "$friend": { ".validate": "newData.isBoolean()" }
+      }
+    },
+
+    "closeFriendOf": {
+      "$friend": {
+        ".read": "auth != null && (auth.uid === $friend || root.child('points').child(auth.uid).child('aliasOf').val() === $friend)",
+        "$owner": {
+          ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true) && (auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner)",
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    },
+
+    "privateCorners": {
+      "$owner": {
+        "friends": {
+          ".read": "auth != null && ((auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner) || root.child('closeFriends').child($owner).child(auth.uid).exists())",
+          "$cornerId": {
+            ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true) && (auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner)",
+            ".validate": "newData.hasChildren(['id', 'name', 'lat', 'lng']) && newData.child('id').val() === $cornerId && newData.child('name').isString() && newData.child('name').val().length <= 80 && newData.child('lat').isNumber() && newData.child('lng').isNumber()"
+          }
+        },
+        "me": {
+          ".read": "auth != null && (auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner)",
+          "$cornerId": {
+            ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true) && (auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner)",
+            ".validate": "newData.hasChildren(['id', 'name', 'lat', 'lng']) && newData.child('id').val() === $cornerId && newData.child('name').isString() && newData.child('name').val().length <= 80 && newData.child('lat').isNumber() && newData.child('lng').isNumber()"
+          }
+        }
+      }
+    },
+
+    "secretDates": {
+      "$owner": {
+        ".read": "auth != null && ((auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner) || root.child('closeFriends').child($owner).child(auth.uid).exists())",
+        "$dateId": {
+          ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true) && (auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner)",
+          ".validate": "newData.hasChildren(['cornerId', 'start', 'end', 'byId', 'byName']) && newData.child('cornerId').isString() && newData.child('cornerId').val().length <= 120 && newData.child('start').isNumber() && newData.child('end').isNumber() && newData.child('end').val() > newData.child('start').val() && newData.child('end').val() - newData.child('start').val() <= 43200000",
+          "going": {
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && root.child('accessGranted').child(auth.uid).exists() && (root.child('closeFriends').child($owner).child(auth.uid).exists() || (auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner))"
+            }
+          }
+        }
+      }
+    },
+
     "notifyTargeted": {
       ".read": false,
       "$eventId": {

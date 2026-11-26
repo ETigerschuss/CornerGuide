@@ -1,0 +1,128 @@
+/* ====================== VISIT TRAIL ====================== */
+.visit-trail {
+  padding: 8px 18px 12px;
+  border-top: 1px solid var(--line);
+}
+.visit-trail-header {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin: 0 0 6px;
+}
+.visit-trail-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.visit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--fg-dim);
+}
+.visit-chip .visit-name { color: var(--amber); font-weight: 600; }
+.visit-chip .visit-time {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+.visit-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(232,169,62,0.1);
+  border: 1px solid rgba(232,169,62,0.3);
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--amber);
+  letter-spacing: 1px;
+  margin-left: 8px;
+}
+.visit-count-badge .fire { font-size: 12px; }
+
+/* ====================== FRIEND PRESENCE ====================== */
+.friends-bar {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: none;
+}
+.friends-bar.has-friends { display: block; }
+.friends-bar-inner {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+.friends-bar h3 {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin: 0 0 8px;
+}
+.friends-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.friend-chip {
+  display: inline-flex;
+  align-items: center;
+  /* A chip carries nickname + corner name + level + up to 2 buttons — it has to
+     be allowed to wrap and shrink, or a long corner name widens the page. */
+  flex-wrap: wrap;
+  row-gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  gap: 6px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.friend-chip .friend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse-badge 2s infinite;
+}
+.friend-chip .friend-corner {
+  color: var(--green);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.friend-chip.away .friend-dot { background: var(--fg-dim); animation: none; }
+.friend-chip.away .friend-corner { color: var(--fg-dim); }
+/* Screen off / app in the background: still there, just not watching live. */
+.friend-chip.asleep { border-style: dashed; }
+.friend-chip.asleep .friend-dot { animation: none; opacity: 0.55; }
+.friend-asleep { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); white-space: nowrap; }
+
+/* ====================== ALARM TOAST ====================== */
+.toast.friend-alert { border-color: var(--bayern); border-left-color: var(--bayern); }
+.toast.friend-alert strong { color: var(--bayern); }
+

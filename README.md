@@ -42,6 +42,7 @@ https://ETigerschuss.github.io/CornerGuide/
 - 🏙️ **Stadtbezirke** — die 25 Münchner Stadtbezirke mit Nummer (01 Altstadt-Lehel … 25 Laim): Grenzen auf der Karte (Namen ab Zoomstufe 13, ein-/ausblendbar), Bezirksnummer an jedem Corner, Filter in der Liste, Bezirk in der Detailansicht mit „Grenzen zeigen"
 - 📍 **Neuer Spot nur durch Tippen** — der Pin steht gleich da, wo man ist (oder: auf die Karte tippen/Pin ziehen); Bezirk, Stadtteil und ein Name („Ecke A/B", Platz, Park) kommen automatisch. Emojis 🚻 Toilette, 💧 Wasser, ☂️ Dach, ⚽ Sport, 🏪 Kiosk und 🌿 Kiffen ok sind aus OpenStreetMap vorausgefüllt und mit einem Tipp umschaltbar; Beschreibung ist optional. Warnung, wenn der Pin zu nah an einem bestehenden Corner liegt
 - 🌿 **Regeln am Spot** — bei jedem Corner (Detail → Corner-Check) und beim Eintragen: Schule/Kita/Spielplatz/Sportplatz im 100-m-Umkreis, Fußgängerzone, Parköffnungszeiten, Verbotszonen der Stadt (siehe unten)
+- 👯 **Enge Freunde & private Corners** — jede Person wählt ihre engen Freunde (nur sie sieht die Liste). Ein Corner ist für 🌍 Alle, 👯 Enge Freunde oder 🔒 Nur dich; ein Cornerdate kann 🤫 geheim sein. Private Sachen gibt der Server nur an dich und deine engen Freunde heraus; dafür gibt's halbe Punkte. Übersicht im Profil unter „Teilen & enge Freunde“
 - 🔎 **Emojis & Filter für alle Corners** — auch die bisherigen Corners zeigen 🚻 💧 ☂️ ⚽ 🏪 🌿 direkt auf der Karte in der Liste; Filter-Chips über der Liste zeigen z. B. nur Corners mit Toilette, wo Kiffen erlaubt ist (🌿 zählt auch „nur 20–7 Uhr“)
 - 💡 **Feedback an die Macher** — Profil → „Idee oder Problem?"; Admins sehen es im Admin-Panel
 
@@ -161,11 +162,26 @@ Die App funktioniert auch ohne Firebase — dann werden Kommentare und Spots lok
 
 ## 🛠 Entwicklung
 
-Das Projekt ist eine einzelne `index.html` — kein Build-Tool nötig. Einfach öffnen oder mit einem lokalen Server starten:
+Ausgeliefert wird weiterhin **eine** `index.html` (GitHub Pages, ein Request, offline-fähig). Bearbeitet wird aber der
+Quellcode in `src/`, nach Bereichen aufgeteilt — `index.html` wird daraus gebaut:
+
+| Pfad | Inhalt |
+|---|---|
+| `src/head.html` | `<head>` bis zu den Bibliotheken |
+| `src/firebase.js` | Firebase-Modul (`window.FB`) |
+| `src/css/NN-*.css` | Styles, in dieser Reihenfolge |
+| `src/body.html` | das komplette Markup |
+| `src/js/NN-*.js` | App-Code nach Bereichen (z. B. `21-identity.js`, `26-circles.js`, `27-cornerdate.js`), ein gemeinsamer Script-Scope wie bisher |
 
 ```bash
-npx serve .
+node tools/build.mjs        # index.html aus src/ bauen (ohne Abhängigkeiten)
+node tools/check.mjs        # passt index.html zu src/? Syntax ok? Regeln gültiges JSON?
+npx serve .                 # lokal ansehen
 ```
+
+Die Prüfung läuft auch in GitHub (Workflow „Checks“) und vor jedem Deploy — eine `index.html`, die nicht aus `src/`
+gebaut ist, wird nicht ausgeliefert. Die Aufteilung hat am Verhalten nichts geändert: Beim Umbau war die gebaute Datei
+Byte für Byte identisch mit der vorherigen. Wie es Richtung tausende Nutzer weitergeht: [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md).
 
 ## 🔔 Push-Nachrichten (komplett aktivieren)
 
@@ -253,6 +269,8 @@ Stand der Regeln: November 2026.
 - **München, Hauptbahnhof** — Alkohol rund um die Uhr verboten im Umfeld (Bahnhofplatz, Arnulf-, Bayer-, Schützen-,
   Prielmayer-, Luitpoldstraße u. a.; [Verordnung](https://stadt.muenchen.de/rathaus/stadtrecht/vorschrift/330.html), gilt
   bis 30.04.2028). Die App erkennt die Zone nur ungefähr und verweist auf die genauen Straßen.
+- **Ausland** — in **Österreich** ist Kiffen verboten (Suchtmittelgesetz), in **Italien** nicht legal (auch Eigenkonsum
+  wird bestraft); in anderen Ländern zeigt die App „dort gelten andere Regeln“ statt einer deutschen Einschätzung.
 - **Englischer Garten, Hofgarten, Finanzgarten** — das Kiffverbot der Schlösserverwaltung von 2024 hat der BayVGH am
   24.11.2025 für unwirksam erklärt; es gelten die Bundesregeln.
 - **Parks** — liegt der Corner in einem Park mit Öffnungszeiten (OpenStreetMap `opening_hours`), zeigt die App sie mit

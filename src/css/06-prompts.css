@@ -1,0 +1,148 @@
+/* ====================== NICKNAME MODAL ====================== */
+.nickname-prompt {
+  position: fixed; inset: 0; z-index: 3500;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center; justify-content: center;
+  /* deliberately no entrance animation: an animation that does not
+     advance would leave this overlay at opacity 0 while still
+     capturing taps (see .modal-backdrop). */
+}
+.nickname-prompt .prompt-card {
+  background: var(--bg-2);
+  border: 2px solid var(--amber);
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 360px;
+  width: calc(100vw - 40px);
+  text-align: center;
+}
+.nickname-prompt h2 {
+  font-family: "Anton", sans-serif;
+  font-weight: 400;
+  font-size: 26px;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+.nickname-prompt p {
+  color: var(--fg-dim);
+  font-size: 14px;
+  margin: 0 0 18px;
+}
+.nickname-prompt input {
+  width: 100%;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 16px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+.nickname-prompt input:focus { outline: none; border-color: var(--amber); }
+.nickname-prompt button {
+  background: var(--amber);
+  color: #111;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  width: 100%;
+}
+.nickname-prompt button:hover { background: var(--pink); color: #fff; }
+
+/* ====================== ACCESS CODE PROMPT ====================== */
+.access-prompt {
+  position: fixed; inset: 0; z-index: 4000;
+  background: rgba(0,0,0,0.92);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center; justify-content: center;
+  /* deliberately no entrance animation: an animation that does not
+     advance would leave this overlay at opacity 0 while still
+     capturing taps (see .modal-backdrop). */
+}
+.access-prompt .prompt-card {
+  background: var(--bg-2);
+  border: 2px solid var(--amber);
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 360px;
+  width: calc(100vw - 40px);
+  text-align: center;
+}
+.access-prompt h2 {
+  font-family: "Anton", sans-serif;
+  font-weight: 400;
+  font-size: 26px;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+.access-prompt p {
+  color: var(--fg-dim);
+  font-size: 14px;
+  margin: 0 0 18px;
+}
+.access-prompt input {
+  width: 100%;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 18px;
+  text-align: center;
+  letter-spacing: 3px;
+  font-family: "JetBrains Mono", monospace;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+.access-prompt input:focus { outline: none; border-color: var(--amber); }
+#team-create-name, #team-create-emoji, #app-dialog-input { text-transform: none; letter-spacing: 0; text-align: left; font-family: "DM Sans", sans-serif; font-size: 15px; }
+#app-dialog-input.code-input { text-transform: uppercase; letter-spacing: 2px; font-family: "JetBrains Mono", monospace; text-align: center; }
+.qr-block { background: var(--bg-3); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 12px; text-align: center; }
+.qr-block h3 { font-size: 14px; margin: 0 0 4px; }
+.qr-block p { font-size: 11px; color: var(--fg-dim); margin: 0 0 10px; line-height: 1.4; }
+.qr-block img { width: 100%; max-width: 220px; height: auto; border-radius: 8px; background: #fff; padding: 6px; box-sizing: border-box; margin-bottom: 10px; }
+.ce-label { display: block; font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-dim); margin: 12px 0 5px; }
+.ce-field { width: 100%; box-sizing: border-box; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); padding: 10px 12px; border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 15px; text-transform: none; letter-spacing: 0; text-align: left; margin: 0; }
+.ce-field:focus { outline: none; border-color: var(--amber); }
+textarea.ce-field { resize: vertical; min-height: 80px; }
+.access-prompt .access-error {
+  color: var(--pink);
+  font-size: 13px;
+  min-height: 20px;
+  margin-bottom: 10px;
+}
+.access-prompt button {
+  background: var(--amber);
+  color: #111;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  width: 100%;
+}
+.access-prompt button:hover { background: var(--pink); color: #fff; }
+.access-prompt button:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Team tiles inside an overlay must keep their own tile look — the generic
+   full-width amber pill above would otherwise turn them into orange circles. */
+.access-prompt .team-btn {
+  background: var(--bg);
+  color: var(--fg);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 4px;
+  width: auto;
+  font-size: 22px;
+  font-weight: 400;
+}
+.access-prompt .team-btn:hover { background: var(--bg-3); color: var(--fg); border-color: var(--amber); }
+.access-prompt .team-btn.active { background: rgba(184,255,58,0.10); border-color: var(--green); color: var(--fg); }
+.access-prompt .team-btn .team-label { color: var(--fg-dim); }
+.access-prompt .team-btn.active .team-label { color: var(--fg); }
+

@@ -26,6 +26,9 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      # Never deploy an index.html that src/ would not build.
+      - name: Check index.html matches src/
+        run: node tools/build.mjs --check
       # The app compares this number with the server's copy to notice updates.
       - name: Stamp build number
         run: |

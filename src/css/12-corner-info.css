@@ -1,0 +1,114 @@
+/* ====================== CORNER-INFO (Sonne · Kiosk · Regen) ====================== */
+.corner-info-section { background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--amber); border-radius: 14px; padding: 14px; margin: 14px 0; }
+.corner-info-section h3 { font-family: "Anton", sans-serif; font-weight: 400; font-size: 18px; text-transform: uppercase; margin: 0 0 6px; }
+.ci-block { padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+.ci-block:first-of-type { border-top: none; padding-top: 4px; }
+.ci-h { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-dim); margin-bottom: 6px; }
+.ci-line { font-size: 14px; line-height: 1.5; }
+.ci-line strong { color: var(--fg); }
+.ci-small { font-size: 12px; color: var(--fg-dim); line-height: 1.45; margin-top: 3px; }
+.ci-rain { color: var(--blue); font-weight: 700; }
+.ci-hours { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 2px; scrollbar-width: none; }
+.ci-hours::-webkit-scrollbar { display: none; }
+.ci-hour { flex: 0 0 auto; min-width: 46px; text-align: center; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; padding: 5px 4px; font-size: 11px; }
+.ci-hour .ci-hi { font-size: 17px; display: block; line-height: 1.3; }
+.ci-hour .ci-hp { color: var(--blue); font-family: "JetBrains Mono", monospace; font-size: 10px; }
+.ci-hour.now { border-color: var(--amber); }
+.ci-place { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.ci-place .ci-p-main { flex: 1; min-width: 0; }
+.ci-place .ci-p-name { font-size: 14px; overflow-wrap: anywhere; }
+.ci-place .ci-p-meta { font-size: 11px; color: var(--fg-dim); font-family: "JetBrains Mono", monospace; overflow-wrap: anywhere; }
+.ci-place .action-btn { padding: 7px 11px; font-size: 12px; flex: 0 0 auto; }
+.ci-open { color: var(--green); }
+.ci-closed { color: var(--pink); }
+.ci-votes { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.ci-votes .action-btn { padding: 7px 11px; font-size: 12px; }
+.ci-votes .action-btn.voted { border-color: var(--green); color: var(--green); }
+.ci-rainblock.alert { background: rgba(108,182,255,0.07); border: 1px solid rgba(108,182,255,0.45); border-radius: 12px; padding: 10px; margin-top: 4px; }
+.ci-attr { font-size: 10px; color: var(--fg-dim); margin-top: 8px; }
+.ci-attr a { color: inherit; }
+.weather-banner { background: rgba(108,182,255,0.08); border: 1px solid rgba(108,182,255,0.45); border-radius: 14px; padding: 10px 14px; font-size: 13px; line-height: 1.45; }
+.weather-banner strong { color: var(--blue); }
+.weather-banner button { background: none; border: none; color: var(--fg); text-decoration: underline; font: inherit; padding: 0; cursor: pointer; }
+
+.celebration {
+  position: fixed; inset: 0; z-index: 4000;
+  display: none; align-items: center; justify-content: center;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, rgba(232,169,62,0.20), rgba(0,0,0,0.72) 65%);
+}
+.celebration.show { display: flex; }
+.cel-card {
+  text-align: center; padding: 28px 32px;
+  background: var(--bg-2); border: 2px solid var(--amber); border-radius: 22px;
+  box-shadow: 0 12px 60px rgba(232,169,62,0.45);
+  animation: celPop 0.5s cubic-bezier(.2,1.5,.4,1);
+  max-width: 84vw;
+}
+@keyframes celPop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.cel-emoji { font-size: 56px; line-height: 1; animation: celSpin 1.1s ease-out; }
+@keyframes celSpin { from { transform: rotate(-22deg) scale(0.5); } to { transform: rotate(0) scale(1); } }
+.cel-karma { font-family: "Anton", sans-serif; font-size: 42px; color: var(--green); margin: 8px 0 4px; letter-spacing: 1px; }
+.cel-text { font-size: 17px; line-height: 1.35; }
+.cel-sub { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); margin-top: 8px; }
+.cel-confetti { position: absolute; inset: 0; overflow: hidden; }
+.cel-confetti span {
+  position: absolute; top: -12px; left: var(--x);
+  width: 9px; height: 14px; background: var(--c); border-radius: 2px;
+  animation: celFall 2.6s linear var(--d) forwards;
+}
+@keyframes celFall {
+  0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cel-confetti { display: none; }
+  .cel-card, .cel-emoji { animation: none; }
+}
+
+/* ====================== PROFILE CORNER MAP ====================== */
+.cg-pie-wrap { background: transparent !important; border: none !important; }
+.cg-pie {
+  border-radius: 50%;
+  /* semi-transparent so the map underneath stays readable */
+  opacity: 0.72;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-sizing: border-box;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  transition: width 0.25s, height 0.25s;
+}
+.cg-pie-wrap:hover .cg-pie { opacity: 0.95; }
+.pmap-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.pmap-controls #pmap-play { flex: 0 0 auto; font-size: 11px; padding: 6px 10px; }
+.pmap-controls #pmap-scrub { flex: 1 1 120px; min-width: 0; accent-color: var(--amber); }
+.pmap-controls #pmap-date { flex: 0 0 auto; font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--fg-dim); }
+.pmap-controls #pmap-speed { flex: 0 0 auto; font-size: 11px; padding: 6px 8px; }
+.pmap-frame { position: relative; }
+.pmap-caption { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 500; pointer-events: none; background: rgba(13,13,13,0.86); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; font-size: 12px; line-height: 1.35; opacity: 0; transform: translateY(6px); transition: opacity 0.25s, transform 0.25s; }
+.pmap-caption.on { opacity: 1; transform: none; }
+.pmap-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.cg-pie.pop { animation: pmap-pop 0.55s cubic-bezier(.2,1.6,.4,1); }
+.pmap-ring { position: absolute; inset: -9px; border: 3px solid var(--amber); border-radius: 50%; animation: pmap-ring 1.4s ease-out infinite; pointer-events: none; }
+@keyframes pmap-pop { 0% { transform: scale(0.2); } 100% { transform: scale(1); } }
+@keyframes pmap-ring { 0% { transform: scale(0.7); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cg-pie.pop, .pmap-ring { animation: none; } .pmap-caption { transition: none; } }
+
+/* ====================== LIVE LOCATION MARKERS ====================== */
+.live-user-marker { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); position: relative; }
+.live-user-marker .live-nick { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; font-family: "JetBrains Mono", monospace; font-size: 9px; padding: 2px 6px; border-radius: 4px; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.live-user-marker:hover .live-nick { opacity: 1; }
+
+/* Mobile: slightly tighter tiles, but keep the names — they matter for
+   self-created teams, which are only distinguishable by their label. */
+.team-buttons { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 6px; }
+.team-btn { padding: 8px 3px; font-size: 20px; }
+.team-btn .team-label { font-size: 7px; letter-spacing: 0.3px; }
+
+
+/* Stacking: every overlay sits at 4000. Confirm/prompt dialogs and toasts are
+   opened FROM overlays (admin panel, claim list, profiles), so they must sit
+   above them — before, "Profil löschen?" opened hidden behind the admin panel. */
+#app-dialog.access-prompt { z-index: 4600; }
+.toast { z-index: 4700; }
+.celebration { z-index: 4500; }
+
