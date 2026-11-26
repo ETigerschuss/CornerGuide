@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Quick checks without dependencies (run locally and in CI):
 //  1. index.html is exactly what src/ builds
-//  2. the app code and the Firebase module have no syntax errors
+//  2. the app code, the Firebase module and the Cloud Functions have no syntax errors
 //  3. the database rules are valid JSON
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync, writeFileSync, mkdtempSync } from "node:fs";
@@ -30,6 +30,11 @@ step("Firebase module has no syntax errors", () => {
   const file = join(dir, "firebase.mjs");
   writeFileSync(file, readFileSync(join(root, "src", "firebase.js"), "utf8"));
   execFileSync(process.execPath, ["--check", file], { stdio: "pipe" });
+});
+step("Cloud Functions have no syntax errors", () => {
+  for (const f of readdirSync(join(root, "functions")).filter((x) => x.endsWith(".js"))) {
+    execFileSync(process.execPath, ["--check", join(root, "functions", f)], { stdio: "pipe" });
+  }
 });
 step("database rules are valid JSON", () => JSON.parse(readFileSync(join(root, "firebase.database.rules.json"), "utf8")));
 

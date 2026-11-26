@@ -40,10 +40,12 @@ https://ETigerschuss.github.io/CornerGuide/
 - 🔗 **Links führen direkt hin** — WhatsApp-Corner-Link (`?corner=…&come=1`): Corner mit „📍 Ich bin da — einchecken" und Route ganz oben; wer schon dort ist (≤ 150 m), ist sofort eingecheckt. Cornerdate-Link (`?corner=…&cd=<id>`): Einladung mit einem Tipp „✋ Bin dabei". Auf einem neuen Gerät warten die Links, bis man gesagt hat, wer man ist
 - ✨ **Updates kommen von selbst** — die App prüft beim Zurückkehren, ob es eine neue Version gibt, und lädt sie, wenn gerade nichts offen ist (sonst: „🔄 Neue Version da — tippen")
 - 🏙️ **Stadtbezirke** — die 25 Münchner Stadtbezirke mit Nummer (01 Altstadt-Lehel … 25 Laim): Grenzen auf der Karte (Namen ab Zoomstufe 13, ein-/ausblendbar), Bezirksnummer an jedem Corner, Filter in der Liste, Bezirk in der Detailansicht mit „Grenzen zeigen"
-- 📍 **Neuer Spot nur durch Tippen** — der Pin steht gleich da, wo man ist (oder: auf die Karte tippen/Pin ziehen); Bezirk, Stadtteil und ein Name („Ecke A/B", Platz, Park) kommen automatisch. Emojis 🚻 Toilette, 💧 Wasser, ☂️ Dach, ⚽ Sport, 🏪 Kiosk und 🌿 Kiffen ok sind aus OpenStreetMap vorausgefüllt und mit einem Tipp umschaltbar; Beschreibung ist optional. Warnung, wenn der Pin zu nah an einem bestehenden Corner liegt
-- 🌿 **Regeln am Spot** — bei jedem Corner (Detail → Corner-Check) und beim Eintragen: Schule/Kita/Spielplatz/Sportplatz im 100-m-Umkreis, Fußgängerzone, Parköffnungszeiten, Verbotszonen der Stadt (siehe unten)
+- 📍 **Neuer Spot nur durch Tippen** — der Pin steht gleich da, wo man ist (oder: auf die Karte tippen/Pin ziehen); Bezirk, Stadtteil und ein Name („Ecke A/B", Platz, Park) kommen automatisch. Emojis 🚻 Toilette, 💧 Wasser, ☂️ Dach, ⚽ Sport, 🏪 Kiosk und 🟢 „grünes Licht“ sind aus OpenStreetMap vorausgefüllt und mit einem Tipp umschaltbar; Beschreibung ist optional. Warnung, wenn der Pin zu nah an einem bestehenden Corner liegt
+- 🟢 **Regeln am Spot („grünes Licht“)** — bei jedem Corner (Detail → Corner-Check) und beim Eintragen: Schule/Kita/Spielplatz/Sportplatz im 100-m-Umkreis, Fußgängerzone, Parköffnungszeiten, Verbotszonen der Stadt (siehe unten)
 - 👯 **Enge Freunde & private Corners** — jede Person wählt ihre engen Freunde (nur sie sieht die Liste). Ein Corner ist für 🌍 Alle, 👯 Enge Freunde oder 🔒 Nur dich; ein Cornerdate kann 🤫 geheim sein. Private Sachen gibt der Server nur an dich und deine engen Freunde heraus; dafür gibt's halbe Punkte. Übersicht im Profil unter „Teilen & enge Freunde“
-- 🔎 **Emojis & Filter für alle Corners** — auch die bisherigen Corners zeigen 🚻 💧 ☂️ ⚽ 🏪 🌿 direkt auf der Karte in der Liste; Filter-Chips über der Liste zeigen z. B. nur Corners mit Toilette, wo Kiffen erlaubt ist (🌿 zählt auch „nur 20–7 Uhr“)
+- 🔎 **Emojis & Filter für alle Corners** — auch die bisherigen Corners zeigen 🚻 💧 ☂️ ⚽ 🏪 🟢 direkt auf der Karte in der Liste; Filter-Chips über der Liste zeigen z. B. nur Corners mit Toilette und grünem Licht (🟢 zählt auch „erst ab 20 Uhr“)
+- 💐 **Komplimente** — auf jedem Profil (und bei den Leuten, die gerade am Corner sind) „💐 Kompliment machen": eins der fertigen antippen oder eigene Worte. Die Person bekommt **+20 Karma** und eine Push-Nachricht, du **+5 Aura** (bis 5× am Tag); ein „💛 Danke" schickt ihr +5 Karma zurück. Ein Kompliment pro Person und Tag (vom Server geprüft). Im eigenen Profil stehen alle Komplimente — und wem man als Nächstes eine Freude machen könnte
+- ⚡ **Startet schlank** — beim Öffnen lädt die App nur noch kleine Kopien (Titelbilder, Punkte, Besuchszahlen) statt der ganzen Datenbank: vorher 9 MB, weil alle Fotos in der Datenbank lagen. Fotos, Check-ins und Profile anderer kommen erst, wenn man sie ansieht (siehe [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md))
 - 💡 **Feedback an die Macher** — Profil → „Idee oder Problem?"; Admins sehen es im Admin-Panel
 
 ## 🌤️ Corner-Check: woher kommen die Daten?
@@ -121,7 +123,7 @@ Eine Web-App kann bei gesperrtem Display nicht weiterlaufen (iOS friert sie komp
 ## 🏆 Punkte: Aura, Karma & Reward-Matrix
 
 - ✨ **Aura** = was du tust (einchecken, Leute treffen, Fotos, Kommentare, Gossip erzählen …) — bestimmt dein Level.
-- 🎁 **Karma** = was andere dir geben (bestätigter Nachschub: +40 pro Bestätigung, Gossip-Punkte: +2 … +20 pro Bewertung).
+- 🎁 **Karma** = was andere dir geben (💐 Kompliment: +20, 💛 Danke dafür: +5, bestätigter Nachschub: +40 pro Bestätigung, Gossip-Punkte: +2 … +20 pro Bewertung).
 - Die **Reward-Matrix** ist ein 3×3-Raster aus Aura-Stufe (Lv. <5 · 5–14 · 15+) und Karma-Stufe (Lv. <2 · 2–5 · 6+),
   von 🌱 Rookie bis 🪩 Matrix Legend. Die App zeigt, wo du stehst und wie viel Aura/Karma bis zum nächsten Feld fehlt.
 - Die komplette Liste aller Punkte-Quellen steht in der App unter **„📖 So sammelst du Punkte"**.
@@ -183,8 +185,13 @@ Die Prüfung läuft auch in GitHub (Workflow „Checks“) und vor jedem Deploy 
 gebaut ist, wird nicht ausgeliefert. Die Aufteilung hat am Verhalten nichts geändert: Beim Umbau war die gebaute Datei
 Byte für Byte identisch mit der vorherigen. Wie es Richtung tausende Nutzer weitergeht: [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md).
 
-Ende-zu-Ende-Tests — die echte App in Chromium gegen die Firebase-Emulatoren, mehrere Personen gleichzeitig: siehe
-[tests/e2e](tests/e2e/README.md). In GitHub unter **Actions → E2E-Tests → Run workflow**.
+Ende-zu-Ende-Tests — die echte App in Chromium gegen die Firebase-Emulatoren (inkl. Cloud Functions), mehrere Personen
+gleichzeitig: siehe [tests/e2e](tests/e2e/README.md). In GitHub unter **Actions → E2E-Tests → Run workflow**.
+
+Cloud Functions (`functions/`): Push-Verteilung und die schlanken Kopien, die die App beim Start liest
+(`functions/lite.js`). **Admin-Werkzeuge** (Actions → „Admin-Werkzeuge" → Run workflow) hat dafür zwei Aktionen, die im
+öffentlichen Log nur Zahlen zeigen: `data-sizes` (wie groß ist welcher Knoten?) und `phase1-backfill` (Kopien für alte
+Daten einmalig füllen, wiederholbar).
 
 ## 🔔 Push-Nachrichten (komplett aktivieren)
 
@@ -255,7 +262,11 @@ still repariert, sonst fragt sie einmal nach dem Code. Profil und Punkte bleiben
 **Admin werden** (z. B. nach eigenem Login-Verlust): Die eigene **Nutzer-ID** steht im Profil unter „Konto & Profil
 sichern". Im Repo unter *Actions → Admin-Werkzeuge → Run workflow* die Aktion `add-admin` mit dieser ID starten.
 
-## 🌿 Regeln am Spot: was prüft die App?
+## 🟢 Regeln am Spot: was prüft die App?
+
+In der App steht dafür nur ein Codewort: **„grünes Licht“** — 🟢 ok · 🌙 erst ab 20 Uhr · 🔴 kein grünes Licht · ❔ unklar.
+Unauffällig, aber beim Cornern weiß man Bescheid. Auf den Karten in der Liste erscheint nur das 🟢; ein „nein“ steht
+erst in der Detailansicht. Dahinter stecken diese Regeln:
 
 Beim Eintragen eines Corners und in jeder Detailansicht (Corner-Check → „Regeln & Ausstattung") fragt die App
 OpenStreetMap (Overpass) nach der Umgebung — 3 Tage zwischengespeichert. **Automatische Einschätzung, ohne Gewähr.**
@@ -308,19 +319,21 @@ aneinander grenzen, und schreibt `data/stadtbezirke.json` (~50 KB). Die App läd
 Bezirk jedes Corners aus seinen Koordinaten. Neu erzeugen: *Actions → Stadtbezirke-Daten → Run workflow*; danach in
 `index.html` die Version in `DISTRICTS_URL` erhöhen, damit Handys die neue Datei statt der zwischengespeicherten laden.
 
-## 📷 Corner-Fotos (Firebase Storage)
+## 📷 Corner-Fotos
 
-Fotos werden als Dateien in **Firebase Storage** abgelegt (nur die URL landet in der
-Datenbank, das hält die Realtime DB schlank). Einmalig einrichten:
+**Firebase Storage ist im Projekt noch nicht aktiviert** (geprüft mit Admin-Werkzeuge → `data-sizes`). Darum liegen die
+Fotos in der Datenbank — seit Phase 1 aber getrennt:
 
-1. Firebase Console → **Storage** → aktivieren (Region passend wählen)
-2. Storage-Regeln deployen (Datei `storage.rules`):
-   ```bash
-   firebase deploy --only storage
-   ```
-   Regel: jeder darf Fotos ansehen, nur eingeloggte Nutzer dürfen Bilder < 5 MB hochladen.
+| Knoten | Inhalt | Wann geladen |
+|---|---|---|
+| `photoCovers/<corner>` | ein kleines Titelbild (360 px) + Anzahl, von einer Cloud Function gepflegt | beim Start (Karten) |
+| `photos/<corner>/<id>` | Autor, Zeit, Bewertungen, Kommentare, Vorschaubild | beim Öffnen des Corners |
+| `photoData/<corner>/<id>` | das volle Bild | beim Antippen |
 
-Fällt Storage aus, speichert die App das Bild als Fallback inline (Base64) in der DB.
+**Storage aktivieren lohnt sich trotzdem:** Firebase Console → **Storage** → „Get started" (Region `europe-west1`).
+Danach lädt die App neue Fotos automatisch dorthin (nur die URL landet in der Datenbank; Googles CDN liefert sie aus, der
+Browser speichert sie zwischen), und Gossip-Sprachaufnahmen laufen auch darüber. Die Regeln (`storage.rules`) deployt der
+Firebase-Workflow schon: jeder darf Fotos ansehen, nur eingeloggte Nutzer dürfen Bilder < 5 MB hochladen.
 
 ## 📲 PWA / App Stores
 

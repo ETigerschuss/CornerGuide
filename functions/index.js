@@ -8,9 +8,10 @@
  * Deploy:  firebase deploy --only functions
  * Requires the Blaze (pay-as-you-go) plan — outbound requests to FCM need it.
  */
-const { onValueCreated } = require("firebase-functions/v2/database");
+const { onValueCreated, onValueWritten } = require("firebase-functions/v2/database");
 const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
+const lite = require("./lite");
 
 admin.initializeApp();
 
@@ -209,5 +210,83 @@ exports.pushOnDirectMessage = onValueCreated(
         logger.error(`Push to ${toId} failed:`, err);
       }
     }
+  }
+);
+
+/* ====================== Slim data for the app start ======================
+ * The app no longer downloads whole nodes when it starts (photos alone were
+ * 8.6 MB). These functions keep small derived copies up to date for every
+ * write — from the current and from older app versions alike. See lite.js.
+ * Points are written very often (every action), so the copy is built from
+ * the event itself (no extra read of the entry with its history); a small
+ * transaction keeps an older event that arrives late from overwriting it.  */
+
+async function mirrorReward(event, path, withAlias) {
+  const next = lite.rewardLite(event.data.after.val(), withAlias);
+  const ref = admin.database().ref(`${path}/${event.params.key}`);
+  if (!next) { await ref.remove(); return; }
+  await ref.transaction((cur) => (cur && Number(cur.last || 0) > Number(next.last || 0) ? undefined : next));
+}
+
+exports.rewardLiteAura = onValueWritten(
+  { ref: "/points/{key}", region: REGION },
+  (event) => mirrorReward(event, "pointsLite", true)
+);
+
+exports.rewardLiteKarma = onValueWritten(
+  { ref: "/karmaPoints/{key}", region: REGION },
+  (event) => mirrorReward(event, "karmaLite", false)
+);
+
+// Check-in → count per corner + the person's own list (by login, or by name
+// for check-ins without one). Undo and re-attribution move/remove the entry.
+exports.visitIndex = onValueWritten(
+  { ref: "/visits/{cornerId}/{visitId}", region: REGION },
+  async (event) => {
+    const { cornerId, visitId } = event.params;
+    const db = admin.database();
+    const before = event.data.before.val();
+    const cur = (await db.ref(`visits/${cornerId}/${visitId}`).get()).val();
+    const updates = {};
+    const oldPath = lite.visitIndexPath(visitId, before);
+    const newPath = lite.visitIndexPath(visitId, cur);
+    if (oldPath && oldPath !== newPath) updates[oldPath] = null;
+    if (newPath) updates[newPath] = lite.visitIndexEntry(cornerId, cur);
+    if (Object.keys(updates).length) await db.ref().update(updates);
+    // Count up or down instead of re-reading the corner's whole list.
+    const delta = (event.data.after.exists() ? 1 : 0) - (before ? 1 : 0);
+    if (!delta) return;
+    const t = cur ? Number(cur.time) || 0 : 0;
+    await db.ref(`visitStats/${cornerId}`).transaction((s) => {
+      const n = Math.max(0, Number((s && s.n) || 0) + delta);
+      return n ? { n, last: Math.max(Number((s && s.last) || 0), t) } : null;
+    });
+  }
+);
+
+// Photos: the cover for the cards (+ count), and inline images out of the
+// metadata into photoData, with a small thumbnail for cards and gallery.
+exports.photoIndex = onValueWritten(
+  { ref: "/photos/{cornerId}/{photoId}", region: REGION },
+  async (event) => {
+    const { cornerId, photoId } = event.params;
+    const db = admin.database();
+    const metaRef = db.ref(`photos/${cornerId}/${photoId}`);
+    const cur = (await metaRef.get()).val();
+    if (!cur) {
+      await db.ref(`photoData/${cornerId}/${photoId}`).remove();
+    } else if (lite.isInline(cur.src)) {
+      // Uploaded by an older app version: same layout as the current one.
+      await db.ref(`photoData/${cornerId}/${photoId}`).set({ src: cur.src });
+      const fix = { src: null };
+      if (!cur.thumb) {
+        const thumb = lite.makeThumb(cur.src);
+        if (thumb) fix.thumb = thumb;
+      }
+      await metaRef.update(fix);   // triggers this function once more, which then only updates the cover
+      return;
+    }
+    const photos = (await db.ref(`photos/${cornerId}`).get()).val();
+    await db.ref(`photoCovers/${cornerId}`).set(lite.coverOf(photos));
   }
 );

@@ -8,17 +8,31 @@ allem einen anderen Umgang mit den **Daten** und der **Identität**; die Aufteil
 | Teil | Heute |
 |---|---|
 | Frontend | Eine ausgelieferte `index.html` (~720 KB, gzip ein Bruchteil davon), Quellcode nach Bereichen in `src/` (14 CSS-, 34 JS-Dateien), Vanilla JS + Leaflet, PWA mit einem Service Worker (Cache + Push), Auto-Update beim Zurückkehren in die App |
-| Backend | Firebase: Realtime Database, anonyme Anmeldung, Storage (Fotos), Cloud Functions (Push-Verteilung) |
+| Backend | Firebase: Realtime Database, anonyme Anmeldung, Cloud Functions (Push-Verteilung und die schlanken Kopien fürs Starten, `functions/lite.js`). Storage ist im Projekt **nicht aktiviert** (siehe unten) |
 | Deploy | GitHub Actions: Pages (Build-Prüfung → Build-Nummer → Upload → Deploy), Firebase-Regeln & Functions bei Änderung |
 | Zugang | Ein gemeinsamer Einladungscode |
 | Identität | Anonymer Login pro Browser; „Wer bist du?“ verknüpft Logins mit einem Profil (`points/<login>.aliasOf`) — ohne Nachweis |
 | Sichtbarkeit | Alle sehen alles (Standort, Check-ins, Corners); neu: enge Freunde, private Corners und geheime Dates, serverseitig geschützt |
 | Externe Daten | OpenStreetMap/Overpass (Spot-Check, Kiosk & Co.), Open-Meteo (Wetter) — Ergebnisse werden zwischengespeichert bzw. geteilt (`cornerFacts`) |
-| Tests | Playwright gegen Firebase-Emulatoren, 16 Testreihen in `tests/e2e/` |
+| Tests | Playwright gegen Firebase-Emulatoren inkl. Cloud Functions, 18 Testreihen in `tests/e2e/` |
+
+## Gemessen (November 2026)
+
+Admin-Werkzeuge → `data-sizes` zeigt Größe und Anzahl pro Knoten, nie Inhalte. Vor Phase 1 waren es **9,0 MB**, die
+jedes Handy bei jedem Start komplett lud:
+
+| Knoten | Größe | Befund |
+|---|---|---|
+| `photos` | 8.612 KB | alle 32 Fotos als Bild direkt in der Datenbank — Storage war nie aktiviert, der Upload fiel jedes Mal auf „inline“ zurück |
+| `points` | 85 KB | 97 % davon Punkteverlauf (1.628 Einträge), den keine Ansicht zeigt |
+| `visits` | 10,5 KB | 120 Check-ins, 74 davon nur mit Namen (sehr alte App-Version) |
+| alles andere | je < 20 KB | |
+
+35 Profile, keines mit mehreren Logins, keine alten Kopien.
 
 ## Was bei tausenden Nutzern bricht
 
-1. **Jedes Handy lädt ganze Datenbank-Knoten.** `points` (mit bis zu 200 Verlaufseinträgen pro Person), `presence`,
+1. **Jedes Handy lädt ganze Datenbank-Knoten.** *(Phase 1: für Fotos, Punkte, Check-ins und Presence gelöst, siehe unten.)* `points` (mit bis zu 200 Verlaufseinträgen pro Person), `presence`,
    `visits` (alle Check-ins aller Zeiten), `comments`, `photos`, `emojiVotes`, `captured`, `encounters` … werden beim Start
    komplett geladen. Bei 5.000 Leuten wären das allein für `points` grob 5.000 × 200 × 80 Byte ≈ 80 MB pro App-Start.
    Das ist langsam, frisst Akku und kostet Geld (die Realtime Database rechnet Downloads pro GB ab).
@@ -44,12 +58,36 @@ allem einen anderen Umgang mit den **Daten** und der **Identität**; die Aufteil
 - Geteilte Corner-Fakten, enge Freunde, private Corners, geheime Dates (serverseitig geschützt)
 - Ende-zu-Ende-Tests im Repo (`tests/e2e/`), in GitHub per Knopfdruck (Workflow „E2E-Tests“)
 
-### Phase 1 — Daten schlank machen (ab ~100 aktiven Nutzern nötig)
-- `points` nur noch Summe + Name; Verlauf nach `pointsHistory/<login>` (lädt nur das eigene Profil)
-- Ranking als `leaderboard/` (Top 100 + eigener Rang), gepflegt von einer Cloud Function
-- `visits` pro Corner begrenzen (z. B. die letzten 50) und `visitsByUser/<login>` für den eigenen Verlauf
-- Presence abfragen statt komplett laden (`orderByChild("lastSeen")` ab „vor 2 Stunden“), Aufräumen per `onDisconnect`
-- Profile anderer erst beim Öffnen laden, Kommentare/Fotos pro Corner erst in der Detailansicht
+### Phase 1 — Daten schlank machen — erledigt
+Grundsatz: **nichts wird gelöscht oder umgebaut, was ältere App-Versionen noch lesen.** Cloud Functions halten kleine
+Kopien aktuell (`functions/lite.js`, für jeden Schreibvorgang, auch von alten App-Versionen); die App liest nur noch diese
+und lädt Details dort, wo sie angezeigt werden. Fehlt eine Kopie oder ist sie (direkt nach einem Update) noch gesperrt,
+liest die App den alten Knoten — es fehlt nie etwas.
+
+| Beim Start | Statt | Details erst … |
+|---|---|---|
+| `photoCovers/<corner>` — ein kleines Titelbild (360 px) + Anzahl | `photos` (8,6 MB) | `photos/<corner>` (Vorschaubilder) beim Öffnen des Corners, `photoData/<corner>/<id>` (volles Bild) beim Antippen |
+| `pointsLite`, `karmaLite` — Summe, Name, Profil-Verknüpfung, „zuletzt aktiv“ | `points`, `karmaPoints` mit Verlauf | eigene Logins vollständig; Verlauf anderer nur, wenn ein Profil mehrere Logins hat (Kopie-Prüfung) |
+| `visitStats/<corner>` — Anzahl + letzter Check-in | `visits` (alle Check-ins aller Zeiten) | `visits/<corner>` (die letzten 30) im Corner; `visitsByUser/<login>` / `visitsByName/<name>` für Profilkarte und öffentliches Profil |
+| `presence` per Abfrage: nur, wer in den letzten 3½ h da war | alle Logins, die je die App geöffnet haben | — |
+
+- Neue Fotos: Storage, sobald aktiviert — sonst das Bild in `photoData`, ein Vorschaubild in der Liste. Ältere
+  App-Versionen, die noch „inline“ speichern, werden von der Cloud Function automatisch umsortiert.
+- Einmalige Übernahme der alten Daten: Admin-Werkzeuge → `phase1-backfill` (wiederholbar, protokolliert nur Zahlen).
+- Ranking und Level werden weiter im Handy gerechnet — jetzt aus wenigen KB statt aus dem ganzen Verlauf.
+- **Firebase Storage aktivieren** (Konsole → Storage → „Get started“) bleibt sinnvoll: Fotos kämen dann von Googles CDN
+  und würden vom Browser zwischengespeichert; auch Gossip-Sprachaufnahmen laufen darüber. Die App nutzt Storage
+  automatisch, sobald es da ist.
+
+### Noch offen aus Phase 1 (klein, aber wächst)
+- `comments`, `checkinFeedback`, `encounters`, `captureHistory`, `gossipRounds` werden noch komplett geladen (heute je
+  < 20 KB). Nach demselben Muster: pro Corner bzw. pro Person ablegen und erst in der Ansicht laden.
+- Ranking als eigener Knoten (Top 100 + eigener Rang), wenn `pointsLite` selbst groß wird (ab einigen tausend Profilen).
+- Punkte werden bei jeder Aktion einzeln geschrieben (auch „+1 aktiv“ alle ≥ 10 s), jedes Mal als Transaktion über den
+  ganzen Eintrag samt Verlauf (bis ~16 KB hin und zurück). Mit tausenden aktiven Leuten zu teuer → Phase 2: Punkte
+  serverseitig bzw. gebündelt, Verlauf als eigene Liste.
+- Das Titelbild wird bei jeder Foto-Änderung (auch Bewertungen) aus der Fotoliste des Corners samt Vorschaubildern neu
+  bestimmt. Bei sehr vielen Fotos pro Corner die Vorschaubilder getrennt ablegen.
 
 ### Phase 2 — Vertrauen & Sicherheit (bevor Fremde dazukommen)
 - Echte Anmeldung (Google/Apple/E-Mail-Link) oder Bestätigung neuer Geräte auf einem eigenen Gerät

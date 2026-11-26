@@ -344,6 +344,7 @@ function cornerOriginHtml(c) {
 function openDetail(cornerId) {
   const c = getAllCorners().find((x) => x.id === cornerId);
   if (!c) return;
+  ensureCornerDetailData(cornerId);   // photos, last check-ins, full cover — only for this corner
   if (detailXpCornerId !== cornerId) addXp(2, "Spot-Detail angesehen");
   detailXpCornerId = cornerId;
   const overlay = $("#detail-overlay");
@@ -372,7 +373,7 @@ function openDetail(cornerId) {
     <div class="detail-origin">${cornerOriginHtml(c)}</div>
     ${capturedHtml}
     ${peopleHere.length ? `<div class="detail-people-here">🟢 ${peopleHere.length} ${T("gerade hier", "here now")}: ${peopleAtCornerDetailed(c.id).map((p) => p.id ? `<button class="people-chip" data-user-profile="${escapeHtml(p.id)}">${escapeHtml(p.label)}</button>` : escapeHtml(p.label)).join(" ")}</div>` : ""}
-    ${peopleMessageTargets.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">${peopleMessageTargets.map((friend) => `<button class="action-btn" data-dm-user="${friend.id}">💬 ${escapeHtml(friend.nickname || friend.name || friend.id)}</button>`).join("")}</div>` : ""}
+    ${peopleMessageTargets.length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px;">${peopleMessageTargets.map((friend) => `<button class="action-btn" data-dm-user="${friend.id}">💬 ${escapeHtml(friend.nickname || friend.name || friend.id)}</button><button class="action-btn cmp-quick" data-compliment-to="${escapeHtml(friend.id)}" data-compliment-name="${escapeHtml(friend.nickname || friend.name || "")}" title="${T("Kompliment machen", "Pay a compliment")}">💐</button>`).join("")}</div>` : ""}
     <div class="gossip-section" data-corner-id="${c.id}"></div>
     <div class="detail-quick-actions">
       <button class="detail-quick-btn" data-scroll-target=".corner-info-section">🌤️ ${T("Regeln · Sonne · Kiosk", "Rules · Sun · Kiosk")}</button>
@@ -639,18 +640,18 @@ async function saveNewSpot() {
 
 function openLightbox(src, author) { $("#lightbox-img").src = src; $("#lightbox-author").textContent = author ? `📸 von ${author}` : ""; $("#lightbox").classList.add("open"); addXp(2, "Lightbox"); }
 
+// Totals and names of everyone from the slim copy, my own logins in full
+// (35-slim-data.js). A listener attached before sign-in is refused; try again
+// once signed in.
 function listenPoints(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  // A listener attached before sign-in is refused; try again once signed in.
-  onValue(ref(db, "points"), (snapshot) => { STATE.points = snapshot.val() || {}; ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); scheduleStartCircles(); },
+  listenRewardStore("aura", () => { ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); scheduleStartCircles(); deferSlim("myVisits", watchMyVisits); deferSlim("myCompliments", watchMyCompliments); },
     () => retryListenerAfterAuth(listenPoints, attempt));
 }
 
 function listenKarmaPoints(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "karmaPoints"), (snapshot) => { STATE.karmaPoints = snapshot.val() || {}; ensurePointIdentity(false); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); },
+  listenRewardStore("karma", () => { ensurePointIdentity(false); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); },
     () => retryListenerAfterAuth(listenKarmaPoints, attempt));
 }
 

@@ -106,18 +106,35 @@
     "comments":        { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "teams":           { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "customTeams":     { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
-    "presence":        { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "presence":        { ".read": "auth != null", ".indexOn": ["lastSeen"], ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "points":          { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "karmaPoints":     { ".read": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "pointsLite":      { ".read": "auth != null", ".write": false },
+    "karmaLite":       { ".read": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)", ".write": false },
     "encounters":      { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "corners":         { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "captured":        { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "captureHistory":  { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "photos":          { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "photoData":       { ".read": "auth != null", "$corner": { "$photo": { ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)", ".validate": "!newData.exists() || (newData.child('src').isString() && newData.child('src').val().length < 3000000)" } } },
+    "photoCovers":     { ".read": "auth != null", ".write": false },
     "emojiVotes":      { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "cornerVotes":     { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "barometer":       { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "visits":          { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
+    "visitStats":      { ".read": "auth != null", ".write": false },
+    "visitsByUser":    { ".read": "auth != null", ".write": false },
+    "visitsByName":    { ".read": "auth != null", ".write": false },
+    "compliments": {
+      ".read": "auth != null",
+      "$to": {
+        "$id": {
+          ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true) && ((!data.exists() && newData.exists() && (newData.child('from').val() === auth.uid || newData.child('from').val() === root.child('points').child(auth.uid).child('aliasOf').val()) && newData.child('from').val() !== $to && $id.beginsWith(newData.child('from').val() + '_')) || (data.exists() && !newData.exists() && (auth.uid === $to || root.child('points').child(auth.uid).child('aliasOf').val() === $to)))",
+          ".validate": "!newData.exists() || (newData.hasChildren(['from', 'text', 'at']) && newData.child('from').isString() && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 200 && newData.child('at').isNumber() && newData.child('at').val() <= now + 120000 && (!newData.child('fromName').exists() || (newData.child('fromName').isString() && newData.child('fromName').val().length <= 40)) && (!newData.child('preset').exists() || (newData.child('preset').isString() && newData.child('preset').val().length <= 20)) && (!newData.child('thanked').exists() || newData.child('thanked').val() === true))",
+          "thanked": { ".write": "auth != null && data.parent().exists() && newData.val() === true && (auth.uid === $to || root.child('points').child(auth.uid).child('aliasOf').val() === $to)" }
+        }
+      }
+    },
     "cornerStatus":    { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "cornerStatuses":  { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "achievements":    { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },

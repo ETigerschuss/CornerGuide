@@ -27,7 +27,7 @@ const SPOT_AMENITIES = [
   { key: "dach", emoji: "☂️", de: "Dach", en: "Roof" },
   { key: "sport", emoji: "⚽", de: "Sport", en: "Sports" },
   { key: "kiosk", emoji: "🏪", de: "Kiosk", en: "Kiosk" },
-  { key: "kiffen", emoji: "🌿", de: "Kiffen ok", en: "Weed ok" }
+  { key: "kiffen", emoji: "🟢", de: "Grünes Licht", en: "Green light" }
 ];
 const ACVV_UNTIL = new Date(2027, 0, 15).getTime();
 const HBF_ALCOHOL_UNTIL = new Date(2028, 4, 1).getTime();   // "tritt am 01.05.2028 außer Kraft"
@@ -36,8 +36,8 @@ const HBF_ZONE_STREETS = ["Bahnhofplatz", "Arnulfstraße", "Bayerstraße", "Sch�
 // Outside Germany (as of November 2026): Austria keeps cannabis under the
 // Suchtmittelgesetz; in Italy personal use is not legal either (fines).
 const COUNTRY_WEED_RULES = {
-  AT: { de: "Österreich: Kiffen ist verboten (Suchtmittelgesetz)", en: "Austria: weed is illegal (Narcotics Act)" },
-  IT: { de: "Italien: nicht legal — auch Eigenkonsum wird bestraft (Verwaltungsstrafen)", en: "Italy: not legal — personal use is fined too" }
+  AT: { de: "in Österreich (Gesetz)", en: "in Austria (law)" },
+  IT: { de: "in Italien (auch privat gibt es Strafen)", en: "in Italy (fines even in private)" }
 };
 const RULE_SOURCES = {
   kcang: "https://www.gesetze-im-internet.de/kcang/__5.html",
@@ -172,8 +172,11 @@ function weedVerdict(res, now = Date.now()) {
   }
   if (res.acvv && now < ACVV_UNTIL) return { v: "no", why: [T("Verbotszone der Stadt am Alten Botanischen Garten", "City ban zone at the Alter Botanischer Garten")] };
   if (res.kcang.length) return { v: "no", why: res.kcang.map((k) => `${k.place}${k.name ? ` „${k.name}“` : ""} ${T("in", "at")} ${formatDistance(k.d)}`) };
-  if (res.pedestrian) return { v: "night", why: [T("Fußgängerzone: von 7 bis 20 Uhr verboten", "Pedestrian zone: banned from 7 am to 8 pm")] };
+  if (res.pedestrian) return { v: "night", why: [T("Fußgängerzone (tagsüber 7–20 Uhr nicht)", "pedestrian zone (not 7 am–8 pm)")] };
   return { v: "ok", why: [T("keine Schule, Kita, Spielplatz oder Sportplatz im Umkreis von 100 m", "no school, daycare, playground or sports ground within 100 m")] };
+}
+function weedVerdictEmoji(v) {
+  return v === "ok" ? "🟢" : v === "night" ? "🌙" : v === "?" ? "❔" : "🔴";
 }
 function weedAllowedNow(verdict, d = new Date()) {
   if (verdict.v === "ok") return true;
@@ -186,11 +189,13 @@ function spotRuleLines(res) {
   if (!res) return [];
   const out = [];
   const w = weedVerdict(res);
-  const weedText = w.v === "ok" ? T("Kiffen erlaubt", "Weed allowed") : w.v === "night" ? T("Kiffen nur 20–7 Uhr", "Weed only 8 pm–7 am") : w.v === "?" ? T("Kiffen", "Weed") : T("Kiffen verboten", "No weed");
-  out.push({ emoji: w.v === "ok" ? "🌿" : w.v === "night" ? "🕗" : w.v === "?" ? "❔" : "🚫", text: `${weedText} — ${w.why.join(", ")}`, src: w.abroad ? "" : (res.acvv ? RULE_SOURCES.acvv : RULE_SOURCES.kcang) });
+  // Said with a code word ("grünes Licht"): it matters at the corner, it
+  // doesn't need to shout.
+  const weedText = w.v === "ok" ? T("Grünes Licht", "Green light") : w.v === "night" ? T("Grünes Licht erst ab 20 Uhr", "Green light only from 8 pm") : w.v === "?" ? T("Grünes Licht: unklar", "Green light: unclear") : T("Kein grünes Licht", "No green light");
+  out.push({ emoji: weedVerdictEmoji(w.v), text: `${weedText} — ${w.why.join(", ")}`, src: w.abroad ? "" : (res.acvv ? RULE_SOURCES.acvv : RULE_SOURCES.kcang) });
   if (res.acvv && Date.now() < ACVV_UNTIL) out.push({ emoji: "🍺", text: T("Alkohol ganztägig verboten (Verordnung der Stadt, Alter Botanischer Garten / Karl-Stützel-Platz, bis 14.01.2027)", "Alcohol banned all day (city ordinance, Alter Botanischer Garten / Karl-Stützel-Platz, until 14 Jan 2027)"), src: RULE_SOURCES.acvv });
   if (res.hbf && Date.now() < HBF_ALCOHOL_UNTIL) out.push({ emoji: "🍺", text: T("Vermutlich in der Alkoholverbotszone am Hauptbahnhof (ganztägig) — genaue Straßen in der Verordnung", "Probably inside the alcohol ban zone at the Hauptbahnhof (all day) — exact streets in the ordinance"), src: RULE_SOURCES.hbf });
-  if (res.biergarten) out.push({ emoji: "🍺", text: T(`Neben „${res.biergarten}“: im Biergarten selbst ist Kiffen in Bayern verboten`, `Next to “${res.biergarten}”: inside beer gardens weed is banned in Bavaria`) });
+  if (res.biergarten) out.push({ emoji: "🍺", text: T(`Neben „${res.biergarten}“: im Biergarten selbst kein grünes Licht (Bayern)`, `Next to “${res.biergarten}”: no green light inside the beer garden (Bavaria)`) });
   res.parks.filter((p) => !p.square).forEach((p) => {
     if (!p.hours) return;
     const open = osmOpenNow(p.hours);

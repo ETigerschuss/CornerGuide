@@ -55,14 +55,19 @@ function identityRewardTotal(kind, key, includeDeviceKeys = false) {
   const root = profileRoot(key);
   const keys = identityKeysOf(root);
   if (includeDeviceKeys || root === myRootKey()) myIdentityKeys().forEach((k) => keys.add(k));
-  const entries = [...keys].map((k) => store[k]).filter((e) => e && Number(e.total || 0) > 0)
-    .sort((a, b) => Number(b.total || 0) - Number(a.total || 0));
+  const entries = [...keys].map((k) => ({ k, e: store[k] })).filter((x) => x.e && Number(x.e.total || 0) > 0)
+    .sort((a, b) => Number(b.e.total || 0) - Number(a.e.total || 0));
+  // The copy check compares histories. The slim copy has none, so with more
+  // than one login the full entries are fetched once (35-slim-data.js).
+  if (entries.length > 1) requestFullRewardEntries(kind, entries.filter((x) => !x.e.history).map((x) => x.k));
+  const withHistory = (x) => (x.e.history ? x.e : fullRewardEntry(kind, x.k));
   const counted = [];
   let total = 0;
-  entries.forEach((e) => {
-    if (counted.some((c) => rewardLooksCopied(e, c))) return;
-    counted.push(e);
-    total += Number(e.total || 0);
+  entries.forEach((x) => {
+    const h = withHistory(x);
+    if (h && counted.some((c) => c && rewardLooksCopied(h, c))) return;
+    counted.push(h);
+    total += Number(x.e.total || 0);
   });
   return total;
 }
@@ -118,9 +123,7 @@ async function linkToProfile(targetKey, opts = {}) {
   const me = currentUserKey();
   const uid = window.FB.getAuthUid?.() || "";
   if (!me || !uid) { toast(T("Bitte zuerst Zugang oder Login.", "Please get access or log in first.")); return false; }
-  let all = STATE.points || {};
-  try { all = (await readOnce("points", 8000)) || all; } catch (e) { /* use what we have */ }
-  STATE.points = { ...(STATE.points || {}), ...all };
+  try { mergeRewardIndex(await readRewardIndex(8000)); } catch (e) { /* use what we have */ }
   const root = profileRoot(targetKey, STATE.points);
   if (!root) return false;
   if (root === me || profileRoot(me) === root) {
@@ -155,7 +158,7 @@ async function linkToProfile(targetKey, opts = {}) {
     const ids = Object.keys(a);
     if (ids.length) { STATE.achievements = Array.from(new Set([...(STATE.achievements || []), ...ids])); saveAchievements(); }
   } catch (e) { /* achievements are optional */ }
-  const visited = [...identityKeysOf(root)].flatMap((k) => visitedCornersForKey(k));
+  const visited = (await Promise.all([...identityKeysOf(root)].map((k) => visitedCornersOf(k, "")))).flat();
   if (visited.length) { STATE.visitedCorners = Array.from(new Set([...(STATE.visitedCorners || []), ...visited])); saveVisitedCorners(); }
   $("#claim-overlay").style.display = "none";
   $("#nickname-prompt").style.display = "none";
@@ -201,7 +204,7 @@ async function linkMyEarlierLogins() {
   _linkingLogins = true;
   let linked = 0, failed = false;
   try {
-    const all = await readOnce("points", 8000).catch(() => { failed = true; return null; });
+    const all = await readRewardIndex(8000).catch(() => { failed = true; return null; });   // totals + links are enough
     const cur = currentUserKey();
     for (const key of (all ? myKeys() : [])) {
       if (!key || key === cur || /[.#$\[\]\/]/.test(key)) continue;
@@ -244,25 +247,6 @@ function profileTwinBannerHtml() {
 
 function openAdminSection(sel) {
   renderAdminPanel().then(() => setTimeout(() => $(sel)?.scrollIntoView({ behavior: "smooth", block: "start" }), 150));
-}
-
-// Reconstruct which corners a nickname has visited from the shared visits node.
-function visitedCornersForNickname(nickname) {
-  if (!nickname) return [];
-  const result = [];
-  const visits = STATE.visits || {};
-  for (const [cornerId, entries] of Object.entries(visits)) {
-    const list = entries ? Object.values(entries) : [];
-    if (list.some((v) => v && v.user === nickname)) result.push(cornerId);
-  }
-  return result;
-}
-function visitedCornersForKey(key) {
-  const result = [];
-  Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
-    if (Object.values(entries || {}).some((v) => v && v.userId === key)) result.push(cornerId);
-  });
-  return result;
 }
 
 // Two entries of the same person: add them up — unless one is a copy of the
@@ -346,7 +330,7 @@ async function claimExistingProfile(oldKey, opts = {}) {
     saveKarmaPoints();
     // Visited corners: from the old key's check-ins (and, for very old
     // check-ins without a user id, from the nickname).
-    const claimedVisited = Array.from(new Set([...visitedCornersForKey(oldKey), ...visitedCornersForNickname(nickname)]));
+    const claimedVisited = await visitedCornersOf(oldKey, nickname);
     if (claimedVisited.length) {
       STATE.visitedCorners = Array.from(new Set([...(STATE.visitedCorners || []), ...claimedVisited]));
       saveVisitedCorners();
@@ -362,10 +346,9 @@ async function claimExistingProfile(oldKey, opts = {}) {
     if (team && STATE.team === team) updates[`teams/${newKey}`] = oldTeam;
     // Re-attribute the check-in history (profile map, history playback) and the
     // "met each other" counts to the new login.
-    Object.entries(STATE.visits || {}).forEach(([cornerId, entries]) => {
-      Object.entries(entries || {}).forEach(([vid, v]) => {
-        if (v && v.userId === oldKey) updates[`visits/${cornerId}/${vid}/userId`] = newKey;
-      });
+    // (the Cloud Function then moves them to the new login's index)
+    Object.entries(await visitIdsOfKey(oldKey)).forEach(([vid, cornerId]) => {
+      updates[`visits/${cornerId}/${vid}/userId`] = newKey;
     });
     Object.entries(STATE.encounters || {}).forEach(([pairKey, e]) => {
       const users = (e && e.users) || {};
@@ -696,10 +679,19 @@ function freshFriends() {
   return Object.values(byPerson);
 }
 
+// Only who was seen recently (query on lastSeen, indexed in the rules) — not
+// every login that ever opened the app. The window moves on every half hour.
+var _presenceUnsub = null;
+var _presenceRefreshTimer = null;
+const PRESENCE_QUERY_WINDOW_MS = CHECKIN_STICKY_MS + 30 * 60 * 1000;
 function listenFriendPresence() {
   if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  onValue(ref(db, "presence"), (snapshot) => {
+  const { db, ref, onValue, query, orderByChild, startAt } = window.FB;
+  if (_presenceUnsub) { try { _presenceUnsub(); } catch (e) { /* already gone */ } }
+  clearTimeout(_presenceRefreshTimer);
+  _presenceRefreshTimer = setTimeout(listenFriendPresence, 30 * 60 * 1000);
+  const recent = query(ref(db, "presence"), orderByChild("lastSeen"), startAt(Date.now() - PRESENCE_QUERY_WINDOW_MS));
+  _presenceUnsub = onValue(recent, (snapshot) => {
     const data = snapshot.val() || {};
     const oldFriends = { ...STATE.friends };
     STATE.friends = {};

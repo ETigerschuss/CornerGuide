@@ -5,7 +5,7 @@ function bindDetailOverlay() {
 
 function getVisitCount(cornerId) {
   if (window.FB?.firebaseReady) {
-    return Object.keys(STATE.visits?.[cornerId] || {}).length;
+    return Number(STATE.visitStats?.[cornerId]?.n || 0);
   }
   return (loadLocalVisits()[cornerId] || []).length;
 }

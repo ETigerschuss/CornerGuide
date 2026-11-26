@@ -436,6 +436,7 @@ function applyIncomingLinks() {
   if (joinId && /^[A-Za-z0-9_-]{1,128}$/.test(joinId)) STATE.pendingJoin = { id: joinId, here: params.get("here") === "1", name: sanitizeInviteName(params.get("n") || "").slice(0, 30) };
   const profileKey = (params.get("profile") || "").trim();
   if (profileKey && /^[A-Za-z0-9_-]{1,128}$/.test(profileKey)) STATE.pendingProfileKey = profileKey;
+  if (profileKey && params.get("focus") === "compliments") STATE.pendingProfileFocus = "compliments";   // push about a compliment
 }
 
 function clearHandledQueryParam(name) {

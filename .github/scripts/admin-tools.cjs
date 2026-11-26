@@ -122,6 +122,66 @@ async function dataSizes() {
   }
 }
 
+// One-time fill of the slim copies for data that existed before the Cloud
+// Functions kept them up to date (functions/lite.js computes the same thing).
+// Safe to run again. Inline photos move to photoData only after the copy was
+// written and read back. Prints counts only.
+async function phase1Backfill() {
+  const lite = require("../../functions/lite.js");
+  const db = admin.database();
+  const [points, karma, visits, photos] = await Promise.all(["points", "karmaPoints", "visits", "photos"].map(async (p) => (await db.ref(p).get()).val() || {}));
+  const pl = {}, kl = {};
+  Object.entries(points).forEach(([k, e]) => { const l = lite.rewardLite(e, true); if (l) pl[k] = l; });
+  Object.entries(karma).forEach(([k, e]) => { const l = lite.rewardLite(e, false); if (l) kl[k] = l; });
+  await db.ref("pointsLite").set(pl);
+  await db.ref("karmaLite").set(kl);
+  console.log(`✔ pointsLite: ${Object.keys(pl).length}, karmaLite: ${Object.keys(kl).length}`);
+
+  const byUser = {}, byName = {}, stats = {};
+  let indexed = 0;
+  Object.entries(visits).forEach(([cornerId, list]) => {
+    const s = lite.visitStatsOf(list);
+    if (s) stats[cornerId] = s;
+    Object.entries(list || {}).forEach(([vid, v]) => {
+      const path = lite.visitIndexPath(vid, v);
+      if (!path) return;
+      const [top, who] = path.split("/");
+      const bucket = top === "visitsByUser" ? byUser : byName;
+      (bucket[who] = bucket[who] || {})[vid] = lite.visitIndexEntry(cornerId, v);
+      indexed++;
+    });
+  });
+  await db.ref().update({ visitStats: stats, visitsByUser: byUser, visitsByName: byName });
+  console.log(`✔ visitStats: ${Object.keys(stats).length} Corners, ${indexed} Check-ins in visitsByUser/visitsByName`);
+
+  let moved = 0, thumbs = 0, failed = 0;
+  for (const [cornerId, list] of Object.entries(photos)) {
+    for (const [pid, p] of Object.entries(list || {})) {
+      if (!p || !lite.isInline(p.src)) continue;
+      try {
+        const dataRef = db.ref(`photoData/${cornerId}/${pid}`);
+        await dataRef.set({ src: p.src });
+        const check = (await dataRef.child("src").get()).val();
+        if (check !== p.src) throw new Error("read-back mismatch");
+        const fix = { src: null };
+        const thumb = p.thumb || lite.makeThumb(p.src);
+        if (thumb && !p.thumb) { fix.thumb = thumb; thumbs++; }
+        await db.ref(`photos/${cornerId}/${pid}`).update(fix);
+        if (fix.thumb) p.thumb = fix.thumb;
+        delete p.src;
+        moved++;
+      } catch (err) {
+        failed++;
+      }
+    }
+  }
+  const covers = {};
+  Object.entries(photos).forEach(([cornerId, list]) => { const c = lite.coverOf(list); if (c) covers[cornerId] = c; });
+  await db.ref("photoCovers").set(covers);
+  console.log(`✔ Fotos: ${moved} nach photoData verschoben, ${thumbs} Vorschaubilder erzeugt, ${failed} fehlgeschlagen; ${Object.keys(covers).length} Titelbilder`);
+  if (failed) throw new Error(`${failed} Fotos nicht verschoben (bleiben unverändert)`);
+}
+
 (async () => {
   // Local tests against the database emulator accept the "owner" token.
   const credential = process.env.FIREBASE_DATABASE_EMULATOR_HOST
@@ -132,6 +192,7 @@ async function dataSizes() {
   if (action === "add-admin") await addAdmin(String(process.env.UID_INPUT || "").trim());
   else if (action === "export-feedback") await exportFeedback(process.env.PUBKEY_B64);
   else if (action === "data-sizes") await dataSizes();
+  else if (action === "phase1-backfill") { await phase1Backfill(); await dataSizes(); }
   else throw new Error(`Unbekannte Aktion: ${action}`);
   process.exit(0);
 })().catch((err) => { console.error(`✖ ${err && err.message ? err.message : err}`); process.exit(1); });

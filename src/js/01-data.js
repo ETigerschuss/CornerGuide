@@ -122,7 +122,7 @@ const AMENITY_ICONS = {
   wasser: { emoji: "💧", label: "Wasser" },
   dach: { emoji: "☂️", label: "Dach" },
   sport: { emoji: "⚽", label: "Sport" },
-  kiffen: { emoji: "🌿", label: "Kiffen ok" }
+  kiffen: { emoji: "🟢", label: "Grünes Licht" }
 };
 
 /* ====================== TEAMS & LEVELS ====================== */
@@ -139,7 +139,7 @@ const CORNER_STATUSES = {
   kiosk: { emoji: "🏪", label: "Kiosk offen" },
   toilet: { emoji: "🚻", label: "Klo in der Nähe" },
   water: { emoji: "🌊", label: "Wasser" },
-  smoke: { emoji: "🌿", label: "Kiffen ok" },
+  smoke: { emoji: "🟢", label: "Grünes Licht" },
   police: { emoji: "🚨", label: "Polizei" }
 };
 

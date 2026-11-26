@@ -73,7 +73,7 @@ async function mockOverpass(page, opts = {}) {
     check("district shown automatically", /02 Ludwigsvorstadt-Isarvorstadt/.test(d.info), d.info);
     check("name is filled in from the map (corner of the two streets)", /^Ecke Gärtnerplatz\/Reichenbachstr\.$/.test(d.name) && d.chips.includes("Gärtnerplatz"), JSON.stringify({ name: d.name, chips: d.chips }));
     check("toilet, water, kiosk switched on automatically; no roof/sport", ["toilette", "wasser", "kiosk"].every((k) => d.on.includes(k)) && !d.on.includes("dach") && !d.on.includes("sport"), JSON.stringify(d.on));
-    check("school 60 m away: 🌿 off, with the reason", !d.on.includes("kiffen") && /hier nicht/.test(d.weedLabel) && /Kiffen verboten/.test(d.rules) && /Testschule/.test(d.rules) && /60 m/.test(d.rules), d.rules.slice(0, 200));
+    check("school 60 m away: 🟢 off, with the reason (code word)", !d.on.includes("kiffen") && /hier nicht/.test(d.weedLabel) && /Kein grünes Licht/.test(d.rules) && !/Kiffen|Cannabis|🌿/.test(d.rules) && /Testschule/.test(d.rules) && /60 m/.test(d.rules), d.rules.slice(0, 200));
     check("source and 'ohne Gewähr' are shown", /Quelle/.test(d.rules) && /ohne Gewähr/.test(d.rules));
     await lena.page.screenshot({ path: path.join(SHOTS, "spot-tap.png") });
     // a tap flips an emoji (e.g. there IS a roof: the bridge)
@@ -91,7 +91,7 @@ async function mockOverpass(page, opts = {}) {
     await lena.page.evaluate((id) => openDetail(id), sp.id);
     await lena.page.waitForFunction(() => !/Prüfe/.test(document.querySelector(".ci-spotcheck")?.textContent || "Prüfe"), null, { timeout: 10000 }).catch(() => {});
     const det = await lena.page.evaluate(() => document.querySelector(".ci-spotcheck")?.textContent.replace(/\s+/g, " ") || "");
-    check("corner detail: 'Regeln & Ausstattung' with pills and reasons", /Toilette/.test(det) && /Kein Kiffen/.test(det) && /Testschule/.test(det), det.slice(0, 200));
+    check("corner detail: 'Regeln & Ausstattung' with pills and reasons", /Toilette/.test(det) && /Kein grünes Licht/.test(det) && !/Kiffen|Cannabis/.test(det) && /Testschule/.test(det), det.slice(0, 200));
     const chipsDetail = await lena.page.evaluate(() => Array.from(document.querySelectorAll("#detail-content .emoji-vote-chip")).map((x) => x.dataset.amenity));
     check("…and the emojis as vote chips", ["toilette", "wasser", "kiosk", "dach"].every((k) => chipsDetail.includes(k)), JSON.stringify(chipsDetail));
     await lena.page.screenshot({ path: path.join(SHOTS, "spot-detail.png"), fullPage: false });
@@ -121,14 +121,14 @@ async function mockOverpass(page, opts = {}) {
         night: [weedAllowedNow({ v: "night" }, new Date(2026, 10, 24, 21, 0)), weedAllowedNow({ v: "night" }, new Date(2026, 10, 24, 15, 0))]
       };
     });
-    check("pedestrian zone: weed only 20–7", logic.fz[0] === "night" && /7 bis 20 Uhr/.test(logic.fz[1]) && logic.night[0] === true && logic.night[1] === false, JSON.stringify(logic.fz));
+    check("pedestrian zone: green light only from 20 h", logic.fz[0] === "night" && /ab 20 Uhr/.test(logic.fz[1]) && /7–20 Uhr/.test(logic.fz[1]) && logic.night[0] === true && logic.night[1] === false, JSON.stringify(logic.fz));
     check("Alter Botanischer Garten: city ban on weed AND alcohol", logic.abg[0] === "no" && /Alkohol ganztägig verboten/.test(logic.abg[1]), logic.abg[1].slice(0, 160));
     check("Hauptbahnhof area: alcohol ban hint (not far away on the same street)", logic.hbf[0] === true && /Hauptbahnhof/.test(logic.hbf[1]) && logic.hbfFar === false, JSON.stringify([logic.hbf[0], logic.hbfFar]));
     check("park opening hours shown", /Testpark: geöffnet Mo-Su 06:00-22:00/.test(logic.park), logic.park);
     check("nothing nearby: weed ok", logic.free[0] === "ok" && /keine Schule/.test(logic.free[1]));
     check("a private sports ground does not count", logic.priv === "ok");
-    check("Lake Garda: not legal in Italy, no 🌿", logic.italy[0] === "no" && /Italien: nicht legal/.test(logic.italy[1]) && logic.italy[2] === 0 && logic.italy[3] === false, JSON.stringify(logic.italy));
-    check("Austria: forbidden (Suchtmittelgesetz), no German source link", logic.austria[0] === "no" && /Österreich: Kiffen ist verboten/.test(logic.austria[1]) && !logic.austria[2], JSON.stringify(logic.austria));
+    check("Lake Garda: no green light in Italy, not doubled", logic.italy[0] === "no" && /^Kein grünes Licht — in Italien/.test(logic.italy[1]) && (logic.italy[1].match(/grünes Licht/g) || []).length === 1 && logic.italy[2] === 0 && logic.italy[3] === false, JSON.stringify(logic.italy));
+    check("Austria: no green light, no German source link", logic.austria[0] === "no" && /^Kein grünes Licht — in Österreich/.test(logic.austria[1]) && !logic.austria[2], JSON.stringify(logic.austria));
     check("other countries: the app doesn't guess", logic.swiss[0] === "?" && /andere Regeln/.test(logic.swiss[1]), JSON.stringify(logic.swiss));
     check("in Germany: unchanged, and the country is never taken for a park", logic.germany[0] === "ok" && logic.germany[1] === 0, JSON.stringify(logic.germany));
 

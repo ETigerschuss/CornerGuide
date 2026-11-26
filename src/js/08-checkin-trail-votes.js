@@ -15,11 +15,15 @@ function startCooldownDisplay() {
 // "Zähl die check-ins pro Person nur einmal pro Tag" — a second check-in at the
 // same corner on the same day is not stored again.
 function visitedTodayAt(cornerId) {
-  const me = currentUserKey();
   const today = new Date().toDateString();
-  return Object.values(STATE.visits?.[cornerId] || {}).some((v) => v
-    && (v.userId ? (v.userId === me || isMyKey(v.userId)) : v.user === STATE.nickname)
-    && new Date(Number(v.time || 0)).toDateString() === today);
+  if (!window.FB?.firebaseReady) {
+    const me = currentUserKey();
+    return (loadLocalVisits()[cornerId] || []).some((v) => v
+      && (v.userId ? (v.userId === me || isMyKey(v.userId)) : v.user === STATE.nickname)
+      && new Date(Number(v.time || 0)).toDateString() === today);
+  }
+  // My own check-ins (all my logins) — no need for the corner's whole list.
+  return myVisitEntries().some((v) => v.cornerId === cornerId && new Date(v.time).toDateString() === today);
 }
 
 function recordVisit(cornerId) {
@@ -37,6 +41,7 @@ function recordVisit(cornerId) {
     const { db, ref, push, set } = window.FB;
     const newRef = push(ref(db, "visits/" + cornerId));
     set(newRef, visit);
+    noteMyVisit(cornerId, newRef.key, visit);   // shows on my profile before the index catches up
     STATE.lastVisitRef = { cornerId, key: newRef.key, at: Date.now() };
     return newRef.key;
   } else {
@@ -56,14 +61,11 @@ function loadLocalVisits() {
   } catch (e) { return {}; }
 }
 
-function listenVisits() {
+// Counts per corner at startup (visitStats); a corner's last check-ins load
+// with its detail, my own from my index (35-slim-data.js).
+function listenVisits(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
-  const { db, ref, onValue } = window.FB;
-  const visitRef = ref(db, "visits");
-  onValue(visitRef, (snapshot) => {
-    STATE.visits = snapshot.val() || {};
-    refreshAllVisitTrails();
-  });
+  listenVisitStats(() => retryListenerAfterAuth(listenVisits, attempt));
 }
 
 function refreshAllVisitTrails() {
@@ -79,7 +81,7 @@ function renderVisitTrail(cornerId, container) {
     : (loadLocalVisits()[cornerId] || []);
 
   const sorted = visits.sort((a, b) => b.time - a.time).slice(0, 8);
-  const totalVisits = visits.length;
+  const totalVisits = Math.max(visits.length, getVisitCount(cornerId));
 
   if (sorted.length === 0) {
     container.innerHTML = `

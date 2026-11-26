@@ -30,7 +30,7 @@ function renderPhotoGallery(cornerId, container) {
       ).join("");
 
       return `<div class="gallery-item">
-        <img src="${p.src}" alt="Foto" class="gallery-img" data-author="${escapeHtml(p.author)}" style="cursor:pointer;" />
+        <img src="${escapeHtml(p.thumb || p.src || "")}" alt="Foto" class="gallery-img" data-author="${escapeHtml(p.author)}" data-corner="${escapeHtml(cornerId)}" data-photo="${escapeHtml(p.key)}" loading="lazy" style="cursor:pointer;" />
         <div class="gallery-meta">
           <span class="gallery-author">📸 ${escapeHtml(p.author)}</span>
           <span class="gallery-time">${timeAgo(p.time)}</span>
@@ -94,10 +94,16 @@ function renderPhotoGallery(cornerId, container) {
     btn.addEventListener("click", () => openPhotoComments(btn.dataset.corner, btn.dataset.photo));
   });
 
-  // Bind lightbox on gallery images
+  // Lightbox: the thumbnail right away, the full picture as soon as it is loaded.
   container.querySelectorAll(".gallery-img").forEach((img) => {
     img.addEventListener("click", () => {
       openLightbox(img.src, img.dataset.author || "");
+      if (!window.FB?.firebaseReady || !img.dataset.photo) return;
+      const shown = img.src;
+      photoFullSrc(img.dataset.corner, img.dataset.photo).then((src) => {
+        const box = $("#lightbox-img");
+        if (src && box && box.src === shown && $("#lightbox")?.classList.contains("open")) box.src = src;
+      });
     });
   });
 }
@@ -112,7 +118,7 @@ function renderPhotoComments() {
   if (!p) { body.innerHTML = `<p class="up-empty">${T("Foto nicht mehr da.", "Photo is gone.")}</p>`; return; }
   const list = Object.entries(p.comments || {}).map(([id, c]) => ({ id, ...c })).sort((a, b) => Number(a.at || 0) - Number(b.at || 0));
   body.innerHTML = `
-    <img class="pc-img" src="${escapeHtml(p.src)}" alt="Foto" />
+    <img class="pc-img" src="${escapeHtml(p.thumb || p.src || "")}" alt="Foto" data-pc-full="${escapeHtml(o.cornerId + "/" + o.photoKey)}" />
     <div class="pc-meta">📸 ${p.authorId ? `<button class="people-chip" data-user-profile="${escapeHtml(p.authorId)}">${escapeHtml(p.author || "?")}</button>` : escapeHtml(p.author || "?")} · ${timeAgo(p.time)}${p.caption ? ` · ${escapeHtml(p.caption)}` : ""}</div>
     <div class="pc-list">${list.length ? list.map((c) => `<div class="pc-item">
         <span class="pc-name">${c.by ? `<button class="people-chip" data-user-profile="${escapeHtml(c.by)}">${escapeHtml(c.name || "?")}</button>` : escapeHtml(c.name || "?")}</span>
@@ -120,6 +126,8 @@ function renderPhotoComments() {
         <span class="pc-time">${timeAgo(c.at)}</span>
         ${isMyKey(c.by) || STATE.isAdmin ? `<button class="pc-del" data-pc-del="${escapeHtml(c.id)}" title="${T("Löschen", "Delete")}">✕</button>` : ""}
       </div>`).join("") : `<p class="up-empty">${T("Noch keine Kommentare — schreib den ersten!", "No comments yet — write the first!")}</p>`}</div>`;
+  const pcImg = body.querySelector(".pc-img");
+  if (pcImg && !p.src) photoFullSrc(o.cornerId, o.photoKey).then((src) => { if (src && pcImg.isConnected) pcImg.src = src; });
   body.querySelectorAll("[data-pc-del]").forEach((b) => b.addEventListener("click", () => {
     window.FB.remove(window.FB.ref(window.FB.db, `photos/${o.cornerId}/${o.photoKey}/comments/${b.dataset.pcDel}`)).catch(() => toast(T("Löschen ging nicht.", "Could not delete.")));
   }));
