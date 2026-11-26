@@ -30,9 +30,16 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Start the Firebase emulators
         run: |
-          nohup npx firebase emulators:start --project cornerguide --only auth,database,storage > emulators.log 2>&1 &
-          for i in $(seq 1 120); do grep -q "All emulators ready" emulators.log && break; sleep 2; done
-          grep "All emulators ready" emulators.log
+          nohup npm run emulators > emulators.log 2>&1 &
+          pid=$!
+          for i in $(seq 1 120); do
+            if grep -q "All emulators ready" emulators.log; then exit 0; fi
+            kill -0 "$pid" 2>/dev/null || break
+            sleep 2
+          done
+          echo "::error::The Firebase emulators did not start"
+          tail -n 40 emulators.log
+          exit 1
       - name: Run all suites
         run: node run-all.mjs
       - name: Keep screenshots and emulator log

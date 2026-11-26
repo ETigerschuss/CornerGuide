@@ -183,6 +183,9 @@ Die Prüfung läuft auch in GitHub (Workflow „Checks“) und vor jedem Deploy 
 gebaut ist, wird nicht ausgeliefert. Die Aufteilung hat am Verhalten nichts geändert: Beim Umbau war die gebaute Datei
 Byte für Byte identisch mit der vorherigen. Wie es Richtung tausende Nutzer weitergeht: [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md).
 
+Ende-zu-Ende-Tests — die echte App in Chromium gegen die Firebase-Emulatoren, mehrere Personen gleichzeitig: siehe
+[tests/e2e](tests/e2e/README.md). In GitHub unter **Actions → E2E-Tests → Run workflow**.
+
 ## 🔔 Push-Nachrichten (komplett aktivieren)
 
 Push braucht **zwei** Dinge, die beide vorhanden sein müssen — sonst passiert nichts:

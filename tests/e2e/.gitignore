@@ -2,3 +2,6 @@ node_modules
 shots/
 *.log
 !package.json
+# copied in by emulators.mjs from the repository root
+firebase.database.rules.json
+storage.rules
