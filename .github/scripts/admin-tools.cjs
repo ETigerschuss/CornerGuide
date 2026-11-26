@@ -11,6 +11,7 @@ const crypto = require("crypto");
 const admin = require("firebase-admin");
 
 const DATABASE_URL = process.env.FIREBASE_DATABASE_URL || "https://cornerguide-default-rtdb.europe-west1.firebasedatabase.app";
+const STORAGE_BUCKET = process.env.FIREBASE_STORAGE_BUCKET || "cornerguide.firebasestorage.app";
 
 async function addAdmin(uid) {
   if (!/^[A-Za-z0-9_-]{10,128}$/.test(uid || "")) throw new Error("Ungültige Nutzer-ID.");
@@ -71,6 +72,26 @@ async function dataSizes() {
   console.log(`photos: ${photoCount} Fotos, davon ${inlinePhotos} direkt in der Datenbank (${kb(inlineBytes).trim()})`);
   console.log(`comments: ${deep(root.comments)} Kommentare an ${Object.keys(root.comments || {}).length} Corners`);
   console.log(`presence: ${Object.keys(root.presence || {}).length} Einträge, davon ${Object.values(root.presence || {}).filter((p) => p && Date.now() - Number(p.lastSeen || 0) < 86400000).length} in den letzten 24 h aktiv`);
+  // Photos only end up in the database when the Storage upload fails — is
+  // there a bucket at all? (yes/no and file counts only)
+  if (!process.env.FIREBASE_DATABASE_EMULATOR_HOST) {
+    console.log("\nStorage");
+    for (const name of [STORAGE_BUCKET, "cornerguide.appspot.com"]) {
+      try {
+        const bucket = admin.storage().bucket(name);
+        const [exists] = await bucket.exists();
+        let files = "";
+        if (exists) {
+          const [photos] = await bucket.getFiles({ prefix: "cornerPhotos/", maxResults: 500 });
+          const [audio] = await bucket.getFiles({ prefix: "gossipAudio/", maxResults: 500 });
+          files = ` — ${photos.length} Fotos, ${audio.length} Sprachaufnahmen`;
+        }
+        console.log(`${name}: ${exists ? "vorhanden" : "nicht vorhanden"}${files}`);
+      } catch (err) {
+        console.log(`${name}: Prüfung nicht möglich (${String(err && (err.code || err.message) || err).slice(0, 120)})`);
+      }
+    }
+  }
 }
 
 (async () => {
@@ -78,7 +99,7 @@ async function dataSizes() {
   const credential = process.env.FIREBASE_DATABASE_EMULATOR_HOST
     ? { getAccessToken: async () => ({ access_token: "owner", expires_in: 3600 }) }
     : admin.credential.applicationDefault();
-  admin.initializeApp({ credential, databaseURL: DATABASE_URL });
+  admin.initializeApp({ credential, databaseURL: DATABASE_URL, storageBucket: STORAGE_BUCKET });
   const action = process.env.ACTION;
   if (action === "add-admin") await addAdmin(String(process.env.UID_INPUT || "").trim());
   else if (action === "export-feedback") await exportFeedback(process.env.PUBKEY_B64);
