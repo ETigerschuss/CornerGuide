@@ -45,7 +45,7 @@ https://ETigerschuss.github.io/CornerGuide/
 - 👯 **Enge Freunde & private Corners** — jede Person wählt ihre engen Freunde (nur sie sieht die Liste). Ein Corner ist für 🌍 Alle, 👯 Enge Freunde oder 🔒 Nur dich; ein Cornerdate kann 🤫 geheim sein. Private Sachen gibt der Server nur an dich und deine engen Freunde heraus; dafür gibt's halbe Punkte. Übersicht im Profil unter „Teilen & enge Freunde“
 - 🔎 **Emojis & Filter für alle Corners** — auch die bisherigen Corners zeigen 🚻 💧 ☂️ ⚽ 🏪 🟢 direkt auf der Karte in der Liste; Filter-Chips über der Liste zeigen z. B. nur Corners mit Toilette und grünem Licht (🟢 zählt auch „erst ab 20 Uhr“)
 - 💐 **Komplimente** — auf jedem Profil (und bei den Leuten, die gerade am Corner sind) „💐 Kompliment machen": eins der fertigen antippen oder eigene Worte. Die Person bekommt **+20 Karma** und eine Push-Nachricht, du **+5 Aura** (bis 5× am Tag); ein „💛 Danke" schickt ihr +5 Karma zurück. Ein Kompliment pro Person und Tag (vom Server geprüft). Im eigenen Profil stehen alle Komplimente — und wem man als Nächstes eine Freude machen könnte
-- ⚡ **Startet schlank** — beim Öffnen lädt die App nur noch kleine Kopien (Titelbilder, Punkte, Besuchszahlen) statt der ganzen Datenbank: vorher 9 MB, weil alle Fotos in der Datenbank lagen. Fotos, Check-ins und Profile anderer kommen erst, wenn man sie ansieht (siehe [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md))
+- ⚡ **Startet schlank** — die App startet auf der Karte mit unter 0,1 MB (Punkte, Besuchszahlen, wer gerade da ist) statt 9 MB wie vorher, als alle Fotos in der Datenbank lagen. Titelbilder kommen mit der Liste, Fotos und Check-ins eines Corners beim Öffnen, volle Bilder beim Antippen, Profile anderer beim Ansehen (siehe [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md))
 - 💡 **Feedback an die Macher** — Profil → „Idee oder Problem?"; Admins sehen es im Admin-Panel
 
 ## 🌤️ Corner-Check: woher kommen die Daten?
@@ -326,7 +326,7 @@ Fotos in der Datenbank — seit Phase 1 aber getrennt:
 
 | Knoten | Inhalt | Wann geladen |
 |---|---|---|
-| `photoCovers/<corner>` | ein kleines Titelbild (360 px) + Anzahl, von einer Cloud Function gepflegt | beim Start (Karten) |
+| `photoCovers/<corner>` | ein kleines Titelbild (360 px) + Anzahl, von einer Cloud Function gepflegt | beim ersten Öffnen der Liste oder eines Corners |
 | `photos/<corner>/<id>` | Autor, Zeit, Bewertungen, Kommentare, Vorschaubild | beim Öffnen des Corners |
 | `photoData/<corner>/<id>` | das volle Bild | beim Antippen |
 

@@ -473,6 +473,7 @@ function bindTabs() {
       $$(".tab").forEach((x) => x.classList.toggle("active", x === t));
       $$(".view").forEach((x) => x.classList.toggle("active", x.id === "view-" + v));
       if (v === "map") { if (!STATE.mainMap) initMainMap(); setTimeout(() => STATE.mainMap?.invalidateSize(), 50); }
+      if (v === "list") wantPhotoCovers();   // the cards show the covers; the map doesn't
       if (v === "leaderboard") renderLeaderboard();
       if (v === "profile") renderProfile();
     });
