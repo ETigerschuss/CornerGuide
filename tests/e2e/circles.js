@@ -35,7 +35,7 @@ async function addSpot(u, name, lat, lng, vis) {
 
     // ---------- Ana marks Ben as a close friend (from his profile) ----------
     await ana.page.evaluate((k) => openUserProfile(k), ben.uid);
-    await ana.page.waitForSelector("#up-cf", { timeout: 8000 });
+    await ana.page.waitForFunction(() => STATE.viewedProfileReady === true, null, { timeout: 15000 });
     await ana.page.click("#up-cf");
     const cfOk = await waitFor(async () => (await dbGet(`closeFriends/${ana.uid}/${ben.uid}`)) === true && (await dbGet(`closeFriendOf/${ben.uid}/${ana.uid}`)) === true);
     check("close friend added from the profile (list + reverse index)", cfOk && /Enge Freunde/.test(await ana.page.textContent("#up-cf")));
