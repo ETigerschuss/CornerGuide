@@ -41,11 +41,19 @@
         authListeners.forEach((listener) => {
           try { listener(authUid); } catch (err) { console.warn("Auth listener failed:", err); }
         });
-        // Fires on every auth state change; the Promise itself only ever resolves once
-        if (resolveAuthReady) resolveAuthReady(authUid);
+        // Fires on every auth state change; the Promise only resolves once — with
+        // a login. A brand-new visitor is first reported as "nobody" until the
+        // anonymous sign-in is through; resolving then showed the code prompt
+        // before an invite link could let them in. (Sign-in failing resolves "".)
+        if (authUid && resolveAuthReady) resolveAuthReady(authUid);
       });
       let authRetryCount = 0;
-      const trySignIn = () => {
+      const trySignIn = async () => {
+        // A login restored from this device stays: signInAnonymously replaces
+        // anyone who is not anonymous — a Google-secured profile was back to a
+        // fresh anonymous login after every reload.
+        try { await auth.authStateReady(); } catch (err) { /* sign in below */ }
+        if (auth.currentUser) return;
         signInAnonymously(auth).catch((err) => {
           authRetryCount++;
           console.warn(`Firebase anonymous auth failed (attempt ${authRetryCount}):`, err);

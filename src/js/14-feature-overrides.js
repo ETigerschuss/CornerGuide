@@ -375,7 +375,8 @@ function buildShareUrl(cornerId, inviteName, autoCheckin = false, extra = {}) {
   // same team (that is the point of sharing a corner with your crew).
   if (autoCheckin && STATE.team) url.searchParams.set("team", STATE.team);
   else url.searchParams.delete("team");
-  return url.toString();
+  // My personal invite: whoever opens it is in without a code (37-invites.js).
+  return withMyInvite(url).toString();
 }
 
 // A neutral code for printing/stickers: no person, no team — just the corner.
@@ -436,7 +437,8 @@ function applyIncomingLinks() {
   if (joinId && /^[A-Za-z0-9_-]{1,128}$/.test(joinId)) STATE.pendingJoin = { id: joinId, here: params.get("here") === "1", name: sanitizeInviteName(params.get("n") || "").slice(0, 30) };
   const profileKey = (params.get("profile") || "").trim();
   if (profileKey && /^[A-Za-z0-9_-]{1,128}$/.test(profileKey)) STATE.pendingProfileKey = profileKey;
-  if (profileKey && params.get("focus") === "compliments") STATE.pendingProfileFocus = "compliments";   // push about a compliment
+  // Push about a compliment (own list) / about a newcomer (their profile + 💐).
+  if (profileKey && ["compliments", "compliment"].includes(params.get("focus"))) STATE.pendingProfileFocus = params.get("focus");
 }
 
 function clearHandledQueryParam(name) {

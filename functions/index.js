@@ -112,54 +112,59 @@ exports.pushOnNotifyEvent = onValueCreated(
  * into the app; anything else is ignored so the link can never leave the app.
  * A separate node keeps old deployments from fanning these out to everyone.
  */
+// Push to a few chosen people (by login key), respecting their mute settings.
+// Used for client events under /notifyTargeted and by the functions below.
+async function deliverTargeted(ev) {
+  if (!ev || !ev.body || !ev.toIds || typeof ev.toIds !== "object") return;
+  const fromId = String(ev.fromId || "");
+  const fromTeam = String(ev.fromTeam || "");
+  const toIds = (Array.isArray(ev.toIds) ? ev.toIds : Object.keys(ev.toIds))
+    .filter((id) => typeof id === "string" && id && id !== fromId && !/[.#$[\]/]/.test(id))
+    .slice(0, 50);
+  if (!toIds.length) return;
+
+  const link = APP_URL + safeQuery(ev.query);
+  const db = admin.database();
+  const entries = await Promise.all(toIds.map(async (uid) => {
+    const [tokenSnap, prefSnap] = await Promise.all([
+      db.ref(`pushTokens/${uid}/token`).get(),
+      db.ref(`userPrefs/${uid}/notifSettings`).get()
+    ]);
+    return { uid, token: tokenSnap.val(), ns: prefSnap.val() || {} };
+  }));
+  const targets = entries.filter(({ token, ns }) => {
+    if (!token || ns.mode === "off") return false;
+    if (Array.isArray(ns.blockedUsers) && ns.blockedUsers.includes(fromId)) return false;
+    if (fromTeam && Array.isArray(ns.blockedTeams) && ns.blockedTeams.includes(fromTeam)) return false;
+    return true;
+  });
+  if (!targets.length) return;
+
+  const type = String(ev.type || "cornerguide").slice(0, 40);
+  const res = await admin.messaging().sendEachForMulticast({
+    tokens: targets.map((t) => t.token),
+    notification: { title: String(ev.title || "Minga Corner Guide").slice(0, 80), body: String(ev.body).slice(0, 160) },
+    data: { url: link, type },
+    webpush: {
+      fcmOptions: { link },
+      notification: { icon: ICON_URL, tag: type }
+    }
+  });
+  logger.info(`Targeted '${type}': ${res.successCount}/${targets.length} delivered.`);
+  await Promise.all(res.responses.map((r, i) => {
+    const code = !r.success && r.error && r.error.code;
+    if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
+      return db.ref(`pushTokens/${targets[i].uid}`).remove();
+    }
+    return null;
+  }));
+}
+
 exports.pushOnTargetedNotify = onValueCreated(
   { ref: "/notifyTargeted/{eventId}", region: REGION },
   async (event) => {
-    const ev = event.data.val();
     try {
-      if (!ev || !ev.body || !ev.toIds || typeof ev.toIds !== "object") return;
-      const fromId = String(ev.fromId || "");
-      const fromTeam = String(ev.fromTeam || "");
-      const toIds = (Array.isArray(ev.toIds) ? ev.toIds : Object.keys(ev.toIds))
-        .filter((id) => typeof id === "string" && id && id !== fromId && !/[.#$[\]/]/.test(id))
-        .slice(0, 50);
-      if (!toIds.length) return;
-
-      const link = APP_URL + safeQuery(ev.query);
-      const db = admin.database();
-      const entries = await Promise.all(toIds.map(async (uid) => {
-        const [tokenSnap, prefSnap] = await Promise.all([
-          db.ref(`pushTokens/${uid}/token`).get(),
-          db.ref(`userPrefs/${uid}/notifSettings`).get()
-        ]);
-        return { uid, token: tokenSnap.val(), ns: prefSnap.val() || {} };
-      }));
-      const targets = entries.filter(({ token, ns }) => {
-        if (!token || ns.mode === "off") return false;
-        if (Array.isArray(ns.blockedUsers) && ns.blockedUsers.includes(fromId)) return false;
-        if (fromTeam && Array.isArray(ns.blockedTeams) && ns.blockedTeams.includes(fromTeam)) return false;
-        return true;
-      });
-      if (!targets.length) return;
-
-      const type = String(ev.type || "cornerguide").slice(0, 40);
-      const res = await admin.messaging().sendEachForMulticast({
-        tokens: targets.map((t) => t.token),
-        notification: { title: String(ev.title || "Minga Corner Guide").slice(0, 80), body: String(ev.body).slice(0, 160) },
-        data: { url: link, type },
-        webpush: {
-          fcmOptions: { link },
-          notification: { icon: ICON_URL, tag: type }
-        }
-      });
-      logger.info(`Targeted '${type}': ${res.successCount}/${targets.length} delivered.`);
-      await Promise.all(res.responses.map((r, i) => {
-        const code = !r.success && r.error && r.error.code;
-        if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
-          return db.ref(`pushTokens/${targets[i].uid}`).remove();
-        }
-        return null;
-      }));
+      await deliverTargeted(event.data.val());
     } catch (err) {
       logger.error("Targeted push failed:", err);
     } finally {
@@ -288,5 +293,69 @@ exports.photoIndex = onValueWritten(
     }
     const photos = (await db.ref(`photos/${cornerId}`).get()).val();
     await db.ref(`photoCovers/${cornerId}`).set(lite.coverOf(photos));
+  }
+);
+
+/* ---------- Invite links (Phase 2) ----------
+ * Every member's shared links carry a personal invite (invites/<token>);
+ * whoever opens one is in without a code. Once that person has picked a name,
+ * their app notes it under inviteJoins/<token>/<uid> (the rules only allow
+ * that for the invite the login really came in with). Here: count it, thank
+ * the inviter with Karma (a few times a day, so nobody farms it with fake
+ * logins) and tell them who it is — the push opens the newcomer's profile,
+ * one tap from a welcome compliment. */
+const INVITE_TOKEN_RE = /^[A-Za-z0-9_-]{16,40}$/;
+const INVITE_KARMA = 30;
+const INVITE_REWARDS_PER_DAY = 3;
+
+function munichDay(ms) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(new Date(ms)).replace(/-/g, "");
+}
+
+// All logins of a profile: the root and every login linked to it.
+async function profileLogins(db, root) {
+  const snap = await db.ref("pointsLite").orderByChild("aliasOf").equalTo(root).get();
+  return [root, ...Object.keys(snap.val() || {})].filter((k) => k && !/[.#$[\]/]/.test(k));
+}
+
+exports.inviteJoined = onValueCreated(
+  { ref: "/inviteJoins/{token}/{uid}", region: REGION },
+  async (event) => {
+    const { token, uid } = event.params;
+    if (!INVITE_TOKEN_RE.test(token)) return;
+    const db = admin.database();
+    try {
+      const inv = (await db.ref(`invites/${token}`).get()).val();
+      const by = inv && typeof inv.by === "string" ? inv.by : "";
+      if (!by || by === uid || /[.#$[\]/]/.test(by)) return;
+      // Once per newcomer, also when the function runs twice for one event.
+      const once = await db.ref(`inviteJoins/${token}/${uid}/done`).transaction((cur) => (cur ? undefined : true));
+      if (!once.committed) return;
+      await db.ref(`invites/${token}/uses`).transaction((n) => (Number(n) || 0) + 1);
+      if (inv.revoked) return;
+      const now = Date.now();
+      const quota = await db.ref(`inviteRewards/${by}/${munichDay(now)}`)
+        .transaction((n) => ((Number(n) || 0) >= INVITE_REWARDS_PER_DAY ? undefined : (Number(n) || 0) + 1));
+      const name = String((event.data.val() || {}).name || "").trim().slice(0, 40) || "Jemand";
+      if (quota.committed) {
+        // karmaLite follows through rewardLiteKarma.
+        await db.ref(`karmaPoints/${by}`).transaction((cur) => {
+          const base = cur && typeof cur === "object" ? cur : { total: 0, nickname: String(inv.byName || "").slice(0, 40) };
+          const history = [...lite.historyList(base), { pts: INVITE_KARMA, reason: `🍻 ${name} ist über deinen Link dabei`, time: now }];
+          return { ...base, total: (Number(base.total) || 0) + INVITE_KARMA, history: history.slice(-200) };
+        });
+      }
+      await deliverTargeted({
+        toIds: await profileLogins(db, by),
+        fromId: uid,
+        type: "invite",
+        title: "🍻 Neu dabei",
+        body: `${name} ist über deinen Link dabei${quota.committed ? ` — +${INVITE_KARMA} Karma für dich` : ""}. Sag Hallo mit einem Kompliment 💐`,
+        query: `?profile=${encodeURIComponent(uid)}&focus=compliment`
+      });
+    } catch (err) {
+      logger.error("inviteJoined failed:", err);
+    }
   }
 );

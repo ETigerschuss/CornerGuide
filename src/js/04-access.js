@@ -62,7 +62,12 @@ function checkAccessGranted() {
   if (!window.FB?.firebaseReady) return;   // offline/dev mode: no gate
   // localStorage only remembers that SOME login had access here. Verify the
   // current one against the database once auth is ready (see verifyAccessGrant).
-  if (localStorage.getItem("cg.accessGranted") === "1") return;
+  if (localStorage.getItem("cg.accessGranted") === "1") {
+    // Already in: someone else's invite in the address is not needed (and must
+    // not end up in a home-screen shortcut).
+    if (_invite.fromLink) clearHandledQueryParam(INVITE_LINK_PARAM);
+    return;
+  }
 
   // Async: wait for auth UID, then verify Firebase flag
   window.FB.authReady.then((uid) => {
@@ -71,12 +76,18 @@ function checkAccessGranted() {
       return;
     }
     const { db, ref, get } = window.FB;
-    get(ref(db, "accessGranted/" + uid)).then((snap) => {
+    get(ref(db, "accessGranted/" + uid)).then(async (snap) => {
       if (snap.val() !== null) {
         localStorage.setItem("cg.accessGranted", "1");
         localStorage.setItem("cg.accessCode", String(snap.val()));
         // Already granted – make sure the prompt stays hidden, continue onboarding
         maybeShowNicknamePrompt();
+        return;
+      }
+      // Opened with someone's invite link: in with one tap, no code (37-invites.js).
+      if (_invite.fromLink) {
+        if (await redeemInviteLink()) return;
+        showAccessPrompt("invite");
         return;
       }
       showAccessPrompt();
@@ -93,7 +104,9 @@ function showAccessPrompt(reason = "") {
   const text = $("#access-text");
   if (text) text.textContent = reason === "missing"
     ? "Für dieses Gerät ist dein Zugang nicht mehr hinterlegt (z. B. nach einem Login-Wechsel) — darum ging Speichern nicht. Gib den Einladungscode aus der Gruppe einmal neu ein, dein Profil bleibt erhalten."
-    : "Gib den Einladungscode ein, um Zugang zu erhalten.";
+    : reason === "invite"
+      ? "Dieser Einladungslink gilt nicht mehr. Lass dir einen neuen schicken — oder gib den Einladungscode ein."
+      : "Öffne einen Link von jemandem aus der Gruppe — oder gib den Einladungscode ein.";
   $("#access-prompt").style.display = "flex";
   setTimeout(() => $("#access-code-input").focus(), 100);
 }
@@ -132,14 +145,40 @@ async function verifyAccessGrant(opts = {}) {
       return true;
     } catch (err) { console.warn("stored access code no longer valid:", err); }
   }
-  // No grant and nothing to repair it with. Someone who had access here before
-  // is asked once (profile and data stay); brand-new people get the normal
-  // invitation prompt from checkAccessGranted() instead of this explanation.
+  // No grant and nothing to repair it with — unless this page came with an
+  // invite link. Otherwise someone who had access here before is asked once
+  // (profile and data stay); brand-new people get the normal invitation
+  // prompt from checkAccessGranted() instead of this explanation.
+  if (_invite.fromLink && await redeemInviteLink()) return true;
   if (localStorage.getItem("cg.accessGranted") === "1") {
     localStorage.removeItem("cg.accessGranted");
     showAccessPrompt("missing");
   }
   return false;
+}
+
+// In — by code or by an invite link. Returning friends pick themselves, new
+// people type a name ("Wer bist du?"), then the link they came with runs.
+function onAccessGranted(code, opts = {}) {
+  const uid = window.FB?.getAuthUid?.() || "";
+  localStorage.setItem("cg.accessGranted", "1");
+  localStorage.setItem("cg.accessCode", code);
+  if (uid) _accessVerified[uid] = true;
+  $("#access-prompt").style.display = "none";
+  reattachSharedListenersAfterGrant();
+  setTimeout(linkMyEarlierLogins, 1500);
+  if (STATE.nickname) {
+    // Someone who already has a profile here only re-confirmed access.
+    toast(`✅ Zugang bestätigt — weiter geht's, ${escapeHtml(STATE.nickname)}!`);
+    broadcastPresence();
+    runPendingLinkActions();
+  } else {
+    // The link's own "Einladung von …" toast already named the inviter.
+    const by = !STATE.pendingInviteName && opts.byName ? ` ${T("von", "by")} <strong>${escapeHtml(opts.byName)}</strong>` : "";
+    toast(opts.invited ? `🍻 ${T("Du bist dabei", "You're in")}${by ? ` — ${T("eingeladen", "invited")}${by}` : ""}! ${T("Wie heißt du?", "What's your name?")}` : "✅ Zugang gewährt – willkommen!");
+    // Returning friends pick themselves right away instead of starting fresh.
+    setTimeout(() => openClaimOverlay({ welcome: true }), 500);
+  }
 }
 
 async function submitAccessCode() {
@@ -166,22 +205,7 @@ async function submitAccessCode() {
     // Write the code as the value; the Firebase .validate rule confirms it exists
     // under accessCodes/{code} before allowing the write.
     await set(ref(db, "accessGranted/" + uid), code);
-    localStorage.setItem("cg.accessGranted", "1");
-    localStorage.setItem("cg.accessCode", code);
-    _accessVerified[uid] = true;
-    $("#access-prompt").style.display = "none";
-    reattachSharedListenersAfterGrant();
-    setTimeout(linkMyEarlierLogins, 1500);
-    if (STATE.nickname) {
-      // Someone who already has a profile here only re-confirmed access.
-      toast(`✅ Zugang bestätigt — weiter geht's, ${escapeHtml(STATE.nickname)}!`);
-      broadcastPresence();
-      runPendingLinkActions();
-    } else {
-      toast("✅ Zugang gewährt – willkommen!");
-      // Returning friends pick themselves right away instead of starting fresh.
-      setTimeout(() => openClaimOverlay({ welcome: true }), 500);
-    }
+    onAccessGranted(code);
   } catch (err) {
     console.warn("Access code validation failed:", err);
     errEl.textContent = "Ungültiger Code. Bitte erneut versuchen.";

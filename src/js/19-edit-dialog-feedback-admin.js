@@ -317,6 +317,7 @@ async function renderAdminPanel() {
   $("#admin-clean-presence").onclick = adminCleanPresence;
   $("#admin-dedupe-visits").onclick = adminDedupeVisits;
   renderAdminFeedback();
+  renderAdminInvites();
   const profilesEl = $("#admin-profiles");
   profilesEl.innerHTML = `<p style="color:var(--fg-dim);font-size:12px;">Lade…</p>`;
   try {
@@ -330,7 +331,7 @@ async function renderAdminPanel() {
       <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:6px;">
         <span style="flex:1;font-size:13px;">${escapeHtml(r.nickname)}${r.key === currentUserKey() ? " (du)" : ""}</span>
         <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);">${r.total} Aura</span>
-        ${r.key !== currentUserKey() ? `<button class="action-btn" style="padding:4px 8px;font-size:10px;border-color:var(--pink);color:var(--pink);" data-admin-del-user="${escapeHtml(r.key)}" data-nick="${escapeHtml(r.nickname)}">Löschen</button>` : ""}
+        ${r.key !== currentUserKey() ? `<button class="action-btn admin-row-btn" data-admin-del-user="${escapeHtml(r.key)}" data-nick="${escapeHtml(r.nickname)}">Löschen</button>` : ""}
       </div>`).join("") || `<p style="color:var(--fg-dim);font-size:12px;">Keine Profile.</p>`;
     profilesEl.querySelectorAll("[data-admin-del-user]").forEach((b) =>
       b.addEventListener("click", () => adminDeleteProfile(b.dataset.adminDelUser, b.dataset.nick)));
@@ -342,7 +343,7 @@ async function renderAdminPanel() {
   cornersEl.innerHTML = spots.map((s) => `
     <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:6px;">
       <span style="flex:1;font-size:13px;">${escapeHtml(s.name)} <span style="color:var(--fg-dim);font-size:11px;">von ${escapeHtml(s.createdBy || "?")}</span></span>
-      <button class="action-btn" style="padding:4px 8px;font-size:10px;border-color:var(--pink);color:var(--pink);" data-admin-del-corner="${escapeHtml(s.id)}" data-name="${escapeHtml(s.name)}">Löschen</button>
+      <button class="action-btn admin-row-btn" data-admin-del-corner="${escapeHtml(s.id)}" data-name="${escapeHtml(s.name)}">Löschen</button>
     </div>`).join("") || `<p style="color:var(--fg-dim);font-size:12px;">Keine eigenen Spots.</p>`;
   cornersEl.querySelectorAll("[data-admin-del-corner]").forEach((b) =>
     b.addEventListener("click", () => adminDeleteCorner(b.dataset.adminDelCorner, b.dataset.name)));

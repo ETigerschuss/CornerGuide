@@ -66,11 +66,19 @@
         authListeners.forEach((listener) => {
           try { listener(authUid); } catch (err) { console.warn("Auth listener failed:", err); }
         });
-        // Fires on every auth state change; the Promise itself only ever resolves once
-        if (resolveAuthReady) resolveAuthReady(authUid);
+        // Fires on every auth state change; the Promise only resolves once — with
+        // a login. A brand-new visitor is first reported as "nobody" until the
+        // anonymous sign-in is through; resolving then showed the code prompt
+        // before an invite link could let them in. (Sign-in failing resolves "".)
+        if (authUid && resolveAuthReady) resolveAuthReady(authUid);
       });
       let authRetryCount = 0;
-      const trySignIn = () => {
+      const trySignIn = async () => {
+        // A login restored from this device stays: signInAnonymously replaces
+        // anyone who is not anonymous — a Google-secured profile was back to a
+        // fresh anonymous login after every reload.
+        try { await auth.authStateReady(); } catch (err) { /* sign in below */ }
+        if (auth.currentUser) return;
         signInAnonymously(auth).catch((err) => {
           authRetryCount++;
           console.warn(`Firebase anonymous auth failed (attempt ${authRetryCount}):`, err);
@@ -1553,6 +1561,18 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .access-prompt .team-btn .team-label { color: var(--fg-dim); }
 .access-prompt .team-btn.active .team-label { color: var(--fg); }
 
+/* Small row buttons in the admin lists (Löschen, Sperren) — not the big
+   full-width prompt buttons above. */
+.access-prompt .admin-row-btn {
+  width: auto;
+  flex: none;
+  background: transparent;
+  border: 1px solid var(--pink);
+  color: var(--pink);
+  padding: 4px 10px;
+  font-size: 11px;
+}
+.access-prompt .admin-row-btn:hover { background: var(--pink); color: #fff; }
 /* ====================== PHOTO GALLERY ====================== */
 .photo-gallery {
   padding: 10px 18px 14px;
@@ -3367,6 +3387,8 @@ body.map-first .cd-strip-item:nth-of-type(n+3) { display: none; }
     <div id="admin-dupes"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">👥 Profile</h3>
     <div id="admin-profiles"></div>
+    <h3 style="font-size:14px;margin:16px 0 8px;">📨 Einladungslinks</h3>
+    <div id="admin-invites"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">📍 Eigene Spots</h3>
     <div id="admin-corners"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">💡 Feedback</h3>
@@ -3843,7 +3865,12 @@ function checkAccessGranted() {
   if (!window.FB?.firebaseReady) return;   // offline/dev mode: no gate
   // localStorage only remembers that SOME login had access here. Verify the
   // current one against the database once auth is ready (see verifyAccessGrant).
-  if (localStorage.getItem("cg.accessGranted") === "1") return;
+  if (localStorage.getItem("cg.accessGranted") === "1") {
+    // Already in: someone else's invite in the address is not needed (and must
+    // not end up in a home-screen shortcut).
+    if (_invite.fromLink) clearHandledQueryParam(INVITE_LINK_PARAM);
+    return;
+  }
 
   // Async: wait for auth UID, then verify Firebase flag
   window.FB.authReady.then((uid) => {
@@ -3852,12 +3879,18 @@ function checkAccessGranted() {
       return;
     }
     const { db, ref, get } = window.FB;
-    get(ref(db, "accessGranted/" + uid)).then((snap) => {
+    get(ref(db, "accessGranted/" + uid)).then(async (snap) => {
       if (snap.val() !== null) {
         localStorage.setItem("cg.accessGranted", "1");
         localStorage.setItem("cg.accessCode", String(snap.val()));
         // Already granted – make sure the prompt stays hidden, continue onboarding
         maybeShowNicknamePrompt();
+        return;
+      }
+      // Opened with someone's invite link: in with one tap, no code (37-invites.js).
+      if (_invite.fromLink) {
+        if (await redeemInviteLink()) return;
+        showAccessPrompt("invite");
         return;
       }
       showAccessPrompt();
@@ -3874,7 +3907,9 @@ function showAccessPrompt(reason = "") {
   const text = $("#access-text");
   if (text) text.textContent = reason === "missing"
     ? "Für dieses Gerät ist dein Zugang nicht mehr hinterlegt (z. B. nach einem Login-Wechsel) — darum ging Speichern nicht. Gib den Einladungscode aus der Gruppe einmal neu ein, dein Profil bleibt erhalten."
-    : "Gib den Einladungscode ein, um Zugang zu erhalten.";
+    : reason === "invite"
+      ? "Dieser Einladungslink gilt nicht mehr. Lass dir einen neuen schicken — oder gib den Einladungscode ein."
+      : "Öffne einen Link von jemandem aus der Gruppe — oder gib den Einladungscode ein.";
   $("#access-prompt").style.display = "flex";
   setTimeout(() => $("#access-code-input").focus(), 100);
 }
@@ -3913,14 +3948,40 @@ async function verifyAccessGrant(opts = {}) {
       return true;
     } catch (err) { console.warn("stored access code no longer valid:", err); }
   }
-  // No grant and nothing to repair it with. Someone who had access here before
-  // is asked once (profile and data stay); brand-new people get the normal
-  // invitation prompt from checkAccessGranted() instead of this explanation.
+  // No grant and nothing to repair it with — unless this page came with an
+  // invite link. Otherwise someone who had access here before is asked once
+  // (profile and data stay); brand-new people get the normal invitation
+  // prompt from checkAccessGranted() instead of this explanation.
+  if (_invite.fromLink && await redeemInviteLink()) return true;
   if (localStorage.getItem("cg.accessGranted") === "1") {
     localStorage.removeItem("cg.accessGranted");
     showAccessPrompt("missing");
   }
   return false;
+}
+
+// In — by code or by an invite link. Returning friends pick themselves, new
+// people type a name ("Wer bist du?"), then the link they came with runs.
+function onAccessGranted(code, opts = {}) {
+  const uid = window.FB?.getAuthUid?.() || "";
+  localStorage.setItem("cg.accessGranted", "1");
+  localStorage.setItem("cg.accessCode", code);
+  if (uid) _accessVerified[uid] = true;
+  $("#access-prompt").style.display = "none";
+  reattachSharedListenersAfterGrant();
+  setTimeout(linkMyEarlierLogins, 1500);
+  if (STATE.nickname) {
+    // Someone who already has a profile here only re-confirmed access.
+    toast(`✅ Zugang bestätigt — weiter geht's, ${escapeHtml(STATE.nickname)}!`);
+    broadcastPresence();
+    runPendingLinkActions();
+  } else {
+    // The link's own "Einladung von …" toast already named the inviter.
+    const by = !STATE.pendingInviteName && opts.byName ? ` ${T("von", "by")} <strong>${escapeHtml(opts.byName)}</strong>` : "";
+    toast(opts.invited ? `🍻 ${T("Du bist dabei", "You're in")}${by ? ` — ${T("eingeladen", "invited")}${by}` : ""}! ${T("Wie heißt du?", "What's your name?")}` : "✅ Zugang gewährt – willkommen!");
+    // Returning friends pick themselves right away instead of starting fresh.
+    setTimeout(() => openClaimOverlay({ welcome: true }), 500);
+  }
 }
 
 async function submitAccessCode() {
@@ -3947,22 +4008,7 @@ async function submitAccessCode() {
     // Write the code as the value; the Firebase .validate rule confirms it exists
     // under accessCodes/{code} before allowing the write.
     await set(ref(db, "accessGranted/" + uid), code);
-    localStorage.setItem("cg.accessGranted", "1");
-    localStorage.setItem("cg.accessCode", code);
-    _accessVerified[uid] = true;
-    $("#access-prompt").style.display = "none";
-    reattachSharedListenersAfterGrant();
-    setTimeout(linkMyEarlierLogins, 1500);
-    if (STATE.nickname) {
-      // Someone who already has a profile here only re-confirmed access.
-      toast(`✅ Zugang bestätigt — weiter geht's, ${escapeHtml(STATE.nickname)}!`);
-      broadcastPresence();
-      runPendingLinkActions();
-    } else {
-      toast("✅ Zugang gewährt – willkommen!");
-      // Returning friends pick themselves right away instead of starting fresh.
-      setTimeout(() => openClaimOverlay({ welcome: true }), 500);
-    }
+    onAccessGranted(code);
   } catch (err) {
     console.warn("Access code validation failed:", err);
     errEl.textContent = "Ungültiger Code. Bitte erneut versuchen.";
@@ -6108,7 +6154,8 @@ function buildShareUrl(cornerId, inviteName, autoCheckin = false, extra = {}) {
   // same team (that is the point of sharing a corner with your crew).
   if (autoCheckin && STATE.team) url.searchParams.set("team", STATE.team);
   else url.searchParams.delete("team");
-  return url.toString();
+  // My personal invite: whoever opens it is in without a code (37-invites.js).
+  return withMyInvite(url).toString();
 }
 
 // A neutral code for printing/stickers: no person, no team — just the corner.
@@ -6169,7 +6216,8 @@ function applyIncomingLinks() {
   if (joinId && /^[A-Za-z0-9_-]{1,128}$/.test(joinId)) STATE.pendingJoin = { id: joinId, here: params.get("here") === "1", name: sanitizeInviteName(params.get("n") || "").slice(0, 30) };
   const profileKey = (params.get("profile") || "").trim();
   if (profileKey && /^[A-Za-z0-9_-]{1,128}$/.test(profileKey)) STATE.pendingProfileKey = profileKey;
-  if (profileKey && params.get("focus") === "compliments") STATE.pendingProfileFocus = "compliments";   // push about a compliment
+  // Push about a compliment (own list) / about a newcomer (their profile + 💐).
+  if (profileKey && ["compliments", "compliment"].includes(params.get("focus"))) STATE.pendingProfileFocus = params.get("focus");
 }
 
 function clearHandledQueryParam(name) {
@@ -6355,6 +6403,9 @@ async function inviteFriends() {
     toast("Bitte gib zuerst einen Namen ein.");
     return;
   }
+  // My personal invite inside the link (37-invites.js) — usually ready since
+  // the start; waiting longer would cost the share sheet its tap on iPhones.
+  if (!myInviteToken()) await Promise.race([ensureMyInviteToken(), new Promise((r) => setTimeout(r, 700))]);
   // Checked in somewhere? Then the invite leads to me ("Folge mir").
   const atCorner = !!myPresenceCorner() && !!window.FB?.firebaseReady;
   const url = atCorner ? buildJoinUrl(false) : buildShareUrl("", STATE.nickname);
@@ -6723,6 +6774,7 @@ function buildRewardGuideHtml() {
     <h4 class="rg-h karma">🎁 ${T("Karma bekommen", "Earning karma")}</h4>
     <table class="rg-table">
       ${row("💐", "Kompliment bekommen · Danke für dein Kompliment", "Got a compliment · thanks for your compliment", `+${COMPLIMENT_KARMA} · +${COMPLIMENT_THANKS_KARMA}`)}
+      ${row("📨", `Jemand Neues ist über deinen Link dabei (bis ${INVITE_REWARDS_PER_DAY}× am Tag)`, `Someone new joined through your link (up to ${INVITE_REWARDS_PER_DAY}× a day)`, `+${INVITE_KARMA}`)}
       ${row("🛒", "Nachschub mitgebracht — pro Person, die es bestätigt", "Brought supplies — per person who confirms", `+${SUPPLY_KARMA_PER_CONFIRM}`)}
       ${row("🗣️", "Gossip-Story erzählt — pro Person am Corner, die bewertet", "Told a gossip story — per person at the corner who rates it", "+2…+20")}
       ${row("📅", "Cornerdate geplant — pro Zusage · pro Gast, der wirklich kommt", "Planned a cornerdate — per yes · per guest who really comes", `+${CORNERDATE_JOIN_KARMA} · +${CORNERDATE_ARRIVE_KARMA}`)}
@@ -6932,7 +6984,12 @@ async function offerProfileTwin(twin) {
     okLabel: T("Ja, das bin ich", "Yes, that's me"),
     cancelLabel: T("Nein, ich bin neu", "No, I'm new")
   });
-  if (ok !== true || !window.FB?.firebaseReady) return;
+  if (ok !== true || !window.FB?.firebaseReady) {
+    // Really new: thank whoever invited them, then open what the link was for.
+    noteInviteJoin(STATE.nickname);
+    runPendingLinkActions();
+    return;
+  }
   await linkToProfile(twin.key, { welcome: true });
 }
 
@@ -6953,7 +7010,7 @@ function saveNickname(nameArg) {
   ensureOwnProfileLock();
   maybeShowRewardTip(6500);
   scheduleStartCircles();
-  if (!twin) runPendingLinkActions();
+  if (!twin) { noteInviteJoin(name); runPendingLinkActions(); }
 }
 
 function bindNicknameBar() {
@@ -7522,7 +7579,7 @@ function buildJoinUrl(onSite) {
   url.searchParams.set("join", currentUserKey());
   if (STATE.nickname) url.searchParams.set("n", STATE.nickname.slice(0, 30));
   if (onSite) url.searchParams.set("here", "1");
-  return url.toString();
+  return withMyInvite(url).toString();
 }
 
 function followMeText() {
@@ -8037,6 +8094,7 @@ async function renderAdminPanel() {
   $("#admin-clean-presence").onclick = adminCleanPresence;
   $("#admin-dedupe-visits").onclick = adminDedupeVisits;
   renderAdminFeedback();
+  renderAdminInvites();
   const profilesEl = $("#admin-profiles");
   profilesEl.innerHTML = `<p style="color:var(--fg-dim);font-size:12px;">Lade…</p>`;
   try {
@@ -8050,7 +8108,7 @@ async function renderAdminPanel() {
       <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:6px;">
         <span style="flex:1;font-size:13px;">${escapeHtml(r.nickname)}${r.key === currentUserKey() ? " (du)" : ""}</span>
         <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);">${r.total} Aura</span>
-        ${r.key !== currentUserKey() ? `<button class="action-btn" style="padding:4px 8px;font-size:10px;border-color:var(--pink);color:var(--pink);" data-admin-del-user="${escapeHtml(r.key)}" data-nick="${escapeHtml(r.nickname)}">Löschen</button>` : ""}
+        ${r.key !== currentUserKey() ? `<button class="action-btn admin-row-btn" data-admin-del-user="${escapeHtml(r.key)}" data-nick="${escapeHtml(r.nickname)}">Löschen</button>` : ""}
       </div>`).join("") || `<p style="color:var(--fg-dim);font-size:12px;">Keine Profile.</p>`;
     profilesEl.querySelectorAll("[data-admin-del-user]").forEach((b) =>
       b.addEventListener("click", () => adminDeleteProfile(b.dataset.adminDelUser, b.dataset.nick)));
@@ -8062,7 +8120,7 @@ async function renderAdminPanel() {
   cornersEl.innerHTML = spots.map((s) => `
     <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:6px;">
       <span style="flex:1;font-size:13px;">${escapeHtml(s.name)} <span style="color:var(--fg-dim);font-size:11px;">von ${escapeHtml(s.createdBy || "?")}</span></span>
-      <button class="action-btn" style="padding:4px 8px;font-size:10px;border-color:var(--pink);color:var(--pink);" data-admin-del-corner="${escapeHtml(s.id)}" data-name="${escapeHtml(s.name)}">Löschen</button>
+      <button class="action-btn admin-row-btn" data-admin-del-corner="${escapeHtml(s.id)}" data-name="${escapeHtml(s.name)}">Löschen</button>
     </div>`).join("") || `<p style="color:var(--fg-dim);font-size:12px;">Keine eigenen Spots.</p>`;
   cornersEl.querySelectorAll("[data-admin-del-corner]").forEach((b) =>
     b.addEventListener("click", () => adminDeleteCorner(b.dataset.adminDelCorner, b.dataset.name)));
@@ -8463,6 +8521,7 @@ async function linkToProfile(targetKey, opts = {}) {
   rememberMyKey(root);
   STATE.nickname = nickname;
   localStorage.setItem("cg.nickname", nickname);
+  forgetInviteJoin();   // already here before: nobody to thank for a new member
   ensurePointIdentity();
   if (window.FB?.set) window.FB.set(window.FB.ref(window.FB.db, `points/${me}/nickname`), nickname).catch(() => {});
   const { db, ref, set } = window.FB;
@@ -11481,6 +11540,7 @@ function sharingSectionHtml() {
       <div class="cf-chips">${friends.map((f) => `<span class="cf-chip">${escapeHtml(f.name)}<button data-cf-remove="${escapeHtml(f.root)}" aria-label="${T("entfernen", "remove")}">✕</button></span>`).join("")}
         <button class="action-btn" id="cf-add">＋ ${T("Hinzufügen", "Add")}</button></div></div>
     <div class="share-row">📍 <strong>${T("Wo du gerade bist", "Where you are")}</strong>: ${T("sehen alle in der App, und alle mit Push bekommen eine Mitteilung. An einem privaten Corner sehen nur deine engen Freunde, welcher es ist.", "everyone in the app sees it, and everyone with push gets a notification. At a private corner only your close friends see which one.")}</div>
+    ${inviteSectionHtml()}
     <div class="share-row">🗺️ <strong>${T("Deine Corners", "Your corners")}</strong>: 🌍 ${counts.all} · 👯 ${counts.friends} · 🔒 ${counts.me} <span class="share-dim">— ${T("beim Eintragen oder unter „Spot bearbeiten“ wählbar; private geben halbe Punkte", "chosen when adding or under “edit spot”; private ones give half the points")}</span></div>
     <div class="share-row">📅 <strong>Cornerdates</strong>: ${T("für alle oder 🤫 geheim — dann sehen es nur deine engen Freunde (halbe Punkte)", "for everyone or 🤫 secret — then only your close friends see it (half the points)")}</div>
     <div class="share-row share-dim">⚠️ ${T("Noch ohne Nachweis: Wer bei „Wer bist du?“ deinen Namen antippt, sieht auch deine privaten Sachen. Bevor Fremde dazukommen, sichern wir das ab.", "No proof yet: whoever taps your name under “Who are you?” also sees your private things. We'll secure that before strangers join.")}</div>
@@ -13356,7 +13416,7 @@ function openLightbox(src, author) { $("#lightbox-img").src = src; $("#lightbox-
 // once signed in.
 function listenPoints(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
-  listenRewardStore("aura", () => { ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); scheduleStartCircles(); deferSlim("myVisits", watchMyVisits); deferSlim("myCompliments", watchMyCompliments); },
+  listenRewardStore("aura", () => { ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); scheduleStartCircles(); deferSlim("myVisits", watchMyVisits); deferSlim("myCompliments", watchMyCompliments); deferSlim("myInvite", ensureMyInviteToken); },
     () => retryListenerAfterAuth(listenPoints, attempt));
 }
 
@@ -14079,7 +14139,13 @@ function openPendingProfile(attempt = 0) {
   STATE.pendingProfileFocus = null;
   clearHandledQueryParam("focus");
   if (focus === "compliments" && (isMyKey(key) || key === myRootKey())) openMyCompliments();
-  else openUserProfile(key);
+  else openProfileForCompliment(key, focus === "compliment");
+}
+
+// "Neu dabei" push: the newcomer's profile, with the compliment ready to send.
+function openProfileForCompliment(key, compose) {
+  openUserProfile(key);
+  if (compose && !isMyKey(key) && key !== myRootKey()) setTimeout(() => openComplimentComposer(key), 600);
 }
 
 /* ---- Tappable notifications ----
@@ -14099,6 +14165,7 @@ function deepLinkAction(link) {
     return () => openDetail(corner);
   }
   if (profile && p.get("focus") === "compliments") return () => (isMyKey(profile) || profile === myRootKey() ? openMyCompliments() : openUserProfile(profile));
+  if (profile && p.get("focus") === "compliment") return () => openProfileForCompliment(profile, true);
   if (profile) return () => openUserProfile(profile);
   if (p.get("feedback") === "1" && STATE.isAdmin) return () => openAdminSection("#admin-feedback");
   return null;
@@ -15218,6 +15285,202 @@ document.addEventListener("click", (e) => {
   const thanks = e.target.closest?.("[data-compliment-thanks]");
   if (thanks) { e.preventDefault(); thankCompliment(thanks.dataset.complimentThanks); }
 });
+/* ====================== INVITE LINKS (Phase 2) ======================
+   "Es muss super einfach bleiben zu starten, wenn ich jemandem einen Link
+   teile": every member has a personal invite inside all the links they share
+   (corner, WhatsApp, cornerdate, follow-me, 📨 Einladen). Whoever opens such a
+   link is in with one tap — no code to type — and only picks a name.
+   Each invite is traceable (who brought whom in) and can be replaced or
+   blocked; the inviter gets Karma once the newcomer has picked a name (from a
+   Cloud Function, a few times a day). The old group code keeps working;
+   neutral stickers for public places carry no invite.
+   invites/<token> { by, byName, at, uses, revoked } · inviteOf/<profile> = token
+   inviteJoins/<token>/<login> { name, at } — written by the newcomer's app.  */
+const INVITE_LINK_PARAM = "i";
+const INVITE_TOKEN_RE = /^[A-Za-z0-9_-]{16,40}$/;
+const INVITE_TOKEN_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+const INVITE_KARMA = 30;                 // given by the Cloud Function (functions/index.js)
+const INVITE_REWARDS_PER_DAY = 3;
+
+function readInviteLocal(key) {
+  try { const t = localStorage.getItem(key) || ""; return INVITE_TOKEN_RE.test(t) ? t : ""; } catch (e) { return ""; }
+}
+
+var _invite = {
+  mine: readInviteLocal("cg.inviteToken"),
+  mineRoot: (() => { try { return localStorage.getItem("cg.inviteRoot") || ""; } catch (e) { return ""; } })(),
+  fromLink: (() => { try { const t = new URLSearchParams(window.location.search).get(INVITE_LINK_PARAM) || ""; return INVITE_TOKEN_RE.test(t) ? t : ""; } catch (e) { return ""; } })(),
+  joined: readInviteLocal("cg.joinedInvite"),   // the invite this login came in with, until a name is picked
+  checkedRoot: "",
+  failedAt: 0,
+  pending: null,
+  uses: null
+};
+
+function newInviteToken() {
+  const bytes = new Uint8Array(20);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => INVITE_TOKEN_CHARS[b % INVITE_TOKEN_CHARS.length]).join("");
+}
+
+// Only the invite of the profile I am now (not one from before a profile switch).
+function myInviteToken() {
+  return _invite.mine && _invite.mineRoot === myRootKey() ? _invite.mine : "";
+}
+
+// Every link I share carries my invite (and never the one this page was opened with).
+function withMyInvite(url) {
+  url.searchParams.delete(INVITE_LINK_PARAM);
+  const token = localStorage.getItem("cg.accessGranted") === "1" ? myInviteToken() : "";
+  if (token) url.searchParams.set(INVITE_LINK_PARAM, token);
+  return url;
+}
+
+// My personal invite: made once, the same on all my devices (inviteOf/<profile>).
+function ensureMyInviteToken() {
+  if (!window.FB?.firebaseReady || !STATE.nickname || localStorage.getItem("cg.accessGranted") !== "1") return Promise.resolve(myInviteToken());
+  const root = myRootKey();
+  if (!root || /[.#$[\]/]/.test(root)) return Promise.resolve("");
+  if (_invite.checkedRoot === root) return Promise.resolve(myInviteToken());
+  if (_invite.pending) return _invite.pending;
+  if (Date.now() - _invite.failedAt < 60000) return Promise.resolve(myInviteToken());
+  _invite.pending = (async () => {
+    const { db, ref, set } = window.FB;
+    try {
+      let token = (await slimGet("inviteOf/" + root)).val();
+      let inv = typeof token === "string" && INVITE_TOKEN_RE.test(token) ? (await slimGet("invites/" + token)).val() : null;
+      if (!inv || inv.revoked || inv.by !== root) {
+        token = newInviteToken();
+        inv = { by: root, byName: String(STATE.nickname).slice(0, 40), at: Date.now() };
+        await set(ref(db, "invites/" + token), inv);
+        await set(ref(db, "inviteOf/" + root), token);
+      }
+      _invite.mine = token;
+      _invite.mineRoot = root;
+      _invite.uses = Number(inv.uses || 0);
+      _invite.checkedRoot = root;
+      try { localStorage.setItem("cg.inviteToken", token); localStorage.setItem("cg.inviteRoot", root); } catch (e) { /* private mode */ }
+      if (STATE.view === "profile") renderProfile();
+    } catch (err) {
+      _invite.failedAt = Date.now();
+      console.warn("invite link not ready:", err);
+    } finally {
+      _invite.pending = null;
+    }
+    return myInviteToken();
+  })();
+  return _invite.pending;
+}
+
+// Opened with someone's invite and no access yet: in with one tap. The rules
+// check that the invite exists and was not blocked.
+async function redeemInviteLink() {
+  const token = _invite.fromLink;
+  const uid = window.FB?.getAuthUid?.() || "";
+  if (!token || !uid) return false;
+  try {
+    await withTimeout(window.FB.set(window.FB.ref(window.FB.db, "accessGranted/" + uid), token), 15000, "invite");
+  } catch (err) {
+    console.warn("invite link not accepted:", err);
+    return false;
+  }
+  clearHandledQueryParam(INVITE_LINK_PARAM);
+  if (!STATE.nickname) {
+    _invite.joined = token;
+    try { localStorage.setItem("cg.joinedInvite", token); } catch (e) { /* private mode */ }
+  }
+  let byName = "";
+  try { byName = String((await slimGet(`invites/${token}/byName`, 3000)).val() || ""); } catch (e) { /* the welcome works without it */ }
+  onAccessGranted(token, { invited: true, byName });
+  return true;
+}
+
+// The newcomer picked a name: the inviter gets thanked (Cloud Function).
+function noteInviteJoin(name) {
+  const token = _invite.joined;
+  const uid = window.FB?.getAuthUid?.() || "";
+  if (!token || !uid || !window.FB?.firebaseReady) return;
+  forgetInviteJoin();
+  window.FB.set(window.FB.ref(window.FB.db, `inviteJoins/${token}/${uid}`), { name: String(name || "").slice(0, 40), at: Date.now() })
+    .catch((err) => console.warn("invite join not noted:", err));
+}
+// …or turned out to be someone who is already here (picked their profile).
+function forgetInviteJoin() {
+  _invite.joined = "";
+  try { localStorage.removeItem("cg.joinedInvite"); } catch (e) { /* private mode */ }
+}
+
+// A link went to the wrong people: the old one stops working, a new one is made.
+async function replaceMyInviteLink() {
+  const token = myInviteToken();
+  if (!token || !window.FB?.firebaseReady) return;
+  if (!(await appConfirm(T("Neuen Einladungslink machen?", "Make a new invite link?"),
+    T("Dein alter Link lässt dann niemanden mehr neu rein. Wer schon dabei ist, bleibt dabei.", "Your old link then lets nobody new in. Everyone already in stays in."),
+    T("Neuer Link", "New link")))) return;
+  try {
+    await window.FB.set(window.FB.ref(window.FB.db, `invites/${token}/revoked`), true);
+  } catch (err) {
+    toast(T("Hat nicht geklappt — Verbindung prüfen.", "Didn't work — check your connection."));
+    return;
+  }
+  _invite.mine = "";
+  _invite.checkedRoot = "";
+  _invite.failedAt = 0;
+  try { localStorage.removeItem("cg.inviteToken"); } catch (e) { /* private mode */ }
+  await ensureMyInviteToken();
+  toast(myInviteToken() ? `📨 ${T("Neuer Einladungslink ist bereit", "New invite link is ready")}` : T("Neuer Link folgt, sobald du online bist.", "New link follows once you are online."));
+}
+
+// Profile → "Teilen & enge Freunde": my link and how many came in with it.
+function inviteSectionHtml() {
+  deferSlim("myInvite", ensureMyInviteToken);
+  if (!window.FB?.firebaseReady || !myInviteToken()) return "";
+  const n = Number(_invite.uses || 0);
+  return `<div class="share-row">📨 <strong>${T("Dein Einladungslink", "Your invite link")}</strong>: ${T("steckt in allem, was du teilst — wer ihn öffnet, ist mit einem Tipp dabei, ohne Code", "is inside everything you share — whoever opens it is in with one tap, no code")}. +${INVITE_KARMA} Karma ${T("pro neuer Person", "per new person")}${n ? ` · ${n} ${T(n === 1 ? "Person so dazugekommen" : "Leute so dazugekommen", n === 1 ? "person joined this way" : "people joined this way")}` : ""}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;"><button class="action-btn cmp-quick" id="share-invite-link">📨 ${T("Teilen", "Share")}</button><button class="action-btn cmp-quick" id="replace-invite-link">🔄 ${T("Neuer Link", "New link")}</button></div></div>`;
+}
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest?.("#share-invite-link")) { e.preventDefault(); inviteFriends(); return; }
+  if (e.target.closest?.("#replace-invite-link")) { e.preventDefault(); replaceMyInviteLink(); }
+});
+
+/* Admin: all invite links — who made it, who came in with it — and a block. */
+async function renderAdminInvites() {
+  const el = $("#admin-invites");
+  if (!el || !STATE.isAdmin || !window.FB?.firebaseReady) return;
+  el.innerHTML = `<p style="color:var(--fg-dim);font-size:12px;">Lade…</p>`;
+  try {
+    const [invites, joins] = await Promise.all([slimGet("invites"), slimGet("inviteJoins")]).then(([a, b]) => [a.val() || {}, b.val() || {}]);
+    const rows = Object.entries(invites)
+      .map(([token, v]) => ({
+        token,
+        by: String((v && (v.byName || v.by)) || "?"),
+        uses: Number((v && v.uses) || 0),
+        at: Number((v && v.at) || 0),
+        revoked: !!(v && v.revoked),
+        names: Object.values(joins[token] || {}).map((j) => j && j.name).filter(Boolean)
+      }))
+      .sort((a, b) => (a.revoked - b.revoked) || (b.uses - a.uses) || (b.at - a.at));
+    el.innerHTML = rows.map((r) => `
+      <div class="admin-invite-row" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:6px;${r.revoked ? "opacity:0.55;" : ""}">
+        <span style="flex:1;font-size:13px;">${escapeHtml(r.by)} <span style="color:var(--fg-dim);font-size:11px;">· ${r.uses} ${T("dabei", "joined")}${r.names.length ? ": " + r.names.slice(-8).map(escapeHtml).join(", ") : ""}</span></span>
+        ${r.revoked ? `<span style="font-size:10px;color:var(--fg-dim);">${T("gesperrt", "blocked")}</span>` : `<button class="action-btn admin-row-btn" data-admin-revoke-invite="${escapeHtml(r.token)}" data-by="${escapeHtml(r.by)}">${T("Sperren", "Block")}</button>`}
+      </div>`).join("") || `<p style="color:var(--fg-dim);font-size:12px;">${T("Noch keine Einladungslinks.", "No invite links yet.")}</p>`;
+    el.querySelectorAll("[data-admin-revoke-invite]").forEach((b) => b.addEventListener("click", async () => {
+      if (!(await appConfirm(`${T("Link von", "Link by")} „${b.dataset.by}“ ${T("sperren?", "block?")}`, T("Über diesen Link kommt niemand mehr neu rein. Wer schon dabei ist, bleibt dabei.", "Nobody new gets in with this link. Everyone already in stays in."), T("Sperren", "Block")))) return;
+      try {
+        await window.FB.set(window.FB.ref(window.FB.db, `invites/${b.dataset.adminRevokeInvite}/revoked`), true);
+        toast(T("🔒 Link gesperrt", "🔒 Link blocked"));
+        renderAdminInvites();
+      } catch (err) {
+        toast(T("Sperren fehlgeschlagen.", "Blocking failed."));
+      }
+    }));
+  } catch (err) {
+    el.innerHTML = `<p style="color:var(--pink);font-size:12px;">${T("Konnte Einladungen nicht laden (Regeln deployed?).", "Could not load invites (rules deployed?).")}</p>`;
+  }
+}
 </script>
 </body>
 </html>

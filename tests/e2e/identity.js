@@ -203,6 +203,21 @@ async function waitFor(fn, ms = 15000) {
     await sleep(4000);
     check("with a known code the grant is repaired silently", (await blocking(mo.page)).length === 0 && !!(await dbGet(`accessGranted/${mo.uid}`)));
 
+    // ---------- secured with Google: the same login after a reload ----------
+    // (signInAnonymously used to replace it with a fresh anonymous login.)
+    const linked = await mo.page.evaluate(async () => {
+      const m = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+      const cred = m.GoogleAuthProvider.credential(JSON.stringify({ sub: "g-mo", email: "mo@example.com", email_verified: true }));
+      await m.linkWithCredential(window.FB.auth.currentUser, cred);
+      return { uid: window.FB.auth.currentUser.uid, anon: window.FB.auth.currentUser.isAnonymous };
+    });
+    await mo.page.reload();
+    await mo.page.waitForFunction(() => window.FB && window.FB.getAuthUid && window.FB.getAuthUid(), null, { timeout: 20000 });
+    await sleep(2500);
+    const relog = await mo.page.evaluate(() => ({ uid: window.FB.auth.currentUser?.uid, anon: window.FB.auth.currentUser?.isAnonymous }));
+    check("a Google-secured login stays the same after a reload", !linked.anon && relog.uid === linked.uid && relog.anon === false, JSON.stringify({ linked, relog }));
+    check("…and opens straight in as Mo", (await blocking(mo.page)).length === 0 && await mo.page.evaluate(() => STATE.nickname) === "Mo");
+
     const errs = [et, et2, mia, tom, hana2, ali2, gil, cleo2, mo].flatMap((u) => u.page._logs.filter((l) => l.startsWith("[pageerror]")));
     check("no page errors", errs.length === 0, errs.join(" | ").slice(0, 400));
   } catch (err) {

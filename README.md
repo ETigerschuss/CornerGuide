@@ -47,6 +47,7 @@ https://ETigerschuss.github.io/CornerGuide/
 - 💐 **Komplimente** — auf jedem Profil (und bei den Leuten, die gerade am Corner sind) „💐 Kompliment machen": eins der fertigen antippen oder eigene Worte. Die Person bekommt **+20 Karma** und eine Push-Nachricht, du **+5 Aura** (bis 5× am Tag); ein „💛 Danke" schickt ihr +5 Karma zurück. Ein Kompliment pro Person und Tag (vom Server geprüft). Im eigenen Profil stehen alle Komplimente — und wem man als Nächstes eine Freude machen könnte
 - ⚡ **Startet schlank** — die App startet auf der Karte mit unter 0,1 MB (Punkte, Besuchszahlen, wer gerade da ist) statt 9 MB wie vorher, als alle Fotos in der Datenbank lagen. Titelbilder kommen mit der Liste, Fotos und Check-ins eines Corners beim Öffnen, volle Bilder beim Antippen, Profile anderer beim Ansehen (siehe [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md))
 - 💡 **Feedback an die Macher** — Profil → „Idee oder Problem?"; Admins sehen es im Admin-Panel
+- 📨 **Einladungslinks — ein Tipp und man ist dabei** — in jedem Link, den jemand aus der Gruppe teilt (Corner, WhatsApp, Cornerdate, „Folge mir", „📨 Einladen"), steckt eine persönliche Einladung (`&i=…`). Wer ihn öffnet, muss keinen Code eingeben: „Du bist dabei! Wie heißt du?" → Namen tippen → der Link läuft weiter (Corner öffnet sich usw.). Wer eingeladen hat, bekommt **+30 Karma** (bis 3× am Tag, vom Server vergeben) und eine Push „🍻 Cleo ist über deinen Link dabei" — ein Tipp darauf öffnet ihr Profil mit einem Kompliment zum Willkommen. Im Profil unter „Teilen & enge Freunde": der eigene Link, wie viele so dazugekommen sind, und „🔄 Neuer Link", falls er in falsche Hände geraten ist. Admins sehen im Admin-Panel, wer wen eingeladen hat, und können einzelne Links sperren. Der Gruppen-Code funktioniert weiter; QR-Sticker für öffentliche Orte tragen keine Einladung
 
 ## 🌤️ Corner-Check: woher kommen die Daten?
 
@@ -237,7 +238,7 @@ weg, wenn Browserdaten gelöscht werden, Safari eine Seite nach 7 Tagen ohne Bes
 **iPhone-Home-Bildschirm** hinzugefügt wird (eigener Speicher!) oder man das Handy wechselt. Das Profil selbst bleibt in
 der Datenbank.
 
-**So einfach geht's zurück:** Einladungscode eingeben → „👋 Wer bist du?" → **den eigenen Namen antippen** — fertig, ohne
+**So einfach geht's zurück:** einen Link von jemandem aus der Gruppe öffnen (oder den Einladungscode eingeben) → „👋 Wer bist du?" → **den eigenen Namen antippen** — fertig, ohne
 weitere Frage. Neu dabei? Im selben Fenster oben den Namen eingeben → „Los geht's". Falsch getippt? Die Willkommens-Meldung
 antippen („Nicht du?") macht es rückgängig. Tippt man seinen alten Namen neu ein, bietet die App das Profil auch von selbst an.
 
@@ -251,6 +252,8 @@ sobald der Zugang bestätigt ist. Auch der **Recovery-Code** (Profil → „Kont
 Es gibt bewusst keine Freigabe — es spielen nur Freunde mit.
 
 **Dauerhaft sichern:** „Mit Google sichern" — dann ist es auf jedem Gerät mit demselben Login automatisch dasselbe Profil.
+(Bis Ende November 2026 ging die Google-Sicherung beim nächsten Öffnen wieder verloren: die App meldete sich bei jedem Start
+zusätzlich anonym an, und das ersetzt in Firebase einen Google-Login. Jetzt bleibt ein gespeicherter Login, wie er ist.)
 
 ### 🔑 „Permission denied" beim Speichern?
 
@@ -306,6 +309,7 @@ Eintragen ausgewählt wurde.
   Push-Teil (`firebase-messaging-sw.js`), damit sich beide nicht mehr gegenseitig ersetzen.
 - **Links:** `?corner=<id>&come=1` (WhatsApp „Kommt vorbei"), `?corner=<id>&cd=<cornerdate-id>` (Cornerdate-Zusage),
   `?corner=<id>&checkin=1` (QR-Sticker: sofort einchecken). Auf neuen Geräten laufen sie nach „Wer bist du?" weiter.
+  Links von Mitgliedern tragen zusätzlich `&i=<einladung>` — damit kommt man ohne Code rein (Sticker nicht).
 - **Cornerdate-Punkte:** Zusagen +5 Aura (einmal pro Date), wirklich kommen (Check-in während des Dates) +10 Aura,
   Planen +5 Aura; wer plant, bekommt +3 Karma pro Zusage und +5 pro Gast, der kommt.
 

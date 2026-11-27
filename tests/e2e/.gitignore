@@ -6,3 +6,4 @@ shots/
 firebase.database.rules.json
 storage.rules
 .functions/
+emulators.out

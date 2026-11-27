@@ -146,3 +146,15 @@ textarea.ce-field { resize: vertical; min-height: 80px; }
 .access-prompt .team-btn .team-label { color: var(--fg-dim); }
 .access-prompt .team-btn.active .team-label { color: var(--fg); }
 
+/* Small row buttons in the admin lists (Löschen, Sperren) — not the big
+   full-width prompt buttons above. */
+.access-prompt .admin-row-btn {
+  width: auto;
+  flex: none;
+  background: transparent;
+  border: 1px solid var(--pink);
+  color: var(--pink);
+  padding: 4px 10px;
+  font-size: 11px;
+}
+.access-prompt .admin-row-btn:hover { background: var(--pink); color: #fff; }
