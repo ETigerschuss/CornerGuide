@@ -100,14 +100,12 @@ function markComplimentsSeen() {
 /* ---- Someone else's compliments: loaded with their profile ---- */
 function personCompliments(root) {
   const c = _cmp.person[root];
-  if (c && c.data) return c.data;
-  if (!c && window.FB?.firebaseReady && root && !/[.#$[\]/]/.test(root)) {
-    _cmp.person[root] = { loading: true };
-    slimGet("compliments/" + root)
-      .then((snap) => { _cmp.person[root] = { data: snap.val() || {} }; refreshOpenPublicProfile(); })
-      .catch(() => { delete _cmp.person[root]; });
-  }
-  return null;
+  return c && c.data ? c.data : null;
+}
+async function loadPersonCompliments(root) {
+  if (!window.FB?.firebaseReady || !root || /[.#$[\]/]/.test(root)) return;
+  try { _cmp.person[root] = { data: (await slimGet("compliments/" + root)).val() || {} }; }
+  catch (e) { /* stays "…" */ }
 }
 function forgetPersonCompliments(root) { delete _cmp.person[root]; }
 

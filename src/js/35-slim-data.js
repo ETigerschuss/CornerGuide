@@ -313,27 +313,25 @@ function personVisitEntries(key, nickname) {
     }));
     return out;
   }
-  const id = key + "|" + (nickname || "");
-  const cached = _slim.visits.person[id];
-  if (cached && cached.data) return cached.data;
-  if (!cached) {
-    _slim.visits.person[id] = { loading: true };
-    const paths = [];
-    if (key && !/[.#$[\]/]/.test(key)) paths.push("visitsByUser/" + key);
-    if (nickname) paths.push("visitsByName/" + visitNameKey(nickname));
-    Promise.all(paths.map((p) => loadVisitIndex(p))).then((lists) => {
-      const out = [];
-      const seen = new Set();
-      lists.forEach((m) => Object.entries(m || {}).forEach(([vid, e]) => {
-        if (!e || seen.has(vid)) return;
-        seen.add(vid);
-        out.push({ cornerId: e.c, time: Number(e.t || 0), team: e.tm || "" });
-      }));
-      _slim.visits.person[id] = { data: out, at: Date.now() };
-      refreshOpenPublicProfile();
-    }).catch(() => { delete _slim.visits.person[id]; });
-  }
-  return null;
+  const cached = _slim.visits.person[key + "|" + (nickname || "")];
+  return cached && cached.data ? cached.data : null;
+}
+
+// Loads them; the profile calls this when it opens (and draws once more after).
+async function loadPersonVisits(key, nickname) {
+  if (!window.FB?.firebaseReady || isLegacyVisits()) return;
+  const paths = [];
+  if (key && !/[.#$[\]/]/.test(key)) paths.push("visitsByUser/" + key);
+  if (nickname) paths.push("visitsByName/" + visitNameKey(nickname));
+  const lists = await Promise.all(paths.map((p) => loadVisitIndex(p)));
+  const out = [];
+  const seen = new Set();
+  lists.forEach((m) => Object.entries(m || {}).forEach(([vid, e]) => {
+    if (!e || seen.has(vid)) return;
+    seen.add(vid);
+    out.push({ cornerId: e.c, time: Number(e.t || 0), team: e.tm || "" });
+  }));
+  _slim.visits.person[key + "|" + (nickname || "")] = { data: out, at: Date.now() };
 }
 
 // Each time a profile opens, its check-ins are read fresh.

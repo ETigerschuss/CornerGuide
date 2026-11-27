@@ -171,6 +171,7 @@ async function openUserProfile(key) {
   if (!overlay) return;
   STATE.viewedProfileKey = key;
   STATE.viewedProfileAchievements = null;
+  STATE.viewedProfileReady = false;   // true once everything loaded on demand is drawn
   forgetPersonVisits(key);
   forgetPersonCompliments(profileRoot(key));
   $("#up-close").onclick = closeUserProfile;
@@ -179,14 +180,21 @@ async function openUserProfile(key) {
   overlay.scrollTop = 0;
   overlay.querySelector(".user-profile-card").scrollTop = 0;
   renderUserProfile(key, null);
-  if (!window.FB?.firebaseReady) return;
-  try {
-    const snap = await window.FB.get(window.FB.ref(window.FB.db, "achievements/" + key));
-    if (STATE.viewedProfileKey === key && overlay.style.display === "flex") {
-      STATE.viewedProfileAchievements = snap.val() || {};
-      renderUserProfile(key, STATE.viewedProfileAchievements);
-    }
-  } catch (err) { /* achievements are optional */ }
+  if (!window.FB?.firebaseReady) { STATE.viewedProfileReady = true; return; }
+  // What loads on demand (achievements, check-ins, compliments) comes in
+  // together and the profile is drawn once more — not once per piece: every
+  // redraw moves the buttons, and a tap in that moment can miss.
+  const nickname = personInfo(key).nickname;
+  const [ach] = await Promise.all([
+    window.FB.get(window.FB.ref(window.FB.db, "achievements/" + key)).then((s) => s.val() || {}, () => ({})),
+    loadPersonVisits(key, nickname).catch(() => {}),
+    loadPersonCompliments(profileRoot(key))
+  ]);
+  if (STATE.viewedProfileKey === key && overlay.style.display === "flex") {
+    STATE.viewedProfileAchievements = ach;
+    renderUserProfile(key, ach);
+    STATE.viewedProfileReady = true;
+  }
 }
 
 // Their check-ins arrived (loaded on demand): draw the profile again.

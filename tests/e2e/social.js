@@ -45,6 +45,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     check("'gerade hier' shows Ben as a tappable chip", !!chip);
     await chip.click();
     await anna.page.waitForSelector("#user-profile-overlay", { state: "visible", timeout: 5000 });
+    await anna.page.waitForFunction(() => STATE.viewedProfileReady === true, null, { timeout: 15000 });
     const top = await anna.page.textContent("#up-top");
     check("profile shows name + live corner", /Ben/.test(top) && /Gerade am/.test(top) && /Piazza Zenetti/.test(top), top.replace(/\s+/g, " ").slice(0, 160));
     check("profile shows aura and check-ins", /Aura/.test(top) && /Check-ins/.test(top));
@@ -125,7 +126,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     await anna.page.screenshot({ path: path.join(SHOTS, "social-chronicle.png") });
     // Ben looks at Anna: "1 Gossip-Runde zusammen"
     await ben.page.evaluate((k) => openUserProfile(k), anna.uid);
-    await sleep(500);
+    await ben.page.waitForFunction(() => STATE.viewedProfileReady === true, null, { timeout: 15000 });
     const together = await ben.page.textContent("#up-top");
     check("profile shows gossips together", /1 Gossip-Runde zusammen/.test(together), together.replace(/\s+/g, " ").slice(-120));
 
