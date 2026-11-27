@@ -113,7 +113,7 @@ function renderChatList() {
   Object.values(STATE.friends || {}).forEach((f) => {
     if (f.id && f.id !== me && !convs[f.id]) convs[f.id] = { id: f.id, name: f.nickname || f.name || f.id, text: "", time: 0 };
   });
-  const rows = Object.values(convs).sort((a, b) => b.time - a.time);
+  const rows = Object.values(convs).filter((c) => !isBlocked(c.id)).sort((a, b) => b.time - a.time);
   if (!rows.length) { list.innerHTML = `<div class="chat-empty">Noch keine Chats. Tippe in der Freunde-Leiste auf 💬, um jemandem zu schreiben.</div>`; return; }
   list.innerHTML = rows.map((c) => {
     const started = (c.time || 0) > 0;
@@ -198,11 +198,15 @@ function openChatThread(peerId, peerName) {
 function renderChatMessages(msgs, opts = {}) {
   const box = $("#chat-messages");
   if (!box) return;
-  if (!msgs.length) { box.innerHTML = `<div class="chat-empty">Noch keine Nachrichten. Schreib die erste! 👋</div>`; return; }
+  // Blocked (38-moderation.js): their messages stay hidden, mine stay.
+  const blockedPeer = _chatActivePeer && isBlocked(_chatActivePeer.id) ? _chatActivePeer.id : "";
+  if (blockedPeer) msgs = msgs.filter((m) => !isBlocked(m.fromId));
+  const notice = blockedPeer ? `<div class="chat-empty">🚫 ${T("Blockiert — ihre Nachrichten sind ausgeblendet.", "Blocked — their messages are hidden.")} <button class="action-btn cmp-quick" data-unblock="${escapeHtml(profileRoot(blockedPeer))}">${T("Aufheben", "Unblock")}</button></div>` : "";
+  if (!msgs.length) { box.innerHTML = notice || `<div class="chat-empty">Noch keine Nachrichten. Schreib die erste! 👋</div>`; return; }
   const me = currentUserKey();
   const peerReadAt = Number(opts.peerReadAt || 0);
   const lastMineTime = [...msgs].reverse().find((m) => m.fromId === me)?.time || 0;
-  box.innerHTML = msgs.map((m) => {
+  box.innerHTML = notice + msgs.map((m) => {
     const mine = m.fromId === me;
     const t = m.time ? new Date(m.time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "";
     const readLine = mine && m.time === lastMineTime ? `<span class="cb-read">${peerReadAt >= (m.time || 0) ? T("✓✓ Gelesen", "✓✓ Read") : T("✓ Gesendet", "✓ Sent")}</span>` : "";
@@ -437,7 +441,7 @@ function playTeamCheckinSound(teamId) {
 
 function addComment(cornerId, author, text) {
   if (!text.trim()) return;
-  const comment = { author: author || "Anonym", text: text.trim(), time: Date.now(), team: STATE.team || "" };
+  const comment = { author: author || "Anonym", authorId: currentUserKey() || "", text: text.trim(), time: Date.now(), team: STATE.team || "" };
   if (window.FB?.firebaseReady) {
     const { db, ref, push, set } = window.FB;
     const newRef = push(ref(db, "comments/" + cornerId));
@@ -452,7 +456,7 @@ function addComment(cornerId, author, text) {
 }
 
 function addReply(cornerId, commentKey, author, text) {
-  const reply = { author: author || "Anonym", text: text.trim(), time: Date.now(), team: STATE.team || "" };
+  const reply = { author: author || "Anonym", authorId: currentUserKey() || "", text: text.trim(), time: Date.now(), team: STATE.team || "" };
   if (window.FB?.firebaseReady) {
     const { db, ref, push, set } = window.FB;
     const newRef = push(ref(db, `comments/${cornerId}/${commentKey}/replies`));

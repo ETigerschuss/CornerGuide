@@ -645,7 +645,7 @@ function openLightbox(src, author) { $("#lightbox-img").src = src; $("#lightbox-
 // once signed in.
 function listenPoints(attempt = 0) {
   if (!window.FB?.firebaseReady) return;
-  listenRewardStore("aura", () => { ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); scheduleStartCircles(); deferSlim("myVisits", watchMyVisits); deferSlim("myCompliments", watchMyCompliments); deferSlim("myInvite", ensureMyInviteToken); },
+  listenRewardStore("aura", () => { ensurePointIdentity(false); updateNicknameBar(); renderFriendsBar(); if (STATE.view === "leaderboard") renderLeaderboard(); if (STATE.view === "profile") renderProfile(); scheduleStartCircles(); deferSlim("myVisits", watchMyVisits); deferSlim("myCompliments", watchMyCompliments); deferSlim("myInvite", ensureMyInviteToken); deferSlim("myBlocks", watchMyBlocks); },
     () => retryListenerAfterAuth(listenPoints, attempt));
 }
 

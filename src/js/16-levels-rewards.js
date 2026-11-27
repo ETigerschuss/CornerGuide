@@ -730,9 +730,11 @@ function _activateAuthDependentFeatures(uid, status) {
     window.FB.onValue(window.FB.ref(window.FB.db, "config/admins/" + uid), (snap) => {
       STATE.isAdmin = snap.val() === true;
       if (STATE.pendingFeedbackFocus) {
+        const section = STATE.pendingFeedbackFocus === "reports" ? "#admin-reports" : "#admin-feedback";
         STATE.pendingFeedbackFocus = false;
         clearHandledQueryParam("feedback");
-        if (STATE.isAdmin) openAdminSection("#admin-feedback");
+        clearHandledQueryParam("reports");
+        if (STATE.isAdmin) openAdminSection(section);
       }
       if (STATE.isAdmin && STATE.view === "profile") renderProfile();
     }, { onlyOnce: true });

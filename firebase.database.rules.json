@@ -22,7 +22,7 @@
       "$uid": {
         ".read": "auth != null && (auth.uid == $uid || root.child('config').child('admins').child(auth.uid).val() === true)",
         ".write": "auth != null && (auth.uid == $uid || root.child('config').child('admins').child(auth.uid).val() === true)",
-        ".validate": "newData.isString() && newData.val().length > 0 && (root.child('accessCodes').child(newData.val()).exists() || (newData.val().matches(/^[A-Za-z0-9_-]{16,40}$/) && root.child('invites').child(newData.val()).child('by').exists() && root.child('invites').child(newData.val()).child('revoked').val() !== true))"
+        ".validate": "newData.isString() && newData.val().length > 0 && !root.child('banned').child($uid).exists() && (root.child('accessCodes').child(newData.val()).exists() || (newData.val().matches(/^[A-Za-z0-9_-]{16,40}$/) && root.child('invites').child(newData.val()).child('by').exists() && root.child('invites').child(newData.val()).child('revoked').val() !== true))"
       }
     },
 
@@ -58,6 +58,30 @@
     },
 
     "inviteRewards": { ".read": false, ".write": false },
+
+    "blocks": {
+      "$owner": {
+        ".read": "auth != null && (auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner)",
+        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists() && (auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner)",
+        "$blocked": {
+          ".validate": "newData.hasChildren(['at']) && newData.child('at').isNumber() && (!newData.child('name').exists() || (newData.child('name').isString() && newData.child('name').val().length <= 40))"
+        }
+      }
+    },
+
+    "reports": {
+      ".read": "auth != null && root.child('config').child('admins').child(auth.uid).val() === true",
+      "$id": {
+        ".write": "auth != null && (root.child('config').child('admins').child(auth.uid).val() === true || (!data.exists() && newData.exists() && root.child('accessGranted').child(auth.uid).exists() && (newData.child('by').val() === auth.uid || newData.child('by').val() === root.child('points').child(auth.uid).child('aliasOf').val())))",
+        ".validate": "newData.hasChildren(['by', 'kind', 'reason', 'at']) && newData.child('by').isString() && newData.child('kind').isString() && newData.child('kind').val().matches(/^(profile|comment|photo)$/) && newData.child('reason').isString() && newData.child('reason').val().length <= 20 && newData.child('at').isNumber() && newData.child('at').val() <= now + 120000 && (!newData.child('target').exists() || (newData.child('target').isString() && newData.child('target').val().length <= 128)) && (!newData.child('targetName').exists() || (newData.child('targetName').isString() && newData.child('targetName').val().length <= 40)) && (!newData.child('byName').exists() || (newData.child('byName').isString() && newData.child('byName').val().length <= 40)) && (!newData.child('ref').exists() || (newData.child('ref').isString() && newData.child('ref').val().length <= 200)) && (!newData.child('excerpt').exists() || (newData.child('excerpt').isString() && newData.child('excerpt').val().length <= 300)) && (!newData.child('text').exists() || (newData.child('text').isString() && newData.child('text').val().length <= 500))"
+      }
+    },
+
+    "banned": {
+      ".read": "auth != null && root.child('config').child('admins').child(auth.uid).val() === true",
+      ".write": "auth != null && root.child('config').child('admins').child(auth.uid).val() === true",
+      "$uid": { ".read": "auth != null && auth.uid === $uid" }
+    },
 
     "pushTokens": {
       ".read": false,
@@ -162,7 +186,7 @@
       ".read": "auth != null",
       "$to": {
         "$id": {
-          ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true) && ((!data.exists() && newData.exists() && (newData.child('from').val() === auth.uid || newData.child('from').val() === root.child('points').child(auth.uid).child('aliasOf').val()) && newData.child('from').val() !== $to && $id.beginsWith(newData.child('from').val() + '_')) || (data.exists() && !newData.exists() && (auth.uid === $to || root.child('points').child(auth.uid).child('aliasOf').val() === $to)))",
+          ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true) && ((!data.exists() && newData.exists() && (newData.child('from').val() === auth.uid || newData.child('from').val() === root.child('points').child(auth.uid).child('aliasOf').val()) && newData.child('from').val() !== $to && $id.beginsWith(newData.child('from').val() + '_') && !root.child('blocks').child($to).child(newData.child('from').val()).exists()) || (data.exists() && !newData.exists() && (auth.uid === $to || root.child('points').child(auth.uid).child('aliasOf').val() === $to)))",
           ".validate": "!newData.exists() || (newData.hasChildren(['from', 'text', 'at']) && newData.child('from').isString() && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 200 && newData.child('at').isNumber() && newData.child('at').val() <= now + 120000 && (!newData.child('fromName').exists() || (newData.child('fromName').isString() && newData.child('fromName').val().length <= 40)) && (!newData.child('preset').exists() || (newData.child('preset').isString() && newData.child('preset').val().length <= 20)) && (!newData.child('thanked').exists() || newData.child('thanked').val() === true))",
           "thanked": { ".write": "auth != null && data.parent().exists() && newData.val() === true && (auth.uid === $to || root.child('points').child(auth.uid).child('aliasOf').val() === $to)" }
         }

@@ -29,7 +29,9 @@ node run-all.mjs circles   # nur eine Testreihe
 `npm run emulators` kopiert vorher die aktuellen Regeln (`firebase.database.rules.json`, `storage.rules`) und die Cloud
 Functions (nach `.functions/`) aus dem Hauptordner hierher — die Firebase-CLI liest nur Dateien im eigenen Ordner. In der
 Kopie laufen die Functions in `us-central1` (nur dort feuert der Emulator Datenbank-Trigger) und mit ausdrücklich
-genannter Datenbank. Nach einer Änderung an Regeln oder Functions die Emulatoren neu starten.
+genannter Datenbank. Die Push-Functions lassen dort ihre Ereignisse (`notify`, `notifyTargeted`) stehen, statt sie nach
+dem Senden zu löschen: warm laufen sie in wenigen Millisekunden, die Tests prüfen aber, was die App eingereiht hat (FCM
+gibt es im Emulator ohnehin nicht). Nach einer Änderung an Regeln oder Functions die Emulatoren neu starten.
 
 Fehlersuche: `E2E_STACKS=1 node identity.js` zeigt bei Seitenfehlern den ganzen Stacktrace, `E2E_ECHO=Text` gibt
 Konsolenzeilen der Seiten aus, die `Text` enthalten.
@@ -44,6 +46,7 @@ Artefakt). Bei jedem Pull Request laufen außerdem die schnellen Prüfungen (`to
 | Datei | Prüft |
 |---|---|
 | `identity.js` | „Wer bist du?“, ein Profil auf mehreren Geräten, Neu-Öffnen ohne Fragen, Zugang reparieren, Google-Login bleibt nach dem Neuladen |
+| `moderation.js` | Melden & Blockieren: 🚩 an Kommentaren/Fotos/Profilen, Meldung nur für Admins, Blockieren blendet Kommentare/Fotos/Chats aus und der Server lehnt Komplimente ab, Admin: Inhalt löschen, Rauswerfen (kein Code, kein Link), Wieder reinlassen |
 | `invites.js` | Einladungslinks: in allen geteilten Links (nicht auf Stickern), ein Tipp rein ohne Code-Abfrage, Karma (3× am Tag, Function), Push öffnet Profil + Kompliment, Mitglieder behalten ihren Zugang, „Neuer Link“ sperrt den alten, Admin-Liste und Sperren, Regeln gegen gefälschte Einladungen, Zähler und Beitritte |
 | `links.js` | Links aus WhatsApp: Corner-Check-in, Cornerdate-Zusage, neue Geräte, Punkte |
 | `spot.js` | Neuer Corner nur durch Tippen, Emojis aus OpenStreetMap, Regeln (KCanG, München, Ausland) |

@@ -6,7 +6,7 @@ function renderPhotoGallery(cornerId, container) {
   let photos;
   if (window.FB?.firebaseReady) {
     const raw = STATE.photos?.[cornerId] || {};
-    photos = Object.entries(raw).map(([key, p]) => ({ ...p, key })).sort((a, b) => b.time - a.time);
+    photos = Object.entries(raw).map(([key, p]) => ({ ...p, key })).filter((p) => !(p.authorId && isBlocked(p.authorId))).sort((a, b) => b.time - a.time);
   } else {
     photos = getPhotos(cornerId).map((p) => ({ ...p, key: p.id }));
   }
@@ -40,6 +40,7 @@ function renderPhotoGallery(cornerId, container) {
           ${starsHtml}
           <span class="gallery-avg">${avgRating} ${ratingValues.length > 0 ? `(${ratingValues.length})` : ""}</span>
           ${window.FB?.firebaseReady ? `<button class="photo-comment-btn" data-corner="${cornerId}" data-photo="${p.key}" title="${T("Kommentare", "Comments")}">💬 ${Object.keys(p.comments || {}).length || ""}</button>` : ""}
+          ${window.FB?.firebaseReady && !(p.authorId && isMyKey(p.authorId)) ? `<button class="photo-report-btn" data-report-photo="${escapeHtml(cornerId + "/" + p.key)}" title="${T("Foto melden", "Report photo")}">🚩</button>` : ""}
         </div>
       </div>`;
     }).join("");

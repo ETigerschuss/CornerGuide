@@ -125,6 +125,7 @@ function renderUserProfile(key, achievements) {
       <div><strong>${visitsLoading ? "…" : log.length}</strong><span>🍻 Check-ins</span></div>
       <div><strong>${visitsLoading ? "…" : agg.length}</strong><span>📍 Corners</span></div>
     </div>
+    ${isBlocked(key) ? `<div class="up-blocked">🚫 ${T("Du hast diese Person blockiert — ihre Komplimente, Nachrichten, Kommentare und Fotos siehst du nicht.", "You blocked this person — you don't see their compliments, messages, comments and photos.")}</div>` : ""}
     <div class="up-matrix">${matrix.emoji} <strong>${escapeHtml(matrix.name)}</strong> — ${escapeHtml(matrix.desc)}</div>
     ${together.length ? `<div class="up-together">${together.join(" · ")}</div>` : ""}`;
   $("#up-bottom").innerHTML = `
@@ -137,7 +138,11 @@ function renderUserProfile(key, achievements) {
       <button class="action-btn primary" id="up-dm">💬 ${T("Nachricht", "Message")}</button>
       ${window.FB?.firebaseReady ? `<button class="action-btn" id="up-cf">${isCloseFriend(key) ? "✓ 👯 " + T("Enge Freunde", "Close friends") : "👯 " + T("Zu engen Freunden", "Add to close friends")}</button>` : ""}
       <button class="action-btn" id="up-close-2">${T("Schließen", "Close")}</button>
-    </div>`;
+    </div>
+    ${window.FB?.firebaseReady && STATE.nickname ? `<div class="up-mod">
+      <button class="up-mod-btn" id="up-report">🚩 ${T("Melden", "Report")}</button>
+      <button class="up-mod-btn" id="up-block">${isBlocked(key) ? `🚫 ${T("Blockiert — aufheben", "Blocked — undo")}` : `🚫 ${T("Blockieren", "Block")}`}</button>
+    </div>` : ""}`;
   const body = $("#user-profile-overlay");
   body.querySelectorAll("[data-up-corner]").forEach((b) => b.addEventListener("click", () => { closeUserProfile(); openDetail(b.dataset.upCorner); }));
   body.querySelectorAll("[data-up-route]").forEach((b) => b.addEventListener("click", () => {
@@ -156,6 +161,8 @@ function renderUserProfile(key, achievements) {
     btn.disabled = false;
   });
   $("#up-close-2")?.addEventListener("click", closeUserProfile);
+  $("#up-report")?.addEventListener("click", () => openReportDialog({ kind: "profile", target: profileRoot(key), targetName: info.nickname }));
+  $("#up-block")?.addEventListener("click", async () => { if (await toggleBlock(key, info.nickname)) refreshOpenPublicProfile(); });
   body.querySelectorAll("[data-gossip-corner]").forEach((b) => b.addEventListener("click", () => { closeUserProfile(); openDetail(b.dataset.gossipCorner); }));
   drawUserProfileMap(log);
 }
@@ -270,6 +277,7 @@ function deepLinkAction(link) {
   if (profile && p.get("focus") === "compliment") return () => openProfileForCompliment(profile, true);
   if (profile) return () => openUserProfile(profile);
   if (p.get("feedback") === "1" && STATE.isAdmin) return () => openAdminSection("#admin-feedback");
+  if (p.get("reports") === "1" && STATE.isAdmin) return () => openAdminSection("#admin-reports");
   return null;
 }
 

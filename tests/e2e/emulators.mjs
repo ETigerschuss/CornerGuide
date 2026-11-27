@@ -35,7 +35,11 @@ for (const f of readdirSync(fnSrc)) {
     // would use another database namespace than the app — name it.
     const local = text
       .replace('const REGION = "europe-west1";', 'const REGION = "us-central1";')
-      .replace("admin.initializeApp();", 'admin.initializeApp({ databaseURL: "https://cornerguide-default-rtdb.europe-west1.firebasedatabase.app" });');
+      .replace("admin.initializeApp();", 'admin.initializeApp({ databaseURL: "https://cornerguide-default-rtdb.europe-west1.firebasedatabase.app" });')
+      // The push functions delete each queued event once handled — warm, in a
+      // few milliseconds, before a test can look at what the app queued.
+      // There is no FCM here anyway: keep the events.
+      .replaceAll("await event.data.ref.remove();", "/* e2e: event kept for the tests */");
     if (!local.includes('"us-central1"') || !local.includes("cornerguide-default-rtdb")) console.warn("emulators.mjs: could not adapt functions/index.js for the emulator — triggers may not work");
     text = local;
   }

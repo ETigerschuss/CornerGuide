@@ -151,6 +151,12 @@ function backfill() {
     await ana.page.evaluate((c) => openDetail(c), C2);
     check("…the corner's big picture comes from Storage", await waitFor(() => ana.page.evaluate(() => /^http/.test(document.querySelector("#detail-overlay .detail-hero-photo img")?.getAttribute("src") || ""))));
     await ana.page.evaluate(() => closeDetail());
+    // Deleted (by its author or an admin): the function removes the file in Storage too.
+    const p2 = Object.entries((await dbGet(`photos/${C2}`)) || {}).find(([, p]) => p && p.storage === true);
+    const fileUrl = (id) => `http://127.0.0.1:9199/v0/b/cornerguide.firebasestorage.app/o/${encodeURIComponent(`cornerPhotos/${C2}/${id}.jpg`)}`;
+    const fileBefore = p2 ? (await fetch(fileUrl(p2[0]))).status : 0;
+    await ana.page.evaluate(([c, id]) => window.FB.remove(window.FB.ref(window.FB.db, `photos/${c}/${id}`)), [C2, p2 ? p2[0] : "x"]);
+    check("a deleted Storage photo takes its file along", fileBefore === 200 && await waitFor(async () => (await fetch(fileUrl(p2[0]))).status === 404), String(fileBefore));
 
     // ---------- my check-ins and someone else's ----------
     await ana.page.evaluate(() => document.querySelector('.tab[data-view="profile"]').click());

@@ -1,0 +1,43 @@
+/* ====================== MELDEN & BLOCKIEREN ====================== */
+/* Report dialog — in the shared prompt card, like the compliment composer. */
+.report-reasons { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.access-prompt .report-reason {
+  width: 100%; margin: 0; padding: 9px 12px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--fg);
+  border-radius: 12px; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer;
+}
+.access-prompt .report-reason:hover { background: rgba(255,255,255,0.08); color: var(--fg); }
+.access-prompt .report-reason.active { border-color: var(--pink); background: rgba(255,77,141,0.14); color: var(--fg); }
+#report-text {
+  width: 100%; box-sizing: border-box; resize: vertical; min-height: 48px; margin-bottom: 10px;
+  background: var(--bg-3); color: var(--fg); border: 1px solid var(--line); border-radius: 10px;
+  padding: 9px 11px; font-family: "DM Sans", sans-serif; font-size: 15px;
+}
+#report-text:focus { outline: none; border-color: var(--pink); }
+.report-block-row { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 0 0 12px; cursor: pointer; }
+.report-block-row[hidden] { display: none; }
+.report-block-row input { width: 18px; height: 18px; accent-color: var(--pink); margin: 0; }
+#report-send:disabled { opacity: 0.45; cursor: default; }
+
+/* Public profile: quiet links at the very bottom. */
+.up-mod { display: flex; justify-content: center; gap: 10px; margin-top: 14px; }
+.access-prompt .up-mod-btn {
+  width: auto; margin: 0; padding: 5px 12px; background: transparent; color: var(--fg-dim);
+  border: 1px solid var(--line); border-radius: 999px; font-size: 12px; font-weight: 500;
+}
+.access-prompt .up-mod-btn:hover { background: transparent; color: var(--pink); border-color: var(--pink); }
+.up-blocked { font-size: 12px; color: var(--pink); margin: 8px 0; text-align: left; }
+
+/* 🚩 on comments and photos */
+.comment-item .comment-actions button.report-btn { opacity: 0.6; }
+.comment-item .comment-actions button.report-btn:hover { opacity: 1; border-color: var(--pink); color: var(--pink); }
+.photo-report-btn { background: none; border: 1px solid var(--line); color: var(--fg-dim); border-radius: 999px; font: inherit; font-size: 11px; padding: 2px 7px; margin-left: 4px; cursor: pointer; opacity: 0.6; }
+.photo-report-btn:hover { opacity: 1; border-color: var(--pink); }
+.comment-hidden { font-size: 11px; color: var(--fg-dim); margin: 4px 0 8px; }
+
+/* Admin: reports */
+.admin-report { border-left: 3px solid var(--pink); }
+.report-excerpt { font-size: 12px; font-style: italic; color: var(--fg); background: var(--bg-3); border-radius: 8px; padding: 6px 8px; margin: 4px 0; overflow-wrap: anywhere; }
+.admin-report-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.access-prompt .admin-row-btn.neutral { border-color: var(--line); color: var(--fg); }
+.access-prompt .admin-row-btn.neutral:hover { background: var(--bg-3); color: var(--fg); }

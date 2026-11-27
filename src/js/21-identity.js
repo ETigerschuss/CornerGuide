@@ -930,7 +930,7 @@ function attachInboxListener(key, ref, onValue, db) {
     STATE.directMessages = messages.slice(-MAX_DIRECT_MESSAGES);
     saveLocalDirectMessages();
     const newest = messages[messages.length - 1];
-    if (newest?.time && newest.time > STATE.lastDirectMessageAt && !isMyKey(newest.fromId)) {
+    if (newest?.time && newest.time > STATE.lastDirectMessageAt && !isMyKey(newest.fromId) && !isBlocked(newest.fromId)) {
       const fromName = newest.fromName || newest.fromId || "Unbekannt";
       toast(
         `💬 <strong>${escapeHtml(fromName)}</strong>: ${escapeHtml((newest.text || "").slice(0, 60))}<br><span style="font-size:11px;opacity:0.7;">Tippen zum Antworten →</span>`,

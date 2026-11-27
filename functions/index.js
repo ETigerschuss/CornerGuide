@@ -269,6 +269,15 @@ exports.visitIndex = onValueWritten(
   }
 );
 
+const STORAGE_BUCKET = "cornerguide.firebasestorage.app";
+async function deletePhotoFile(cornerId, photoId) {
+  try {
+    await admin.storage().bucket(STORAGE_BUCKET).file(`cornerPhotos/${cornerId}/${photoId}.jpg`).delete({ ignoreNotFound: true });
+  } catch (err) {
+    logger.warn(`photo file not deleted (${cornerId}/${photoId}):`, err && err.message);
+  }
+}
+
 // Photos: the cover for the cards (+ count), and inline images out of the
 // metadata into photoData, with a small thumbnail for cards and gallery.
 exports.photoIndex = onValueWritten(
@@ -280,6 +289,10 @@ exports.photoIndex = onValueWritten(
     const cur = (await metaRef.get()).val();
     if (!cur) {
       await db.ref(`photoData/${cornerId}/${photoId}`).remove();
+      // Deleted (by its author or an admin): the file in Storage goes too —
+      // apps may only upload there.
+      const before = event.data.before.val();
+      if (before && (before.storage === true || /^https?:/.test(String(before.src || "")))) await deletePhotoFile(cornerId, photoId);
     } else if (lite.isInline(cur.src)) {
       // Uploaded by an older app version: same layout as the current one.
       await db.ref(`photoData/${cornerId}/${photoId}`).set({ src: cur.src });
