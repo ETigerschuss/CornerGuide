@@ -317,6 +317,7 @@ async function renderAdminPanel() {
   $("#admin-clean-presence").onclick = adminCleanPresence;
   $("#admin-dedupe-visits").onclick = adminDedupeVisits;
   renderAdminFeedback();
+  renderAdminReports();
   renderAdminInvites();
   const profilesEl = $("#admin-profiles");
   profilesEl.innerHTML = `<p style="color:var(--fg-dim);font-size:12px;">Lade…</p>`;

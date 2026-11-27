@@ -84,6 +84,8 @@ function checkAccessGranted() {
         maybeShowNicknamePrompt();
         return;
       }
+      // Removed by the admins (38-moderation.js): say so, nothing to type.
+      if (await amIBanned()) { showAccessPrompt("banned"); return; }
       // Opened with someone's invite link: in with one tap, no code (37-invites.js).
       if (_invite.fromLink) {
         if (await redeemInviteLink()) return;
@@ -106,7 +108,9 @@ function showAccessPrompt(reason = "") {
     ? "Für dieses Gerät ist dein Zugang nicht mehr hinterlegt (z. B. nach einem Login-Wechsel) — darum ging Speichern nicht. Gib den Einladungscode aus der Gruppe einmal neu ein, dein Profil bleibt erhalten."
     : reason === "invite"
       ? "Dieser Einladungslink gilt nicht mehr. Lass dir einen neuen schicken — oder gib den Einladungscode ein."
-      : "Öffne einen Link von jemandem aus der Gruppe — oder gib den Einladungscode ein.";
+      : reason === "banned"
+        ? "Die Admins haben deinen Zugang gesperrt. Wenn das ein Irrtum ist, sprich jemanden aus der Gruppe an."
+        : "Öffne einen Link von jemandem aus der Gruppe — oder gib den Einladungscode ein.";
   $("#access-prompt").style.display = "flex";
   setTimeout(() => $("#access-code-input").focus(), 100);
 }
@@ -149,6 +153,11 @@ async function verifyAccessGrant(opts = {}) {
   // invite link. Otherwise someone who had access here before is asked once
   // (profile and data stay); brand-new people get the normal invitation
   // prompt from checkAccessGranted() instead of this explanation.
+  if (await amIBanned()) {
+    localStorage.removeItem("cg.accessGranted");
+    showAccessPrompt("banned");
+    return false;
+  }
   if (_invite.fromLink && await redeemInviteLink()) return true;
   if (localStorage.getItem("cg.accessGranted") === "1") {
     localStorage.removeItem("cg.accessGranted");

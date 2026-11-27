@@ -499,6 +499,8 @@
   <div class="prompt-card" style="max-width:480px;max-height:85vh;overflow-y:auto;text-align:left;">
     <h2>🛠 Admin-Panel</h2>
     <p style="font-size:12px;color:var(--fg-dim);">Host-Werkzeuge. Löschen ist endgültig — Vorsicht.</p>
+    <h3 style="font-size:14px;margin:16px 0 8px;">🚩 Meldungen</h3>
+    <div id="admin-reports"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">🔗 Doppelte Profile</h3>
     <div id="admin-dupes"></div>
     <h3 style="font-size:14px;margin:16px 0 8px;">👥 Profile</h3>
@@ -513,6 +515,20 @@
     <button class="notif-opt" id="admin-dedupe-visits" style="margin-bottom:8px;">Doppelte Check-ins löschen (1 pro Person, Corner &amp; Tag)</button>
     <button class="notif-opt" id="admin-clean-presence" style="margin-bottom:8px;">Geister-Presence entfernen (&gt;45 min weg bzw. &gt;3 h ohne Lebenszeichen am Corner)</button>
     <button id="admin-close" class="action-btn" style="margin-top:12px;">Schließen</button>
+  </div>
+</div>
+
+<!-- Melden (38-moderation.js) -->
+<div id="report-overlay" class="access-prompt" style="display:none;">
+  <div class="prompt-card report-card" style="max-width:400px;text-align:left;position:relative;">
+    <button class="up-close" id="report-close" aria-label="Schließen">✕</button>
+    <h2 class="cmp-title" id="report-title">🚩 Melden</h2>
+    <p class="cmp-sub" id="report-sub"></p>
+    <div class="report-reasons" id="report-reasons"></div>
+    <textarea id="report-text" maxlength="500" rows="2" placeholder="Was ist passiert? (freiwillig)"></textarea>
+    <label class="report-block-row" id="report-block-row"><input type="checkbox" id="report-block" /> <span>Auch blockieren</span></label>
+    <button id="report-send" disabled>🚩 Melden</button>
+    <p class="cmp-points">Geht nur an die Admins — die Person erfährt nicht, wer gemeldet hat.</p>
   </div>
 </div>
 

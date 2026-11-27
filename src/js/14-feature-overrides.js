@@ -433,6 +433,7 @@ function applyIncomingLinks() {
   if (sharedTeam && autoCheckin) STATE.pendingSharedTeam = sharedTeam;
   // Push about a profile request (admins / the profile's current device).
   if (params.get("feedback") === "1") STATE.pendingFeedbackFocus = true;
+  if (params.get("reports") === "1") STATE.pendingFeedbackFocus = "reports";   // push about a report
   const joinId = (params.get("join") || "").trim();
   if (joinId && /^[A-Za-z0-9_-]{1,128}$/.test(joinId)) STATE.pendingJoin = { id: joinId, here: params.get("here") === "1", name: sanitizeInviteName(params.get("n") || "").slice(0, 30) };
   const profileKey = (params.get("profile") || "").trim();

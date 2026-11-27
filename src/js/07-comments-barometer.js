@@ -84,7 +84,11 @@ function refreshAllCommentSections() {
 function renderCommentSection(cornerId, container) {
   const comments = STATE.comments[cornerId] || {};
   const myLikeKey = currentUserKey();
-  const commentEntries = Object.entries(comments).map(([key, comment]) => ({
+  // From people I blocked (38-moderation.js): hidden.
+  const fromBlocked = (c) => !!c && ((c.authorId && isBlocked(c.authorId)) || isBlockedName(c.author));
+  const allEntries = Object.entries(comments).filter(([, c]) => c);
+  const hiddenCount = allEntries.filter(([, c]) => fromBlocked(c)).length;
+  const commentEntries = allEntries.filter(([, c]) => !fromBlocked(c)).map(([key, comment]) => ({
     key,
     comment,
     likeCount: getCommentLikeCount(comment)
@@ -96,9 +100,9 @@ function renderCommentSection(cornerId, container) {
   const isCollapsed = commentEntries.length > 3;
 
   const listHtml = commentEntries.map(({ key, comment: c, likeCount }) => {
-    const isMine = c.author === STATE.nickname;
+    const isMine = c.authorId ? isMyKey(c.authorId) : c.author === STATE.nickname;
     const likedByMe = !!c?.likes?.[myLikeKey];
-    const replies = c.replies ? Object.entries(c.replies).sort((a, b) => a[1].time - b[1].time) : [];
+    const replies = c.replies ? Object.entries(c.replies).filter(([, r]) => r && !fromBlocked(r)).sort((a, b) => a[1].time - b[1].time) : [];
     const repliesHtml = replies.length > 0 ? `
       <div class="comment-replies">
         ${replies.map(([rKey, r]) => `
@@ -119,6 +123,7 @@ function renderCommentSection(cornerId, container) {
       <div class="comment-actions">
         <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="${likedByMe ? "Like entfernen" : "Kommentar liken"}" aria-pressed="${likedByMe ? "true" : "false"}">👍 ${likeCount} Likes</button>
         <button class="reply-btn" data-corner="${cornerId}" data-key="${key}">💬 Antworten</button>
+        ${!isMine && window.FB?.firebaseReady ? `<button class="report-btn" data-report-comment="${escapeHtml(cornerId + "/" + key)}" title="${T("Melden", "Report")}" aria-label="${T("Kommentar melden", "Report comment")}">🚩</button>` : ""}
         ${isMine ? `<button class="edit-btn" data-corner="${cornerId}" data-key="${key}">✏️ Edit</button>
         <button class="delete-btn" data-corner="${cornerId}" data-key="${key}">🗑 Löschen</button>` : ""}
       </div>
@@ -133,7 +138,8 @@ function renderCommentSection(cornerId, container) {
       ${commentEntries.length > 0 ? `<span class="comment-count">${commentEntries.length}</span>` : ""}
     </div>
     <div class="${isCollapsed ? "comments-collapsed" : ""}">
-      <ul class="comment-list">${listHtml || '<li style="color:var(--fg-dim);font-size:13px;padding:8px 0;">Noch keine Kommentare — sei der Erste!</li>'}</ul>
+      <ul class="comment-list">${listHtml || (hiddenCount ? "" : '<li style="color:var(--fg-dim);font-size:13px;padding:8px 0;">Noch keine Kommentare — sei der Erste!</li>')}</ul>
+      ${hiddenCount ? `<p class="comment-hidden">🚫 ${hiddenCount} ${T(hiddenCount === 1 ? "Kommentar von jemandem, den du blockiert hast, ausgeblendet" : "Kommentare von Leuten, die du blockiert hast, ausgeblendet", hiddenCount === 1 ? "comment from someone you blocked hidden" : "comments from people you blocked hidden")}</p>` : ""}
       ${isCollapsed ? `<button class="comments-toggle" data-corner="${cornerId}">▼ Alle ${commentEntries.length} anzeigen</button>` : ""}
     </div>
     <div class="comment-form">

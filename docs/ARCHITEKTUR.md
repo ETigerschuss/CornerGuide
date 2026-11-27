@@ -115,7 +115,14 @@ Leitplanke: Starten muss super einfach bleiben, wenn jemand einen Link teilt —
   Links ohne Code reinlassen: „Wer bist du?" lässt noch jeden ein bestehendes Profil antippen
 - Punkte nur noch serverseitig (Cloud Functions prüfen Check-in-Abstand, Cooldown, Tageslimits)
 - Kontakte (gegenseitig) und Sichtbarkeit des Standorts: alle / Kontakte / enge Freunde / niemand
-- Blockieren & Melden, Moderations-Ansicht für Admins
+- **Erledigt: Blockieren & Melden, Moderations-Ansicht.** `blocks/<profil>/<profil>` (nur man selbst liest und
+  schreibt; die Regeln lehnen Komplimente von Blockierten ab, Pushes filtert der Server über `blockedUsers` der
+  Logins, Chats/Kommentare/Fotos blendet die App aus). `reports/<id>` (anlegen nur im eigenen Namen, lesen nur Admins;
+  Push an die Admins, `?reports=1`). Admin: Inhalt löschen, Rauswerfen = `banned/<login>` für alle Logins +
+  `accessGranted` weg + Einladungslinks gesperrt (die Regeln für `accessGranted` prüfen `banned`, also auch kein
+  Code und kein Link mehr), Wieder reinlassen. Neue Kommentare tragen `authorId`. Grenze ohne echte Anmeldung: Wer
+  rausgeworfen wurde, kann mit gelöschtem Browser als neuer Login wiederkommen, wenn ihm jemand einen Link schickt
+  — dann sieht man im Admin-Panel, über wessen Link.
 - DSGVO: Datenschutzerklärung, Konto exportieren und löschen, Standortverlauf mit Ablaufdatum
 
 ### Phase 3 — Wachstum

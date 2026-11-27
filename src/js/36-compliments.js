@@ -36,7 +36,7 @@ function complimentText(c) {
   return p && (!c.text || c.text === p.de || c.text === p.en) ? `${p.emoji} ${T(p.de, p.en)}` : String((c && c.text) || "");
 }
 function complimentList(map) {
-  return Object.entries(map || {}).map(([id, c]) => ({ id, ...c })).filter((c) => c && c.text).sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
+  return Object.entries(map || {}).map(([id, c]) => ({ id, ...c })).filter((c) => c && c.text && !isBlocked(c.from)).sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
 }
 
 // Sent today (this device) — the database rules stop a second one per day anyway.

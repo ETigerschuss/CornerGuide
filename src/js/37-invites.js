@@ -73,7 +73,7 @@ function ensureMyInviteToken() {
       _invite.uses = Number(inv.uses || 0);
       _invite.checkedRoot = root;
       try { localStorage.setItem("cg.inviteToken", token); localStorage.setItem("cg.inviteRoot", root); } catch (e) { /* private mode */ }
-      if (STATE.view === "profile") renderProfile();
+      refreshInviteRow();
     } catch (err) {
       _invite.failedAt = Date.now();
       console.warn("invite link not ready:", err);
@@ -145,8 +145,17 @@ async function replaceMyInviteLink() {
 }
 
 // Profile → "Teilen & enge Freunde": my link and how many came in with it.
+// Updated in place when the link is ready — redrawing the whole profile then
+// could swallow a tap that lands at the same moment.
 function inviteSectionHtml() {
   deferSlim("myInvite", ensureMyInviteToken);
+  return `<div id="invite-row">${inviteRowHtml()}</div>`;
+}
+function refreshInviteRow() {
+  const el = document.getElementById("invite-row");
+  if (el) el.innerHTML = inviteRowHtml();
+}
+function inviteRowHtml() {
   if (!window.FB?.firebaseReady || !myInviteToken()) return "";
   const n = Number(_invite.uses || 0);
   return `<div class="share-row">📨 <strong>${T("Dein Einladungslink", "Your invite link")}</strong>: ${T("steckt in allem, was du teilst — wer ihn öffnet, ist mit einem Tipp dabei, ohne Code", "is inside everything you share — whoever opens it is in with one tap, no code")}. +${INVITE_KARMA} Karma ${T("pro neuer Person", "per new person")}${n ? ` · ${n} ${T(n === 1 ? "Person so dazugekommen" : "Leute so dazugekommen", n === 1 ? "person joined this way" : "people joined this way")}` : ""}
