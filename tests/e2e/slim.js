@@ -139,6 +139,18 @@ function backfill() {
     const upStorage = await waitFor(async () => Object.values((await dbGet(`photos/${C}`)) || {}).some((p) => p.storage === true && /^http/.test(p.src || "") && p.thumb));
     check("upload with Storage: just the URL (+ thumbnail)", upStorage);
     check("the cover count follows", await waitFor(async () => ((await dbGet(`photoCovers/${C}`)) || {}).n === 4));
+    // A corner whose cover is in Storage: small thumbnail on the card, the URL only big in the detail.
+    const C2 = (await ana.page.evaluate(() => getAllCorners().map((c) => c.id))).find((id) => id !== C);
+    await ana.page.evaluate(([c, src]) => savePhoto(c, src, ""), [C2, jpegDataUrl(640, 480, 60)]);
+    check("Storage photo as cover: URL plus thumbnail", await waitFor(async () => { const cv = await dbGet(`photoCovers/${C2}`); return cv && /^http/.test(cv.src || "") && /^data:image/.test(cv.thumb || ""); }));
+    await ana.page.evaluate(() => document.querySelector('.tab[data-view="list"]').click());
+    await waitFor(() => ana.page.evaluate((c) => !!(STATE.photoCovers && STATE.photoCovers[c] && STATE.photoCovers[c].src), C2));
+    await sleep(400);
+    const c2card = await ana.page.evaluate((c) => document.querySelector(`#card-${CSS.escape(c)} .card-photo img`)?.getAttribute("src") || "", C2);
+    check("…the card shows the thumbnail, not the full picture", c2card.startsWith("data:image/jpeg"), c2card.slice(0, 40));
+    await ana.page.evaluate((c) => openDetail(c), C2);
+    check("…the corner's big picture comes from Storage", await waitFor(() => ana.page.evaluate(() => /^http/.test(document.querySelector("#detail-overlay .detail-hero-photo img")?.getAttribute("src") || ""))));
+    await ana.page.evaluate(() => closeDetail());
 
     // ---------- my check-ins and someone else's ----------
     await ana.page.evaluate(() => document.querySelector('.tab[data-view="profile"]').click());

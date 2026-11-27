@@ -8,7 +8,7 @@ allem einen anderen Umgang mit den **Daten** und der **Identität**; die Aufteil
 | Teil | Heute |
 |---|---|
 | Frontend | Eine ausgelieferte `index.html` (~720 KB, gzip ein Bruchteil davon), Quellcode nach Bereichen in `src/` (14 CSS-, 34 JS-Dateien), Vanilla JS + Leaflet, PWA mit einem Service Worker (Cache + Push), Auto-Update beim Zurückkehren in die App |
-| Backend | Firebase: Realtime Database, anonyme Anmeldung, Cloud Functions (Push-Verteilung und die schlanken Kopien fürs Starten, `functions/lite.js`). Storage ist im Projekt **nicht aktiviert** (siehe unten) |
+| Backend | Firebase: Realtime Database, anonyme Anmeldung, Cloud Functions (Push-Verteilung und die schlanken Kopien fürs Starten, `functions/lite.js`). Storage für Fotos und Gossip-Sprachaufnahmen (seit 27.11.2026 aktiviert) |
 | Deploy | GitHub Actions: Pages (Build-Prüfung → Build-Nummer → Upload → Deploy), Firebase-Regeln & Functions bei Änderung |
 | Zugang | Ein gemeinsamer Einladungscode |
 | Identität | Anonymer Login pro Browser; „Wer bist du?“ verknüpft Logins mit einem Profil (`points/<login>.aliasOf`) — ohne Nachweis |
@@ -80,9 +80,9 @@ liest die App den alten Knoten — es fehlt nie etwas.
   App-Versionen, die noch „inline“ speichern, werden von der Cloud Function automatisch umsortiert.
 - Einmalige Übernahme der alten Daten: Admin-Werkzeuge → `phase1-backfill` (wiederholbar, protokolliert nur Zahlen).
 - Ranking und Level werden weiter im Handy gerechnet — jetzt aus wenigen KB statt aus dem ganzen Verlauf.
-- **Firebase Storage aktivieren** (Konsole → Storage → „Get started“) bleibt sinnvoll: Fotos kämen dann von Googles CDN
-  und würden vom Browser zwischengespeichert; auch Gossip-Sprachaufnahmen laufen darüber. Die App nutzt Storage
-  automatisch, sobald es da ist.
+- **Firebase Storage ist seit 27.11.2026 aktiv:** neue Fotos kommen als Datei von Googles CDN (der Browser speichert sie
+  zwischen), Gossip-Sprachaufnahmen laufen auch darüber. Die Karten zeigen trotzdem das kleine Vorschaubild; die URL wird
+  nur groß geladen (Detail, Vollbild). Die 32 älteren Fotos liegen weiter in `photoData` (Umzug nach Storage optional).
 
 ### Noch offen aus Phase 1 (klein, aber wächst)
 - `comments`, `checkinFeedback`, `encounters`, `captureHistory`, `gossipRounds` werden noch komplett geladen (heute je

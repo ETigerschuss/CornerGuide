@@ -321,8 +321,9 @@ Bezirk jedes Corners aus seinen Koordinaten. Neu erzeugen: *Actions → Stadtbez
 
 ## 📷 Corner-Fotos
 
-**Firebase Storage ist im Projekt noch nicht aktiviert** (geprüft mit Admin-Werkzeuge → `data-sizes`). Darum liegen die
-Fotos in der Datenbank — seit Phase 1 aber getrennt:
+**Firebase Storage ist seit 27.11.2026 aktiviert** (Bucket `cornerguide.firebasestorage.app`, Regeln aus `storage.rules`
+deployt der Firebase-Workflow). Neue Fotos landen dort als Datei, in der Datenbank steht nur die URL plus ein kleines
+Vorschaubild. Die älteren Fotos (aus der Zeit ohne Storage) liegen in der Datenbank — seit Phase 1 aber getrennt:
 
 | Knoten | Inhalt | Wann geladen |
 |---|---|---|
@@ -330,10 +331,10 @@ Fotos in der Datenbank — seit Phase 1 aber getrennt:
 | `photos/<corner>/<id>` | Autor, Zeit, Bewertungen, Kommentare, Vorschaubild | beim Öffnen des Corners |
 | `photoData/<corner>/<id>` | das volle Bild | beim Antippen |
 
-**Storage aktivieren lohnt sich trotzdem:** Firebase Console → **Storage** → „Get started" (Region `europe-west1`).
-Danach lädt die App neue Fotos automatisch dorthin (nur die URL landet in der Datenbank; Googles CDN liefert sie aus, der
-Browser speichert sie zwischen), und Gossip-Sprachaufnahmen laufen auch darüber. Die Regeln (`storage.rules`) deployt der
-Firebase-Workflow schon: jeder darf Fotos ansehen, nur eingeloggte Nutzer dürfen Bilder < 5 MB hochladen.
+Karten zeigen immer das kleine Vorschaubild; die Storage-URL bzw. `photoData` wird nur groß geladen (Detail, Vollbild).
+Regeln (`storage.rules`): jeder darf Fotos ansehen, nur eingeloggte Nutzer dürfen Bilder < 5 MB hochladen; Gossip-Aufnahmen
+nur für eingeloggte Nutzer. Wichtig: Wer Storage neu einrichtet, bekommt von der Konsole Standard-Regeln — danach den
+Firebase-Workflow einmal per Hand starten, damit wieder `storage.rules` gilt.
 
 ## 📲 PWA / App Stores
 

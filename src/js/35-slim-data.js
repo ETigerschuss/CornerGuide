@@ -428,10 +428,11 @@ function wantPhotoCovers() {
   if (window.FB?.firebaseReady) listenPhotoCovers(sp.retry);
 }
 
-// The cover for a card: a Storage URL, or the small thumbnail.
+// The cover for a card: the small thumbnail (already loaded with the covers);
+// the full picture only where it is shown big (detail, lightbox).
 function coverSrcOf(cornerId) {
   const c = STATE.photoCovers?.[cornerId];
-  return c ? (c.src || c.thumb || "") : "";
+  return c ? (c.thumb || c.src || "") : "";
 }
 
 // Metadata + thumbnails of a corner's photos, while its detail is open.
@@ -505,10 +506,18 @@ function ensureCornerDetailData(cornerId) {
   wantPhotoCovers();
   deferSlim("cornerPhotos:" + cornerId, () => ensureCornerPhotos(cornerId));
   deferSlim("cornerVisits:" + cornerId, () => ensureCornerVisits(cornerId));
-  const cover = STATE.photoCovers?.[cornerId];
-  if (cover && cover.id && !cover.src) photoFullSrc(cornerId, cover.id).then((src) => setDetailHero(cornerId, src));
   delete _heroShown[cornerId];
-  setTimeout(() => updateDetailHero(cornerId), 0);   // photos already here (reopened corner, or full node)
+  // Once the detail is drawn (with the thumbnail): the full cover picture.
+  setTimeout(() => {
+    const cover = STATE.photoCovers?.[cornerId];
+    if (cover && cover.id) showFullHero(cornerId, cover);
+    updateDetailHero(cornerId);   // photos already here (reopened corner, or full node)
+  }, 0);
+}
+// A Storage URL is the full picture already; otherwise it is in photoData.
+function showFullHero(cornerId, cover) {
+  if (cover.src) setDetailHero(cornerId, cover.src);
+  else photoFullSrc(cornerId, cover.id).then((src) => setDetailHero(cornerId, src));
 }
 
 // The big picture at the top of an open corner: from its own photos once
@@ -519,8 +528,8 @@ function updateDetailHero(cornerId) {
   const cover = coversFromPhotos({ [cornerId]: STATE.photos?.[cornerId] || {} })[cornerId];
   if (!cover || _heroShown[cornerId] === cover.id) return;
   _heroShown[cornerId] = cover.id;
-  if (cover.thumb || cover.src) setDetailHero(cornerId, cover.src || cover.thumb, true);
-  if (!cover.src) photoFullSrc(cornerId, cover.id).then((src) => setDetailHero(cornerId, src));
+  if (cover.thumb) setDetailHero(cornerId, cover.thumb, true);
+  showFullHero(cornerId, cover);
 }
 function setDetailHero(cornerId, src, onlyIfEmpty) {
   const hero = $("#detail-overlay .detail-hero-photo");
