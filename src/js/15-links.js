@@ -142,6 +142,9 @@ async function inviteFriends() {
     toast("Bitte gib zuerst einen Namen ein.");
     return;
   }
+  // My personal invite inside the link (37-invites.js) — usually ready since
+  // the start; waiting longer would cost the share sheet its tap on iPhones.
+  if (!myInviteToken()) await Promise.race([ensureMyInviteToken(), new Promise((r) => setTimeout(r, 700))]);
   // Checked in somewhere? Then the invite leads to me ("Folge mir").
   const atCorner = !!myPresenceCorner() && !!window.FB?.firebaseReady;
   const url = atCorner ? buildJoinUrl(false) : buildShareUrl("", STATE.nickname);

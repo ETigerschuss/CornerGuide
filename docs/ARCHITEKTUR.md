@@ -95,8 +95,24 @@ liest die App den alten Knoten — es fehlt nie etwas.
   bestimmt. Bei sehr vielen Fotos pro Corner die Vorschaubilder getrennt ablegen.
 
 ### Phase 2 — Vertrauen & Sicherheit (bevor Fremde dazukommen)
-- Echte Anmeldung (Google/Apple/E-Mail-Link) oder Bestätigung neuer Geräte auf einem eigenen Gerät
-- Persönliche Einladungslinks statt eines Codes (mit Limit, nachvollziehbar, sperrbar)
+Leitplanke: Starten muss super einfach bleiben, wenn jemand einen Link teilt — Anmeldung bleibt freiwillig.
+
+- **Erledigt: persönliche Einladungslinks.** Jedes Mitglied hat `invites/<token>` (`by`, `byName`, `at`, `uses`,
+  `revoked`) und `inviteOf/<profil>` = token. Alle geteilten Links tragen `&i=<token>` (nie den Link, mit dem die
+  Seite geöffnet wurde; Sticker gar keinen). Wer ohne Zugang so einen Link öffnet, schreibt
+  `accessGranted/<login>` = token — die Regeln lassen das nur für existierende, nicht gesperrte Einladungen zu (der
+  Gruppen-Code geht weiter). Sobald die Person einen *neuen* Namen wählt (nicht beim Antippen eines bestehenden
+  Profils), notiert ihre App `inviteJoins/<token>/<login>` {name, at}; nur für die Einladung, mit der dieser Login
+  reinkam, und nur einmal. Die Cloud Function `inviteJoined` zählt `uses`, gibt der einladenden Person +30 Karma
+  (`inviteRewards/<profil>/<tag>`, höchstens 3× am Tag — gegen Karma-Farmen mit Fake-Logins) und schickt ihr eine
+  Push, die das Profil der neuen Person mit einem Kompliment öffnet. Nachvollziehbar: `accessGranted` + `inviteJoins`
+  (nur Admins lesen), sperrbar: Mitglied („🔄 Neuer Link") oder Admin („Sperren"). Wer schon drin ist, bleibt drin.
+- **Erledigt nebenbei:** Ein mit Google gesicherter Login wurde beim nächsten Start durch einen neuen anonymen ersetzt
+  (`signInAnonymously` vor dem Wiederherstellen des gespeicherten Logins). Jetzt wartet die App auf
+  `auth.authStateReady()` und meldet sich nur anonym an, wenn niemand gespeichert ist. `authReady` löst erst mit einem
+  Login auf, sodass Neue ohne Code-Abfrage über den Einladungslink reinkommen.
+- Echte Anmeldung (Google/Apple/E-Mail-Link) oder Bestätigung neuer Geräte auf einem eigenen Gerät — wichtiger, seit
+  Links ohne Code reinlassen: „Wer bist du?" lässt noch jeden ein bestehendes Profil antippen
 - Punkte nur noch serverseitig (Cloud Functions prüfen Check-in-Abstand, Cooldown, Tageslimits)
 - Kontakte (gegenseitig) und Sichtbarkeit des Standorts: alle / Kontakte / enge Freunde / niemand
 - Blockieren & Melden, Moderations-Ansicht für Admins

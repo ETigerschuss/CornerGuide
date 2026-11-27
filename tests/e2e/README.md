@@ -43,7 +43,8 @@ Artefakt). Bei jedem Pull Request laufen außerdem die schnellen Prüfungen (`to
 
 | Datei | Prüft |
 |---|---|
-| `identity.js` | „Wer bist du?“, ein Profil auf mehreren Geräten, Neu-Öffnen ohne Fragen, Zugang reparieren |
+| `identity.js` | „Wer bist du?“, ein Profil auf mehreren Geräten, Neu-Öffnen ohne Fragen, Zugang reparieren, Google-Login bleibt nach dem Neuladen |
+| `invites.js` | Einladungslinks: in allen geteilten Links (nicht auf Stickern), ein Tipp rein ohne Code-Abfrage, Karma (3× am Tag, Function), Push öffnet Profil + Kompliment, Mitglieder behalten ihren Zugang, „Neuer Link“ sperrt den alten, Admin-Liste und Sperren, Regeln gegen gefälschte Einladungen, Zähler und Beitritte |
 | `links.js` | Links aus WhatsApp: Corner-Check-in, Cornerdate-Zusage, neue Geräte, Punkte |
 | `spot.js` | Neuer Corner nur durch Tippen, Emojis aus OpenStreetMap, Regeln (KCanG, München, Ausland) |
 | `facts.js` | Emojis, Filter und geteilte Fakten für bestehende Corners |

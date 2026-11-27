@@ -173,6 +173,7 @@ function buildRewardGuideHtml() {
     <h4 class="rg-h karma">🎁 ${T("Karma bekommen", "Earning karma")}</h4>
     <table class="rg-table">
       ${row("💐", "Kompliment bekommen · Danke für dein Kompliment", "Got a compliment · thanks for your compliment", `+${COMPLIMENT_KARMA} · +${COMPLIMENT_THANKS_KARMA}`)}
+      ${row("📨", `Jemand Neues ist über deinen Link dabei (bis ${INVITE_REWARDS_PER_DAY}× am Tag)`, `Someone new joined through your link (up to ${INVITE_REWARDS_PER_DAY}× a day)`, `+${INVITE_KARMA}`)}
       ${row("🛒", "Nachschub mitgebracht — pro Person, die es bestätigt", "Brought supplies — per person who confirms", `+${SUPPLY_KARMA_PER_CONFIRM}`)}
       ${row("🗣️", "Gossip-Story erzählt — pro Person am Corner, die bewertet", "Told a gossip story — per person at the corner who rates it", "+2…+20")}
       ${row("📅", "Cornerdate geplant — pro Zusage · pro Gast, der wirklich kommt", "Planned a cornerdate — per yes · per guest who really comes", `+${CORNERDATE_JOIN_KARMA} · +${CORNERDATE_ARRIVE_KARMA}`)}
@@ -382,7 +383,12 @@ async function offerProfileTwin(twin) {
     okLabel: T("Ja, das bin ich", "Yes, that's me"),
     cancelLabel: T("Nein, ich bin neu", "No, I'm new")
   });
-  if (ok !== true || !window.FB?.firebaseReady) return;
+  if (ok !== true || !window.FB?.firebaseReady) {
+    // Really new: thank whoever invited them, then open what the link was for.
+    noteInviteJoin(STATE.nickname);
+    runPendingLinkActions();
+    return;
+  }
   await linkToProfile(twin.key, { welcome: true });
 }
 
@@ -403,7 +409,7 @@ function saveNickname(nameArg) {
   ensureOwnProfileLock();
   maybeShowRewardTip(6500);
   scheduleStartCircles();
-  if (!twin) runPendingLinkActions();
+  if (!twin) { noteInviteJoin(name); runPendingLinkActions(); }
 }
 
 function bindNicknameBar() {

@@ -54,12 +54,11 @@ const qs = (url) => url.slice(url.indexOf("?"));
     const showed = await bea.page.evaluate(() => (rewardHistoryList(STATE.points[currentUserKey()]) || []).some((h) => /Wort gehalten/.test(h.reason)));
     check("came to the cornerdate: +10 Aura 'Wort gehalten'", showed);
 
-    // ---------- Cem has never opened the app: link -> code -> name -> invitation ----------
+    // ---------- Cem has never opened the app: link -> name -> invitation ----------
+    // (Ali's link carries his invite: no code — see invites.js.)
     const cem = await newUser(browser, "Cem", { query: dateLink, dsf: 2, viewport: { width: 390, height: 844 } });
-    await cem.page.waitForSelector("#access-prompt", { state: "visible", timeout: 20000 });
-    await cem.page.fill("#access-code-input", "TEST");
-    await cem.page.click("#access-code-save");
-    await cem.page.waitForSelector("#claim-new-name", { state: "visible", timeout: 15000 });
+    await cem.page.waitForSelector("#claim-new-name", { state: "visible", timeout: 20000 });
+    check("new phone: no code needed with Ali's link", !(await cem.page.isVisible("#access-prompt")));
     await cem.page.fill("#claim-new-name", "Cem");
     await cem.page.click("#claim-new-go");
     await cem.page.waitForSelector("#app-dialog", { state: "visible", timeout: 15000 }).catch(() => {});
@@ -92,7 +91,7 @@ const qs = (url) => url.slice(url.indexOf("?"));
     await sleep(800);
     check("…one tap on 'Ich bin da' checks in", await emil.page.evaluate(() => STATE.manualCheckinId) === "piazza-zenetti");
 
-    // ---------- QR sticker on a new phone: checks in after the name (was lost before) ----------
+    // ---------- QR sticker on a new phone: code (stickers carry no invite), then checked in after the name ----------
     const fin = await newUser(browser, "Fin", { query: `?corner=${ZEN.id}&checkin=1` });
     await fin.page.waitForSelector("#access-prompt", { state: "visible", timeout: 20000 });
     await fin.page.fill("#access-code-input", "TEST");

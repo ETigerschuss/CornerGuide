@@ -10,7 +10,7 @@ function buildJoinUrl(onSite) {
   url.searchParams.set("join", currentUserKey());
   if (STATE.nickname) url.searchParams.set("n", STATE.nickname.slice(0, 30));
   if (onSite) url.searchParams.set("here", "1");
-  return url.toString();
+  return withMyInvite(url).toString();
 }
 
 function followMeText() {

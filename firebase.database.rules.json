@@ -22,9 +22,42 @@
       "$uid": {
         ".read": "auth != null && (auth.uid == $uid || root.child('config').child('admins').child(auth.uid).val() === true)",
         ".write": "auth != null && (auth.uid == $uid || root.child('config').child('admins').child(auth.uid).val() === true)",
-        ".validate": "newData.isString() && newData.val().length > 0 && root.child('accessCodes').child(newData.val()).exists()"
+        ".validate": "newData.isString() && newData.val().length > 0 && (root.child('accessCodes').child(newData.val()).exists() || (newData.val().matches(/^[A-Za-z0-9_-]{16,40}$/) && root.child('invites').child(newData.val()).child('by').exists() && root.child('invites').child(newData.val()).child('revoked').val() !== true))"
       }
     },
+
+    "invites": {
+      ".read": "auth != null && root.child('config').child('admins').child(auth.uid).val() === true",
+      "$token": {
+        ".read": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && (root.child('config').child('admins').child(auth.uid).val() === true || (!data.exists() && newData.exists() && root.child('accessGranted').child(auth.uid).exists() && (newData.child('by').val() === auth.uid || newData.child('by').val() === root.child('points').child(auth.uid).child('aliasOf').val())))",
+        ".validate": "$token.matches(/^[A-Za-z0-9_-]{16,40}$/) && newData.hasChildren(['by', 'at']) && newData.child('by').isString() && newData.child('by').val().length <= 128 && newData.child('at').isNumber() && newData.child('at').val() <= now + 120000 && (!newData.child('byName').exists() || (newData.child('byName').isString() && newData.child('byName').val().length <= 40))",
+        "revoked": { ".write": "auth != null && data.parent().exists() && newData.val() === true && (data.parent().child('by').val() === auth.uid || data.parent().child('by').val() === root.child('points').child(auth.uid).child('aliasOf').val())" }
+      }
+    },
+
+    "inviteOf": {
+      "$owner": {
+        ".read": "auth != null && (auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner || root.child('config').child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && root.child('accessGranted').child(auth.uid).exists() && (auth.uid === $owner || root.child('points').child(auth.uid).child('aliasOf').val() === $owner)",
+        ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{16,40}$/) && root.child('invites').child(newData.val()).child('by').val() === $owner"
+      }
+    },
+
+    "inviteJoins": {
+      ".read": "auth != null && root.child('config').child('admins').child(auth.uid).val() === true",
+      "$token": {
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && !data.exists() && newData.exists() && root.child('accessGranted').child($uid).val() === $token",
+          ".validate": "newData.hasChildren(['name', 'at'])",
+          "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40" },
+          "at": { ".validate": "newData.isNumber() && newData.val() <= now + 120000" },
+          "$other": { ".validate": false }
+        }
+      }
+    },
+
+    "inviteRewards": { ".read": false, ".write": false },
 
     "pushTokens": {
       ".read": false,
@@ -109,7 +142,7 @@
     "presence":        { ".read": "auth != null", ".indexOn": ["lastSeen"], ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "points":          { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "karmaPoints":     { ".read": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
-    "pointsLite":      { ".read": "auth != null", ".write": false },
+    "pointsLite":      { ".read": "auth != null", ".write": false, ".indexOn": ["aliasOf"] },
     "karmaLite":       { ".read": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)", ".write": false },
     "encounters":      { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },
     "corners":         { ".read": "auth != null", ".write": "auth != null && (root.child('accessGranted').child(auth.uid).exists() || root.child('config').child('admins').child(auth.uid).val() === true)" },

@@ -241,7 +241,13 @@ function openPendingProfile(attempt = 0) {
   STATE.pendingProfileFocus = null;
   clearHandledQueryParam("focus");
   if (focus === "compliments" && (isMyKey(key) || key === myRootKey())) openMyCompliments();
-  else openUserProfile(key);
+  else openProfileForCompliment(key, focus === "compliment");
+}
+
+// "Neu dabei" push: the newcomer's profile, with the compliment ready to send.
+function openProfileForCompliment(key, compose) {
+  openUserProfile(key);
+  if (compose && !isMyKey(key) && key !== myRootKey()) setTimeout(() => openComplimentComposer(key), 600);
 }
 
 /* ---- Tappable notifications ----
@@ -261,6 +267,7 @@ function deepLinkAction(link) {
     return () => openDetail(corner);
   }
   if (profile && p.get("focus") === "compliments") return () => (isMyKey(profile) || profile === myRootKey() ? openMyCompliments() : openUserProfile(profile));
+  if (profile && p.get("focus") === "compliment") return () => openProfileForCompliment(profile, true);
   if (profile) return () => openUserProfile(profile);
   if (p.get("feedback") === "1" && STATE.isAdmin) return () => openAdminSection("#admin-feedback");
   return null;

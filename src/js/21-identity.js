@@ -140,6 +140,7 @@ async function linkToProfile(targetKey, opts = {}) {
   rememberMyKey(root);
   STATE.nickname = nickname;
   localStorage.setItem("cg.nickname", nickname);
+  forgetInviteJoin();   // already here before: nobody to thank for a new member
   ensurePointIdentity();
   if (window.FB?.set) window.FB.set(window.FB.ref(window.FB.db, `points/${me}/nickname`), nickname).catch(() => {});
   const { db, ref, set } = window.FB;
