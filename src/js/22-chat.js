@@ -114,10 +114,10 @@ function renderChatList() {
     if (f.id && f.id !== me && !convs[f.id]) convs[f.id] = { id: f.id, name: f.nickname || f.name || f.id, text: "", time: 0 };
   });
   const rows = Object.values(convs).filter((c) => !isBlocked(c.id)).sort((a, b) => b.time - a.time);
-  if (!rows.length) { list.innerHTML = `<div class="chat-empty">Noch keine Chats. Tippe in der Freunde-Leiste auf 💬, um jemandem zu schreiben.</div>`; return; }
+  if (!rows.length) { list.innerHTML = T(`<div class="chat-empty">Noch keine Chats. Tippe in der Freunde-Leiste auf 💬, um jemandem zu schreiben.</div>`, "<div class=\"chat-empty\">No chats yet. Tap 💬 in the friends bar to message someone.</div>"); return; }
   list.innerHTML = rows.map((c) => {
     const started = (c.time || 0) > 0;
-    const when = started ? new Date(c.time).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+    const when = started ? new Date(c.time).toLocaleString(appLocale(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
     const unread = unreadForPeer(c.id);
     return `
     <div class="chat-conv ${started ? "started" : ""} ${unread ? "unread" : ""}" data-peer-id="${escapeHtml(c.id)}" data-peer-name="${escapeHtml(c.name)}">
@@ -136,14 +136,14 @@ function renderChatList() {
 
 function openChatThread(peerId, peerName) {
   if (!peerId || peerId === currentUserKey()) return;
-  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  if (!STATE.nickname) { toast(T("Bitte gib zuerst einen Namen ein.", "Please enter a name first.")); return; }
   $("#chat-overlay").classList.add("open");
   _chatActivePeer = { id: peerId, name: peerName || peerId };
   $("#chat-list").style.display = "none";
   $("#chat-thread").style.display = "flex";
   $("#chat-back").style.display = "";
   $("#chat-title").textContent = peerName || peerId;
-  $("#chat-messages").innerHTML = `<div class="chat-empty">Lädt…</div>`;
+  $("#chat-messages").innerHTML = T(`<div class="chat-empty">Lädt…</div>`, "<div class=\"chat-empty\">Loading…</div>");
   markConversationRead(peerId);
   if (_chatThreadUnsub) { _chatThreadUnsub(); _chatThreadUnsub = null; }
   const renderLocalFallback = () => {
@@ -175,7 +175,7 @@ function openChatThread(peerId, peerName) {
         console.warn("chat thread listener failed:", err);
         if (!Object.keys(byPair).length) {
           renderLocalFallback();
-          toast("⚠️ Chat-Verlauf nicht ladbar — zeige lokale Nachrichten.");
+          toast(T("⚠️ Chat-Verlauf nicht ladbar — zeige lokale Nachrichten.", "⚠️ Chat history unavailable — showing local messages."));
         }
       });
       if (typeof u === "function") unsubs.push(u);
@@ -202,13 +202,13 @@ function renderChatMessages(msgs, opts = {}) {
   const blockedPeer = _chatActivePeer && isBlocked(_chatActivePeer.id) ? _chatActivePeer.id : "";
   if (blockedPeer) msgs = msgs.filter((m) => !isBlocked(m.fromId));
   const notice = blockedPeer ? `<div class="chat-empty">🚫 ${T("Blockiert — ihre Nachrichten sind ausgeblendet.", "Blocked — their messages are hidden.")} <button class="action-btn cmp-quick" data-unblock="${escapeHtml(profileRoot(blockedPeer))}">${T("Aufheben", "Unblock")}</button></div>` : "";
-  if (!msgs.length) { box.innerHTML = notice || `<div class="chat-empty">Noch keine Nachrichten. Schreib die erste! 👋</div>`; return; }
+  if (!msgs.length) { box.innerHTML = notice || T(`<div class="chat-empty">Noch keine Nachrichten. Schreib die erste! 👋</div>`, "<div class=\"chat-empty\">No messages yet. Write the first! 👋</div>"); return; }
   const me = currentUserKey();
   const peerReadAt = Number(opts.peerReadAt || 0);
   const lastMineTime = [...msgs].reverse().find((m) => m.fromId === me)?.time || 0;
   box.innerHTML = notice + msgs.map((m) => {
     const mine = m.fromId === me;
-    const t = m.time ? new Date(m.time).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "";
+    const t = m.time ? new Date(m.time).toLocaleTimeString(appLocale(), { hour: "2-digit", minute: "2-digit" }) : "";
     const readLine = mine && m.time === lastMineTime ? `<span class="cb-read">${peerReadAt >= (m.time || 0) ? T("✓✓ Gelesen", "✓✓ Read") : T("✓ Gesendet", "✓ Sent")}</span>` : "";
     return `<div class="chat-bubble ${mine ? "me" : "them"}">${escapeHtml(m.text || "")}<span class="cb-time">${escapeHtml(t)}</span>${readLine}</div>`;
   }).join("");
@@ -217,7 +217,7 @@ function renderChatMessages(msgs, opts = {}) {
 
 function formatShortDateTime(ts) {
   if (!ts) return "";
-  return new Date(ts).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleString(appLocale(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
 function recentCornerMessages(cornerId) {
@@ -326,7 +326,7 @@ function listenCornerVotes() {
 }
 
 function setCornerVote(cornerId, nextValue) {
-  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  if (!STATE.nickname) { toast(T("Bitte gib zuerst einen Namen ein.", "Please enter a name first.")); return; }
   const corner = getAllCorners().find((c) => c.id === cornerId);
   if (!corner) return;
   const voteKey = currentUserKey();
@@ -379,13 +379,13 @@ function renderCornerVotingSection(cornerId, container) {
   if (!corner) return;
   const stats = getCornerVoteStats(cornerId);
   const checkins = getVisitCount(cornerId);
-  const deleteHint = corner.isCustom ? ` · Löschung wenn Downvotes höher als Check-ins sind (${stats.down}/${checkins})` : "";
+  const deleteHint = corner.isCustom ? T(` · Löschung wenn Downvotes höher als Check-ins sind (${stats.down}/${checkins})`, ` · deleted when downvotes outnumber check-ins (${stats.down}/${checkins})`, ` · se borra si los votos en contra superan los check-ins (${stats.down}/${checkins})`) : "";
   container.dataset.cornerId = cornerId;
   container.innerHTML = `
-    <h4>Community Voting</h4>
+    <h4>${T("Community Voting", "Community voting", "Votación de la comunidad")}</h4>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <button class="action-btn ${stats.mine > 0 ? "primary" : ""}" data-vote="1">👍 Corner (${stats.up})</button>
-      <button class="action-btn ${stats.mine < 0 ? "primary" : ""}" data-vote="-1">🤨 Hä, kein Corner (${stats.down})</button>
+      <button class="action-btn ${stats.mine < 0 ? "primary" : ""}" data-vote="-1">🤨 ${T("Hä, kein Corner", "Huh, not a corner", "Eh, esto no es un corner")} (${stats.down})</button>
       <span style="font-size:11px;color:var(--fg-dim);">${deleteHint}</span>
     </div>
   `;
@@ -474,7 +474,7 @@ function addReply(cornerId, commentKey, author, text) {
 function voteBarometer(cornerId, score) {
   const today = getTodayKey();
   const voteKey = currentUserKey();
-  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  if (!STATE.nickname) { toast(T("Bitte gib zuerst einen Namen ein.", "Please enter a name first.")); return; }
   if (window.FB?.firebaseReady) {
     const { db, ref, set } = window.FB;
     set(ref(db, `barometer/${today}/${cornerId}/${voteKey}`), score);
@@ -498,7 +498,7 @@ function getBarometerData(cornerId) {
 function voteEmoji(cornerId, amenityKey) {
   const voteKey = currentUserKey();
   let adding = false;
-  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  if (!STATE.nickname) { toast(T("Bitte gib zuerst einen Namen ein.", "Please enter a name first.")); return; }
   if (window.FB?.firebaseReady) {
     const { db, ref, set, remove: fbRemove } = window.FB;
     const voteRef = ref(db, `emojiVotes/${cornerId}/${amenityKey}/${voteKey}`);
@@ -538,7 +538,7 @@ function getStatusCounts(cornerId) {
 }
 
 function toggleCornerStatus(cornerId, statusKey) {
-  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  if (!STATE.nickname) { toast(T("Bitte gib zuerst einen Namen ein.", "Please enter a name first.")); return; }
   const active = getStatusCounts(cornerId).find((s) => s.key === statusKey)?.active;
   if (window.FB?.firebaseReady) {
     const { db, ref, set, remove } = window.FB;
@@ -646,7 +646,7 @@ function manualCheckin(cornerId) {
     const elapsed = Date.now() - STATE.lastCheckinTime;
     if (elapsed < COOLDOWN_MS) {
       const remaining = COOLDOWN_MS - elapsed;
-      toast(`⏳ ${Math.floor(remaining / 60000)}:${String(Math.floor((remaining % 60000) / 1000)).padStart(2, "0")} bis zum nächsten Spot`);
+      toast(`⏳ ${Math.floor(remaining / 60000)}:${String(Math.floor((remaining % 60000) / 1000)).padStart(2, "0")} ${T("bis zum nächsten Spot", "until the next spot", "para el próximo spot")}`);
       updateCheckinButtons();
       return;
     }
@@ -735,7 +735,7 @@ function manualCheckin(cornerId) {
           clearHandledQueryParam("team");
           if (STATE.team !== wanted) {
             selectTeam(wanted);
-            toast(`${TEAMS[wanted].emoji} Im Team <strong>${escapeHtml(TEAMS[wanted].name)}</strong> eingecheckt`);
+            toast(`${TEAMS[wanted].emoji} ${T("Im Team", "Checked in with team", "Check-in con el equipo")} <strong>${escapeHtml(TEAMS[wanted].name)}</strong>${T(" eingecheckt", "", "")}`);
           }
         } else if (attempt < 10) {
           setTimeout(() => apply(attempt + 1), 400); // custom teams may still be loading
@@ -749,7 +749,7 @@ function manualCheckin(cornerId) {
     if (STATE.pendingReferrerId && STATE.pendingReferrerId !== currentUserKey()) {
       addPoints(STATE.pendingReferrerId, 15, "Dein QR-Code wurde gescannt");
       addXp(10, "Per QR-Code eingecheckt");
-      toast("🎉 QR-Bonus: +10 Aura für dich, +15 Aura für den Ersteller!");
+      toast(T("🎉 QR-Bonus: +10 Aura für dich, +15 Aura für den Ersteller!", "🎉 QR bonus: +10 aura for you, +15 aura for the creator!"));
       unlockAchievement("qr-scanned", "Code-Knacker", "🧾", 15);
       STATE.pendingReferrerId = null;
       clearHandledQueryParam("ref");
@@ -804,8 +804,8 @@ function showRewardCelebration(amount, kind = "karma", opts = {}) {
         <div class="cel-karma">+${amount} ${label}</div>
         <div class="cel-text">${leveledUp
           ? `<strong>LEVEL ${info.level}!</strong><br>${tier.emoji} ${escapeHtml(tier.name)}${opts.text ? `<br><span style="font-size:14px;">${opts.text}</span>` : ""}`
-          : (opts.text || "Danke für den Nachschub! 🍻")}</div>
-        <div class="cel-sub">${leveledUp ? "" : `noch ${info.xpToNext} ${label} bis Level ${info.level + 1}`}</div>
+          : (opts.text || T("Danke für den Nachschub! 🍻", "Thanks for the supplies! 🍻"))}</div>
+        <div class="cel-sub">${leveledUp ? "" : T(`noch ${info.xpToNext} ${label} bis Level ${info.level + 1}`, `${info.xpToNext} ${label} to level ${info.level + 1}`, `faltan ${info.xpToNext} de ${label} para el nivel ${info.level + 1}`)}</div>
       </div>
       <div class="cel-confetti">${Array.from({ length: 28 }, (_, i) =>
         `<span style="--i:${i};--d:${(i % 7) * 0.13}s;--x:${(i * 37) % 100}%;--c:${["#e8a93e","#ff2e6c","#b8ff3a","#6cb6ff","#c77dff"][i % 5]};"></span>`).join("")}</div>`;

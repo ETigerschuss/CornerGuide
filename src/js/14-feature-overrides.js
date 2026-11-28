@@ -106,11 +106,11 @@ function checkDwellAutoCheckin() {
 
 /* ---- Availability: user-picked status everyone can see ---- */
 const AVAILABILITY = {
-  available: { color: "#b8ff3a", emoji: "🟢", label: "Verfügbar" },
-  keen:      { color: "#ff8c42", emoji: "🟠", label: "Bock auf Cornern" },
-  otw:       { color: "#6cb6ff", emoji: "🔵", label: "Unterwegs" },
-  later:     { color: "#f9c74f", emoji: "🟡", label: "Vielleicht später" },
-  busy:      { color: "#ff4d4d", emoji: "🔴", label: "Keine Zeit" }
+  available: { color: "#b8ff3a", emoji: "🟢", label: T("Verfügbar", "Available") },
+  keen:      { color: "#ff8c42", emoji: "🟠", label: T("Bock auf Cornern", "Up for cornering", "Con ganas de corner") },
+  otw:       { color: "#6cb6ff", emoji: "🔵", label: T("Unterwegs", "On the way", "De camino") },
+  later:     { color: "#f9c74f", emoji: "🟡", label: T("Vielleicht später", "Maybe later") },
+  busy:      { color: "#ff4d4d", emoji: "🔴", label: T("Keine Zeit", "No time", "Sin tiempo") }
 };
 STATE.availability = localStorage.getItem("cg.availability") || "available";
 

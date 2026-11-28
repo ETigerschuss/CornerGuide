@@ -25,8 +25,8 @@ function renderFeedbackSummary(cornerId) {
     <p class="feedback-title">📋 Community-Feedback (${entries.length} Bewertungen)</p>
     <div class="feedback-tags">
       ${kioskYes > 0 ? `<span class="spot-icon"><span class="icon-emoji">🏪</span><span class="icon-label">Kiosk: ${kioskYes}x ja</span></span>` : ""}
-      ${toiletYes > 0 ? `<span class="spot-icon"><span class="icon-emoji">🚻</span><span class="icon-label">Toilette: ${toiletYes}x in der Nähe</span></span>` : ""}
-      ${greenVery > 0 ? `<span class="spot-icon"><span class="icon-emoji">🌿</span><span class="icon-label">Grün: ${greenVery}x sehr</span></span>` : ""}
+      ${toiletYes > 0 ? `<span class="spot-icon"><span class="icon-emoji">🚻</span><span class="icon-label">${T("Toilette", "Toilet")}: ${toiletYes}x ${T("in der Nähe", "nearby")}</span></span>` : ""}
+      ${greenVery > 0 ? `<span class="spot-icon"><span class="icon-emoji">🌿</span><span class="icon-label">${T("Grün", "Green")}: ${greenVery}x ${T("sehr", "very")}</span></span>` : ""}
       ${busyHigh > 0 ? `<span class="spot-icon"><span class="icon-emoji">🚶</span><span class="icon-label">Belebt: ${busyHigh}x</span></span>` : ""}
     </div>
     ${highlights.length > 0 ? `<div class="feedback-highlights"><p class="feedback-highlights-title">💬 Highlights:</p>${highlights.slice(0, 3).map(h => `<p class="feedback-quote">"${escapeHtml(h)}"</p>`).join("")}</div>` : ""}
@@ -76,7 +76,7 @@ function downloadLightboxPhoto() {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  toast("Foto wird heruntergeladen ⬇️");
+  toast(T("Foto wird heruntergeladen ⬇️", "Downloading photo ⬇️"));
 }
 
 /* ====================== FIRST CHECK-IN PROMPT ====================== */
@@ -142,7 +142,7 @@ function submitCheckinFeedback() {
   }
 
   $("#checkin-prompt").classList.remove("open");
-  toast("Danke für dein Feedback! 🙌 (+5 Punkte)");
+  toast(T("Danke für dein Feedback! 🙌 (+5 Punkte)", "Thanks for your feedback! 🙌 (+5 points)"));
   addPoints(STATE.nickname, 5, "Check-in Feedback");
   refreshAllFeedbackSections();
   pendingCheckinCorner = null;

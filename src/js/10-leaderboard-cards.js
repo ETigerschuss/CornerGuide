@@ -95,13 +95,13 @@ function startEditDescription(cornerId) {
   const hasOverride = !c.isCustom && localStorage.getItem("cg.desc." + cornerId) !== null;
 
   container.innerHTML = `
-    <textarea class="desc-editor" placeholder="Was macht den Spot aus? Kiosk-Tipps, Toiletten, Vibes, Stories...">${escapeHtml(currentDesc)}</textarea>
+    <textarea class="desc-editor" placeholder="${T("Was macht den Spot aus? Kiosk-Tipps, Toiletten, Vibes, Stories...", "What makes the spot? Kiosk tips, toilets, vibes, stories...")}">${escapeHtml(currentDesc)}</textarea>
     <div class="desc-edit-actions">
-      <button class="action-btn primary" data-edit="save">✓ Speichern</button>
-      <button class="action-btn" data-edit="cancel">Abbrechen</button>
+      <button class="action-btn primary" data-edit="save">✓ ${T("Speichern", "Save")}</button>
+      <button class="action-btn" data-edit="cancel">${T("Abbrechen", "Cancel")}</button>
       ${hasOverride ? '<button class="action-btn danger" data-edit="reset">↻ Original</button>' : ""}
     </div>
-    <p class="desc-edit-hint">⌘/Strg+Enter speichert · Esc bricht ab</p>
+    <p class="desc-edit-hint">${T("⌘/Strg+Enter speichert · Esc bricht ab", "⌘/Ctrl+Enter saves · Esc cancels")}</p>
   `;
 
   const textarea = container.querySelector(".desc-editor");
@@ -119,7 +119,7 @@ function startEditDescription(cornerId) {
     resetBtn.addEventListener("click", () => {
       localStorage.removeItem("cg.desc." + cornerId);
       renderCards();
-      toast("Auf Original zurückgesetzt ↻");
+      toast(T("Auf Original zurückgesetzt ↻", "Reset to the original ↻"));
     });
   }
   textarea.addEventListener("keydown", (e) => {
@@ -146,7 +146,7 @@ function saveDescription(cornerId, newText) {
     else localStorage.removeItem("cg.desc." + cornerId);
   }
   renderCards();
-  toast(trimmed ? "Beschreibung gespeichert ✓" : "Beschreibung gelöscht");
+  toast(trimmed ? T("Beschreibung gespeichert ✓", "Description saved ✓") : T("Beschreibung gelöscht", "Description deleted"));
 }
 
 /* ====================== MINIMAPS ====================== */
@@ -208,7 +208,7 @@ function createMinimap(el) {
 
 /* ====================== PHOTO UPLOAD ====================== */
 function handlePhotoUpload(file, cornerId) {
-  if (!file.type.startsWith("image/")) { toast("Das ist kein Bild."); return; }
+  if (!file.type.startsWith("image/")) { toast(T("Das ist kein Bild.", "That's not an image.")); return; }
   compressImageFile(file, { maxDim: 800, quality: 0.7 }).then((dataUrl) => {
     try {
       // Save as cover photo in localStorage
@@ -216,13 +216,13 @@ function handlePhotoUpload(file, cornerId) {
       // Also save to Firebase/gallery
       savePhoto(cornerId, dataUrl, "");
       renderCards();
-      toast("Foto gespeichert 📸");
+      toast(T("Foto gespeichert 📸", "Photo saved 📸"));
       addXp(10, "Foto hochgeladen");
       unlockAchievement("first-photo", "Fotograf", "📸", 15);
-    } catch (err) { toast("Speicher voll. Lösch ein altes Foto."); }
+    } catch (err) { toast(T("Speicher voll. Lösch ein altes Foto.", "Storage full. Delete an old photo.")); }
   }).catch((err) => {
     console.warn("Cover image compression failed:", err);
-    toast("Bild konnte nicht verarbeitet werden.");
+    toast(T("Bild konnte nicht verarbeitet werden.", "Couldn't process the image."));
   });
 }
 

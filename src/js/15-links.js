@@ -127,19 +127,19 @@ async function shareCornerLink(cornerId) {
   try {
     if (navigator.share) {
       await navigator.share({ title: "Minga Corner Guide", text, url });
-      toast("🔗 Corner-Link geteilt");
+      toast(T("🔗 Corner-Link geteilt", "🔗 Corner link shared"));
       return;
     }
     await copyText(url);
-    toast("🔗 Corner-Link kopiert");
+    toast(T("🔗 Corner-Link kopiert", "🔗 Corner link copied"));
   } catch (err) {
-    toast("Link konnte nicht geteilt werden.");
+    toast(T("Link konnte nicht geteilt werden.", "Couldn't share the link."));
   }
 }
 
 async function inviteFriends() {
   if (!STATE.nickname) {
-    toast("Bitte gib zuerst einen Namen ein.");
+    toast(T("Bitte gib zuerst einen Namen ein.", "Please enter a name first."));
     return;
   }
   // My personal invite inside the link (37-invites.js) — usually ready since
@@ -150,18 +150,18 @@ async function inviteFriends() {
   const url = atCorner ? buildJoinUrl(false) : buildShareUrl("", STATE.nickname);
   try {
     if (navigator.share) {
-      await navigator.share({ title: "Minga Corner Guide", text: atCorner ? followMeText() : `${STATE.nickname} lädt dich zum Cornern ein 🍻`, url });
-      toast("📨 Einladung geteilt");
+      await navigator.share({ title: "Minga Corner Guide", text: atCorner ? followMeText() : T(`${STATE.nickname} lädt dich zum Cornern ein 🍻`, `${STATE.nickname} invites you to come cornering 🍻`, `${STATE.nickname} te invita a hacer corner 🍻`), url });
+      toast(T("📨 Einladung geteilt", "📨 Invite shared"));
       addXp(5, "Freunde eingeladen");
       unlockAchievement("recruiter", "Anwerber", "📨", 15);
       return;
     }
     await copyText(url);
-    toast("📨 Einladungs-Link kopiert");
+    toast(T("📨 Einladungs-Link kopiert", "📨 Invite link copied"));
     addXp(5, "Freunde eingeladen");
     unlockAchievement("recruiter", "Anwerber", "📨", 15);
   } catch (err) {
-    toast("Einladung konnte nicht geteilt werden.");
+    toast(T("Einladung konnte nicht geteilt werden.", "Couldn't share the invite."));
   }
 }
 
@@ -231,15 +231,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function enableFirebasePush() {
   if (!window.FB?.firebaseReady) {
-    toast("Push nur mit Firebase verfügbar.");
+    toast(T("Push nur mit Firebase verfügbar.", "Push only available with Firebase."));
     return;
   }
   if (!FCM_VAPID_PUBLIC_KEY) {
-    toast("🔔 Push-Schlüssel wird noch geladen — bitte kurz warten und erneut versuchen.");
+    toast(T("🔔 Push-Schlüssel wird noch geladen — bitte kurz warten und erneut versuchen.", "🔔 Push key is still loading — please wait a moment and try again."));
     return;
   }
   if (!window.FB?.enablePushNotifications) {
-    toast("Push wird in diesem Browser nicht unterstützt.");
+    toast(T("Push wird in diesem Browser nicht unterstützt.", "Push isn't supported in this browser."));
     return;
   }
   try {
@@ -247,7 +247,7 @@ async function enableFirebasePush() {
     let fmswReg = await setupServiceWorker();
     if (!fmswReg) fmswReg = await navigator.serviceWorker.getRegistration("./");
     if (!fmswReg) {
-      toast("Service Worker nicht bereit.");
+      toast(T("Service Worker nicht bereit.", "Service worker not ready."));
       return;
     }
     const token = await window.FB.enablePushNotifications(FCM_VAPID_PUBLIC_KEY, fmswReg);
@@ -263,7 +263,7 @@ async function enableFirebasePush() {
     addXp(10, "Push aktiviert");
     unlockAchievement("always-on", "Immer erreichbar", "🔔", 15);
   } catch (err) {
-    const message = err?.message || "Push konnte nicht aktiviert werden.";
+    const message = err?.message || T("Push konnte nicht aktiviert werden.", "Couldn't enable push.");
     toast(`🔔 ${escapeHtml(message)}`);
   }
 }

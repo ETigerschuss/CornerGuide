@@ -72,7 +72,7 @@ function walkingRouteUrl(lat, lng) {
     : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=walking`;
 }
 function formatDistance(m) { return m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`; }
-function clockOf(ms) { return new Date(ms).toLocaleTimeString(STATE.lang === "en" ? "en-GB" : "de-DE", { hour: "2-digit", minute: "2-digit" }); }
+function clockOf(ms) { return new Date(ms).toLocaleTimeString(appLocale(), { hour: "2-digit", minute: "2-digit" }); }
 
 // Solar elevation in degrees (compact NOAA-style approximation, ±0.5°).
 function sunElevationDeg(ms, lat, lng) {

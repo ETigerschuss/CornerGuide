@@ -240,7 +240,7 @@ function updateSpotPinInfo(lat, lng) {
   else if (_districts) parts.push(`🏞️ ${T("Außerhalb der Münchner Stadtbezirke", "Outside Munich's districts")}`);
   let near = null, nearD = Infinity;
   getAllCorners().forEach((c) => { const m = haversine(lat, lng, c.lat, c.lng); if (m < nearD) { nearD = m; near = c; } });
-  if (near && nearD < MIN_CORNER_DISTANCE_METERS) parts.push(`<span class="spot-pin-warn">⚠️ ${T(`nur ${Math.round(nearD)} m von „${escapeHtml(near.name)}“ — mindestens ${MIN_CORNER_DISTANCE_METERS} m Abstand`, `only ${Math.round(nearD)} m from “${escapeHtml(near.name)}” — keep ${MIN_CORNER_DISTANCE_METERS} m apart`)}</span>`);
+  if (near && nearD < MIN_CORNER_DISTANCE_METERS) parts.push(`<span class="spot-pin-warn">⚠️ ${T(`nur ${Math.round(nearD)} m von „${escapeHtml(near.name)}“ — mindestens ${MIN_CORNER_DISTANCE_METERS} m Abstand`, `only ${Math.round(nearD)} m from “${escapeHtml(near.name)}” — keep ${MIN_CORNER_DISTANCE_METERS} m apart`, `solo a ${Math.round(nearD)} m de «${escapeHtml(near.name)}» — deja ${MIN_CORNER_DISTANCE_METERS} m de distancia`)}</span>`);
   if (info) info.innerHTML = parts.join(" · ") || "📍";
   // Fill the Stadtteil field with the district unless the user typed one.
   const area = $("#f-area");
@@ -248,7 +248,7 @@ function updateSpotPinInfo(lat, lng) {
 }
 
 function initMainMap() {
-  if (typeof L === "undefined") { toast("Karte konnte nicht geladen werden. Internetverbindung prüfen?"); return; }
+  if (typeof L === "undefined") { toast(T("Karte konnte nicht geladen werden. Internetverbindung prüfen?", "Couldn't load the map. Check your internet connection?")); return; }
   const map = L.map("main-map", { zoomControl: true }).setView([48.135, 11.555], 13);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap-Mitwirkende",
@@ -325,9 +325,9 @@ function bindGeo() {
 // onGeoUpdate defined below in enhanced geo section
 function onGeoError(err) {
   stopGeo();
-  if (err.code === 1) toast("Standort-Zugriff verweigert.");
-  else if (err.code === 2) toast("Standort nicht verfügbar.");
-  else toast("Standort-Fehler.");
+  if (err.code === 1) toast(T("Standort-Zugriff verweigert.", "Location access denied."));
+  else if (err.code === 2) toast(T("Standort nicht verfügbar.", "Location not available."));
+  else toast(T("Standort-Fehler.", "Location error."));
 }
 function setGeoStatus(text, cls) {
   const el = $("#geo-status");

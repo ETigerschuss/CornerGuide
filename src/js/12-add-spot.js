@@ -31,17 +31,17 @@ function openModal() {
 function closeModal() { $("#modal-backdrop").classList.remove("open"); }
 
 function fillCurrentLocation() {
-  if (!navigator.geolocation) { toast("Geolocation nicht unterstützt."); return; }
+  if (!navigator.geolocation) { toast(T("Geolocation nicht unterstützt.", "Geolocation not supported.")); return; }
   $("#use-location").textContent = "📍 Suche…";
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       $("#f-lat").value = pos.coords.latitude.toFixed(6);
       $("#f-lng").value = pos.coords.longitude.toFixed(6);
       if (_pinMap) { setSpotPin(pos.coords.latitude, pos.coords.longitude); _pinMap.setView([pos.coords.latitude, pos.coords.longitude], 17); }
-      $("#use-location").textContent = "📍 Übernommen";
-      setTimeout(() => $("#use-location").textContent = "📍 Aktuellen Standort verwenden", 2000);
+      $("#use-location").textContent = T("📍 Übernommen", "📍 Applied");
+      setTimeout(() => $("#use-location").textContent = T("📍 Aktuellen Standort verwenden", "📍 Use current location"), 2000);
     },
-    () => { $("#use-location").textContent = "📍 Aktuellen Standort verwenden"; toast("Standort nicht verfügbar."); },
+    () => { $("#use-location").textContent = T("📍 Aktuellen Standort verwenden", "📍 Use current location"); toast(T("Standort nicht verfügbar.", "Location not available.")); },
     { enableHighAccuracy: true, timeout: 15000 }
   );
 }
@@ -60,6 +60,6 @@ function deleteCustomSpot(id) {
   renderCards();
   updateCounts();
   rebuildMainMarkers();
-  toast("Spot gelöscht.");
+  toast(T("Spot gelöscht.", "Spot deleted."));
 }
 

@@ -17,8 +17,8 @@ function sinceLabel(ms) {
   const days = Math.floor((Date.now() - ms) / 86400000);
   if (days < 1) return T("heute aktiv", "active today");
   if (days < 2) return T("gestern aktiv", "active yesterday");
-  if (days < 60) return T(`vor ${days} Tagen aktiv`, `active ${days} days ago`);
-  return T(`vor ${Math.round(days / 30)} Monaten aktiv`, `active ${Math.round(days / 30)} months ago`);
+  if (days < 60) return T(`vor ${days} Tagen aktiv`, `active ${days} days ago`, `activo hace ${days} días`);
+  return T(`vor ${Math.round(days / 30)} Monaten aktiv`, `active ${Math.round(days / 30)} months ago`, `activo hace ${Math.round(days / 30)} meses`);
 }
 
 async function adminUids() {
@@ -113,9 +113,9 @@ async function openClaimOverlay(opts = {}) {
           // This device is already someone: say plainly what happens.
           const here = getCurrentAura();
           const ok = await showDialog({
-            title: T(`Du bist „${row.nickname}“?`, `You are “${row.nickname}”?`),
+            title: T(`Du bist „${row.nickname}“?`, `You are “${row.nickname}”?`, `¿Eres «${row.nickname}»?`),
             text: here > 50
-              ? T(`„${STATE.nickname || "Anonym"}“ (${here} Aura) und „${row.nickname}“ werden zu einem Profil — nur wenn beides du bist.`, `“${STATE.nickname || "Anonym"}” (${here} aura) and “${row.nickname}” become one profile — only if both are you.`)
+              ? T(`„${STATE.nickname || "Anonym"}“ (${here} Aura) und „${row.nickname}“ werden zu einem Profil — nur wenn beides du bist.`, `“${STATE.nickname || "Anonym"}” (${here} aura) and “${row.nickname}” become one profile — only if both are you.`, `«${STATE.nickname || "Anonym"}» (${here} de aura) y «${row.nickname}» se convierten en un solo perfil — solo si ambos son tú.`)
               : T("Dieses Gerät gehört dann zu deinem Profil. Deine anderen Geräte bleiben angemeldet.", "This device then belongs to your profile. Your other devices stay signed in."),
             okLabel: T("Ja, das bin ich", "Yes, that's me")
           });
@@ -168,7 +168,7 @@ function watchOwnProfileLock() {
     if (window.FB?.firebaseReady) window.FB.remove(window.FB.ref(window.FB.db, "presence/" + uid)).catch(() => {});
     updateNicknameBar();
     if (STATE.view === "profile") renderProfile();
-    toast(T(`📲 „${escapeHtml(name)}“ ist jetzt auf einem anderen Gerät. Wer bist du hier?`, `📲 “${escapeHtml(name)}” is on another device now. Who are you here?`));
+    toast(T(`📲 „${escapeHtml(name)}“ ist jetzt auf einem anderen Gerät. Wer bist du hier?`, `📲 “${escapeHtml(name)}” is on another device now. Who are you here?`, `📲 «${escapeHtml(name)}» está ahora en otro dispositivo. ¿Quién eres aquí?`));
     setTimeout(() => openClaimOverlay({ welcome: true }), 800);
   }, () => { _ownLockUnsub = null; });
 }

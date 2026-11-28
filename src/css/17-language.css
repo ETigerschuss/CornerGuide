@@ -1,0 +1,35 @@
+/* ====================== TITLE PAGE: LOGO & LANGUAGE ====================== */
+.stamp-btn {
+  background: none; border: 0; padding: 0; margin: 0; color: inherit; font: inherit;
+  cursor: pointer; pointer-events: auto; -webkit-tap-highlight-color: transparent;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.stamp-btn:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 12px; }
+.stamp-btn:active { transform: scale(0.94); }
+.hero-lang-code {
+  font-family: "JetBrains Mono", monospace; font-size: 9px; letter-spacing: 1px;
+  color: var(--fg-dim); line-height: 1; text-transform: none;
+}
+body.map-first .hero-lang-code { font-size: 8px; }
+.hero-lang-menu {
+  position: fixed; z-index: 3000; min-width: 168px;
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: 14px;
+  padding: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.hero-lang-menu[hidden] { display: none; }
+.hero-lang-menu .lang-head {
+  font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--fg-dim); padding: 4px 10px 6px;
+}
+.hero-lang-menu button {
+  background: none; border: 0; color: var(--fg); font: 500 15px "DM Sans", sans-serif;
+  text-align: left; padding: 10px 10px; border-radius: 9px; cursor: pointer;
+  display: flex; gap: 8px; align-items: center;
+}
+.hero-lang-menu button:hover, .hero-lang-menu button:focus-visible { background: rgba(255, 255, 255, 0.06); outline: none; }
+.hero-lang-menu button.active { background: rgba(232, 169, 62, 0.14); }
+.hero-lang-menu .lang-check { margin-left: auto; color: var(--amber); }
+/* On the map the title sits on top of the stamps' row — keep the logo and the
+   flag tappable (the empty middle still lets taps through). */
+body.map-first .stamps { z-index: 2; }

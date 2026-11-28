@@ -126,7 +126,7 @@ function drawProfileMap(upto, focus = null) {
       .map((sl) => `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${sl.color};margin-right:4px;"></span>${escapeHtml(sl.label)}: ${sl.n}x`)
       .join("<br>");
     const m = L.marker([e.lat, e.lng], { icon, riseOnHover: true, zIndexOffset: isFocus ? 1000 : 500 })
-      .bindPopup(`<strong>${escapeHtml(e.name)}</strong><br>${e.count}x ${T("eingecheckt", "checked in")}<br><small>${breakdown}</small><br><small>${T("zuletzt", "last")}: ${e.last ? new Date(e.last).toLocaleDateString("de-DE") : "—"}</small>`);
+      .bindPopup(`<strong>${escapeHtml(e.name)}</strong><br>${e.count}x ${T("eingecheckt", "checked in")}<br><small>${breakdown}</small><br><small>${T("zuletzt", "last")}: ${e.last ? new Date(e.last).toLocaleDateString(appLocale()) : "—"}</small>`);
     m.addTo(map); _pmapLayers.push(m);
   });
 
@@ -136,7 +136,7 @@ function drawProfileMap(upto, focus = null) {
     const shown = log.length, total = full.length;
     const last = log[log.length - 1];
     dateEl.textContent = total === 0 ? T("noch keine Check-ins", "no check-ins yet")
-      : `${shown}/${total} Check-ins${last ? " · " + new Date(last.time).toLocaleDateString("de-DE") : ""}`;
+      : `${shown}/${total} Check-ins${last ? " · " + new Date(last.time).toLocaleDateString(appLocale()) : ""}`;
   }
   const scrub = document.getElementById("pmap-scrub");
   if (scrub) { scrub.max = String(Math.max(1, full.length)); if (typeof upto !== "number") scrub.value = String(full.length); }
@@ -207,7 +207,7 @@ async function playProfileMapHistory() {
   const all = log.map((v) => [v.lat, v.lng]);
   _pmapIndex = 0;
   drawProfileMap(0);
-  setPmapCaption(`🗺️ ${T(`${log.length} Check-ins — los geht's!`, `${log.length} check-ins — here we go!`)}`);
+  setPmapCaption(`🗺️ ${T(`${log.length} Check-ins — los geht's!`, `${log.length} check-ins — here we go!`, `${log.length} check-ins — ¡allá vamos!`)}`);
   await pmapFlyToBounds(all, 1.0);
   await pmapSleep(700);
   let prev = null;
@@ -238,7 +238,7 @@ async function playProfileMapHistory() {
     const scrub = document.getElementById("pmap-scrub");
     if (scrub) scrub.value = String(i + 1);
     const team = getTeamInfo(v.team);
-    const date = new Date(v.time).toLocaleDateString(STATE.lang === "en" ? "en-GB" : "de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
+    const date = new Date(v.time).toLocaleDateString(appLocale(), { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
     setPmapCaption(`<span class="pmap-dot" style="background:${teamColor(v.team)};"></span><strong>${escapeHtml(v.name)}</strong> · ${date}${team ? ` · ${team.emoji} ${escapeHtml(team.name)}` : ""}${here ? "" : " · ✈️"}`);
     await pmapSleep(500 + 900 * pace);
     prev = v;

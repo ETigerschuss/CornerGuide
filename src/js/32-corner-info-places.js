@@ -337,7 +337,7 @@ function cornerOriginHtml(c) {
   if (!c.isCustom) return `🗺️ ${T("Aus der Original-Liste „Cornern als Lebensstil“", "From the original list “Cornern als Lebensstil”")}`;
   const who = c.createdBy ? (c.createdById ? `<button class="people-chip" data-user-profile="${escapeHtml(c.createdById)}">${escapeHtml(c.createdBy)}</button>` : `<strong>${escapeHtml(c.createdBy)}</strong>`) : T("jemandem aus der Crew", "someone from the crew");
   const ts = Number(c.createdAt) || Number(String(c.id || "").split("-")[1]) || 0;
-  const when = ts > 1500000000000 ? ` ${T("am", "on")} ${new Date(ts).toLocaleDateString(STATE.lang === "en" ? "en-GB" : "de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}` : "";
+  const when = ts > 1500000000000 ? ` ${T("am", "on")} ${new Date(ts).toLocaleDateString(appLocale(), { day: "2-digit", month: "2-digit", year: "numeric" })}` : "";
   return `✍️ ${T("Eingetragen von", "Added by")} ${who}${when}`;
 }
 
@@ -527,16 +527,16 @@ function rebuildMainMarkers() {
 }
 
 function startGeo() {
-  if (!navigator.geolocation) { toast("Geolocation wird nicht unterstützt."); return; }
+  if (!navigator.geolocation) { toast(T("Geolocation wird nicht unterstützt.", "Geolocation isn't supported.")); return; }
   if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
-  setGeoStatus("Suche…", "");
+  setGeoStatus(T("Suche…", "Searching…"), "");
   if (STATE.userPos && STATE.mainMap) focusMainMapOnUser(STATE.userPos.lat, STATE.userPos.lng, true);
   STATE.geoWatch = navigator.geolocation.watchPosition(onGeoUpdate, onGeoError, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
   STATE.geoActive = true;
   $("#locate-btn").classList.add("active");
-  $("#locate-btn").textContent = "📍 Standort aus";
+  $("#locate-btn").textContent = T("📍 Standort aus", "📍 Turn location off");
   $("#list-locate-btn").classList.add("active");
-  $("#list-locate-btn").textContent = "📍 Standort aus";
+  $("#list-locate-btn").textContent = T("📍 Standort aus", "📍 Turn location off");
 }
 
 function stopGeo() {
@@ -544,11 +544,11 @@ function stopGeo() {
   STATE.geoWatch = null;
   STATE.geoActive = false;
   $("#locate-btn").classList.remove("active");
-  $("#locate-btn").textContent = "📍 Standort an";
+  $("#locate-btn").textContent = T("📍 Standort an", "📍 Turn location on");
   $("#list-locate-btn").classList.remove("active");
-  $("#list-locate-btn").textContent = "📍 Standort an";
-  setGeoStatus("Standort aus", "");
-  $("#me-position-meta").textContent = "Standort aus";
+  $("#list-locate-btn").textContent = T("📍 Standort an", "📍 Turn location on");
+  setGeoStatus(T("Standort aus", "Location off"), "");
+  $("#me-position-meta").textContent = T("Standort aus", "Location off");
   if (STATE.userMainMarker && STATE.mainMap) { STATE.mainMap.removeLayer(STATE.userMainMarker); STATE.userMainMarker = null; }
   if (STATE.atCornerId) { const old = STATE.atCornerId; STATE.atCornerId = null; refreshMainMarker(old); document.getElementById("card-" + old)?.classList.remove("at-here"); }
   STATE.hasCenteredOnUser = false;
@@ -600,7 +600,7 @@ async function saveNewSpot() {
   if (!name) { toast("Name fehlt."); $("#f-name").focus(); return; }
   if (isNaN(lat) || isNaN(lng)) { toast(T("Tipp auf die Karte, wo der Spot ist.", "Tap the map where the spot is.")); return; }
   const tooClose = getAllCorners().find((corner) => !isPrivateCorner(corner) && haversine(lat, lng, corner.lat, corner.lng) < MIN_CORNER_DISTANCE_METERS);
-  if (tooClose) { toast(`Zu nah an <strong>${escapeHtml(tooClose.name)}</strong> — bitte mindestens ${MIN_CORNER_DISTANCE_METERS}m Abstand.`); return; }
+  if (tooClose) { toast(T(`Zu nah an <strong>${escapeHtml(tooClose.name)}</strong> — bitte mindestens ${MIN_CORNER_DISTANCE_METERS}m Abstand.`, `Too close to <strong>${escapeHtml(tooClose.name)}</strong> — please keep at least ${MIN_CORNER_DISTANCE_METERS} m apart.`, `Demasiado cerca de <strong>${escapeHtml(tooClose.name)}</strong> — deja al menos ${MIN_CORNER_DISTANCE_METERS} m de distancia.`)); return; }
   const vis = window.FB?.firebaseReady && VISIBILITY[SPOT_DRAFT.visibility] ? SPOT_DRAFT.visibility : "all";
   const spot = { id: (vis === "all" ? "custom-" : "private-") + Date.now() + "-" + Math.random().toString(36).slice(2, 7), name, area: $("#f-area").value.trim() || "Eigener Spot", lat, lng, description: desc, tags: $("#f-tags").value.split(",").map((s) => s.trim()).filter(Boolean), amenities: SPOT_AMENITIES.filter((a) => SPOT_DRAFT.amen[a.key]).map((a) => a.key), isCustom: true, createdBy: STATE.nickname || "Anonym", createdById: currentUserKey(), createdAt: Date.now() };
   const facts = spotCheckSummary();
@@ -617,25 +617,25 @@ async function saveNewSpot() {
         // Usually a missing access grant for this login — repair or ask for the code.
         const ok = await verifyAccessGrant({ interactive: true });
         toast(ok
-          ? "🔑 Zugang wurde erneuert — tipp bitte nochmal auf „Speichern“."
-          : "🔑 Für dieses Gerät fehlt der Zugang — Einladungscode eingeben, dann nochmal speichern. Deine Eingaben bleiben stehen.");
+          ? T("🔑 Zugang wurde erneuert — tipp bitte nochmal auf „Speichern“.", "🔑 Access renewed — please tap “Save” again.")
+          : T("🔑 Für dieses Gerät fehlt der Zugang — Einladungscode eingeben, dann nochmal speichern. Deine Eingaben bleiben stehen.", "🔑 This device is missing access — enter the invite code, then save again. Your input stays."));
         return;
       }
       const reason = err?.message ? ` (${escapeHtml(err.message)})` : "";
-      toast(`❌ Spot konnte nicht in Firebase gespeichert werden${reason}`);
+      toast(`❌ ${T("Spot konnte nicht in Firebase gespeichert werden", "Couldn't save the spot in Firebase", "No se pudo guardar el spot en Firebase")}${reason}`);
       return;
     }
   } else {
     STATE.customSpots.push(spot);
     saveCustomSpots();
-    toast(`💾 Spot <strong>${escapeHtml(name)}</strong> lokal gespeichert (nur auf diesem Gerät)`);
+    toast(`💾 Spot <strong>${escapeHtml(name)}</strong> ${T("lokal gespeichert (nur auf diesem Gerät)", "saved locally (only on this device)", "guardado en local (solo en este dispositivo)")}`);
   }
   const spotAura = vis === "all" ? 50 : PRIVATE_SPOT_AURA;
   closeModal(); renderCards(); updateCounts(); rebuildMainMarkers(); unlockAchievement("first-corner", "Entdecker", "🗺️", 30); addXp(spotAura, `Corner hinzugefügt: ${name}`); if (STATE.customSpots.filter((s) => (s.createdById || s.createdBy) === currentUserKey()).length >= 3) unlockAchievement("three-corners", "Kartograph", "🧭", 50);
   // Last, so the achievement toast does not replace it.
   if (window.FB?.firebaseReady) toast(vis === "all"
-    ? `✅ <strong>${escapeHtml(name)}</strong> ist eingetragen — alle sehen den Spot sofort auf Karte und Liste. +50 Aura 🍻`
-    : `${VISIBILITY[vis].emoji} <strong>${escapeHtml(name)}</strong> ist eingetragen — ${vis === "friends" ? T("nur du und deine engen Freunde sehen ihn", "only you and your close friends see it") : T("nur du siehst ihn", "only you see it")}. +${PRIVATE_SPOT_AURA} Aura`, "at-corner", () => openDetail(spot.id));
+    ? `✅ <strong>${escapeHtml(name)}</strong> ${T("ist eingetragen — alle sehen den Spot sofort auf Karte und Liste.", "is added — everyone sees the spot right away on the map and list.", "está añadido — todos ven el spot al instante en el mapa y la lista.")} +50 Aura 🍻`
+    : `${VISIBILITY[vis].emoji} <strong>${escapeHtml(name)}</strong> ${T("ist eingetragen", "is added", "está añadido")} — ${vis === "friends" ? T("nur du und deine engen Freunde sehen ihn", "only you and your close friends see it") : T("nur du siehst ihn", "only you see it")}. +${PRIVATE_SPOT_AURA} Aura`, "at-corner", () => openDetail(spot.id));
 }
 
 function openLightbox(src, author) { $("#lightbox-img").src = src; $("#lightbox-author").textContent = author ? `📸 von ${author}` : ""; $("#lightbox").classList.add("open"); addXp(2, "Lightbox"); }
@@ -735,7 +735,7 @@ function getAchievementCardsHtml() {
     { id: "first-cornerdate", name: "Date-Planer", emoji: "📅", desc: "Erstes Cornerdate geplant" },
     { id: "level-100", name: "Vollendet", emoji: "🏆", desc: `Level ${MILESTONE_LEVEL} erreicht` }
   ];
-  return items.map((a) => `<div class="achievement-card ${STATE.achievements.includes(a.id) ? 'unlocked' : 'locked'}"><div class="achievement-emoji">${a.emoji}</div><div class="achievement-name">${a.name}</div><div class="achievement-pts">${a.desc}</div></div>`).join("");
+  return items.map((a) => `<div class="achievement-card ${STATE.achievements.includes(a.id) ? 'unlocked' : 'locked'}"><div class="achievement-emoji">${a.emoji}</div><div class="achievement-name">${TX(a.name)}</div><div class="achievement-pts">${TX(a.desc)}</div></div>`).join("");
 }
 
 function renderAchievementsSection() {

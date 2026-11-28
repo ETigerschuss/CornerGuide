@@ -106,8 +106,8 @@ function renderUserProfile(key, achievements) {
   const met = encounterCountWith(key);
   const gossips = typeof sharedGossipsWith === "function" ? sharedGossipsWith(key) : [];
   const together = [
-    met ? `🤝 ${T(`${met}x zusammen gecornert`, `cornered together ${met}x`)}` : "",
-    gossips.length ? `🗣️ ${T(`${gossips.length} Gossip-Runde${gossips.length === 1 ? "" : "n"} zusammen`, `${gossips.length} gossip round${gossips.length === 1 ? "" : "s"} together`)}` : ""
+    met ? `🤝 ${T(`${met}x zusammen gecornert`, `cornered together ${met}x`, `${met} veces de corner juntos`)}` : "",
+    gossips.length ? `🗣️ ${T(`${gossips.length} Gossip-Runde${gossips.length === 1 ? "" : "n"} zusammen`, `${gossips.length} gossip round${gossips.length === 1 ? "" : "s"} together`, `${gossips.length} ronda${gossips.length === 1 ? "" : "s"} de gossip juntos`)}` : ""
   ].filter(Boolean);
   const ach = Object.entries(achievements || {}).sort((a, b) => Number(b[1]?.time || 0) - Number(a[1]?.time || 0));
   $("#up-top").innerHTML = `
@@ -366,8 +366,7 @@ function renderProfile() {
     <div class="notification-toggle" style="margin-top:12px;">
       <h3>🌐 ${T("Sprache", "Language")}</h3>
       <div class="notif-options">
-        <button class="notif-opt ${STATE.lang === "de" ? "active" : ""}" id="lang-de-btn">🇩🇪 Deutsch</button>
-        <button class="notif-opt ${STATE.lang === "en" ? "active" : ""}" id="lang-en-btn">🇬🇧 English</button>
+        ${Object.entries(APP_LANGS).map(([code, l]) => `<button class="notif-opt ${STATE.lang === code ? "active" : ""}" id="lang-${code}-btn" data-set-lang="${code}">${l.flag} ${l.name}</button>`).join("")}
       </div>
     </div>
     <div class="best-friends-section"><h3>💬 ${T("Direktnachrichten", "Direct messages")}</h3>${recentMessages.length ? recentMessages.map((msg) => `<div class="friend-encounter"><span class="fe-name">${escapeHtml(msg.fromName || msg.fromId || T("Unbekannt", "Unknown"))}: ${escapeHtml(msg.text || "")}</span><button class="action-btn" style="padding:4px 8px;font-size:10px;" data-reply-id="${msg.fromId}">${T("Antworten", "Reply")}</button></div>`).join("") : `<p style="color:var(--fg-dim);font-size:13px;">${T("Noch keine Direktnachrichten.", "No direct messages yet.")}</p>`}</div>
@@ -379,8 +378,6 @@ function renderProfile() {
     saveNotifSettings();
     renderProfile();
   }));
-  document.getElementById("lang-de-btn")?.addEventListener("click", () => setLang("de"));
-  document.getElementById("lang-en-btn")?.addEventListener("click", () => setLang("en"));
   $$("#profile-content .team-chip[data-team]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const team = btn.dataset.team;
@@ -507,15 +504,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastClickXp = 0;
   document.addEventListener("click", (e) => { if (e.isTrusted && Date.now() - lastClickXp > 10000) { lastClickXp = Date.now(); addXp(1, "Tap"); } }, { passive: true });
   if (STATE.lastCheckinCorner && Date.now() - STATE.lastCheckinTime < COOLDOWN_MS) startCooldownDisplay();
-  // Apply saved language to static elements on startup
-  if (STATE.lang === "en") {
-    document.querySelectorAll(".tab[data-view]").forEach((t) => {
-      const labels = { list: "List", map: "Map", leaderboard: "🏆 Ranking", profile: "👤 Profile" };
-      if (labels[t.dataset.view]) t.textContent = labels[t.dataset.view];
-    });
-    const fbTitle = document.getElementById("friends-bar-title");
-    if (fbTitle) fbTitle.textContent = "🍻 Friends out there";
-  }
+  // The page itself is written in German: its texts in the app language
+  // (39-static-i18n.js), and back to the view a language switch came from.
+  applyStaticTexts();
+  reopenViewAfterLangSwitch();
 });
 
 // Tips and reminders wait until no other message is on screen — they used to

@@ -44,7 +44,7 @@ function cornerDateGoing(d) { return Object.entries(d.going || {}).map(([id, g])
 function formatDateRange(start, end) {
   const s = new Date(Number(start));
   const e = new Date(Number(end));
-  const locale = STATE.lang === "en" ? "en-GB" : "de-DE";
+  const locale = appLocale();
   const same = (a, b) => a.toDateString() === b.toDateString();
   const day = same(s, new Date()) ? T("Heute", "Today")
     : same(s, new Date(Date.now() + 86400000)) ? T("Morgen", "Tomorrow")
@@ -310,7 +310,7 @@ async function saveCornerDate() {
   const done = $("#cd-done");
   done.innerHTML = `<div class="cd-done-title">✅ ${T("Geplant!", "Planned!")}</div>
     <p class="gossip-sub">${escapeHtml(formatDateRange(start, end))} ${T("am", "at")} <strong>${escapeHtml(corner.name)}</strong>${notifyAll ? ` · ${T("alle wurden benachrichtigt", "everyone was notified")}` : ""}</p>
-    <p class="cd-reward">${secret ? `🤫 ${T("Geheim: nur deine engen Freunde sehen es", "Secret: only your close friends see it")} · ` : ""}${planAura ? `✨ <strong>+${planPts} Aura</strong> ${T("fürs Planen", "for planning")} · ` : ""}🎁 ${T(`+${CORNERDATE_JOIN_KARMA} Karma pro Zusage, +${CORNERDATE_ARRIVE_KARMA} pro Gast, der wirklich kommt`, `+${CORNERDATE_JOIN_KARMA} karma per yes, +${CORNERDATE_ARRIVE_KARMA} per guest who really shows up`)}</p>
+    <p class="cd-reward">${secret ? `🤫 ${T("Geheim: nur deine engen Freunde sehen es", "Secret: only your close friends see it")} · ` : ""}${planAura ? `✨ <strong>+${planPts} Aura</strong> ${T("fürs Planen", "for planning")} · ` : ""}🎁 ${T(`+${CORNERDATE_JOIN_KARMA} Karma pro Zusage, +${CORNERDATE_ARRIVE_KARMA} pro Gast, der wirklich kommt`, `+${CORNERDATE_JOIN_KARMA} karma per yes, +${CORNERDATE_ARRIVE_KARMA} per guest who really shows up`, `+${CORNERDATE_JOIN_KARMA} de karma por cada sí, +${CORNERDATE_ARRIVE_KARMA} por cada invitado que de verdad aparece`)}</p>
     <div class="cd-actions">
       <button class="action-btn primary" data-cd-ics>📅 ${T("In meinen Kalender (iPhone, Android, Outlook)", "Add to my calendar (iPhone, Android, Outlook)")}</button>
       <a class="action-btn" href="${escapeHtml(googleCalendarUrl(saved))}" target="_blank" rel="noopener">🗓️ Google ${T("Kalender", "Calendar")}</a>
@@ -346,7 +346,7 @@ function rewardCornerDateArrival(cornerId) {
     gossipLocalMark("cg.cdArrived", id);
     addKarmaPoints(d.byId, d.secret ? PRIVATE_POINTS(CORNERDATE_ARRIVE_KARMA) : CORNERDATE_ARRIVE_KARMA, `${STATE.nickname} ist zu deinem Cornerdate gekommen`, d.byName);
     sendTargetedPush([d.byId], { type: "cornerdate-here", title: "📅 Dein Cornerdate läuft!", body: `${STATE.nickname} ist da (+${CORNERDATE_ARRIVE_KARMA} Karma)`, query: `?corner=${encodeURIComponent(cornerId)}&date=1` });
-    toast(`📅 ${T("Pünktlich zum Cornerdate von", "Right on time for")} <strong>${escapeHtml(d.byName || "?")}</strong> — ${T(`+${CORNERDATE_ARRIVE_KARMA} Karma für die Planung`, `+${CORNERDATE_ARRIVE_KARMA} karma for planning it`)} 🎁`);
+    toast(`📅 ${T("Pünktlich zum Cornerdate von", "Right on time for")} <strong>${escapeHtml(d.byName || "?")}</strong> — ${T(`+${CORNERDATE_ARRIVE_KARMA} Karma für die Planung`, `+${CORNERDATE_ARRIVE_KARMA} karma for planning it`, `+${CORNERDATE_ARRIVE_KARMA} de karma por planearlo`)} 🎁`);
   });
 }
 
@@ -387,7 +387,7 @@ async function toggleCornerDateGoing(dateId) {
       }
       const joinAura = d.secret ? PRIVATE_POINTS(CORNERDATE_JOIN_AURA) : CORNERDATE_JOIN_AURA;
       const showAura = d.secret ? PRIVATE_POINTS(CORNERDATE_SHOWUP_AURA) : CORNERDATE_SHOWUP_AURA;
-      toast(`✋ ${T("Du bist dabei!", "You're in!")}${_cdJoinPaid ? ` <strong>+${joinAura} Aura</strong>` : ""}<br><span style="font-size:11px;opacity:0.8;">${T(`Kommst du wirklich, gibt's nochmal +${showAura}. „📅 Kalender“ trägt's dir ein.`, `Show up and get another +${showAura}. “📅 Calendar” adds it for you.`)}</span>`);
+      toast(`✋ ${T("Du bist dabei!", "You're in!")}${_cdJoinPaid ? ` <strong>+${joinAura} Aura</strong>` : ""}<br><span style="font-size:11px;opacity:0.8;">${T(`Kommst du wirklich, gibt's nochmal +${showAura}. „📅 Kalender“ trägt's dir ein.`, `Show up and get another +${showAura}. “📅 Calendar” adds it for you.`, `Aparece y gana otros +${showAura}. «📅 Calendario» te lo apunta.`)}</span>`);
     }
   } catch (err) {
     console.warn("toggleCornerDateGoing failed:", err);

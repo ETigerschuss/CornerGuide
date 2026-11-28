@@ -5,7 +5,8 @@
 <header class="hero">
   <div class="hero-inner">
     <div class="stamps">
-      <svg class="stamp-logo left" viewBox="0 0 512 512" role="img" aria-label="Corner Guide Logo">
+      <button type="button" class="stamp-btn" id="hero-logo-btn" aria-label="Dein Profil">
+      <svg class="stamp-logo left" viewBox="0 0 512 512" aria-hidden="true">
         <defs>
           <linearGradient id="hg" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="#e8a93e"/>
@@ -19,7 +20,11 @@
         <polygon points="206,244 306,244 256,344" fill="#f4e9d1"/>
         <circle cx="256" cy="212" r="26" fill="#0d0d0d"/>
       </svg>
-      <span class="stamp-incl right" title="Alle willkommen – offen für alle">🏳️‍🌈</span>
+      </button>
+      <button type="button" class="stamp-btn" id="hero-flag-btn" aria-haspopup="true" aria-expanded="false" aria-label="Sprache wählen" title="Alle willkommen – offen für alle · Sprache wählen">
+        <span class="stamp-incl right">🏳️‍🌈</span>
+        <span class="hero-lang-code" id="hero-lang-code">DE ▾</span>
+      </button>
     </div>
     <div class="title-block">
       <h1 class="title-mingas">Minga</h1>
@@ -32,6 +37,9 @@
     </div>
   </div>
 </header>
+
+<!-- Language menu under the 🏳️‍🌈 flag (39-static-i18n.js) -->
+<div id="hero-lang-menu" class="hero-lang-menu" role="menu" hidden></div>
 
 <!-- Sticky navigation: lives outside the hero so it stays pinned while scrolling -->
 <div class="tabs-bar">

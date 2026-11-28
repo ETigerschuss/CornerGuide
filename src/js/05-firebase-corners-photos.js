@@ -94,7 +94,7 @@ function compressImageFile(file, options = {}) {
       img.onload = () => {
         const longest = Math.max(img.width, img.height);
         if (!Number.isFinite(longest) || longest <= 0) {
-          reject(new Error("Bilddimensionen konnten nicht bestimmt werden."));
+          reject(new Error(T("Bilddimensionen konnten nicht bestimmt werden.", "Couldn't read the image size.")));
           return;
         }
         const scale = Math.min(1, maxDim / longest);
@@ -106,10 +106,10 @@ function compressImageFile(file, options = {}) {
         canvas.getContext("2d").drawImage(img, 0, 0, width, height);
         resolve(canvas.toDataURL("image/jpeg", quality));
       };
-      img.onerror = () => reject(new Error("Bildformat wird nicht unterstützt oder Datei ist beschädigt."));
+      img.onerror = () => reject(new Error(T("Bildformat wird nicht unterstützt oder Datei ist beschädigt.", "Image format not supported or file is damaged.")));
       img.src = ev.target.result;
     };
-    reader.onerror = () => reject(new Error("Bilddatei konnte nicht gelesen werden (ggf. beschädigt oder nicht zugreifbar)."));
+    reader.onerror = () => reject(new Error(T("Bilddatei konnte nicht gelesen werden (ggf. beschädigt oder nicht zugreifbar).", "Couldn't read the image file (maybe damaged or not accessible).")));
     reader.readAsDataURL(file);
   });
 }
@@ -121,7 +121,7 @@ function photoRatingKey() {
 }
 
 function ratePhoto(cornerId, photoKey, score) {
-  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  if (!STATE.nickname) { toast(T("Bitte gib zuerst einen Namen ein.", "Please enter a name first.")); return; }
 
   if (window.FB?.firebaseReady) {
     const { db, ref, set } = window.FB;
@@ -134,7 +134,7 @@ function ratePhoto(cornerId, photoKey, score) {
     }
     refreshAllPhotoGalleries();
     Promise.resolve(set(ref(db, "photos/" + cornerId + "/" + photoKey + "/ratings/" + photoRatingKey()), score))
-      .catch((err) => { console.warn("ratePhoto write failed:", err); toast("⚠️ Bewertung konnte nicht gespeichert werden."); });
+      .catch((err) => { console.warn("ratePhoto write failed:", err); toast(T("⚠️ Bewertung konnte nicht gespeichert werden.", "⚠️ Couldn't save the rating.")); });
   } else {
     try {
       const photos = getPhotos(cornerId);

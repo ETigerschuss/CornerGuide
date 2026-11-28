@@ -46,6 +46,7 @@ Artefakt). Bei jedem Pull Request laufen außerdem die schnellen Prüfungen (`to
 | Datei | Prüft |
 |---|---|
 | `identity.js` | „Wer bist du?“, ein Profil auf mehreren Geräten, Neu-Öffnen ohne Fragen, Zugang reparieren, Google-Login bleibt nach dem Neuladen |
+| `language.js` | Deutsch/English/Español: Logo öffnet das eigene Profil, 🏳️‍🌈 öffnet die Sprachwahl darunter, Wechsel lädt in der neuen Sprache neu und bleibt in der Ansicht, Profil-Einstellung, Datumsformat, Neue auf Spanisch, kein Text ohne Spanisch auf den Hauptseiten |
 | `moderation.js` | Melden & Blockieren: 🚩 an Kommentaren/Fotos/Profilen, Meldung nur für Admins, Blockieren blendet Kommentare/Fotos/Chats aus und der Server lehnt Komplimente ab, Admin: Inhalt löschen, Rauswerfen (kein Code, kein Link), Wieder reinlassen |
 | `invites.js` | Einladungslinks: in allen geteilten Links (nicht auf Stickern), ein Tipp rein ohne Code-Abfrage, Karma (3× am Tag, Function), Push öffnet Profil + Kompliment, Mitglieder behalten ihren Zugang, „Neuer Link“ sperrt den alten, Admin-Liste und Sperren, Regeln gegen gefälschte Einladungen, Zähler und Beitritte |
 | `links.js` | Links aus WhatsApp: Corner-Check-in, Cornerdate-Zusage, neue Geräte, Punkte |
