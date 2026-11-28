@@ -195,7 +195,7 @@ function spotRuleLines(res) {
   out.push({ emoji: weedVerdictEmoji(w.v), text: `${weedText} — ${w.why.join(", ")}`, src: w.abroad ? "" : (res.acvv ? RULE_SOURCES.acvv : RULE_SOURCES.kcang) });
   if (res.acvv && Date.now() < ACVV_UNTIL) out.push({ emoji: "🍺", text: T("Alkohol ganztägig verboten (Verordnung der Stadt, Alter Botanischer Garten / Karl-Stützel-Platz, bis 14.01.2027)", "Alcohol banned all day (city ordinance, Alter Botanischer Garten / Karl-Stützel-Platz, until 14 Jan 2027)"), src: RULE_SOURCES.acvv });
   if (res.hbf && Date.now() < HBF_ALCOHOL_UNTIL) out.push({ emoji: "🍺", text: T("Vermutlich in der Alkoholverbotszone am Hauptbahnhof (ganztägig) — genaue Straßen in der Verordnung", "Probably inside the alcohol ban zone at the Hauptbahnhof (all day) — exact streets in the ordinance"), src: RULE_SOURCES.hbf });
-  if (res.biergarten) out.push({ emoji: "🍺", text: T(`Neben „${res.biergarten}“: im Biergarten selbst kein grünes Licht (Bayern)`, `Next to “${res.biergarten}”: no green light inside the beer garden (Bavaria)`) });
+  if (res.biergarten) out.push({ emoji: "🍺", text: T(`Neben „${res.biergarten}“: im Biergarten selbst kein grünes Licht (Bayern)`, `Next to “${res.biergarten}”: no green light inside the beer garden (Bavaria)`, `Junto a «${res.biergarten}»: sin luz verde dentro del biergarten (Baviera)`) });
   res.parks.filter((p) => !p.square).forEach((p) => {
     if (!p.hours) return;
     const open = osmOpenNow(p.hours);

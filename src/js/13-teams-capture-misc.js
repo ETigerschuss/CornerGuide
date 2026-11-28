@@ -52,7 +52,7 @@ function renderTeamBattles() {
 
   container.innerHTML = `<div class="team-battle-section">
     <h3>⚔️ Team Battles</h3>
-    ${items || '<p style="color:var(--fg-dim);font-size:13px;">Noch keine Corners eingenommen.</p>'}
+    ${items || T('<p style="color:var(--fg-dim);font-size:13px;">Noch keine Corners eingenommen.</p>', "<p style=\"color:var(--fg-dim);font-size:13px;\">No corners captured yet.</p>")}
   </div>`;
 }
 
@@ -75,7 +75,7 @@ function renderAchievementsInProfile(container) {
     const unlocked = STATE.achievements.includes(a.id);
     return `<div class="achievement-card ${unlocked ? "unlocked" : "locked"}">
       <div class="achievement-emoji">${a.emoji}</div>
-      <div class="achievement-name">${a.name}</div>
+      <div class="achievement-name">${TX(a.name)}</div>
     </div>`;
   }).join("");
 

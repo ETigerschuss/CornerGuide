@@ -231,7 +231,7 @@ async function linkMyEarlierLogins() {
     if (STATE.view === "profile") renderProfile();
     if (STATE.view === "leaderboard") renderLeaderboard();
     const lv = getLevel(getCurrentAura()).level;
-    toastWhenFree(`🔗 <strong>${T("Deine früheren Logins gehören jetzt zu deinem Profil", "Your earlier logins now belong to your profile")}</strong><br><span style="font-size:11px;opacity:0.8;">${T(`Profil und Ranking zeigen beide Lv. ${lv}.`, `Profile and ranking both show Lv. ${lv}.`)}</span>`, "at-corner");
+    toastWhenFree(`🔗 <strong>${T("Deine früheren Logins gehören jetzt zu deinem Profil", "Your earlier logins now belong to your profile")}</strong><br><span style="font-size:11px;opacity:0.8;">${T(`Profil und Ranking zeigen beide Lv. ${lv}.`, `Profile and ranking both show Lv. ${lv}.`, `El perfil y el ranking muestran Lv. ${lv}.`)}</span>`, "at-corner");
   }
 }
 
@@ -242,7 +242,7 @@ function profileTwinBannerHtml() {
   const twin = findProfileTwin(STATE.nickname);
   if (!twin) return "";
   const lv = getLevel(twin.total).level;
-  return `<div class="backup-banner twin-banner">👀 ${T(`Es gibt noch ein Profil <strong>„${escapeHtml(twin.nickname)}“</strong> (Lv. ${lv}, ${twin.total} Aura). Bist du das? Dann leg beide zusammen — die Punkte werden addiert, beide Geräte bleiben angemeldet.`, `There is another profile <strong>“${escapeHtml(twin.nickname)}”</strong> (Lv. ${lv}, ${twin.total} aura). Is that you? Merge them — the points are added up and both devices stay signed in.`)}
+  return `<div class="backup-banner twin-banner">👀 ${T(`Es gibt noch ein Profil <strong>„${escapeHtml(twin.nickname)}“</strong> (Lv. ${lv}, ${twin.total} Aura). Bist du das? Dann leg beide zusammen — die Punkte werden addiert, beide Geräte bleiben angemeldet.`, `There is another profile <strong>“${escapeHtml(twin.nickname)}”</strong> (Lv. ${lv}, ${twin.total} aura). Is that you? Merge them — the points are added up and both devices stay signed in.`, `Hay otro perfil <strong>«${escapeHtml(twin.nickname)}»</strong> (Lv. ${lv}, ${twin.total} de aura). ¿Eres tú? Únelos — los puntos se suman y ambos dispositivos siguen con la sesión iniciada.`)}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><button class="action-btn primary" data-twin-merge="${escapeHtml(twin.key)}">🔗 ${T("Ja, zusammenführen", "Yes, merge")}</button></div></div>`;
 }
 
@@ -402,8 +402,8 @@ async function claimExistingProfile(oldKey, opts = {}) {
     if (nickPrompt && STATE.nickname) nickPrompt.style.display = "none";
     const total = Number(auraEntry?.total || 0);
     if (!opts.quiet) {
-      if (opts.approved) showRewardCelebration(total, "aura", { emoji: "🛟", text: T(`„${escapeHtml(nickname)}“ ist zurück!`, `“${escapeHtml(nickname)}” is back!`) });
-      toast(T(`✅ Profil „${escapeHtml(nickname)}“ übernommen — willkommen zurück!`, `✅ Profile “${escapeHtml(nickname)}” restored — welcome back!`));
+      if (opts.approved) showRewardCelebration(total, "aura", { emoji: "🛟", text: T(`„${escapeHtml(nickname)}“ ist zurück!`, `“${escapeHtml(nickname)}” is back!`, `¡«${escapeHtml(nickname)}» ha vuelto!`) });
+      toast(T(`✅ Profil „${escapeHtml(nickname)}“ übernommen — willkommen zurück!`, `✅ Profile “${escapeHtml(nickname)}” restored — welcome back!`, `✅ Perfil «${escapeHtml(nickname)}» restaurado — ¡bienvenido de nuevo!`));
     }
     return true;
   } catch (err) {
@@ -422,7 +422,7 @@ async function initFirebase() {
     const status = $("#fb-status");
     status.style.display = "block";
     status.className = "firebase-status offline";
-    status.textContent = "⚡ Offline-Modus — Firebase nicht konfiguriert (Kommentare & Freunde lokal)";
+    status.textContent = T("⚡ Offline-Modus — Firebase nicht konfiguriert (Kommentare & Freunde lokal)", "⚡ Offline mode — Firebase not configured (comments & friends local)");
     loadLocalComments();
     loadLocalBarometer();
     STATE.emojiVotes = loadLocalEmojiVotes();
@@ -451,7 +451,7 @@ async function initFirebase() {
     const status = $("#fb-status");
     status.style.display = "block";
     status.className = "firebase-status offline";
-    status.textContent = "⚡ Verbindung wird hergestellt — Inhalte werden geladen";
+    status.textContent = T("⚡ Verbindung wird hergestellt — Inhalte werden geladen", "⚡ Connecting — loading content");
     loadLocalComments();
     loadLocalBarometer();
     STATE.emojiVotes = loadLocalEmojiVotes();
@@ -662,7 +662,7 @@ function presenceIsAsleep(f, now = Date.now()) {
 
 function asleepSinceLabel(f) {
   const mins = Math.max(1, Math.round((Date.now() - Number(f.lastSeen || 0)) / 60000));
-  return mins < 60 ? T(`vor ${mins} min`, `${mins} min ago`) : T(`vor ${Math.floor(mins / 60)} h`, `${Math.floor(mins / 60)} h ago`);
+  return mins < 60 ? T(`vor ${mins} min`, `${mins} min ago`, `hace ${mins} min`) : T(`vor ${Math.floor(mins / 60)} h`, `${Math.floor(mins / 60)} h ago`, `hace ${Math.floor(mins / 60)} h`);
 }
 
 // Returns only presence entries that still count as online / at their corner.
@@ -774,7 +774,7 @@ function renderFriendsBar() {
     btn.addEventListener("click", () => {
       const friend = STATE.friends[btn.dataset.supplyUser];
       const name = friend?.nickname || friend?.name || btn.dataset.supplyUser;
-      sendQuickMessage(btn.dataset.supplyUser, name, "Brauchst du Nachschub? 🍺🛒");
+      sendQuickMessage(btn.dataset.supplyUser, name, T("Brauchst du Nachschub? 🍺🛒", "Need supplies? 🍺🛒"));
     });
   });
 }
@@ -871,7 +871,7 @@ function recordChatActivity(peerId, peerName, text, time) {
 // Core send: writes to messages/{toId} (drives the push + inbox) AND to
 // chats/{pairId} (the two-sided thread both participants can read).
 function sendMessage(toId, toName, text, opts = {}) {
-  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return false; }
+  if (!STATE.nickname) { toast(T("Bitte gib zuerst einen Namen ein.", "Please enter a name first.")); return false; }
   if (!toId || toId === currentUserKey()) return false;
   const clean = String(text || "").trim();
   if (!clean) return false;
@@ -888,7 +888,7 @@ function sendMessage(toId, toName, text, opts = {}) {
   if (window.FB?.firebaseReady) {
     const { db, ref, push, set } = window.FB;
     Promise.resolve(set(push(ref(db, "messages/" + toId)), payload))
-      .catch((err) => { console.warn("message write failed:", err); toast("⚠️ Nachricht konnte nicht zugestellt werden."); });
+      .catch((err) => { console.warn("message write failed:", err); toast(T("⚠️ Nachricht konnte nicht zugestellt werden.", "⚠️ Message could not be delivered.")); });
     const pairId = chatPairId(currentUserKey(), toId);
     Promise.resolve(set(push(ref(db, "chats/" + pairId)), payload))
       .catch((err) => console.warn("chat thread write failed (rules deployed?):", err));
@@ -903,7 +903,7 @@ function sendMessage(toId, toName, text, opts = {}) {
 }
 
 function sendQuickMessage(toId, toName, text) {
-  sendMessage(toId, toName, text, { toastMsg: `🛒 Nachschub-Frage an <strong>${escapeHtml(toName || toId)}</strong> gesendet` });
+  sendMessage(toId, toName, text, { toastMsg: `🛒 ${T("Nachschub-Frage an", "Supply question sent to", "Pregunta de provisiones enviada a")} <strong>${escapeHtml(toName || toId)}</strong>${T(" gesendet", "", "")}` });
 }
 
 function sendDirectMessagePrompt(toId, toName, cornerId) {
@@ -933,7 +933,7 @@ function attachInboxListener(key, ref, onValue, db) {
     if (newest?.time && newest.time > STATE.lastDirectMessageAt && !isMyKey(newest.fromId) && !isBlocked(newest.fromId)) {
       const fromName = newest.fromName || newest.fromId || "Unbekannt";
       toast(
-        `💬 <strong>${escapeHtml(fromName)}</strong>: ${escapeHtml((newest.text || "").slice(0, 60))}<br><span style="font-size:11px;opacity:0.7;">Tippen zum Antworten →</span>`,
+        `💬 <strong>${escapeHtml(fromName)}</strong>: ${escapeHtml((newest.text || "").slice(0, 60))}<br><span style="font-size:11px;opacity:0.7;">${T("Tippen zum Antworten →", "Tap to reply →", "Toca para responder →")}</span>`,
         null,
         () => openChatThread(newest.fromId, fromName)
       );

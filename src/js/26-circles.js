@@ -222,7 +222,7 @@ function bindVisibilityPicker(box, onPick) {
 }
 function visibilityHint(v) {
   if (v === "friends") return closeFriendRoots().size
-    ? T(`Nur du und deine ${closeFriendRoots().size} engen Freunde sehen ihn. Halbe Punkte.`, `Only you and your ${closeFriendRoots().size} close friends see it. Half the points.`)
+    ? T(`Nur du und deine ${closeFriendRoots().size} engen Freunde sehen ihn. Halbe Punkte.`, `Only you and your ${closeFriendRoots().size} close friends see it. Half the points.`, `Solo lo ven tú y tus ${closeFriendRoots().size} amigos cercanos. La mitad de puntos.`)
     : T("Du hast noch keine engen Freunde — im Profil unter „Teilen & enge Freunde“ hinzufügen. Halbe Punkte.", "No close friends yet — add them in your profile. Half the points.");
   if (v === "me") return T("Nur du siehst ihn. Halbe Punkte.", "Only you see it. Half the points.");
   return T("Alle in der App sehen ihn auf Karte und Liste.", "Everyone in the app sees it on the map and list.");

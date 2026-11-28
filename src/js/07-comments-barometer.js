@@ -54,7 +54,7 @@ function getCommentLikeCount(comment) {
 }
 
 function toggleCommentLike(cornerId, commentKey) {
-  if (!STATE.nickname) { toast("Bitte gib zuerst einen Namen ein."); return; }
+  if (!STATE.nickname) { toast(T("Bitte gib zuerst einen Namen ein.", "Please enter a name first.")); return; }
   const voteKey = currentUserKey();
   const hasLiked = !!STATE.comments?.[cornerId]?.[commentKey]?.likes?.[voteKey];
   const shouldLike = !hasLiked;
@@ -124,8 +124,8 @@ function renderCommentSection(cornerId, container) {
         <button class="comment-like-btn ${likedByMe ? "active" : ""}" data-corner="${cornerId}" data-key="${key}" aria-label="${likedByMe ? "Like entfernen" : "Kommentar liken"}" aria-pressed="${likedByMe ? "true" : "false"}">👍 ${likeCount} Likes</button>
         <button class="reply-btn" data-corner="${cornerId}" data-key="${key}">💬 Antworten</button>
         ${!isMine && window.FB?.firebaseReady ? `<button class="report-btn" data-report-comment="${escapeHtml(cornerId + "/" + key)}" title="${T("Melden", "Report")}" aria-label="${T("Kommentar melden", "Report comment")}">🚩</button>` : ""}
-        ${isMine ? `<button class="edit-btn" data-corner="${cornerId}" data-key="${key}">✏️ Edit</button>
-        <button class="delete-btn" data-corner="${cornerId}" data-key="${key}">🗑 Löschen</button>` : ""}
+        ${isMine ? `<button class="edit-btn" data-corner="${cornerId}" data-key="${key}">✏️ ${T("Bearbeiten", "Edit")}</button>
+        <button class="delete-btn" data-corner="${cornerId}" data-key="${key}">🗑 ${T("Löschen", "Delete")}</button>` : ""}
       </div>
       ${repliesHtml}
     </li>
@@ -138,7 +138,7 @@ function renderCommentSection(cornerId, container) {
       ${commentEntries.length > 0 ? `<span class="comment-count">${commentEntries.length}</span>` : ""}
     </div>
     <div class="${isCollapsed ? "comments-collapsed" : ""}">
-      <ul class="comment-list">${listHtml || (hiddenCount ? "" : '<li style="color:var(--fg-dim);font-size:13px;padding:8px 0;">Noch keine Kommentare — sei der Erste!</li>')}</ul>
+      <ul class="comment-list">${listHtml || (hiddenCount ? "" : T('<li style="color:var(--fg-dim);font-size:13px;padding:8px 0;">Noch keine Kommentare — sei der Erste!</li>', "<li style=\"color:var(--fg-dim);font-size:13px;padding:8px 0;\">No comments yet — be the first!</li>"))}</ul>
       ${hiddenCount ? `<p class="comment-hidden">🚫 ${hiddenCount} ${T(hiddenCount === 1 ? "Kommentar von jemandem, den du blockiert hast, ausgeblendet" : "Kommentare von Leuten, die du blockiert hast, ausgeblendet", hiddenCount === 1 ? "comment from someone you blocked hidden" : "comments from people you blocked hidden")}</p>` : ""}
       ${isCollapsed ? `<button class="comments-toggle" data-corner="${cornerId}">▼ Alle ${commentEntries.length} anzeigen</button>` : ""}
     </div>
@@ -243,8 +243,8 @@ function renderCommentSection(cornerId, container) {
       actionsDiv.innerHTML = "";
       textEl.innerHTML = `<textarea class="comment-edit-input" maxlength="300">${escapeHtml(currentText)}</textarea>
         <div class="comment-actions" style="margin-top:6px;">
-          <button class="save-edit-btn" data-corner="${cId}" data-key="${key}">✓ Speichern</button>
-          <button class="cancel-edit-btn">Abbrechen</button>
+          <button class="save-edit-btn" data-corner="${cId}" data-key="${key}">✓ ${T("Speichern", "Save")}</button>
+          <button class="cancel-edit-btn">${T("Abbrechen", "Cancel")}</button>
         </div>`;
       const editInput = textEl.querySelector(".comment-edit-input");
       editInput.focus();
@@ -268,9 +268,9 @@ function renderCommentSection(cornerId, container) {
   // Bind delete buttons
   container.querySelectorAll(".delete-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      if (await appConfirm("Kommentar löschen?", "", "Löschen")) {
+      if (await appConfirm(T("Kommentar löschen?", "Delete comment?"), "", T("Löschen", "Delete"))) {
         deleteComment(btn.dataset.corner, btn.dataset.key);
-        toast("Kommentar gelöscht 🗑");
+        toast(T("Kommentar gelöscht 🗑", "Comment deleted 🗑"));
       }
     });
   });
@@ -325,7 +325,7 @@ function renderBarometer(cornerId, container) {
 
   const resultHtml = count > 0
     ? `<span class="barometer-result"><span class="avg-score">${avg.toFixed(1)}</span><span class="vote-count">(${count} ${count === 1 ? "Stimme" : "Stimmen"})</span></span>`
-    : `<span class="barometer-result"><span class="vote-count">Noch keine Bewertung heute</span></span>`;
+    : T(`<span class="barometer-result"><span class="vote-count">Noch keine Bewertung heute</span></span>`, "<span class=\"barometer-result\"><span class=\"vote-count\">No rating today yet</span></span>");
 
   container.innerHTML = `
     <p class="barometer-header">📊 Tages-Barometer</p>
@@ -336,7 +336,7 @@ function renderBarometer(cornerId, container) {
     btn.addEventListener("click", () => {
       const score = parseInt(btn.dataset.score);
       voteBarometer(cornerId, score);
-      toast(`Bewertung: ${emojis[score-1]} (${score}/5)`);
+      toast(`${T("Bewertung", "Rating")}: ${emojis[score-1]} (${score}/5)`);
       addPoints(STATE.nickname, 2, "Barometer bewertet");
     });
   });

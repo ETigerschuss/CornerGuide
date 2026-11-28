@@ -109,7 +109,7 @@ function formatDuration(seconds) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 function clockTime(ts) {
-  return new Date(Number(ts) || 0).toLocaleTimeString(STATE.lang === "en" ? "en-GB" : "de-DE", { hour: "2-digit", minute: "2-digit" });
+  return new Date(Number(ts) || 0).toLocaleTimeString(appLocale(), { hour: "2-digit", minute: "2-digit" });
 }
 // Only replace markup that actually changed: re-rendering rating buttons in
 // the middle of a tap would swallow the tap.
@@ -222,7 +222,7 @@ function gossipLogRowHtml(g) {
   const me = currentUserKey();
   const teller = isMyKey(g.tellerId) ? T("Du", "You") : (g.tellerName || "?");
   const others = Object.entries(g.people || {}).filter(([id]) => id !== g.tellerId && !isMyKey(id) && id !== me).map(([, n]) => n);
-  const date = new Date(Number(g.at || 0)).toLocaleDateString(STATE.lang === "en" ? "en-GB" : "de-DE", { day: "2-digit", month: "2-digit", year: "2-digit" });
+  const date = new Date(Number(g.at || 0)).toLocaleDateString(appLocale(), { day: "2-digit", month: "2-digit", year: "2-digit" });
   return `<button class="gl-row" data-gossip-corner="${escapeHtml(g.cornerId)}">
     <span class="gl-emoji">${escapeHtml(g.verdict || "🗣️")}</span>
     <span class="gl-main">
@@ -238,9 +238,9 @@ function buildGossipChronicleHtml() {
   if (!list.length) return `<div class="team-battle-section gossip-chronicle"><h3>🗣️ ${T("Gossip-Chronik", "Gossip chronicle")}</h3><p style="font-size:12px;color:var(--fg-dim);margin:0;">${T("Noch keine Gossip-Runden. Wenn ihr zu zweit oder mehr an einem Corner eingecheckt seid, kann jemand eine starten — hier steht dann, wer wo was erzählt hat.", "No gossip rounds yet. When two or more of you are checked in at a corner, someone can start one — this is where you'll see who told what, where.")}</p></div>`;
   const told = list.filter((g) => g.role === "teller").length;
   return `<div class="team-battle-section gossip-chronicle"><h3>🗣️ ${T("Gossip-Chronik", "Gossip chronicle")}</h3>
-    <p style="font-size:12px;color:var(--fg-dim);margin:0 0 8px;">${T(`${list.length} ${list.length === 1 ? "Runde" : "Runden"} · ${told} selbst erzählt`, `${list.length} round${list.length === 1 ? "" : "s"} · ${told} told by you`)}</p>
+    <p style="font-size:12px;color:var(--fg-dim);margin:0 0 8px;">${T(`${list.length} ${list.length === 1 ? "Runde" : "Runden"} · ${told} selbst erzählt`, `${list.length} round${list.length === 1 ? "" : "s"} · ${told} told by you`, `${list.length} ronda${list.length === 1 ? "" : "s"} · tú contaste ${told}`)}</p>
     <div class="gl-list">${list.slice(0, 8).map(gossipLogRowHtml).join("")}</div>
-    ${list.length > 8 ? `<details class="gl-more"><summary>${T(`Alle ${list.length} anzeigen`, `Show all ${list.length}`)}</summary><div class="gl-list">${list.slice(8).map(gossipLogRowHtml).join("")}</div></details>` : ""}
+    ${list.length > 8 ? `<details class="gl-more"><summary>${T(`Alle ${list.length} anzeigen`, `Show all ${list.length}`, `Mostrar los ${list.length}`)}</summary><div class="gl-list">${list.slice(8).map(gossipLogRowHtml).join("")}</div></details>` : ""}
   </div>`;
 }
 

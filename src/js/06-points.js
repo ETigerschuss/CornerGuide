@@ -13,9 +13,9 @@ function renderPhotoGallery(cornerId, container) {
 
   if (photos.length === 0) {
     container.innerHTML = `
-      <p class="gallery-header">📸 Foto-Galerie</p>
-      <p style="font-size:12px;color:var(--fg-dim);margin:0 0 8px;">Noch keine Fotos — lade das erste hoch!</p>
-      <button class="action-btn gallery-upload-btn" data-corner="${cornerId}">📷 Foto hochladen</button>
+      <p class="gallery-header">📸 ${T("Foto-Galerie", "Photo gallery")}</p>
+      <p style="font-size:12px;color:var(--fg-dim);margin:0 0 8px;">${T("Noch keine Fotos — lade das erste hoch!", "No photos yet — upload the first!")}</p>
+      <button class="action-btn gallery-upload-btn" data-corner="${cornerId}">📷 ${T("Foto hochladen", "Upload photo")}</button>
       <input type="file" accept="image/*" class="gallery-file-input" data-corner="${cornerId}" style="display:none;" multiple>
     `;
   } else {
@@ -46,9 +46,9 @@ function renderPhotoGallery(cornerId, container) {
     }).join("");
 
     container.innerHTML = `
-      <p class="gallery-header">📸 Foto-Galerie <span class="comment-count">${photos.length}</span></p>
+      <p class="gallery-header">📸 ${T("Foto-Galerie", "Photo gallery")} <span class="comment-count">${photos.length}</span></p>
       <div class="gallery-grid">${photosHtml}</div>
-      <button class="action-btn gallery-upload-btn" data-corner="${cornerId}">📷 Foto hochladen</button>
+      <button class="action-btn gallery-upload-btn" data-corner="${cornerId}">📷 ${T("Foto hochladen", "Upload photo")}</button>
       <input type="file" accept="image/*" class="gallery-file-input" data-corner="${cornerId}" style="display:none;" multiple>
     `;
     // Put the horizontal scroller back where the user had it.
@@ -77,7 +77,7 @@ function renderPhotoGallery(cornerId, container) {
         toast("Foto hochgeladen 📸");
       }).catch((err) => {
         console.warn("Gallery image compression failed:", err);
-        toast("Bild konnte nicht verarbeitet werden.");
+        toast(T("Bild konnte nicht verarbeitet werden.", "Couldn't process the image."));
       });
     });
     fileInput.value = "";

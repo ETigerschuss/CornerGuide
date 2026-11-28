@@ -42,31 +42,51 @@ const STATE = {
   lastCheckinCorner: localStorage.getItem("cg.lastCheckinCorner") || "",
   notifPref: loadNotifPref(),
   cooldownInterval: null,
-  lang: localStorage.getItem("cg.lang") || "de"
+  lang: (() => { try { const l = localStorage.getItem("cg.lang"); return ["de", "en", "es"].includes(l) ? l : "de"; } catch (e) { return "de"; } })()
 };
 
 /* ====================== LANGUAGE ====================== */
 /**
- * T(de, en) — returns the German or English string depending on STATE.lang.
- * Use for every user-visible string that should be translatable.
+ * T(de, en, es) — the text in the app's language. Use for every user-visible
+ * string. Spanish: the third argument, else the dictionary (00-i18n-es.js,
+ * keyed by the German text), else English.
  */
-function T(de, en) { return STATE.lang === "en" ? en : de; }
+const APP_LANGS = {
+  de: { flag: "🇩🇪", name: "Deutsch", locale: "de-DE" },
+  en: { flag: "🇬🇧", name: "English", locale: "en-GB" },
+  es: { flag: "🇪🇸", name: "Español", locale: "es-ES" }
+};
+function T(de, en, es) {
+  if (STATE.lang === "es") {
+    if (es !== undefined) return es;
+    if (Object.prototype.hasOwnProperty.call(I18N_ES, de)) return I18N_ES[de];
+    if (window._i18nMiss) window._i18nMiss.add(de);   // tests list what is still missing
+    return en;
+  }
+  return STATE.lang === "en" ? en : de;
+}
+// German-only texts that were stored or are names (achievements, levels):
+// Spanish when the dictionary knows them, otherwise as they are.
+function TX(de) {
+  return STATE.lang === "es" && Object.prototype.hasOwnProperty.call(I18N_ES, de) ? I18N_ES[de] : de;
+}
+function appLocale() { return (APP_LANGS[STATE.lang] || APP_LANGS.de).locale; }
+// Team names and labels from 01-data.js, defined before the language is known.
+[TEAMS, CORNER_STATUSES, AMENITY_ICONS].forEach((table) => Object.values(table).forEach((e) => {
+  if (e.name) e.name = TX(e.name);
+  if (e.label) e.label = TX(e.label);
+}));
 
+// A new language reloads the app: every text — also the ones set up once at
+// the start — comes in the new language. The view you were on stays open.
 function setLang(lang) {
+  if (!APP_LANGS[lang] || lang === STATE.lang) return;
+  try {
+    localStorage.setItem("cg.lang", lang);
+    sessionStorage.setItem("cg.reopenView", STATE.view || "map");
+  } catch (e) { /* private mode: switch for this page only */ }
   STATE.lang = lang;
-  localStorage.setItem("cg.lang", lang);
-  // Re-render everything that uses T()
-  document.querySelectorAll(".tab[data-view]").forEach((t) => {
-    const labels = { list: T("Liste", "List"), map: T("Karte", "Map"), leaderboard: "🏆 " + T("Ranking", "Ranking"), profile: "👤 " + T("Profil", "Profile") };
-    if (labels[t.dataset.view]) t.textContent = labels[t.dataset.view];
-  });
-  const bar = document.getElementById("friends-bar-title");
-  if (bar) bar.textContent = T("🍻 Freunde unterwegs", "🍻 Friends out there");
-  if (STATE.view === "profile") renderProfile();
-  if (STATE.view === "leaderboard") renderLeaderboard();
-  renderCards();
-  if (typeof renderCornerDatesStrip === "function") renderCornerDatesStrip();
-  if (typeof renderWeatherBanner === "function") renderWeatherBanner();
+  window.location.reload();
 }
 
 

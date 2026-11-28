@@ -45,8 +45,8 @@ const LEVEL_RANKS = [
 ];
 function getLevelTier(level) {
   const lvl = Number(level || 1);
-  for (const r of LEVEL_RANKS) if (lvl <= r.max) return { name: r.name, emoji: r.emoji };
-  return { name: "Mythos von Minga", emoji: "🐉" };
+  for (const r of LEVEL_RANKS) if (lvl <= r.max) return { name: TX(r.name), emoji: r.emoji };
+  return { name: TX("Mythos von Minga"), emoji: "🐉" };
 }
 
 /* Every 10th level is a milestone. Level 100 gets the big "feels like the end"
@@ -70,7 +70,7 @@ function checkLevelMilestones() {
     const reward = LEVEL_REWARDS[m];
     if (m === MILESTONE_LEVEL) {
       unlockAchievement("level-100", "Vollendet", "🏆", 1000);
-      toast(`🏆 <strong>LEVEL 100!</strong><br>Du hast den Minga Corner Guide vollendet — und es geht weiter. 🍻`, "at-corner");
+      toast(T(`🏆 <strong>LEVEL 100!</strong><br>Du hast den Minga Corner Guide vollendet — und es geht weiter. 🍻`, "🏆 <strong>LEVEL 100!</strong><br>You've completed the Minga Corner Guide — and it goes on. 🍻"), "at-corner");
     } else {
       toast(`🎖️ <strong>Meilenstein Level ${m}</strong>${reward ? `<br>Belohnung: ${escapeHtml(reward.label)}` : ""}`, "at-corner");
     }
@@ -134,7 +134,7 @@ function matrixNextSteps(aura, karma) {
     const need = Math.max(1, xpForLevel(MATRIX_KARMA_LEVELS[row]) - Number(karma || 0));
     const cell = MATRIX_CELLS[row + 1][col];
     const runs = Math.ceil(need / SUPPLY_KARMA_PER_CONFIRM);
-    steps.push(`↑ ${cell.emoji} <strong>${cell.name}</strong>: ${T("noch", "another")} <strong>${need} Karma</strong> <span class="mx-how">(${T(`z. B. ${runs}× bestätigter Nachschub, ein paar gut bewertete Gossip-Storys — oder Komplimente von den anderen`, `e.g. ${runs}× confirmed supplies, a few well-rated gossip stories — or compliments from the others`)})</span>`);
+    steps.push(`↑ ${cell.emoji} <strong>${cell.name}</strong>: ${T("noch", "another")} <strong>${need} Karma</strong> <span class="mx-how">(${T(`z. B. ${runs}× bestätigter Nachschub, ein paar gut bewertete Gossip-Storys — oder Komplimente von den anderen`, `e.g. ${runs}× confirmed supplies, a few well-rated gossip stories — or compliments from the others`, `p. ej. ${runs}× provisiones confirmadas, unas cuantas historias de gossip bien valoradas — o cumplidos de los demás`)})</span>`);
   }
   if (col < 2) {
     const need = Math.max(1, xpForLevel(MATRIX_AURA_LEVELS[col]) - Number(aura || 0));
@@ -200,7 +200,7 @@ function buildRewardGuideHtml() {
       ${row("🏆", "Achievements", "Achievements", "+10…+1000")}
       ${row("👆", "Aktiv in der App (höchstens alle 10 Sek.)", "Active in the app (at most every 10 s)", "+1")}
     </table>
-    <p class="rg-note">${T(`Fair Play: Check-in-Aura gibt es pro Corner nur einmal am Tag, zwischen zwei Corners liegen 15 Min. Gossip bringt Karma für ${GOSSIP_KARMA_ROUNDS_PER_DAY} Storys pro Tag, eigene Storys kann man nicht bewerten. Level: Aura bestimmt dein Level (Lv. 100 ist der große Meilenstein).`, `Fair play: check-in aura counts once per corner per day, and there are 15 min between two corners. Gossip earns karma for ${GOSSIP_KARMA_ROUNDS_PER_DAY} stories a day, and you can't rate your own. Aura drives your level (Lv. 100 is the big milestone).`)}</p>
+    <p class="rg-note">${T(`Fair Play: Check-in-Aura gibt es pro Corner nur einmal am Tag, zwischen zwei Corners liegen 15 Min. Gossip bringt Karma für ${GOSSIP_KARMA_ROUNDS_PER_DAY} Storys pro Tag, eigene Storys kann man nicht bewerten. Level: Aura bestimmt dein Level (Lv. 100 ist der große Meilenstein).`, `Fair play: check-in aura counts once per corner per day, and there are 15 min between two corners. Gossip earns karma for ${GOSSIP_KARMA_ROUNDS_PER_DAY} stories a day, and you can't rate your own. Aura drives your level (Lv. 100 is the big milestone).`, `Juego limpio: el aura del check-in cuenta una vez por corner y día, y entre dos corners hay 15 min. El gossip da karma por ${GOSSIP_KARMA_ROUNDS_PER_DAY} historias al día, y no puedes valorar la tuya. El aura sube tu nivel (el Lv. 100 es el gran hito).`)}</p>
   </div>`;
 }
 
@@ -346,7 +346,7 @@ function unlockAchievement(id, name, emoji, pts) {
   STATE.achievements.push(id);
   saveAchievements();
   addXp(pts, name);
-  toast(`🏆 Achievement freigeschaltet: ${emoji} <strong>${name}</strong>`);
+  toast(`🏆 ${T("Achievement freigeschaltet", "Achievement unlocked", "Logro desbloqueado")}: ${emoji} <strong>${TX(name)}</strong>`);
   if (window.FB?.firebaseReady) {
     const { db, ref, set } = window.FB;
     set(ref(db, "achievements/" + currentUserKey() + "/" + id), { name, emoji, time: Date.now(), nickname: STATE.nickname || "Anonym" });
@@ -378,8 +378,8 @@ function findProfileTwin(name) {
 
 async function offerProfileTwin(twin) {
   const ok = await showDialog({
-    title: T(`„${twin.nickname}“ gibt es schon`, `“${twin.nickname}” already exists`),
-    text: T(`Ein Profil mit diesem Namen hat ${twin.total} Aura. Bist du das (neues Handy, Browser gelöscht)? Dann mach einfach damit weiter, statt bei null anzufangen.`, `A profile with this name has ${twin.total} aura. Is that you (new phone, cleared browser)? Just carry on with it instead of starting from zero.`),
+    title: T(`„${twin.nickname}“ gibt es schon`, `“${twin.nickname}” already exists`, `«${twin.nickname}» ya existe`),
+    text: T(`Ein Profil mit diesem Namen hat ${twin.total} Aura. Bist du das (neues Handy, Browser gelöscht)? Dann mach einfach damit weiter, statt bei null anzufangen.`, `A profile with this name has ${twin.total} aura. Is that you (new phone, cleared browser)? Just carry on with it instead of starting from zero.`, `Un perfil con este nombre tiene ${twin.total} de aura. ¿Eres tú (móvil nuevo, navegador borrado)? Sigue con él en vez de empezar de cero.`),
     okLabel: T("Ja, das bin ich", "Yes, that's me"),
     cancelLabel: T("Nein, ich bin neu", "No, I'm new")
   });
@@ -394,7 +394,7 @@ async function offerProfileTwin(twin) {
 
 function saveNickname(nameArg) {
   const name = String(typeof nameArg === "string" ? nameArg : ($("#nickname-input").value || "")).trim().slice(0, 20);
-  if (!name) { toast("Bitte gib einen Namen ein."); return; }
+  if (!name) { toast(T("Bitte gib einen Namen ein.", "Please enter a name.")); return; }
   const twin = window.FB?.firebaseReady ? findProfileTwin(name) : null;
   if (twin) setTimeout(() => offerProfileTwin(twin), 600);
   STATE.nickname = name;
@@ -402,7 +402,7 @@ function saveNickname(nameArg) {
   ensurePointIdentity();
   $("#nickname-prompt").style.display = "none";
   if ($("#claim-overlay")) $("#claim-overlay").style.display = "none";
-  toast(`Willkommen, <strong>${escapeHtml(name)}</strong>! 🍻`);
+  toast(`${T("Willkommen", "Welcome", "Bienvenido")}, <strong>${escapeHtml(name)}</strong>! 🍻`);
   syncIdentity();
   updateNicknameBar();
   unlockAchievement("first-login", "Willkommen", "👋", 10);
@@ -431,7 +431,7 @@ function bindNicknameBar() {
     localStorage.setItem("cg.nickname", STATE.nickname);
     ensurePointIdentity();
     propagateNickname(STATE.nickname);
-    toast(`Nickname geändert: <strong>${escapeHtml(STATE.nickname)}</strong>`);
+    toast(`${T("Nickname geändert", "Name changed", "Nombre cambiado")}: <strong>${escapeHtml(STATE.nickname)}</strong>`);
     syncIdentity();
     updateNicknameBar();
     renderFriendsBar();
@@ -459,13 +459,13 @@ function updateNicknameBar() {
   if (badge) badge.textContent = tier.name;
   if (fill) fill.style.width = `${Math.round(info.progress * 100)}%`;
   const bar2 = $("#nick-level-bar");
-  if (bar2) bar2.title = `${info.xpIntoLevel}/${info.xpForNext} Aura · noch ${info.xpToNext} bis Level ${info.level + 1} — ${T("tippen: so sammelst du Punkte", "tap: how to earn points")}`;
+  if (bar2) bar2.title = `${info.xpIntoLevel}/${info.xpForNext} Aura · ${T(`noch ${info.xpToNext} bis Level ${info.level + 1}`, `${info.xpToNext} to level ${info.level + 1}`, `faltan ${info.xpToNext} para el nivel ${info.level + 1}`)} — ${T("tippen: so sammelst du Punkte", "tap: how to earn points")}`;
 }
 
 function renderTeamPickerHtml() {
   return `
     <div class="team-select-section">
-      <h4>Für welches Team checkst du ein?</h4>
+      <h4>${T("Für welches Team checkst du ein?", "Which team are you checking in for?")}</h4>
       <div class="team-buttons">
         ${allTeamKeys().map((teamId) => `
           <button class="team-btn ${STATE.team === teamId ? "active" : ""}" data-team="${teamId}" title="${escapeHtml(TEAMS[teamId]?.name || teamId)}" style="border-color:${STATE.team === teamId ? (TEAMS[teamId]?.color || "var(--amber)") : "var(--line)"};">
@@ -473,7 +473,7 @@ function renderTeamPickerHtml() {
             <span class="team-label">${escapeHtml(TEAMS[teamId]?.name || teamId)}</span>
           </button>
         `).join("")}
-        <button class="team-btn team-create-btn" data-team-create="1" title="Eigenes Team erstellen" style="border-style:dashed;">
+        <button class="team-btn team-create-btn" data-team-create="1" title="${T("Eigenes Team erstellen", "Create your own team")}" style="border-style:dashed;">
           <span>➕</span>
           <span class="team-label">Team</span>
         </button>
@@ -542,8 +542,8 @@ function listenCustomTeams() {
 }
 
 function openTeamCreate(cornerId) {
-  if (!STATE.nickname) { toast("Bitte zuerst einen Namen wählen."); return; }
-  if (!window.FB?.firebaseReady) { toast("Teams erstellen nur online möglich."); return; }
+  if (!STATE.nickname) { toast(T("Bitte zuerst einen Namen wählen.", "Please pick a name first.")); return; }
+  if (!window.FB?.firebaseReady) { toast(T("Teams erstellen nur online möglich.", "Teams can only be created online.")); return; }
   _teamCreateReturnCorner = cornerId || null;
   _teamCreateColor = CUSTOM_TEAM_COLORS[0];
   const overlay = $("#team-create-overlay");
@@ -570,7 +570,7 @@ function openTeamCreate(cornerId) {
 async function saveTeamCreate() {
   const name = $("#team-create-name").value.trim();
   const emoji = ($("#team-create-emoji").value.trim() || "🚩").slice(0, 4);
-  if (!name) { toast("Bitte einen Team-Namen eingeben."); return; }
+  if (!name) { toast(T("Bitte einen Team-Namen eingeben.", "Please enter a team name.")); return; }
   const key = "custom-" + name.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 16) + "-" + Math.random().toString(36).slice(2, 6);
   const team = { name: name.slice(0, 24), emoji, color: _teamCreateColor, createdBy: STATE.nickname, createdAt: Date.now() };
   try {
@@ -581,7 +581,7 @@ async function saveTeamCreate() {
     selectTeam(key);
     addXp(15, `Team gegründet: ${team.name}`);
     unlockAchievement("team-founder", "Gründer", "🚩", 25);
-    toast(`✅ Team „${escapeHtml(team.name)}" erstellt & ausgewählt`);
+    toast(`✅ ${T("Team", "Team", "Equipo")} „${escapeHtml(team.name)}" ${T("erstellt & ausgewählt", "created & selected", "creado y elegido")}`);
     // If this came out of a check-in, continue that chain instead of the detail view.
     const pending = STATE.pendingCheckinQuestions;
     if (pending) {
@@ -592,7 +592,7 @@ async function saveTeamCreate() {
     }
   } catch (err) {
     console.warn("saveTeamCreate failed:", err);
-    toast("Team konnte nicht erstellt werden.");
+    toast(T("Team konnte nicht erstellt werden.", "Couldn't create the team."));
   }
 }
 
@@ -655,7 +655,7 @@ function renderLiveLocationMarkers() {
       iconAnchor: [14, 14]
     });
     const marker = L.marker([info.lat, info.lng], { icon, zIndexOffset: 1200 }).addTo(STATE.mainMap);
-    marker.bindPopup(`<strong>${escapeHtml(info.nickname || userId)}</strong><br><button class="action-btn meetup-msg-btn" style="margin-top:6px;padding:6px 10px;font-size:11px;" data-user="${encodeURIComponent(userId)}">💬 Treffen?</button> <button class="action-btn" style="margin-top:6px;padding:6px 10px;font-size:11px;" data-user-profile="${escapeHtml(userId)}">👤 Profil</button>`);
+    marker.bindPopup(`<strong>${escapeHtml(info.nickname || userId)}</strong><br><button class="action-btn meetup-msg-btn" style="margin-top:6px;padding:6px 10px;font-size:11px;" data-user="${encodeURIComponent(userId)}">💬 ${T("Treffen?", "Meet up?")}</button> <button class="action-btn" style="margin-top:6px;padding:6px 10px;font-size:11px;" data-user-profile="${escapeHtml(userId)}">👤 ${T("Profil", "Profile")}</button>`);
     marker.on("popupopen", (event) => {
       const btn = event.popup?.getElement()?.querySelector(".meetup-msg-btn");
       if (!btn) return;
@@ -676,7 +676,7 @@ function _activateAuthDependentFeatures(uid, status) {
   migrateInboxFromLegacyKeys();
   if (status) {
     status.className = "firebase-status online";
-    status.textContent = "⚡ Live — Firebase aktiv & authentifiziert";
+    status.textContent = T("⚡ Live — Firebase aktiv & authentifiziert", "⚡ Live — Firebase active & signed in");
   }
   // Load VAPID key from database config (needed for push notifications)
   if (window.FB?.db && window.FB?.ref && window.FB?.onValue) {

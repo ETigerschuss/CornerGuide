@@ -84,10 +84,10 @@ function renderVisitTrail(cornerId, container) {
   const totalVisits = Math.max(visits.length, getVisitCount(cornerId));
 
   if (sorted.length === 0) {
-    container.innerHTML = `
+    container.innerHTML = T(`
       <p class="visit-trail-header">👣 Besucher-Trail</p>
       <p style="font-size:12px;color:var(--fg-dim);margin:0;">Noch keine Besuche — sei der Erste!</p>
-    `;
+    `, "\n      <p class=\"visit-trail-header\">👣 Visitor trail</p>\n      <p style=\"font-size:12px;color:var(--fg-dim);margin:0;\">No visits yet — be the first!</p>\n    ");
     return;
   }
 
@@ -99,7 +99,7 @@ function renderVisitTrail(cornerId, container) {
   `).join("");
 
   container.innerHTML = `
-    <p class="visit-trail-header">👣 Besucher-Trail ${totalVisits > 0 ? `<span class="visit-count-badge"><span class="fire">🔥</span> ${totalVisits}x besucht</span>` : ""}</p>
+    <p class="visit-trail-header">👣 ${T("Besucher-Trail", "Visitor trail")} ${totalVisits > 0 ? `<span class="visit-count-badge"><span class="fire">🔥</span> ${totalVisits}x ${T("besucht", "visited")}</span>` : ""}</p>
     <ul class="visit-trail-list">${chips}</ul>
   `;
 }
@@ -139,7 +139,7 @@ function renderEmojiVotes(cornerId, container) {
     const info = AMENITY_ICONS[a];
     if (!info) return "";
     const { count, myVote } = getEmojiVoteData(cornerId, a);
-    return `<button class="emoji-vote-chip ${myVote ? "voted" : ""}" data-corner="${cornerId}" data-amenity="${a}" title="Stimme für ${info.label}">
+    return `<button class="emoji-vote-chip ${myVote ? "voted" : ""}" data-corner="${cornerId}" data-amenity="${a}" title="${T("Stimme für", "Vote for", "Votar por")} ${info.label}">
       <span class="vote-emoji">${info.emoji}</span>
       <span class="vote-count">${count || ""}</span>
     </button>`;
@@ -155,7 +155,7 @@ function renderEmojiVotes(cornerId, container) {
       btn.classList.add("just-voted");
       setTimeout(() => btn.classList.remove("just-voted"), 300);
       const info = AMENITY_ICONS[amenity];
-      toast(`${info?.emoji || ""} ${wasVoted ? "Stimme entfernt" : "Abgestimmt!"}`);
+      toast(`${info?.emoji || ""} ${wasVoted ? T("Stimme entfernt", "Vote removed", "Voto quitado") : T("Abgestimmt!", "Voted!", "¡Votado!")}`);
       if (!wasVoted) addPoints(STATE.nickname, 2, "Emoji-Vote");
     });
   });
@@ -164,7 +164,7 @@ function renderEmojiVotes(cornerId, container) {
 function timeAgo(timestamp) {
   const diff = Date.now() - timestamp;
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "gerade eben";
+  if (mins < 1) return T("gerade eben", "just now");
   if (mins < 60) return `vor ${mins} min`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `vor ${hrs} h`;

@@ -20,6 +20,8 @@ function cornerWhatsAppText(cornerId) {
   const where = `${corner.name}${corner.area ? ` (${corner.area})` : ""}`;
   if (myPresenceCorner() !== cornerId) return `🍻 Lust auf ${where}? 👉 ${link}`;
   const others = freshFriends().filter((f) => f.atCorner === cornerId && !isMyKey(f.id)).map((f) => f.nickname || f.name).filter(Boolean);
-  return `🍻 Bin gerade am ${where}!${others.length ? ` Schon da: ${others.join(", ")}.` : ""} Kommt vorbei 👉 ${link}`;
+  return T(`🍻 Bin gerade am ${where}!${others.length ? ` Schon da: ${others.join(", ")}.` : ""} Kommt vorbei 👉 ${link}`,
+    `🍻 I'm at ${where} right now!${others.length ? ` Already here: ${others.join(", ")}.` : ""} Come over 👉 ${link}`,
+    `🍻 ¡Estoy en ${where} ahora mismo!${others.length ? ` Ya están: ${others.join(", ")}.` : ""} Pásate 👉 ${link}`);
 }
 

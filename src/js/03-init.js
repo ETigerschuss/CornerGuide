@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
   openPendingProfile();
   handlePendingJoin();
   if (STATE.pendingInviteName) {
-    toast(`🍻 Einladung von <strong>${escapeHtml(STATE.pendingInviteName)}</strong>`);
+    toast(`🍻 ${T("Einladung von", "Invitation from", "Invitación de")} <strong>${escapeHtml(STATE.pendingInviteName)}</strong>`);
     clearHandledQueryParam(INVITE_PARAM);
   }
   // Start cooldown display if active

@@ -34,12 +34,12 @@ function bindAccessPrompt() {
   const hint = $("#access-install-hint");
   if (hint && !inStandalone) {
     hint.innerHTML = isIOS
-      ? "📲 <strong>iPhone-Tipp:</strong> Safari öffnen → Teilen-Symbol <span style=\"font-size:14px;\">&#x1F5D2;</span> → &bdquo;Zum Home-Bildschirm&ldquo;. Nur als installierte App gibt&#39;s Push-Nachrichten!"
-      : "📲 <strong>Tipp:</strong> Füg die App über das Browser-Menü zum Startbildschirm hinzu — für Push-Nachrichten und schnellen Zugriff.";
+      ? T("📲 <strong>iPhone-Tipp:</strong> Safari öffnen → Teilen-Symbol <span style=\"font-size:14px;\">&#x1F5D2;</span> → &bdquo;Zum Home-Bildschirm&ldquo;. Nur als installierte App gibt&#39;s Push-Nachrichten!", "📲 <strong>iPhone tip:</strong> open Safari → share icon <span style=\"font-size:14px;\">&#x1F5D2;</span> → &bdquo;Add to Home Screen&ldquo;. Push messages only work in the installed app!")
+      : T("📲 <strong>Tipp:</strong> Füg die App über das Browser-Menü zum Startbildschirm hinzu — für Push-Nachrichten und schnellen Zugriff.", "📲 <strong>Tip:</strong> add the app to your home screen via the browser menu — for push messages and quick access.");
   }
   // Recovery paths so a new browser/device doesn't need a fresh invite code.
   $("#access-recover-code")?.addEventListener("click", async () => {
-    const code = await appPrompt("Recovery-Code", "", "CODE", { codeStyle: true, text: "Übernimmt dein Profil und deinen Zugang in einem Schritt.", okLabel: "Übernehmen" });
+    const code = await appPrompt("Recovery-Code", "", "CODE", { codeStyle: true, text: T("Übernimmt dein Profil und deinen Zugang in einem Schritt.", "Takes over your profile and your access in one step."), okLabel: T("Übernehmen", "Take over") });
     if (code) await claimRecoveryCode(code);
   });
   $("#access-recover-google")?.addEventListener("click", async () => {
@@ -48,8 +48,8 @@ function bindAccessPrompt() {
       await refreshAccessForCurrentUser();
       const uid = window.FB.getAuthUid?.();
       if (uid) loadProfileFromCloud(uid);
-      if (localStorage.getItem("cg.accessGranted") === "1") toast("✅ Willkommen zurück!");
-      else toast("Angemeldet — aber dieses Google-Konto hat noch keinen Zugang. Bitte Code eingeben.");
+      if (localStorage.getItem("cg.accessGranted") === "1") toast(T("✅ Willkommen zurück!", "✅ Welcome back!"));
+      else toast(T("Angemeldet — aber dieses Google-Konto hat noch keinen Zugang. Bitte Code eingeben.", "Signed in — but this Google account has no access yet. Please enter the code."));
     } catch (err) {
       if (err?.code === "auth/popup-closed-by-user") return;
       toast(`Google-Login fehlgeschlagen (${escapeHtml(err?.code || "?")}): ${escapeHtml(err?.message || "")}`);
@@ -105,12 +105,12 @@ function showAccessPrompt(reason = "") {
   bindAccessPrompt();
   const text = $("#access-text");
   if (text) text.textContent = reason === "missing"
-    ? "Für dieses Gerät ist dein Zugang nicht mehr hinterlegt (z. B. nach einem Login-Wechsel) — darum ging Speichern nicht. Gib den Einladungscode aus der Gruppe einmal neu ein, dein Profil bleibt erhalten."
+    ? T("Für dieses Gerät ist dein Zugang nicht mehr hinterlegt (z. B. nach einem Login-Wechsel) — darum ging Speichern nicht. Gib den Einladungscode aus der Gruppe einmal neu ein, dein Profil bleibt erhalten.", "Your access isn't stored for this device anymore (e.g. after switching logins) — that's why saving failed. Enter the group's invite code once more; your profile stays.")
     : reason === "invite"
-      ? "Dieser Einladungslink gilt nicht mehr. Lass dir einen neuen schicken — oder gib den Einladungscode ein."
+      ? T("Dieser Einladungslink gilt nicht mehr. Lass dir einen neuen schicken — oder gib den Einladungscode ein.", "This invite link no longer works. Ask for a new one — or enter the invite code.")
       : reason === "banned"
-        ? "Die Admins haben deinen Zugang gesperrt. Wenn das ein Irrtum ist, sprich jemanden aus der Gruppe an."
-        : "Öffne einen Link von jemandem aus der Gruppe — oder gib den Einladungscode ein.";
+        ? T("Die Admins haben deinen Zugang gesperrt. Wenn das ein Irrtum ist, sprich jemanden aus der Gruppe an.", "The admins have blocked your access. If that's a mistake, talk to someone from the group.")
+        : T("Öffne einen Link von jemandem aus der Gruppe — oder gib den Einladungscode ein.", "Open a link from someone in the group — or enter the invite code.");
   $("#access-prompt").style.display = "flex";
   setTimeout(() => $("#access-code-input").focus(), 100);
 }
@@ -178,13 +178,13 @@ function onAccessGranted(code, opts = {}) {
   setTimeout(linkMyEarlierLogins, 1500);
   if (STATE.nickname) {
     // Someone who already has a profile here only re-confirmed access.
-    toast(`✅ Zugang bestätigt — weiter geht's, ${escapeHtml(STATE.nickname)}!`);
+    toast(`✅ ${T("Zugang bestätigt — weiter geht's", "Access confirmed — carry on", "Acceso confirmado — sigue")}, ${escapeHtml(STATE.nickname)}!`);
     broadcastPresence();
     runPendingLinkActions();
   } else {
     // The link's own "Einladung von …" toast already named the inviter.
-    const by = !STATE.pendingInviteName && opts.byName ? ` ${T("von", "by")} <strong>${escapeHtml(opts.byName)}</strong>` : "";
-    toast(opts.invited ? `🍻 ${T("Du bist dabei", "You're in")}${by ? ` — ${T("eingeladen", "invited")}${by}` : ""}! ${T("Wie heißt du?", "What's your name?")}` : "✅ Zugang gewährt – willkommen!");
+    const by = !STATE.pendingInviteName && opts.byName ? ` ${T("von", "by", "por")} <strong>${escapeHtml(opts.byName)}</strong>` : "";
+    toast(opts.invited ? `🍻 ${T("Du bist dabei", "You're in")}${by ? ` — ${T("eingeladen", "invited")}${by}` : ""}! ${T("Wie heißt du?", "What's your name?")}` : T("✅ Zugang gewährt – willkommen!", "✅ Access granted – welcome!"));
     // Returning friends pick themselves right away instead of starting fresh.
     setTimeout(() => openClaimOverlay({ welcome: true }), 500);
   }
@@ -198,14 +198,14 @@ async function submitAccessCode() {
   const errEl = $("#access-error");
   // Sanitize: strip characters illegal in Firebase paths and normalise to uppercase
   const code = input.value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
-  if (!code) { errEl.textContent = "Bitte einen Code eingeben."; return; }
+  if (!code) { errEl.textContent = T("Bitte einen Code eingeben.", "Please enter a code."); return; }
 
   btn.disabled = true;
   errEl.textContent = "";
 
   const uid = window.FB.getAuthUid();
   if (!uid) {
-    errEl.textContent = "Kein Anmelde-Status. Bitte Seite neu laden.";
+    errEl.textContent = T("Kein Anmelde-Status. Bitte Seite neu laden.", "No sign-in status. Please reload the page.");
     btn.disabled = false;
     return;
   }
@@ -217,7 +217,7 @@ async function submitAccessCode() {
     onAccessGranted(code);
   } catch (err) {
     console.warn("Access code validation failed:", err);
-    errEl.textContent = "Ungültiger Code. Bitte erneut versuchen.";
+    errEl.textContent = T("Ungültiger Code. Bitte erneut versuchen.", "Invalid code. Please try again.");
     btn.disabled = false;
     input.focus();
   }

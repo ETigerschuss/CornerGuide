@@ -36,7 +36,7 @@ function applyProfileSnapshot(p, { silent = false } = {}) {
   syncIdentity();
   // A restored profile brings its nickname — close the "Wer bist du?" prompt.
   if (STATE.nickname) { const np = $("#nickname-prompt"); if (np) np.style.display = "none"; }
-  if (!silent) toast("✅ Profil übernommen");
+  if (!silent) toast(T("✅ Profil übernommen", "✅ Profile taken over"));
   return true;
 }
 
@@ -120,7 +120,7 @@ async function createRecoveryCode() {
 
 // Hand the code to the person's own chat/notes (outside this browser — that is the point).
 async function shareRecoveryCode(code) {
-  const text = T(`Mein Minga-Corner-Guide-Recovery-Code: ${code}\nProfil → Konto & Profil sichern → „Recovery-Code eingeben“.`, `My Minga Corner Guide recovery code: ${code}\nProfile → Secure account & profile → “Enter recovery code”.`);
+  const text = T(`Mein Minga-Corner-Guide-Recovery-Code: ${code}\nProfil → Konto & Profil sichern → „Recovery-Code eingeben“.`, `My Minga Corner Guide recovery code: ${code}\nProfile → Secure account & profile → “Enter recovery code”.`, `Mi código de recuperación de Minga Corner Guide: ${code}\nPerfil → Asegurar cuenta y perfil → «Introducir código de recuperación».`);
   try {
     if (navigator.share) { await navigator.share({ title: "Recovery-Code", text }); return; }
   } catch (err) { if (err && err.name === "AbortError") return; }
@@ -162,7 +162,7 @@ async function claimRecoveryCode(rawCode) {
     // Point the same code at this login, so it keeps working for the next switch.
     localStorage.setItem("cg.recoveryCode", code);
     createRecoveryCode().catch(() => {});
-    if (!linked) toast(T(`✅ Profil „${escapeHtml(STATE.nickname || remote.nickname || "")}“ übernommen — willkommen zurück!`, `✅ Profile “${escapeHtml(STATE.nickname || remote.nickname || "")}” restored — welcome back!`));
+    if (!linked) toast(T(`✅ Profil „${escapeHtml(STATE.nickname || remote.nickname || "")}“ übernommen — willkommen zurück!`, `✅ Profile “${escapeHtml(STATE.nickname || remote.nickname || "")}” restored — welcome back!`, `✅ Perfil «${escapeHtml(STATE.nickname || remote.nickname || "")}» restaurado — ¡bienvenido de nuevo!`));
     if (STATE.view === "profile") renderProfile();
   } catch (err) {
     console.warn("claimRecoveryCode failed:", err);
@@ -184,23 +184,23 @@ function openQrDialog(corner) {
   const personal = buildShareUrl(corner.id, STATE.nickname || "", true);
   const sticker = buildStickerUrl(corner.id);
   const teamNote = STATE.team && TEAMS[STATE.team]
-    ? `inkl. Team ${TEAMS[STATE.team].emoji} ${escapeHtml(TEAMS[STATE.team].name)}`
-    : "ohne Team";
+    ? `${T("inkl. Team", "incl. team", "con el equipo")} ${TEAMS[STATE.team].emoji} ${escapeHtml(TEAMS[STATE.team].name)}`
+    : T("ohne Team", "no team", "sin equipo");
   $("#qr-title").textContent = corner.name;
   $("#qr-body").innerHTML = `
     <div class="qr-block">
-      <h3>👤 Persönlicher Code</h3>
-      <p>Zum Teilen mit Freunden: sie werden eingecheckt, du bekommst Punkte, ${teamNote}.</p>
-      <img src="${qrImageUrl(personal, 320)}" alt="Persönlicher QR-Code" />
-      <button class="action-btn" data-copy="${escapeHtml(personal)}">🔗 Link kopieren</button>
+      <h3>👤 ${T("Persönlicher Code", "Personal code", "Código personal")}</h3>
+      <p>${T("Zum Teilen mit Freunden: sie werden eingecheckt, du bekommst Punkte", "To share with friends: they get checked in, you get points", "Para compartir con amigos: se les hace check-in y tú ganas puntos")}, ${teamNote}.</p>
+      <img src="${qrImageUrl(personal, 320)}" alt="${T("Persönlicher QR-Code", "Personal QR code", "Código QR personal")}" />
+      <button class="action-btn" data-copy="${escapeHtml(personal)}">🔗 ${T("Link kopieren", "Copy link", "Copiar enlace")}</button>
     </div>
     <div class="qr-block">
-      <h3>🏷️ Aufkleber-Code (neutral)</h3>
-      <p>Ohne Person und ohne Team — zum Ausdrucken und an den Corner kleben. Wer scannt, wird direkt hier eingecheckt.</p>
-      <img src="${qrImageUrl(sticker, 320)}" alt="Neutraler QR-Code" />
+      <h3>🏷️ ${T("Aufkleber-Code (neutral)", "Sticker code (neutral)", "Código para pegatina (neutro)")}</h3>
+      <p>${T("Ohne Person und ohne Team — zum Ausdrucken und an den Corner kleben. Wer scannt, wird direkt hier eingecheckt.", "No person, no team — print it and stick it at the corner. Whoever scans it gets checked in right here.", "Sin persona ni equipo — imprímelo y pégalo en el corner. Quien lo escanee hace check-in aquí mismo.")}</p>
+      <img src="${qrImageUrl(sticker, 320)}" alt="${T("Neutraler QR-Code", "Neutral QR code", "Código QR neutro")}" />
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="action-btn" data-copy="${escapeHtml(sticker)}">🔗 Link kopieren</button>
-        <button class="action-btn primary" id="qr-print">🖨️ Aufkleber drucken</button>
+        <button class="action-btn" data-copy="${escapeHtml(sticker)}">🔗 ${T("Link kopieren", "Copy link", "Copiar enlace")}</button>
+        <button class="action-btn primary" id="qr-print">🖨️ ${T("Aufkleber drucken", "Print sticker", "Imprimir pegatina")}</button>
       </div>
     </div>
     <div class="qr-block">
@@ -209,7 +209,7 @@ function openQrDialog(corner) {
       <button class="action-btn" id="qr-follow">🧲 ${T("Folge-mir-QR zeigen", "Show follow-me QR")}</button>
     </div>`;
   $("#qr-body").querySelectorAll("[data-copy]").forEach((b) =>
-    b.addEventListener("click", async () => { await copyText(b.dataset.copy); toast("🔗 Link kopiert"); }));
+    b.addEventListener("click", async () => { await copyText(b.dataset.copy); toast(T("🔗 Link kopiert", "🔗 Link copied")); }));
   $("#qr-print")?.addEventListener("click", () => printCornerSticker(corner, sticker));
   $("#qr-follow")?.addEventListener("click", openFollowMeDialog);
   $("#qr-close").onclick = () => { overlay.style.display = "none"; };

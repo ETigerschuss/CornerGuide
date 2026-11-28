@@ -17,8 +17,8 @@ function followMeText() {
   const here = myPresenceCorner();
   const corner = here ? getAllCorners().find((c) => c.id === here) : null;
   return corner
-    ? T(`${STATE.nickname} ist am ${corner.name} — komm vorbei! 🍻 Der Link führt immer dahin, wo ich gerade bin:`, `${STATE.nickname} is at ${corner.name} — come over! 🍻 This link always leads to where I am right now:`)
-    : T(`Komm zum Cornern! 🍻 Der Link führt immer dahin, wo ${STATE.nickname} gerade eingecheckt ist:`, `Come cornering! 🍻 This link always leads to where ${STATE.nickname} is checked in:`);
+    ? T(`${STATE.nickname} ist am ${corner.name} — komm vorbei! 🍻 Der Link führt immer dahin, wo ich gerade bin:`, `${STATE.nickname} is at ${corner.name} — come over! 🍻 This link always leads to where I am right now:`, `${STATE.nickname} está en ${corner.name} — ¡pásate! 🍻 Este enlace siempre lleva a donde estoy ahora:`)
+    : T(`Komm zum Cornern! 🍻 Der Link führt immer dahin, wo ${STATE.nickname} gerade eingecheckt ist:`, `Come cornering! 🍻 This link always leads to where ${STATE.nickname} is checked in:`, `¡Vente al corner! 🍻 Este enlace siempre lleva a donde ${STATE.nickname} tiene el check-in:`);
 }
 
 function openFollowMeDialog() {
@@ -30,7 +30,7 @@ function openFollowMeDialog() {
   const here = myPresenceCorner();
   const corner = here ? getAllCorners().find((c) => c.id === here) : null;
   $("#qr-title").innerHTML = corner
-    ? T(`Gerade bist du am <strong>${escapeHtml(corner.name)}</strong>.`, `You are at <strong>${escapeHtml(corner.name)}</strong> right now.`)
+    ? T(`Gerade bist du am <strong>${escapeHtml(corner.name)}</strong>.`, `You are at <strong>${escapeHtml(corner.name)}</strong> right now.`, `Ahora estás en <strong>${escapeHtml(corner.name)}</strong>.`)
     : T("Du bist gerade nirgends eingecheckt — der Code führt zu dir, sobald du eincheckst.", "You are not checked in anywhere — the code leads to you as soon as you check in.");
   $("#qr-body").innerHTML = `
     <div class="qr-block">
@@ -117,7 +117,7 @@ function detailTopBarHtml(c) {
 // Print-ready sticker sheet for one corner.
 function printCornerSticker(corner, url) {
   const w = window.open("", "_blank");
-  if (!w) { toast("Bitte Pop-ups erlauben, um zu drucken."); return; }
+  if (!w) { toast(T("Bitte Pop-ups erlauben, um zu drucken.", "Please allow pop-ups to print.")); return; }
   w.document.write(`<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Aufkleber – ${escapeHtml(corner.name)}</title>
     <style>
       body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; }
@@ -180,7 +180,7 @@ function openCheckinTeamPicker(cornerId) {
     $("#cto-buddy-list").querySelectorAll("[data-buddy-team]").forEach((b) =>
       b.addEventListener("click", () => {
         selectTeam(b.dataset.buddyTeam);
-        toast(`${TEAMS[b.dataset.buddyTeam].emoji} Team ${escapeHtml(TEAMS[b.dataset.buddyTeam].name)} übernommen`);
+        toast(`${TEAMS[b.dataset.buddyTeam].emoji} ${T("Team", "Team", "Equipo")} ${escapeHtml(TEAMS[b.dataset.buddyTeam].name)} ${T("übernommen", "taken", "elegido")}`);
         overlay.style.display = "none";
       }));
   } else {

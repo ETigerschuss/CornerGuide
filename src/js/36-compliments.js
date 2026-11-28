@@ -117,7 +117,7 @@ function openComplimentComposer(toKey, toName) {
   const toRoot = profileRoot(toKey);
   if (!toRoot || toRoot === myRootKey() || isMyKey(toRoot)) { toast(T("Dir selbst? 😄 Such dir jemand anderen aus.", "Yourself? 😄 Pick someone else.")); return; }
   const name = toName || identityNickname(toRoot) || T("diese Person", "this person");
-  if (complimentedToday(toRoot)) { toast(`💐 ${T(`${escapeHtml(name)} hat heute schon ein Kompliment von dir — morgen wieder!`, `You already complimented ${escapeHtml(name)} today — again tomorrow!`)}`); return; }
+  if (complimentedToday(toRoot)) { toast(`💐 ${T(`${escapeHtml(name)} hat heute schon ein Kompliment von dir — morgen wieder!`, `You already complimented ${escapeHtml(name)} today — again tomorrow!`, `Hoy ya le hiciste un cumplido a ${escapeHtml(name)} — ¡mañana otra vez!`)}`); return; }
   const overlay = $("#compliment-overlay");
   if (!overlay) return;
   _cmp.compose = { toRoot, name, preset: "" };
@@ -175,7 +175,7 @@ async function sendCompliment() {
     console.warn("compliment failed:", err);
     if (send) send.disabled = false;
     // The rules allow one per person and day.
-    toast(T(`💐 ${escapeHtml(c.name)} hat heute schon ein Kompliment von dir — oder die Verbindung hakt.`, `💐 You already complimented ${escapeHtml(c.name)} today — or the connection is shaky.`));
+    toast(T(`💐 ${escapeHtml(c.name)} hat heute schon ein Kompliment von dir — oder die Verbindung hakt.`, `💐 You already complimented ${escapeHtml(c.name)} today — or the connection is shaky.`, `💐 Hoy ya le hiciste un cumplido a ${escapeHtml(c.name)} — o la conexión falla.`));
     return;
   }
   markComplimented(c.toRoot);

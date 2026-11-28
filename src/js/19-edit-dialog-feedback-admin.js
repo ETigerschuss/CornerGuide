@@ -31,7 +31,7 @@ function openCornerEditor(cornerId) {
   $("#ce-save").onclick = () => saveCornerEdit(cornerId);
   $("#ce-delete").style.display = "";
   $("#ce-delete").onclick = async () => {
-    if (!(await appConfirm(`Spot „${c.name}" löschen?`, "Der Spot verschwindet für alle. Das ist endgültig.", "Löschen"))) return;
+    if (!(await appConfirm(T(`Spot „${c.name}" löschen?`, `Delete spot “${c.name}”?`, `¿Borrar el spot «${c.name}»?`), T("Der Spot verschwindet für alle. Das ist endgültig.", "The spot disappears for everyone. This is final."), T("Löschen", "Delete")))) return;
     close();
     await deleteOwnCorner(cornerId);
   };
@@ -44,7 +44,7 @@ async function saveCornerEdit(cornerId) {
   if (!c || !canEditCorner(c)) return;
   const name = $("#ce-name").value.trim();
   const desc = $("#ce-desc").value.trim();
-  if (!name) { toast("Bitte einen Namen eingeben."); return; }
+  if (!name) { toast(T("Bitte einen Namen eingeben.", "Please enter a name.")); return; }
   const updated = {
     ...c,
     name: name.slice(0, 80),
@@ -75,7 +75,7 @@ async function saveCornerEdit(cornerId) {
       if (fromPath !== toPath && CE_VISIBILITY !== "all") STATE.customSpots = STATE.customSpots.filter((s) => s.id !== cornerId);
     } catch (err) {
       console.warn("saveCornerEdit failed:", err);
-      toast("⚠️ Änderung konnte nicht gespeichert werden.");
+      toast(T("⚠️ Änderung konnte nicht gespeichert werden.", "⚠️ Couldn't save the change."));
       return;
     }
   }
@@ -90,14 +90,14 @@ async function deleteOwnCorner(cornerId) {
   if (!c || !canEditCorner(c)) return;
   if (window.FB?.firebaseReady) {
     try { await window.FB.remove(window.FB.ref(window.FB.db, cornerDbPath(c))); }
-    catch (err) { console.warn("deleteOwnCorner failed:", err); toast("⚠️ Löschen fehlgeschlagen."); return; }
+    catch (err) { console.warn("deleteOwnCorner failed:", err); toast(T("⚠️ Löschen fehlgeschlagen.", "⚠️ Deleting failed.")); return; }
   }
   if (STATE.privateCorners?.[cornerId]) delete STATE.privateCorners[cornerId];
   STATE.customSpots = STATE.customSpots.filter((s) => s.id !== cornerId);
   saveCustomSpots();
   closeDetail();
   renderCards(); updateCounts(); rebuildMainMarkers();
-  toast(`🗑️ Spot „${escapeHtml(c.name)}" gelöscht`);
+  toast(`🗑️ ${T(`Spot „${escapeHtml(c.name)}" gelöscht`, `Spot “${escapeHtml(c.name)}” deleted`, `Spot «${escapeHtml(c.name)}» borrado`)}`);
 }
 
 /* ====================== APP DIALOG (prompt/confirm replacement) ====================== */
@@ -112,7 +112,7 @@ function _dialogKeyHandler(e) {
   if (e.key === "Escape") _closeDialog(null);
   if (e.key === "Enter" && document.activeElement === $("#app-dialog-input")) $("#app-dialog-ok").click();
 }
-function showDialog({ title, text = "", input = false, value = "", placeholder = "", okLabel = "OK", cancelLabel = "Abbrechen", codeStyle = false, danger = false }) {
+function showDialog({ title, text = "", input = false, value = "", placeholder = "", okLabel = "OK", cancelLabel = T("Abbrechen", "Cancel"), codeStyle = false, danger = false }) {
   return new Promise((resolve) => {
     // If a dialog is already open, cancel it first.
     if (_dialogResolve) _closeDialog(null);
@@ -205,10 +205,10 @@ async function adminDedupeVisits() {
   });
   const n = Object.keys(updates).length;
   if (!n) { toast(T("Keine doppelten Check-ins gefunden. ✨", "No duplicate check-ins found. ✨")); return; }
-  if (!(await appConfirm(T(`${n} doppelte Check-ins löschen?`, `Delete ${n} duplicate check-ins?`), T("Pro Person, Corner und Tag bleibt der erste Check-in.", "The first check-in per person, corner and day stays."), T("Aufräumen", "Clean up")))) return;
+  if (!(await appConfirm(T(`${n} doppelte Check-ins löschen?`, `Delete ${n} duplicate check-ins?`, `¿Borrar ${n} check-ins duplicados?`), T("Pro Person, Corner und Tag bleibt der erste Check-in.", "The first check-in per person, corner and day stays."), T("Aufräumen", "Clean up")))) return;
   try {
     await update(ref(db), updates);
-    toast(T(`🧹 ${n} doppelte Check-ins gelöscht`, `🧹 ${n} duplicate check-ins deleted`));
+    toast(T(`🧹 ${n} doppelte Check-ins gelöscht`, `🧹 ${n} duplicate check-ins deleted`, `🧹 ${n} check-ins duplicados borrados`));
   } catch (err) { toast(T("Aufräumen fehlgeschlagen.", "Cleanup failed.")); }
 }
 
