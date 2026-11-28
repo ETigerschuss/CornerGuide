@@ -154,7 +154,14 @@ async function addSpot(u, name, lat, lng, vis) {
     await ana.page.waitForSelector("#share-section [data-cf-remove]", { timeout: 5000 });
     await ana.page.click("#share-section [data-cf-remove]");
     const gone = await waitFor(async () => !(await dbGet(`closeFriends/${ana.uid}/${ben.uid}`)) && !(await dbGet(`closeFriendOf/${ben.uid}/${ana.uid}`)));
-    check("removing Ben takes away his access", gone && (await readAs(ben, `secretDates/${ana.uid}`)) === "denied");
+    // Ben's app still listens on Ana's secret dates until it hears it was
+    // removed — get() answers from that listener's cache meanwhile, so the
+    // refusal arrives a moment later (on a slow CI machine: noticeably later).
+    const denied = gone && await waitFor(async () => (await readAs(ben, `secretDates/${ana.uid}`)) === "denied", 15000);
+    check("removing Ben takes away his access", denied, JSON.stringify({
+      gone, read: await readAs(ben, `secretDates/${ana.uid}`),
+      left: Object.keys((await dbGet(`closeFriends/${ana.uid}`)) || {}).length
+    }));
 
     const errs = [ana, ben, cem, ben2].flatMap((u) => u.page._logs.filter((l) => l.startsWith("[pageerror]")));
     check("no page errors", errs.length === 0, errs.join(" | ").slice(0, 400));
