@@ -215,17 +215,22 @@ async function adminDedupeVisits() {
 /* ====================== ADMIN PANEL (host only) ====================== */
 const ADMIN_USER_NODES = ["points", "karmaPoints", "presence", "teams", "achievements", "pushTokens", "userPrefs", "userProfiles", "liveLocations"];
 
-async function adminDeleteProfile(key, nickname) {
+async function adminDeleteProfile(key, nickname, keys = [key]) {
   if (!STATE.isAdmin || !window.FB?.firebaseReady) return;
-  if (!(await appConfirm(`Profil „${nickname || key}" löschen?`, "Wird überall entfernt (Punkte, Presence, Team, Achievements). Das ist endgültig.", "Endgültig löschen"))) return;
+  const logins = [...new Set([key, ...(keys || [])])].filter(Boolean);
+  const more = logins.length > 1 ? T(` — mit allen ${logins.length} Logins`, ` — with all ${logins.length} logins`, ` — con sus ${logins.length} logins`) : "";
+  if (!(await appConfirm(T(`Profil „${nickname || key}“ löschen?`, `Delete profile “${nickname || key}”?`, `¿Eliminar el perfil «${nickname || key}»?`),
+    T(`Wird überall entfernt (Punkte, Presence, Team, Achievements)${more}. Das ist endgültig.`, `Removed everywhere (points, presence, team, achievements)${more}. This is final.`, `Se elimina en todas partes (puntos, presencia, equipo, logros)${more}. Es definitivo.`),
+    T("Endgültig löschen", "Delete for good", "Eliminar definitivamente")))) return;
   const { db, ref, remove } = window.FB;
   try {
-    await Promise.all(ADMIN_USER_NODES.map((node) => remove(ref(db, node + "/" + key)).catch(() => {})));
-    toast(`🗑️ Profil „${escapeHtml(nickname || key)}" gelöscht`);
+    await Promise.all(logins.flatMap((k) => ADMIN_USER_NODES.map((node) => remove(ref(db, node + "/" + k)).catch(() => {}))));
+    logins.forEach((k) => { if (STATE.points) delete STATE.points[k]; if (STATE.karmaPoints) delete STATE.karmaPoints[k]; });
+    toast(`🗑️ ${T("Profil gelöscht", "Profile deleted", "Perfil eliminado")}: „${escapeHtml(nickname || key)}“`);
     renderAdminPanel();
   } catch (err) {
     console.warn("adminDeleteProfile failed:", err);
-    toast("Löschen fehlgeschlagen.");
+    toast(T("Löschen fehlgeschlagen.", "Deleting failed.", "No se pudo eliminar."));
   }
 }
 
@@ -261,52 +266,7 @@ async function adminCleanPresence() {
   }
 }
 
-/* Find people whose XP got split across several identity keys (same nickname,
-   different keys). "Anonym" is excluded on purpose — those are usually
-   different people who never picked a name. */
-function findDuplicateProfiles(pointsData) {
-  const groups = {};
-  Object.entries(pointsData || {}).forEach(([key, p]) => {
-    const nick = ((p && p.nickname) || "").trim();
-    if (!nick || nick.toLowerCase() === "anonym") return;
-    (groups[nick.toLowerCase()] = groups[nick.toLowerCase()] || []).push({ key, nickname: nick, total: (p && p.total) || 0 });
-  });
-  return Object.values(groups)
-    .filter((entries) => entries.length > 1)
-    .map((entries) => entries.sort((a, b) => b.total - a.total));
-}
-
-async function renderAdminDuplicates(pointsData) {
-  const el = $("#admin-dupes");
-  if (!el) return;
-  const groups = findDuplicateProfiles(pointsData);
-  if (!groups.length) { el.innerHTML = `<p style="color:var(--fg-dim);font-size:12px;">Keine doppelten Profile. ✨</p>`; return; }
-  el.innerHTML = groups.map((g, gi) => {
-    const sum = g.reduce((s, e) => s + e.total, 0);
-    return `<div style="padding:10px 12px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:8px;">
-      <div style="font-size:13px;font-weight:600;margin-bottom:4px;">${escapeHtml(g[0].nickname)} — ${g.length} Einträge</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);margin-bottom:8px;">
-        ${g.map((e) => `${e.total} Aura`).join(" + ")} = <strong style="color:var(--amber);">${sum} Aura</strong>
-      </div>
-      <button class="action-btn primary" data-merge-group="${gi}" style="padding:6px 10px;font-size:11px;">Zusammenführen</button>
-    </div>`;
-  }).join("");
-  el.querySelectorAll("[data-merge-group]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const g = groups[parseInt(btn.dataset.mergeGroup, 10)];
-      if (!g) return;
-      const sum = g.reduce((s, e) => s + e.total, 0);
-      if (!(await appConfirm(`„${g[0].nickname}" zusammenführen?`, `${g.length} Einträge werden zu einem Profil mit ${sum} Aura verschmolzen. Nur ausführen, wenn das wirklich dieselbe Person ist.`, "Zusammenführen"))) return;
-      const target = g[0].key;               // keep the richest key
-      let ok = 0;
-      for (const e of g.slice(1)) {
-        if (await mergeProfileKeys(e.key, target)) ok++;
-      }
-      toast(ok ? `🔗 „${escapeHtml(g[0].nickname)}" zusammengeführt (${sum} Aura)` : "Zusammenführen fehlgeschlagen.");
-      renderAdminPanel();
-    });
-  });
-}
+// Same-name profiles and the profile list: 40-profile-merge.js
 
 async function renderAdminPanel() {
   const overlay = $("#admin-overlay");
@@ -325,17 +285,7 @@ async function renderAdminPanel() {
     const snap = await window.FB.get(window.FB.ref(window.FB.db, "points"));
     const data = snap.val() || {};
     renderAdminDuplicates(data);
-    const rows = Object.entries(data)
-      .map(([key, p]) => ({ key, nickname: (p && p.nickname) || key, total: (p && p.total) || 0 }))
-      .sort((a, b) => b.total - a.total);
-    profilesEl.innerHTML = rows.map((r) => `
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;margin-bottom:6px;">
-        <span style="flex:1;font-size:13px;">${escapeHtml(r.nickname)}${r.key === currentUserKey() ? " (du)" : ""}</span>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);">${r.total} Aura</span>
-        ${r.key !== currentUserKey() ? `<button class="action-btn admin-row-btn" data-admin-del-user="${escapeHtml(r.key)}" data-nick="${escapeHtml(r.nickname)}">Löschen</button>` : ""}
-      </div>`).join("") || `<p style="color:var(--fg-dim);font-size:12px;">Keine Profile.</p>`;
-    profilesEl.querySelectorAll("[data-admin-del-user]").forEach((b) =>
-      b.addEventListener("click", () => adminDeleteProfile(b.dataset.adminDelUser, b.dataset.nick)));
+    renderAdminProfiles(data);
   } catch (err) {
     profilesEl.innerHTML = `<p style="color:var(--pink);font-size:12px;">Konnte Profile nicht laden (Regeln deployed?).</p>`;
   }
