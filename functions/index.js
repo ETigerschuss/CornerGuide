@@ -326,10 +326,17 @@ function munichDay(ms) {
     .format(new Date(ms)).replace(/-/g, "");
 }
 
-// All logins of a profile: the root and every login linked to it.
+// All logins of a profile: the root and every login linked to it — also the
+// logins of a profile that was merged into it (login → old profile → root).
 async function profileLogins(db, root) {
-  const snap = await db.ref("pointsLite").orderByChild("aliasOf").equalTo(root).get();
-  return [root, ...Object.keys(snap.val() || {})].filter((k) => k && !/[.#$[\]/]/.test(k));
+  const all = new Set([root]);
+  let level = [root];
+  for (let depth = 0; depth < 4 && level.length; depth++) {
+    const found = await Promise.all(level.map((k) => db.ref("pointsLite").orderByChild("aliasOf").equalTo(k).get()));
+    level = found.flatMap((snap) => Object.keys(snap.val() || {})).filter((k) => !all.has(k));
+    level.forEach((k) => all.add(k));
+  }
+  return [...all].filter((k) => k && !/[.#$[\]/]/.test(k));
 }
 
 exports.inviteJoined = onValueCreated(
